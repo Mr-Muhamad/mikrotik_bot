@@ -1,0 +1,570 @@
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from database.models import get_router_display_name
+
+SUBMENU_PAGE_SIZE = 20
+
+TIME_OPTIONS = [
+    ("اليوم", 1),
+    ("آخر 7 أيام", 7),
+    ("آخر 30 يوماً", 30),
+    ("الكل", None),
+]
+
+
+def get_router_keyboard():
+    """Return the keyboard for selecting saved routers or discovering new ones."""
+    from bot.handlers.callback_constants import CALLBACKS
+
+    keyboard = [
+        [InlineKeyboardButton("📋 الروترات المحفوظة", callback_data="saved_routers")],
+        [InlineKeyboardButton("🔍 اكتشاف روترات جديدة", callback_data="discover_routers")],
+        [InlineKeyboardButton("➕ إضافة روتر يدوياً", callback_data=CALLBACKS["manual_add_router"])],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_main_keyboard():
+    """Return the main bot menu keyboard with all feature sections."""
+    keyboard = [
+        [
+            InlineKeyboardButton("📡 Hotspot", callback_data="menu_hotspot"),
+            InlineKeyboardButton("🎫 User Manager", callback_data="menu_userman"),
+        ],
+        [
+            InlineKeyboardButton("📊 الإحصائيات", callback_data="menu_stats"),
+            InlineKeyboardButton("💾 Backup", callback_data="menu_backup"),
+        ],
+        [
+            InlineKeyboardButton("⚙️ إعدادات PDF", callback_data="menu_pdf_settings"),
+            InlineKeyboardButton("🌐 تغيير الروتر", callback_data="select_router"),
+        ],
+        [
+            InlineKeyboardButton("🧹 تنظيف الشات", callback_data="clean_chat"),
+        ],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_hotspot_keyboard():
+    """Return the Hotspot management submenu keyboard."""
+    keyboard = [
+        [
+            InlineKeyboardButton("➕ إضافة مستخدم", callback_data="hotspot_add"),
+            InlineKeyboardButton("✏️ تعديل مستخدم", callback_data="hotspot_edit"),
+        ],
+        [
+            InlineKeyboardButton("🗑️ حذف مستخدم", callback_data="hotspot_delete"),
+            InlineKeyboardButton("🔍 بحث", callback_data="hotspot_search"),
+        ],
+        [
+            InlineKeyboardButton("🎫 إنشاء كروت", callback_data="hotspot_cards"),
+            InlineKeyboardButton("📊 إحصائيات", callback_data="hotspot_stats"),
+        ],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_userman_keyboard():
+    """Return the User Manager submenu keyboard."""
+    keyboard = [
+        [
+            InlineKeyboardButton("🎫 إنشاء كروت", callback_data="userman_cards"),
+            InlineKeyboardButton("📋 عرض المستخدمين", callback_data="userman_list"),
+        ],
+        [
+            InlineKeyboardButton("🔄 جلب البروفايلات", callback_data="userman_profiles"),
+        ],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_stats_keyboard():
+    """Return the statistics submenu keyboard."""
+    keyboard = [
+        [
+            InlineKeyboardButton("📡 ملخص سريع", callback_data="stats_hotspot"),
+            InlineKeyboardButton("🎫 User Manager", callback_data="stats_userman"),
+        ],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_report_keyboard():
+    """Return the Hotspot usage report keyboard with export and refresh options."""
+    keyboard = [
+        [InlineKeyboardButton("📄 تصدير CSV", callback_data="report_csv")],
+        [InlineKeyboardButton("🔄 تحديث", callback_data="report_refresh")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_batches_keyboard(batches):
+    """Return a keyboard listing saved card batches for selection."""
+    keyboard = []
+    for b in batches:
+        label = f"#{b['id']} • {b.get('name', '')} • {b.get('count', 0)}"
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"batch_sel:{b['id']}")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_batch_detail_keyboard(batch_id):
+    """Return the detail keyboard for a single batch (regenerate / back)."""
+    keyboard = [
+        [InlineKeyboardButton("🔄 إعادة توليد PDF", callback_data=f"batch_regen:{batch_id}")],
+        [InlineKeyboardButton("🔙 قائمة الدفعات", callback_data="batches_refresh")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_backup_keyboard():
+    """Return the backup submenu keyboard."""
+    keyboard = [
+        [
+            InlineKeyboardButton("💾 Full System Backup", callback_data="backup_full"),
+            InlineKeyboardButton("🎫 User Manager Backup", callback_data="backup_userman"),
+        ],
+        [InlineKeyboardButton("⏰ باكوب آلي", callback_data="menu_schedule")],
+        [
+            InlineKeyboardButton("📥 استعادة نسخة احتياطية", callback_data="backup_restore"),
+            InlineKeyboardButton("🎫 استعادة User Manager", callback_data="userman_restore"),
+        ],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_pdf_settings_keyboard():
+    """Return the PDF settings main categories keyboard."""
+    keyboard = [
+        [InlineKeyboardButton("🔤 إعدادات النصوص والهوية", callback_data="pdf_group_text")],
+        [InlineKeyboardButton("📐 إعدادات الهيكل والمقاسات", callback_data="pdf_group_layout")],
+        [InlineKeyboardButton("📱 إعدادات الباركود", callback_data="pdf_group_misc")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_pdf_text_keyboard():
+    """Return the PDF text settings submenu."""
+    keyboard = [
+        [InlineKeyboardButton("🏷️ اسم الشبكة", callback_data="pdf_brand_name"),
+         InlineKeyboardButton("🌐 DNS الـ Hotspot", callback_data="pdf_hotspot_dns")],
+        [InlineKeyboardButton("📝 التذييل", callback_data="pdf_footer")],
+        [InlineKeyboardButton("🔤 أحجام الخط", callback_data="pdf_value_font_size")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="menu_pdf_settings")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_pdf_layout_keyboard():
+    """Return the PDF layout settings submenu."""
+    keyboard = [
+        [InlineKeyboardButton("📏 الهوامش", callback_data="pdf_margins")],
+        [InlineKeyboardButton("↔️ الفواصل", callback_data="pdf_spacing")],
+        [InlineKeyboardButton("📄 الكروت/صف", callback_data="pdf_cards_per_row"),
+         InlineKeyboardButton("📄 الكروت/صفحة", callback_data="pdf_cards_per_page")],
+        [InlineKeyboardButton("📐 تباعد النصوص", callback_data="pdf_label_spacing")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="menu_pdf_settings")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_pdf_misc_keyboard():
+    """Return the PDF miscellaneous settings submenu."""
+    keyboard = [
+        [InlineKeyboardButton("📱 تفعيل QR Code", callback_data="pdf_show_qr")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="menu_pdf_settings")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_card_type_keyboard():
+    """Return the card type selection keyboard for User Manager."""
+    keyboard = [
+        [InlineKeyboardButton("1️⃣ اسم + سر مختلفين", callback_data="card_type1")],
+        [InlineKeyboardButton("2️⃣ اسم + سر متشابهين", callback_data="card_type2")],
+        [InlineKeyboardButton("3️⃣ اسم + سر فارغة", callback_data="card_type3")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="menu_userman")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_card_payment_keyboard():
+    """Return the payment-status selection keyboard for User Manager cards."""
+    keyboard = [
+        [InlineKeyboardButton("💰 مدفوع", callback_data="card_paid")],
+        [InlineKeyboardButton("🆓 غير مدفوع", callback_data="card_unpaid")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="card_back_to_profile")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_card_mac_keyboard():
+    """Return the MAC-binding choice keyboard for User Manager cards."""
+    keyboard = [
+        [InlineKeyboardButton("🖥️ ربط بجهاز معروف", callback_data="card_bind_known")],
+        [InlineKeyboardButton("🚫 بدون ربط", callback_data="card_no_bind")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="card_back_to_payment")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_profile_keyboard(profiles, prefix, back_callback="main_menu"):
+    """Return a keyboard listing profiles; callback_data uses index (prefix_0, prefix_1, …)."""
+    keyboard = []
+    for index, profile in enumerate(profiles):
+        name = profile if isinstance(profile, str) else profile.get("name", "unknown")
+        keyboard.append([InlineKeyboardButton(name, callback_data=f"{prefix}_{index}")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data=back_callback)])
+    keyboard.append([InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_confirm_keyboard():
+    """Return a confirm/cancel confirmation keyboard."""
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ تأكيد", callback_data="confirm_yes"),
+            InlineKeyboardButton("❌ إلغاء", callback_data="confirm_no"),
+        ],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_discovered_routers_keyboard(routers):
+    """Return a keyboard listing discovered routers for selection."""
+    keyboard = []
+    for router in routers:
+        name = router.display_name()
+        keyboard.append([InlineKeyboardButton(name, callback_data=f"disc_router_{router.ip_address}")])
+    keyboard.append([InlineKeyboardButton("🔄 إعادة بحث", callback_data="discover_routers")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_saved_routers_keyboard(routers):
+    """Return a keyboard listing saved routers with version info."""
+    keyboard = []
+    for r in routers:
+        name = get_router_display_name(r)
+        version = r.get("version", "")
+        if version:
+            name += f" (v{version})"
+        keyboard.append([InlineKeyboardButton(name, callback_data=f"saved_router_{r['id']}")])
+    keyboard.append([InlineKeyboardButton("🔄 تحديث الحالة", callback_data="refresh_routers")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_router_action_keyboard(router_id):
+    """Return the action keyboard for a saved router (connect, reboot, rename, delete)."""
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ اتصال", callback_data=f"connect_router_{router_id}"),
+            InlineKeyboardButton("🔄 إعادة تشغيل", callback_data=f"reboot_router_{router_id}"),
+        ],
+        [
+            InlineKeyboardButton("✏️ تسمية", callback_data=f"rename_router_{router_id}"),
+            InlineKeyboardButton("🗑️ حذف", callback_data=f"delete_router_{router_id}"),
+        ],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="saved_routers")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_delete_router_confirm_keyboard(router_id):
+    """Return a confirmation keyboard for deleting a saved router."""
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ تأكيد", callback_data=f"confirm_delete_router_yes_{router_id}"),
+            InlineKeyboardButton("❌ إلغاء", callback_data=f"confirm_delete_router_no_{router_id}"),
+        ],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_schedule_keyboard():
+    """Return the backup schedule enable/disable keyboard."""
+    keyboard = [
+        [
+            InlineKeyboardButton("🟢 تفعيل", callback_data="schedule_enable"),
+            InlineKeyboardButton("🔴 تعطيل", callback_data="schedule_disable"),
+        ],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="menu_backup")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_reboot_keyboard(router_key):
+    """Return a confirmation keyboard for rebooting a router."""
+    keyboard = [
+        [
+            InlineKeyboardButton("✅ نعم، أعد التشغيل", callback_data=f"reboot_yes_{router_key}"),
+            InlineKeyboardButton("❌ إلغاء", callback_data="reboot_no"),
+        ],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def _user_button_label(user: dict) -> str:
+    name = str(user.get("name", "N/A"))
+    comment = str(user.get("comment", ""))
+    label = f"{name} ({comment})" if comment else name
+    if len(label) > 35:
+        label = label[:32] + "..."
+    return label
+
+
+def get_user_selection_keyboard(users, action_prefix, back_callback="menu_hotspot"):
+    """Return a keyboard listing hotspot users for selection with a given action prefix."""
+    keyboard = []
+    for user in users:
+        user_id = user.get(".id") or "*0"
+        keyboard.append([InlineKeyboardButton(_user_button_label(user), callback_data=f"{action_prefix}_{user_id}")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data=back_callback)])
+    keyboard.append([InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_paginated_user_keyboard(users, action_prefix, paginator, back_callback="menu_hotspot"):
+    """Return a paginated keyboard listing hotspot users for selection."""
+    keyboard = []
+    for user in paginator.current_items:
+        user_id = user.get(".id") or "*0"
+        keyboard.append([InlineKeyboardButton(_user_button_label(user), callback_data=f"{action_prefix}_{user_id}")])
+
+    nav_row = []
+    if paginator.has_prev():
+        nav_row.append(InlineKeyboardButton(
+            f"◀️ السابق ({paginator.page})", callback_data=f"page_{action_prefix}_{paginator.prev_page()}"))
+    if paginator.has_next():
+        nav_row.append(InlineKeyboardButton(
+            f"التالي ({paginator.page + 2}) ▶️", callback_data=f"page_{action_prefix}_{paginator.next_page()}"))
+    if nav_row:
+        keyboard.append(nav_row)
+
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data=back_callback)])
+    keyboard.append([InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_edit_user_keyboard(users):
+    """Return a keyboard listing hotspot users for selection to edit."""
+    return get_user_selection_keyboard(users, "edit_user", "menu_hotspot")
+
+
+def get_delete_user_keyboard(users):
+    """Return a keyboard listing hotspot users for selection to delete."""
+    return get_user_selection_keyboard(users, "delete_user", "menu_hotspot")
+
+
+def get_edit_field_keyboard(is_disabled: bool = False):
+    """Return the field selection keyboard for editing a hotspot user."""
+    toggle_label = "🔴 تعطيل" if not is_disabled else "🟢 تفعيل"
+    keyboard = [
+        [InlineKeyboardButton("👤 الاسم", callback_data="edit_field_name"),
+         InlineKeyboardButton("🔑 الباسورد", callback_data="edit_field_password")],
+        [InlineKeyboardButton("📋 البروفايل", callback_data="edit_field_profile"),
+         InlineKeyboardButton("📊 الحد الكلى", callback_data="edit_field_bytes")],
+        [InlineKeyboardButton("⏰ مدة الصلاحية", callback_data="edit_field_uptime"),
+         InlineKeyboardButton("💬 التعليق", callback_data="edit_field_comment")],
+        [InlineKeyboardButton(toggle_label, callback_data="edit_field_toggle_disabled")],
+        [InlineKeyboardButton("🔄 تصفير العدادات", callback_data="edit_field_reset")],
+        [InlineKeyboardButton("⛔ طرد المستخدم", callback_data="edit_kick_user")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="edit_back_search"),
+         InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_back_keyboard(callback_data):
+    """Return a keyboard with a back button and home button."""
+    keyboard = [
+        [InlineKeyboardButton("🔙 رجوع", callback_data=callback_data)],
+        [InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_nav_back_keyboard():
+    """Return a navigation back button keyboard."""
+    keyboard = [
+        [InlineKeyboardButton("🔙 رجوع", callback_data="go_back")],
+        [InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_skip_keyboard(skip_callback, back_callback):
+    """Return a keyboard with skip and back buttons."""
+    keyboard = [
+        [
+            InlineKeyboardButton("⏭️ تخطي", callback_data=skip_callback),
+            InlineKeyboardButton("🔙 رجوع", callback_data=back_callback),
+        ],
+        [InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_cancel_keyboard():
+    """Return a cancel and home button keyboard."""
+    keyboard = [
+        [InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")],
+        [InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_search_results_keyboard(hosts):
+    """Return a keyboard listing search result hosts for selection."""
+    keyboard = []
+    for i, h in enumerate(hosts):
+        name = str(h.get("host-name") or h.get("user") or "") or "غير معروف"
+        ip = str(h.get("address") or "") or "—"
+        label = f"{i+1}. {name}" if name else f"{i+1}. {ip}"
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"host_sel_{i}")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="search_back")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_host_detail_keyboard():
+    """Return the host detail keyboard with kick option."""
+    keyboard = [
+        [InlineKeyboardButton("⛔ طرد الجهاز", callback_data="host_kick_execute")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="search_back")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def _logs_time_label(filters):
+    since_days = filters.get("since_days")
+    if not since_days:
+        return "الكل"
+    return next((name for name, days in TIME_OPTIONS if days == since_days), "الكل")
+
+
+def get_logs_filter_keyboard(filters, page=0, total=0, page_size=10):
+    """Return the filter + pagination keyboard for the audit log view."""
+    has_prev = page > 0
+    has_next = (page + 1) * page_size < total
+    router_label = filters.get("router") or "الكل"
+    admin_label = filters.get("admin_label") or filters.get("admin_id") or "الكل"
+    action_label = filters.get("action") or "الكل"
+    time_label = _logs_time_label(filters)
+
+    keyboard = [
+        [
+            InlineKeyboardButton(f"🔍 راوتر: {router_label}", callback_data="logs_filter_router"),
+            InlineKeyboardButton(f"👤 مشرف: {admin_label}", callback_data="logs_filter_admin"),
+        ],
+        [
+            InlineKeyboardButton(f"⚙️ عملية: {action_label}", callback_data="logs_filter_action"),
+            InlineKeyboardButton(f"🕓 مدة: {time_label}", callback_data="logs_filter_time"),
+        ],
+    ]
+    if any((filters.get("router"), filters.get("admin_id"), filters.get("action"), filters.get("since_days"))):
+        keyboard.append([InlineKeyboardButton("🧹 مسح الفلاتر", callback_data="logs_clear")])
+
+    nav_buttons = []
+    if has_prev:
+        nav_buttons.append(InlineKeyboardButton("◀️ السابس", callback_data=f"logs_page_{page - 1}"))
+    if has_next:
+        nav_buttons.append(InlineKeyboardButton("التالي ▶️", callback_data=f"logs_page_{page + 1}"))
+    if nav_buttons:
+        keyboard.append(nav_buttons)
+    keyboard.append([InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_logs_submenu_keyboard(suffix, options, page=0, page_size=SUBMENU_PAGE_SIZE):
+    """Return a keyboard listing filter options for the given category."""
+    start = page * page_size
+    chunk = options[start:start + page_size]
+    keyboard = []
+    for i, opt in enumerate(chunk):
+        label = str(opt)
+        if len(label) > 60:
+            label = label[:57] + "..."
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"logs_set_{suffix}_{start + i}")])
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(InlineKeyboardButton("◀️ السابق", callback_data="logs_sub_prev"))
+    if start + page_size < len(options):
+        nav_buttons.append(InlineKeyboardButton("التالي ▶️", callback_data="logs_sub_next"))
+    if nav_buttons:
+        keyboard.append(nav_buttons)
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="logs_back")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_backup_restore_keyboard(backups):
+    """Return keyboard listing available backups for restore."""
+    keyboard = []
+    for idx, b in enumerate(backups[:10]):
+        name = b.get("name", "")
+        btype = "📦" if b.get("type") == "system" else "📄"
+        keyboard.append([InlineKeyboardButton(f"{btype} {name}", callback_data=f"restore:{idx}")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_backup")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_restore_confirm_keyboard():
+    """Return confirmation keyboard for backup restore."""
+    keyboard = [
+        [InlineKeyboardButton("⚠️ نعم، استعادة", callback_data="confirm_restore")],
+        [InlineKeyboardButton("❌ إلغاء", callback_data="menu_backup")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_backup_download_keyboard(
+    downloaded: list[str], backup_type: str, local_path: str = "",
+) -> InlineKeyboardMarkup:
+    """أزرار تحميل اختيارية تظهر بعد نجاح الباكوب.
+
+    Args:
+        downloaded: أسماء الملفات المحمّلة.
+        backup_type: "full" أو "userman".
+        local_path: المسار المحلي للملفات (يُخزّن في user_data).
+    """
+    keyboard = []
+    for idx, fname in enumerate(downloaded):
+        keyboard.append([
+            InlineKeyboardButton(
+                f"📥 تحميل {fname}",
+                callback_data=f"backup_dl:{backup_type}:{idx}",
+            )
+        ])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_backup")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_userman_restore_keyboard(tar_files: list[dict]) -> InlineKeyboardMarkup:
+    """Return keyboard listing saved User Manager tar backups for restore."""
+    keyboard = []
+    for idx, f in enumerate(tar_files):
+        name = f.get("filename", "")
+        size_kb = f.get("size", 0) // 1024
+        label = f"{name} ({size_kb}KB)"
+        keyboard.append([
+            InlineKeyboardButton(label, callback_data=f"userman_restore_tar:{idx}")
+        ])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_backup")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_userman_restore_confirm_keyboard() -> InlineKeyboardMarkup:
+    """Return confirmation keyboard for userman restore."""
+    keyboard = [
+        [InlineKeyboardButton("⚠️ نعم، استعادة", callback_data="userman_restore_exec")],
+        [InlineKeyboardButton("❌ إلغاء", callback_data="menu_backup")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+

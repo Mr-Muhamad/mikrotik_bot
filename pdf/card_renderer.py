@@ -1,0 +1,228 @@
+import os
+import io
+import tempfile
+import logging
+import threading
+import qrcode
+from urllib.parse import quote
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
+
+logger = logging.getLogger(__name__)
+
+CARD_BORDER_LINE_WIDTH = 1.2
+CARD_SEPARATOR_LINE_WIDTH = 0.2
+
+FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts")
+
+_ARABIC_FONT = None
+_ARABIC_RESHAPER = None
+_BIDI_DISPLAY = None
+_INIT_LOCK = threading.Lock()
+
+
+def _setup_arabic_support():
+    """Initialize Arabic text reshaping and bidirectional support."""
+    global _ARABIC_FONT, _ARABIC_RESHAPER, _BIDI_DISPLAY
+
+    with _INIT_LOCK:
+        if _ARABIC_FONT is not None:
+            return _ARABIC_FONT
+
+        font_files = [
+            ("HacenBeirut", "Hacen Beirut Heading.ttf"),
+            ("NotoSansArabic", "NotoSansArabic-Regular.ttf"),
+            ("Arial", "arial.ttf"),
+        ]
+
+        for font_name, font_file in font_files:
+            font_path = os.path.join(FONT_PATH, font_file)
+            if os.path.exists(font_path):
+                try:
+                    pdfmetrics.registerFont(TTFont(font_name, font_path))
+                    _ARABIC_FONT = font_name
+                    logger.info(f"Loaded Arabic font: {font_name}")
+                    break
+                except Exception as e:
+                    logger.warning(f"Failed to load font {font_file}: {e}")
+
+        if _ARABIC_FONT is None:
+            _ARABIC_FONT = "Helvetica"
+            logger.warning("No Arabic font found, using Helvetica")
+
+        try:
+            from arabic_reshaper import ArabicReshaper
+            from bidi.algorithm import get_display
+            _ARABIC_RESHAPER = ArabicReshaper(configuration={'delete_harakat': False})
+            _BIDI_DISPLAY = get_display
+        except ImportError:
+            logger.warning("arabic_reshaper or python-bidi not installed")
+
+    return _ARABIC_FONT
+
+
+def _arabic_text(text):
+    """Reshape and reorder Arabic text for correct PDF rendering."""
+    if not text:
+        return ""
+    if _ARABIC_RESHAPER is None or _BIDI_DISPLAY is None:
+        return str(text)
+    try:
+        reshaped = _ARABIC_RESHAPER.reshape(str(text))
+        return _BIDI_DISPLAY(reshaped)
+    except Exception as e:
+        logger.debug(f"Arabic text reshaping failed, using raw text: {e}")
+        return str(text)
+
+
+class CardRenderer:
+    """Renders individual hotspot/userman cards onto a PDF canvas."""
+
+    def __init__(self, font_name=None, brand_name="", hotspot_dns="", footer_text="", show_qr=1,
+                 label_spacing_single=1.0, label_spacing_dual=1.0,
+                 value_max_font_single=12, value_max_font_dual=11):
+        self.font_name = font_name or _setup_arabic_support()
+        self.brand_name = brand_name
+        self.hotspot_dns = hotspot_dns
+        self.footer_text = footer_text or ""
+        self.show_qr = show_qr
+        self.label_spacing_single = label_spacing_single
+        self.label_spacing_dual = label_spacing_dual
+        self.value_max_font_single = value_max_font_single
+        self.value_max_font_dual = value_max_font_dual
+
+    def render_card(self, canvas_obj, x, y, width, height, card, index):
+        """Draw a single card at the given coordinates."""
+        canvas_obj.saveState()
+
+        self._draw_border(canvas_obj, x, y, width, height)
+        self._draw_header(canvas_obj, x, y, width, height)
+        self._draw_title(canvas_obj, x, y, width, height)
+        self._draw_credentials(canvas_obj, x, y, width, height, card)
+        if self.hotspot_dns and self.show_qr:
+            self._draw_qr(canvas_obj, x, y, width, height, card)
+        self._draw_footer(canvas_obj, x, y, width, card)
+
+        canvas_obj.restoreState()
+
+    def _draw_border(self, c, x, y, width, height):
+        """Draw rounded rectangle border."""
+        c.setStrokeColorRGB(0, 0, 0)
+        c.setLineWidth(CARD_BORDER_LINE_WIDTH)
+        c.roundRect(x, y, width, height, 2)
+
+    def _draw_header(self, c, x, y, width, height):
+        """Draw brand name and separator line."""
+        if not self.brand_name:
+            return
+        header_y = y + height - 4.5 * mm
+        c.setFont(self.font_name, 14)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawCentredString(x + width / 2, header_y, _arabic_text(self.brand_name))
+
+        line_y = y + height - 6 * mm
+        c.setLineWidth(CARD_BORDER_LINE_WIDTH)
+        c.line(x + 1.5 * mm, line_y, x + width - 1.5 * mm, line_y)
+
+    def _draw_title(self, c, x, y, width, height):
+        """Draw card data title."""
+        title_y = y + height - 9.5 * mm
+        c.setFont(self.font_name, 7)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawCentredString(x + width / 2, title_y, _arabic_text("- بـيـانـات الـكـارت -"))
+
+        sep_y = y + height - 10.5 * mm
+        c.setLineWidth(CARD_SEPARATOR_LINE_WIDTH)
+        c.line(x + 4 * mm, sep_y, x + width - 4 * mm, sep_y)
+
+    def _dynamic_font_size(self, text, max_width_mm, max_font=11, min_font=6):
+        """Pick the largest integer font size so *text* fits *max_width_mm*."""
+        if not text:
+            return max_font
+        pt_per_mm = 72.0 / 25.4
+        max_width_pt = max_width_mm * pt_per_mm
+        for size in range(max_font, min_font - 1, -1):
+            w = pdfmetrics.stringWidth(text, "Helvetica-Bold", size)
+            if w <= max_width_pt:
+                return size
+        return min_font
+
+    def _draw_credentials(self, c, x, y, width, height, card):
+        """Draw username and password fields with dynamic font sizing."""
+        username = str(card.get("username", "") if isinstance(card, dict) else card.username)
+        password = str(card.get("password", "") if isinstance(card, dict) else card.password)
+        show_password = card.get("show_password", False) if isinstance(card, dict) else card.show_password
+
+        data_top = y + height - 10.5 * mm
+        footer_line_y = y + 5 * mm
+        v_middle = (data_top + footer_line_y) / 2
+
+        if not show_password or not password:
+            # حالة رقم الشحن فقط — استخدام label_spacing_single
+            spacing = self.label_spacing_single
+            label_x = x + 1 * mm * spacing
+            value_x = x + 11 * mm * spacing
+            max_text_width = (x + width) - value_x - 1.5 * mm
+
+            fs = self._dynamic_font_size(username, max_text_width, max_font=self.value_max_font_single, min_font=7)
+            c.setFont(self.font_name, 6.5)
+            c.setFillColorRGB(0, 0, 0)
+            c.drawString(label_x, v_middle - 0.9 * mm, _arabic_text(":رقم الشحن"))
+            c.setFont("Helvetica-Bold", fs)
+            c.drawString(value_x, v_middle - 1.6 * mm, username)
+        else:
+            # حالة يوزر + باسورد — استخدام label_spacing_dual
+            spacing = self.label_spacing_dual
+            label_x = x + 1 * mm * spacing
+            value_x = x + 11 * mm * spacing
+            max_text_width = (x + width) - value_x - 1.5 * mm
+
+            longer = username if len(username) >= len(password) else password
+            fs = self._dynamic_font_size(longer, max_text_width, max_font=self.value_max_font_dual, min_font=7)
+
+            c.setFont(self.font_name, 7)
+            c.setFillColorRGB(0, 0, 0)
+            c.drawString(label_x, v_middle + 2 * mm, _arabic_text(":الــيـوزر"))
+            c.setFont("Helvetica-Bold", fs)
+            c.drawString(value_x, v_middle + 1.8 * mm, username)
+
+            c.setFont(self.font_name, 7)
+            c.drawString(label_x, v_middle - 3.5 * mm, _arabic_text(":الباسورد"))
+            c.setFont("Helvetica-Bold", fs)
+            c.drawString(value_x, v_middle - 3.8 * mm, password)
+
+    def _draw_qr(self, c, x, y, width, height, card):
+        """Draw QR code for hotspot login."""
+        username = str(card.get("username", "") if isinstance(card, dict) else card.username)
+
+        if not username:
+            return
+
+        login_url = f"http://{self.hotspot_dns}/login?username={quote(username, safe='')}"
+        qr = qrcode.make(login_url)
+
+        qr_size = height * 0.45
+        qr_x = x + width - qr_size - 1.5 * mm
+        qr_y = y + 5 * mm
+
+        buf = io.BytesIO()
+        qr.save(buf, format='PNG')
+        buf.seek(0)
+        c.drawImage(ImageReader(buf), qr_x, qr_y, width=qr_size, height=qr_size)
+
+    def _draw_footer(self, c, x, y, width, card=None):
+        """Draw footer line and footer text."""
+        footer_line_y = y + 5 * mm
+        c.setLineWidth(CARD_BORDER_LINE_WIDTH)
+        c.setFillColorRGB(0, 0, 0)
+        c.line(x + 1.5 * mm, footer_line_y, x + width - 1.5 * mm, footer_line_y)
+
+        if self.footer_text:
+            c.setFont(self.font_name, 7)
+            c.drawCentredString(
+                x + width / 2,
+                y + 2 * mm,
+                _arabic_text(self.footer_text),
+            )

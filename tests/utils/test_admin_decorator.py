@@ -1,0 +1,207 @@
+"""Tests for utils.admin_decorator — admin gating and rate limiting."""
+
+import time
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+from config import ADMIN_IDS
+from utils.admin_decorator import (
+    ADMIN_ONLY_MSG,
+    RATE_LIMIT_WINDOW,
+    _check_rate_limit,
+    _rate_limit_data,
+    admin_only,
+)
+from bot.router_selector import require_router
+
+
+def _update(user_id: int = 100, has_message: bool = True, has_callback: bool = False):
+    u = MagicMock()
+    u.effective_user = MagicMock(id=user_id)
+    u.message = MagicMock() if has_message else None
+    if u.message:
+        u.message.reply_text = AsyncMock()
+    u.callback_query = MagicMock() if has_callback else None
+    if u.callback_query:
+        u.callback_query.answer = AsyncMock()
+        u.callback_query.edit_message_text = AsyncMock()
+    return u
+
+
+def _ctx():
+    c = MagicMock()
+    c.user_data = {}
+    return c
+
+
+@pytest.fixture(autouse=True)
+def _clear_rate_limit():
+    """Reset rate limit cache between tests."""
+    _rate_limit_data.clear()
+    yield
+    _rate_limit_data.clear()
+
+
+# ─── admin_only tests ──────────────────────────────────────────
+
+
+class TestAdminOnlyAllowsAdmin:
+    @pytest.mark.asyncio
+    async def test_admin_passes_through(self):
+        @admin_only
+        async def handler(update, context):
+            return "ok"
+
+        admin_id = next(iter(ADMIN_IDS))
+        update = _update(user_id=admin_id)
+        ctx = _ctx()
+        result = await handler(update, ctx)
+        assert result == "ok"
+
+    @pytest.mark.asyncio
+    async def test_non_admin_with_message_is_blocked(self):
+        @admin_only
+        async def handler(update, context):
+            return "ok"
+
+        update = _update(user_id=999999)
+        ctx = _ctx()
+        result = await handler(update, ctx)
+        assert result is None
+        update.message.reply_text.assert_called_once_with(ADMIN_ONLY_MSG)
+
+    @pytest.mark.asyncio
+    async def test_non_admin_with_callback_is_blocked(self):
+        @admin_only
+        async def handler(update, context):
+            return "ok"
+
+        update = _update(user_id=999999, has_message=False, has_callback=True)
+        ctx = _ctx()
+        result = await handler(update, ctx)
+        assert result is None
+        update.callback_query.answer.assert_called_once()
+        update.callback_query.edit_message_text.assert_called_once_with(ADMIN_ONLY_MSG)
+
+
+class TestAdminOnlyRateLimit:
+    @pytest.mark.asyncio
+    async def test_second_call_within_window_is_blocked(self):
+        @admin_only
+        async def handler(update, context):
+            return "ok"
+
+        admin_id = next(iter(ADMIN_IDS))
+        u1 = _update(user_id=admin_id)
+        u2 = _update(user_id=admin_id)
+        ctx = _ctx()
+        await handler(u1, ctx)
+        result = await handler(u2, ctx)
+        # Second call within 1s is dropped
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_call_after_window_succeeds(self):
+        @admin_only
+        async def handler(update, context):
+            return "ok"
+
+        admin_id = next(iter(ADMIN_IDS))
+        u1 = _update(user_id=admin_id)
+        u2 = _update(user_id=admin_id)
+        ctx = _ctx()
+        await handler(u1, ctx)
+        # Simulate window passing
+        _rate_limit_data[admin_id] -= RATE_LIMIT_WINDOW + 0.5
+        result = await handler(u2, ctx)
+        assert result == "ok"
+
+    @pytest.mark.asyncio
+    async def test_rate_limited_callback_answers_query(self):
+        @admin_only
+        async def handler(update, context):
+            return "ok"
+
+        admin_id = next(iter(ADMIN_IDS))
+        u1 = _update(user_id=admin_id)
+        u2 = _update(user_id=admin_id, has_message=False, has_callback=True)
+        ctx = _ctx()
+        await handler(u1, ctx)
+        await handler(u2, ctx)
+        u2.callback_query.answer.assert_called_once()
+
+
+# ─── _check_rate_limit tests ──────────────────────────────────
+
+
+class TestCheckRateLimit:
+    def test_first_call_returns_true(self):
+        assert _check_rate_limit(42) is True
+
+    def test_immediate_second_call_returns_false(self):
+        _check_rate_limit(42)
+        assert _check_rate_limit(42) is False
+
+    def test_different_users_independent(self):
+        _check_rate_limit(1)
+        assert _check_rate_limit(2) is True
+        assert _check_rate_limit(1) is False
+
+    def test_stale_entries_cleaned_after_interval(self, monkeypatch):
+        # Force cleanup trigger
+        from utils import admin_decorator
+        admin_decorator._last_cleanup = 0.0
+        # Insert stale entry
+        _rate_limit_data[99] = time.monotonic() - 7200  # 2 hours old
+        # New call triggers cleanup
+        _check_rate_limit(100)
+        assert 99 not in _rate_limit_data
+
+
+# ─── require_router tests ─────────────────────────────────────
+
+
+class TestRequireRouter:
+    @pytest.mark.asyncio
+    async def test_with_router_proceeds(self):
+        from bot.router_selector import set_selected_router
+        admin_id = next(iter(ADMIN_IDS))
+        set_selected_router(admin_id, "discovered_1")
+
+        @require_router
+        async def handler(update, context):
+            return "ran"
+
+        u = _update(user_id=admin_id)
+        c = _ctx()
+        result = await handler(u, c)
+        assert result == "ran"
+        assert c.user_data["router_key"] == "discovered_1"
+
+    @pytest.mark.asyncio
+    async def test_without_router_message_prompts(self):
+        @require_router
+        async def handler(update, context):
+            return "ran"
+
+        u = _update(user_id=999999, has_message=True, has_callback=False)
+        c = _ctx()
+        with patch("bot.router_selector.get_selected_router", return_value=None):
+            result = await handler(u, c)
+        assert result is None
+        u.message.reply_text.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_without_router_callback_shows_keyboard(self):
+        @require_router
+        async def handler(update, context):
+            return "ran"
+
+        u = _update(user_id=999999, has_message=False, has_callback=True)
+        c = _ctx()
+        with patch("bot.router_selector.get_selected_router", return_value=None):
+            result = await handler(u, c)
+        assert result is None
+        u.callback_query.answer.assert_called_once()
+        u.callback_query.edit_message_text.assert_called_once()

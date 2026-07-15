@@ -1,0 +1,234 @@
+EEEEE                                                                    [100%]
+=================================== ERRORS ====================================
+__________ ERROR at setup of test_viewer_blocked_from_admin_command ___________
+
+self = <Coroutine test_viewer_blocked_from_admin_command>
+
+    def setup(self) -> None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+        # When loop factories are configured, resolve the loop factory
+        # fixture early so that a factory variant change cascades cache
+        # invalidation before any async fixture checks its cache.
+        hook_caller = self.config.hook.pytest_asyncio_loop_factories
+        if hook_caller.get_hookimpls():
+            _ = self._request.getfixturevalue(_asyncio_loop_factory.__name__)
+>       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:558: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:926: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+tests\conftest.py:24: in temp_db
+    init_db()
+database\models.py:146: in init_db
+    seed_admin_roles(ADMIN_IDS)
+database\models.py:311: in seed_admin_roles
+    ensure_admin_role(admin_id, default_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+admin_id = 724730774, default_role = 'admin', changed_by = None
+
+    def ensure_admin_role(admin_id, default_role="admin", changed_by=None):
+        """Insert a role row for an admin if none exists yet (idempotent)."""
+        if default_role not in VALID_ROLES:
+            raise ValueError(f"invalid role: {default_role}")
+        with get_db() as conn:
+            cursor = conn.cursor()
+>           cursor.execute(
+                "INSERT OR IGNORE INTO admin_roles (admin_id, role, changed_by, changed_at) VALUES (?, ?, ?, ?)",
+                (admin_id, default_role, changed_by, _now_utc()),
+            )
+E           sqlite3.OperationalError: database is locked
+
+database\models.py:302: OperationalError
+______________ ERROR at setup of test_admin_passes_admin_command ______________
+
+self = <Coroutine test_admin_passes_admin_command>
+
+    def setup(self) -> None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+        # When loop factories are configured, resolve the loop factory
+        # fixture early so that a factory variant change cascades cache
+        # invalidation before any async fixture checks its cache.
+        hook_caller = self.config.hook.pytest_asyncio_loop_factories
+        if hook_caller.get_hookimpls():
+            _ = self._request.getfixturevalue(_asyncio_loop_factory.__name__)
+>       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:558: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:926: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+tests\conftest.py:24: in temp_db
+    init_db()
+database\models.py:146: in init_db
+    seed_admin_roles(ADMIN_IDS)
+database\models.py:311: in seed_admin_roles
+    ensure_admin_role(admin_id, default_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+admin_id = 724730774, default_role = 'admin', changed_by = None
+
+    def ensure_admin_role(admin_id, default_role="admin", changed_by=None):
+        """Insert a role row for an admin if none exists yet (idempotent)."""
+        if default_role not in VALID_ROLES:
+            raise ValueError(f"invalid role: {default_role}")
+        with get_db() as conn:
+            cursor = conn.cursor()
+>           cursor.execute(
+                "INSERT OR IGNORE INTO admin_roles (admin_id, role, changed_by, changed_at) VALUES (?, ?, ?, ?)",
+                (admin_id, default_role, changed_by, _now_utc()),
+            )
+E           sqlite3.OperationalError: database is locked
+
+database\models.py:302: OperationalError
+_________ ERROR at setup of test_operator_blocked_from_admin_command __________
+
+self = <Coroutine test_operator_blocked_from_admin_command>
+
+    def setup(self) -> None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+        # When loop factories are configured, resolve the loop factory
+        # fixture early so that a factory variant change cascades cache
+        # invalidation before any async fixture checks its cache.
+        hook_caller = self.config.hook.pytest_asyncio_loop_factories
+        if hook_caller.get_hookimpls():
+            _ = self._request.getfixturevalue(_asyncio_loop_factory.__name__)
+>       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:558: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:926: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+tests\conftest.py:24: in temp_db
+    init_db()
+database\models.py:146: in init_db
+    seed_admin_roles(ADMIN_IDS)
+database\models.py:311: in seed_admin_roles
+    ensure_admin_role(admin_id, default_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+admin_id = 724730774, default_role = 'admin', changed_by = None
+
+    def ensure_admin_role(admin_id, default_role="admin", changed_by=None):
+        """Insert a role row for an admin if none exists yet (idempotent)."""
+        if default_role not in VALID_ROLES:
+            raise ValueError(f"invalid role: {default_role}")
+        with get_db() as conn:
+            cursor = conn.cursor()
+>           cursor.execute(
+                "INSERT OR IGNORE INTO admin_roles (admin_id, role, changed_by, changed_at) VALUES (?, ?, ?, ?)",
+                (admin_id, default_role, changed_by, _now_utc()),
+            )
+E           sqlite3.OperationalError: database is locked
+
+database\models.py:302: OperationalError
+___________ ERROR at setup of test_operator_passes_operator_command ___________
+
+self = <Coroutine test_operator_passes_operator_command>
+
+    def setup(self) -> None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+        # When loop factories are configured, resolve the loop factory
+        # fixture early so that a factory variant change cascades cache
+        # invalidation before any async fixture checks its cache.
+        hook_caller = self.config.hook.pytest_asyncio_loop_factories
+        if hook_caller.get_hookimpls():
+            _ = self._request.getfixturevalue(_asyncio_loop_factory.__name__)
+>       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:558: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:926: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+tests\conftest.py:24: in temp_db
+    init_db()
+database\models.py:146: in init_db
+    seed_admin_roles(ADMIN_IDS)
+database\models.py:311: in seed_admin_roles
+    ensure_admin_role(admin_id, default_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+admin_id = 724730774, default_role = 'admin', changed_by = None
+
+    def ensure_admin_role(admin_id, default_role="admin", changed_by=None):
+        """Insert a role row for an admin if none exists yet (idempotent)."""
+        if default_role not in VALID_ROLES:
+            raise ValueError(f"invalid role: {default_role}")
+        with get_db() as conn:
+            cursor = conn.cursor()
+>           cursor.execute(
+                "INSERT OR IGNORE INTO admin_roles (admin_id, role, changed_by, changed_at) VALUES (?, ?, ?, ?)",
+                (admin_id, default_role, changed_by, _now_utc()),
+            )
+E           sqlite3.OperationalError: database is locked
+
+database\models.py:302: OperationalError
+____________ ERROR at setup of test_unknown_role_defaults_to_admin ____________
+
+self = <Coroutine test_unknown_role_defaults_to_admin>
+
+    def setup(self) -> None:
+        runner_fixture_id = f"_{self._loop_scope}_scoped_runner"
+        if runner_fixture_id not in self.fixturenames:
+            self.fixturenames.append(runner_fixture_id)
+        # When loop factories are configured, resolve the loop factory
+        # fixture early so that a factory variant change cascades cache
+        # invalidation before any async fixture checks its cache.
+        hook_caller = self.config.hook.pytest_asyncio_loop_factories
+        if hook_caller.get_hookimpls():
+            _ = self._request.getfixturevalue(_asyncio_loop_factory.__name__)
+>       return super().setup()
+               ^^^^^^^^^^^^^^^
+
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:558: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest_asyncio\plugin.py:926: in pytest_fixture_setup
+    return (yield)
+            ^^^^^
+tests\conftest.py:24: in temp_db
+    init_db()
+database\models.py:146: in init_db
+    seed_admin_roles(ADMIN_IDS)
+database\models.py:311: in seed_admin_roles
+    ensure_admin_role(admin_id, default_role)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+admin_id = 724730774, default_role = 'admin', changed_by = None
+
+    def ensure_admin_role(admin_id, default_role="admin", changed_by=None):
+        """Insert a role row for an admin if none exists yet (idempotent)."""
+        if default_role not in VALID_ROLES:
+            raise ValueError(f"invalid role: {default_role}")
+        with get_db() as conn:
+            cursor = conn.cursor()
+>           cursor.execute(
+                "INSERT OR IGNORE INTO admin_roles (admin_id, role, changed_by, changed_at) VALUES (?, ?, ?, ?)",
+                (admin_id, default_role, changed_by, _now_utc()),
+            )
+E           sqlite3.OperationalError: database is locked
+
+database\models.py:302: OperationalError
+=========================== short test summary info ===========================
+ERROR tests/bot/handlers/test_roles.py::test_viewer_blocked_from_admin_command
+ERROR tests/bot/handlers/test_roles.py::test_admin_passes_admin_command - sql...
+ERROR tests/bot/handlers/test_roles.py::test_operator_blocked_from_admin_command
+ERROR tests/bot/handlers/test_roles.py::test_operator_passes_operator_command
+ERROR tests/bot/handlers/test_roles.py::test_unknown_role_defaults_to_admin
+5 errors in 29.65s

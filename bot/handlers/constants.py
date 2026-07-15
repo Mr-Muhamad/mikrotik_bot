@@ -1,0 +1,53 @@
+from bot.handlers.states import WaitingState
+
+WAITING_INPUT = WaitingState.INPUT.value
+WAITING_USERNAME = WaitingState.USERNAME.value
+WAITING_PASSWORD = WaitingState.PASSWORD.value
+WAITING_PROFILE = WaitingState.PROFILE.value
+WAITING_BYTES_TOTAL = WaitingState.BYTES_TOTAL.value
+WAITING_COMMENT = WaitingState.COMMENT.value
+WAITING_EDIT_FIELD = WaitingState.EDIT_FIELD.value
+WAITING_EDIT_VALUE = WaitingState.EDIT_VALUE.value
+WAITING_DELETE_ID = WaitingState.DELETE_ID.value
+WAITING_SEARCH = WaitingState.SEARCH.value
+WAITING_CARD_COUNT = WaitingState.CARD_COUNT.value
+WAITING_PDF_VALUE = WaitingState.PDF_VALUE.value
+WAITING_DISC_USERNAME = WaitingState.DISC_USERNAME.value
+WAITING_DISC_PASSWORD = WaitingState.DISC_PASSWORD.value
+WAITING_SCHEDULE_TIME = WaitingState.SCHEDULE_TIME.value
+WAITING_CARD_TYPE = WaitingState.CARD_TYPE.value
+WAITING_CARD_PROFILE = WaitingState.CARD_PROFILE.value
+WAITING_DELETE_SELECT = WaitingState.DELETE_SELECT.value
+WAITING_RENAME = WaitingState.RENAME.value
+WAITING_UPTIME_TYPE = WaitingState.UPTIME_TYPE.value
+WAITING_UPTIME_VALUE = WaitingState.UPTIME_VALUE.value
+WAITING_HOTSPOT_CARD_COUNT = WaitingState.HOTSPOT_CARD_COUNT.value
+WAITING_HOTSPOT_CARD_LENGTH = WaitingState.HOTSPOT_CARD_LENGTH.value
+WAITING_HOTSPOT_CARD_PREFIX = WaitingState.HOTSPOT_CARD_PREFIX.value
+WAITING_HOTSPOT_CARD_TYPE = WaitingState.HOTSPOT_CARD_TYPE.value
+WAITING_HOTSPOT_CARD_PROFILE = WaitingState.HOTSPOT_CARD_PROFILE.value
+WAITING_HOTSPOT_CARD_UPTIME = WaitingState.HOTSPOT_CARD_UPTIME.value
+WAITING_HOTSPOT_CARD_BYTES = WaitingState.HOTSPOT_CARD_BYTES.value
+
+# Phase 1: Usage
+WAITING_USAGE_QUERY = WaitingState.USAGE_QUERY.value
+
+# Manual router add
+WAITING_MANUAL_IP = WaitingState.MANUAL_IP.value
+WAITING_MANUAL_PORT = WaitingState.MANUAL_PORT.value
+WAITING_MANUAL_USER = WaitingState.MANUAL_USER.value
+WAITING_MANUAL_PASS = WaitingState.MANUAL_PASS.value
+WAITING_MANUAL_ALIAS = WaitingState.MANUAL_ALIAS.value
+WAITING_MANUAL_CONFIRM = WaitingState.MANUAL_CONFIRM.value
+
+# Hotspot stats day text input
+WAITING_STATS_DAY = WaitingState.STATS_DAY.value
+
+# User Manager card payment distinction step
+WAITING_CARD_PAYMENT = WaitingState.CARD_PAYMENT.value
+
+# User Manager card MAC binding step
+WAITING_CARD_MAC = WaitingState.CARD_MAC.value
+
+# User Manager card prefix step
+WAITING_CARD_PREFIX = WaitingState.CARD_PREFIX.value
