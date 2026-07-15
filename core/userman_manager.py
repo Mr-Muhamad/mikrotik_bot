@@ -82,13 +82,16 @@ class UserManager:
         for i in range(count):
             try:
                 for _attempt in range(10):
-                    username = self._generate_digits(username_length)
+                    random_num = self._generate_digits(username_length)
+                    username = f"{prefix}{random_num}" if prefix else random_num
+                    
                     if card_system == CardSystem.DIFFERENT_CREDENTIALS:
                         password = self._generate_digits(username_length)
                     elif card_system == CardSystem.SAME_CREDENTIALS:
                         password = username
                     else:
                         password = ""
+                        
                     if username not in existing:
                         break
                 else:
