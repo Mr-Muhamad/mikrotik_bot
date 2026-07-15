@@ -9,8 +9,7 @@ from bot.keyboards import (
     get_hotspot_keyboard,
     get_router_keyboard,
     get_search_results_keyboard,
-    get_search_system_keyboard,
-    get_userman_detail_keyboard,
+    
 )
 from bot.messages import (
     DEVICE_NOT_FOUND,
@@ -27,13 +26,12 @@ from bot.messages import (
 from utils.formatters import format_bytes
 from bot.router_selector import cleanup_state, get_selected_router, nav_set, set_current_action
 from core.hotspot_manager import hotspot_manager
-from core.userman_manager import userman_manager
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import delete_now, edit_clean, reply_final, safe_edit_plain, send_loading, send_step
 from utils.error_response import send_error
-from .constants import WAITING_SEARCH, WAITING_SEARCH_SYSTEM
+from .constants import WAITING_HOTSPOT_SEARCH
 
 logger = logging.getLogger(__name__)
 
@@ -45,26 +43,16 @@ MAX_SEARCH_RESULTS = 50
 async def hotspot_search_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
-    msg = "أين تريد البحث؟"
     if query:
         await safe_answer_callback(query)
-        await edit_clean(query, context, msg, get_search_system_keyboard())
+        await edit_clean(query, context, SEARCH_PROMPT_ADV, get_cancel_keyboard())
     else:
-        await send_step(update, context, msg, get_search_system_keyboard())
-    set_current_action(update.effective_user.id, "search_system")
-    return WAITING_SEARCH_SYSTEM
+        await send_step(update, context, SEARCH_PROMPT_ADV, get_cancel_keyboard())
+    set_current_action(update.effective_user.id, "hotspot_search")
+    nav_set(context, "menu_hotspot")
+    return WAITING_HOTSPOT_SEARCH
 
-@admin_only
-async def search_system_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    sys_type = query.data.split("_")[-1]
-    context.user_data["search_sys"] = sys_type
-    
-    prompt = SEARCH_PROMPT_ADV if sys_type == 'hotspot' else SEARCH_PROMPT
-    await edit_clean(query, context, prompt, get_cancel_keyboard())
-    return WAITING_SEARCH,
-    WAITING_SEARCH_SYSTEM
+
 
 
 @admin_only
@@ -78,39 +66,26 @@ async def hotspot_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
     text = update.message.text.strip()
     loading = await send_loading(update, context, SEARCHING_HOSTS)
 
-    sys_type = context.user_data.get("search_sys", "hotspot")
-    if sys_type == "userman":
-        try:
-            hosts = await run_blocking(userman_manager.search_users, router_key, text)
-        except Exception:
-            hosts = []
-        is_userman = True
+    text = update.message.text.strip()
+    loading = await send_loading(update, context, SEARCHING_HOSTS)
+
+    if text.startswith("user:"):
+        hosts = await _search_users(router_key, text[5:].strip())
+    elif text.startswith("mac:"):
+        hosts = await _search_hosts_by_field(router_key, "mac-address", text[4:].strip())
+    elif text.startswith("comment:"):
+        hosts = await _search_users(router_key, text[8:].strip())
+    elif text.startswith("ip:"):
+        hosts = await _search_hosts_by_field(router_key, "address", text[3:].strip())
     else:
-        is_userman = False
-        if text.startswith("user:"):
-            hosts = await _search_users(router_key, text[5:].strip())
-        elif text.startswith("mac:"):
-            hosts = await _search_hosts_by_field(router_key, "mac-address", text[4:].strip())
-        elif text.startswith("comment:"):
-            hosts = await _search_users(router_key, text[8:].strip())
-        elif text.startswith("ip:"):
-            hosts = await _search_hosts_by_field(router_key, "address", text[3:].strip())
-        else:
-            hosts = await _search_hosts_with_users(router_key, text)
+        hosts = await _search_hosts_with_users(router_key, text)
 
     if len(hosts) > MAX_SEARCH_RESULTS:
         hosts = hosts[:MAX_SEARCH_RESULTS]
     context.user_data["search_hosts"] = hosts
     await delete_now(context, update.effective_chat.id, loading.message_id)
-    
-    if is_userman:
-        res_text = _format_userman_search_results(hosts)
-    else:
-        res_text = _format_search_results_text(hosts)
-        
-    await send_step(update, context, res_text, get_search_results_keyboard(hosts, is_userman=is_userman))
-    return WAITING_SEARCH,
-    WAITING_SEARCH_SYSTEM
+    await send_step(update, context, _format_search_results_text(hosts), get_search_results_keyboard(hosts, is_userman=False))
+    return WAITING_HOTSPOT_SEARCH
 
 
 async def _search_users(router_key: str, term: str) -> list[dict]:
@@ -204,17 +179,14 @@ async def hotspot_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE
     if on_host_detail and hosts is not None:
         context.user_data.pop("kick_host_idx", None)
         await edit_clean(query, context, _format_search_results_text(hosts), get_search_results_keyboard(hosts))
-        return WAITING_SEARCH,
-    WAITING_SEARCH_SYSTEM
+        return WAITING_HOTSPOT_SEARCH
     if hosts is not None:
         context.user_data.pop("search_hosts", None)
         context.user_data.pop("kick_host_idx", None)
         await edit_clean(query, context, SEARCH_PROMPT_ADV, get_cancel_keyboard())
-        return WAITING_SEARCH,
-    WAITING_SEARCH_SYSTEM
+        return WAITING_HOTSPOT_SEARCH
     await edit_clean(query, context, SEARCH_PROMPT_ADV, get_cancel_keyboard())
-    return WAITING_SEARCH,
-    WAITING_SEARCH_SYSTEM
+    return WAITING_HOTSPOT_SEARCH
 
 
 @admin_only
@@ -239,8 +211,7 @@ async def hotspot_show_host(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_error(update, context, e, log_extra="hotspot_show_host", reply_markup=get_hotspot_keyboard())
         cleanup_state(query.from_user.id, context.user_data)
         return ConversationHandler.END
-    return WAITING_SEARCH,
-    WAITING_SEARCH_SYSTEM
+    return WAITING_HOTSPOT_SEARCH
 
 
 @admin_only
@@ -277,29 +248,4 @@ async def hotspot_host_action(update: Update, context: ContextTypes.DEFAULT_TYPE
     return ConversationHandler.END
 
 
-def _format_userman_search_results(users):
-    from bot.messages import NO_RESULTS, UNKNOWN_NAME
-    if not users:
-        return NO_RESULTS
-    lines = []
-    for i, u in enumerate(users, 1):
-        name = u.get("name") or u.get("username") or UNKNOWN_NAME
-        profile = u.get("profile", "—")
-        detail = f"{i}️⃣ 👤 {name} | 📋 {profile}"
-        if str(u.get("disabled", "false")).lower() == "true":
-            detail += " [🔴 معطل]"
-        lines.append(detail)
-    header = f"🔍 تم العثور على {len(users)}"
-    MAX_SEARCH_RESULTS = 50
-    if len(users) > MAX_SEARCH_RESULTS:
-        header += f" — يعرض أول {MAX_SEARCH_RESULTS}:"
-    return header + ":\n\n" + "\n".join(lines[:MAX_SEARCH_RESULTS])
 
-def _format_userman_detail(user):
-    from bot.messages import UNKNOWN_NAME
-    name = user.get("name") or user.get("username") or UNKNOWN_NAME
-    pwd = user.get("password") or "—"
-    profile = user.get("profile") or "—"
-    is_disabled = str(user.get("disabled", "false")).lower() == "true"
-    status = "🔴 معطل" if is_disabled else "🟢 نشط"
-    return f"👤 مستخدم User Manager:\n📛 الاسم: {name}\n🔑 الرمز: {pwd}\n📋 البروفايل: {profile}\nوضع الحساب: {status}"

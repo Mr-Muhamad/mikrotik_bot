@@ -85,8 +85,10 @@ class TestHotspotManager:
         hosts = hotspot_manager.search_hosts(self.ROUTER_KEY, "no-match")
 
         assert hosts == []
-        assert mikrotik_api.execute.call_count == 1
-        assert mikrotik_api.execute.call_args.args[1] == "ip/hotspot/host/print"
+        assert mikrotik_api.execute.call_count == 3
+        assert mikrotik_api.execute.call_args_list[0].args[1] == "ip/hotspot/host/print"
+        assert mikrotik_api.execute.call_args_list[1].args[1] == "ip/hotspot/host/print"
+        assert mikrotik_api.execute.call_args_list[2].args[1] == "ip/hotspot/host/print"
 
     def test_kick_host_skips_leases_when_no_match(self):
         from core.hotspot_manager import mikrotik_api
@@ -97,8 +99,10 @@ class TestHotspotManager:
 
         assert success is False
         assert host_name is None
-        assert mikrotik_api.execute.call_count == 1
-        assert mikrotik_api.execute.call_args.args[1] == "ip/hotspot/host/print"
+        assert mikrotik_api.execute.call_count == 3
+        assert mikrotik_api.execute.call_args_list[0].args[1] == "ip/hotspot/host/print"
+        assert mikrotik_api.execute.call_args_list[1].args[1] == "ip/hotspot/host/print"
+        assert mikrotik_api.execute.call_args_list[2].args[1] == "ip/hotspot/host/print"
 
     def test_create_cards(self, mock_mikrotik_api):
         cards = hotspot_manager.create_cards(

@@ -11,12 +11,11 @@ from bot.handlers.userman import (
     userman_card_payment_selected,
     userman_card_count,
     userman_card_mac_selected,
-    userman_card_mac_input,
     userman_list,
     userman_profiles,
 )
 from bot.handlers.constants import (
-    WAITING_CARD_TYPE, WAITING_CARD_PROFILE, WAITING_CARD_COUNT, WAITING_CARD_PAYMENT, WAITING_CARD_MAC,
+    WAITING_CARD_TYPE, WAITING_CARD_PROFILE, WAITING_CARD_COUNT, WAITING_CARD_PAYMENT, WAITING_CARD_MAC, WAITING_CARD_PREFIX,
 )
 from utils import admin_decorator
 
@@ -306,37 +305,12 @@ class TestUsermanCardMacSelected:
     async def test_bind_known_returns_mac_state(self):
         ctx = _ctx()
         result = await userman_card_mac_selected(_query_update("card_bind_known"), ctx)
-        assert result == WAITING_CARD_MAC
+        assert result == WAITING_CARD_PREFIX
 
     @pytest.mark.asyncio
     async def test_no_bind_returns_count_state(self):
         ctx = _ctx()
         result = await userman_card_mac_selected(_query_update("card_no_bind"), ctx)
-        assert result == WAITING_CARD_COUNT
+        assert result == WAITING_CARD_PREFIX
         assert ctx.user_data.get("card_caller_id") == ""
-
-    @pytest.mark.asyncio
-    async def test_mac_input_valid_normalizes_and_advances(self):
-        update = MagicMock()
-        update.effective_user = MagicMock(id=ADMIN_ID)
-        update.effective_chat = MagicMock(id=1)
-        update.message = MagicMock()
-        update.message.text = "aa:bb:cc:dd:ee:ff"
-        ctx = _ctx()
-        with patch("bot.handlers.userman.send_step", new=AsyncMock()):
-            result = await userman_card_mac_input(update, ctx)
-        assert result == WAITING_CARD_COUNT
-        assert ctx.user_data["card_caller_id"] == "AA:BB:CC:DD:EE:FF"
-
-    @pytest.mark.asyncio
-    async def test_mac_input_invalid_reprompts(self):
-        update = MagicMock()
-        update.effective_user = MagicMock(id=ADMIN_ID)
-        update.effective_chat = MagicMock(id=1)
-        update.message = MagicMock()
-        update.message.text = "not-a-mac"
-        ctx = _ctx()
-        with patch("bot.handlers.userman.send_step", new=AsyncMock()):
-            result = await userman_card_mac_input(update, ctx)
-        assert result == WAITING_CARD_MAC
-        assert "card_caller_id" not in ctx.user_data
+        assert ctx.user_data.get("card_caller_id") == ""

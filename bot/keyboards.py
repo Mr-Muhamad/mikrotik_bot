@@ -73,8 +73,9 @@ def get_userman_keyboard():
             InlineKeyboardButton("📋 عرض المستخدمين", callback_data="userman_list"),
         ],
         [
-            InlineKeyboardButton("🔄 جلب البروفايلات", callback_data="userman_profiles"),
+            InlineKeyboardButton("📝 قوالب (Profiles)", callback_data="userman_profiles"),
         ],
+        [InlineKeyboardButton("🔍 بحث عن مستخدم", callback_data="userman_search")],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -420,17 +421,6 @@ def get_cancel_keyboard():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-
-def get_search_system_keyboard():
-    """Return a keyboard to choose between Hotspot and User Manager search."""
-    keyboard = [
-        [
-            InlineKeyboardButton("📡 Hotspot", callback_data="search_sys_hotspot"),
-            InlineKeyboardButton("🎫 User Manager", callback_data="search_sys_userman"),
-        ],
-        [InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")],
-    ]
-    return InlineKeyboardMarkup(keyboard)
 
 
 def get_search_results_keyboard(hosts, is_userman=False):

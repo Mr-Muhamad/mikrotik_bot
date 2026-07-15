@@ -16,7 +16,7 @@ class WaitingState(IntEnum):
     EDIT_FIELD = 6
     EDIT_VALUE = 7
     DELETE_ID = 8
-    SEARCH = 9
+    HOTSPOT_SEARCH = 9
     CARD_COUNT = 10
     PDF_VALUE = 11
     DISC_USERNAME = 12
@@ -65,5 +65,5 @@ class WaitingState(IntEnum):
     # User Manager card prefix step (51)
     CARD_PREFIX = 51
 
-    # Search system selection (52)
-    SEARCH_SYSTEM = 52
+    # User Manager search (52)
+    USERMAN_SEARCH = 52

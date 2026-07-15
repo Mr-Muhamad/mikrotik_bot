@@ -18,7 +18,6 @@ from bot.handlers.hotspot_delete import (
     confirm_callback, confirm_reprompt,
 )
 from bot.handlers.hotspot_search import (
-    search_system_selected,
     hotspot_search_start,
     hotspot_search_query,
     hotspot_search_back,
@@ -42,9 +41,13 @@ from bot.handlers.hotspot_cards import (
     hs_back_to_length, hs_back_to_type, hs_back_to_profile, hs_back_to_uptime,
 )
 from bot.handlers.userman import (
-    userman_cards_start, userman_card_type_selected,
-    userman_card_profile_selected, userman_card_count,
+    userman_cards_start, userman_card_type_selected, userman_card_profile_selected,
+    userman_card_payment_selected, userman_card_count, userman_card_mac_selected,
     userman_list, userman_profiles,
+)
+from bot.handlers.userman_search import (
+    userman_search_start, userman_search_query, userman_search_back,
+    userman_search_select, userman_search_action,
 )
 from bot.handlers.routers import (
     discover_routers_callback, discovered_router_selected,
@@ -65,11 +68,11 @@ from bot.handlers.settings import pdf_settings_option, pdf_settings_value
 from bot.handlers.constants import (
     WAITING_USERNAME, WAITING_PASSWORD, WAITING_PROFILE,
     WAITING_BYTES_TOTAL, WAITING_COMMENT, WAITING_DELETE_ID,
-    WAITING_DELETE_SELECT, WAITING_SEARCH, WAITING_CARD_COUNT,
-    WAITING_CARD_TYPE, WAITING_CARD_PROFILE, WAITING_PDF_VALUE,
-    WAITING_INPUT, WAITING_DISC_USERNAME, WAITING_DISC_PASSWORD,
-    WAITING_SCHEDULE_TIME, WAITING_EDIT_FIELD, WAITING_EDIT_VALUE,
-    WAITING_RENAME, WAITING_UPTIME_TYPE, WAITING_UPTIME_VALUE,
+    WAITING_DELETE_SELECT, WAITING_HOTSPOT_SEARCH, WAITING_USERMAN_SEARCH,
+    WAITING_CARD_COUNT, WAITING_CARD_TYPE, WAITING_CARD_PROFILE,
+    WAITING_PDF_VALUE, WAITING_INPUT, WAITING_DISC_USERNAME,
+    WAITING_DISC_PASSWORD, WAITING_SCHEDULE_TIME, WAITING_EDIT_FIELD,
+    WAITING_EDIT_VALUE, WAITING_RENAME, WAITING_UPTIME_TYPE, WAITING_UPTIME_VALUE,
     WAITING_HOTSPOT_CARD_COUNT, WAITING_HOTSPOT_CARD_LENGTH,
     WAITING_HOTSPOT_CARD_PREFIX, WAITING_HOTSPOT_CARD_TYPE,
     WAITING_HOTSPOT_CARD_PROFILE, WAITING_HOTSPOT_CARD_UPTIME,

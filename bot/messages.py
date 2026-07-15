@@ -30,6 +30,10 @@ DELETE_USER_PROMPT = """🗑️ حذف مستخدم
 SEARCH_PROMPT = """🔍 بحث عن الأجهزة
 
 أرسل الـ MAC أو الـ IP:"""
+
+USERMAN_SEARCH_PROMPT = """🔍 بحث عن مستخدم
+
+أرسل اسم المستخدم (Username):"""
 SEARCH_ADVANCED_HINT = """
 
 مثال: mac:XX:XX:XX:XX:XX أو ip:192.168.1.1 أو user:اسم أو comment:تعليق"""

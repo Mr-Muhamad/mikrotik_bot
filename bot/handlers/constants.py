@@ -9,7 +9,7 @@ WAITING_COMMENT = WaitingState.COMMENT.value
 WAITING_EDIT_FIELD = WaitingState.EDIT_FIELD.value
 WAITING_EDIT_VALUE = WaitingState.EDIT_VALUE.value
 WAITING_DELETE_ID = WaitingState.DELETE_ID.value
-WAITING_SEARCH = WaitingState.SEARCH.value
+WAITING_HOTSPOT_SEARCH = WaitingState.HOTSPOT_SEARCH.value
 WAITING_CARD_COUNT = WaitingState.CARD_COUNT.value
 WAITING_PDF_VALUE = WaitingState.PDF_VALUE.value
 WAITING_DISC_USERNAME = WaitingState.DISC_USERNAME.value
@@ -52,5 +52,5 @@ WAITING_CARD_MAC = WaitingState.CARD_MAC.value
 # User Manager card prefix step
 WAITING_CARD_PREFIX = WaitingState.CARD_PREFIX.value
 
-# Search system selection
-WAITING_SEARCH_SYSTEM = WaitingState.SEARCH_SYSTEM.value
+# User Manager search
+WAITING_USERMAN_SEARCH = WaitingState.USERMAN_SEARCH.value

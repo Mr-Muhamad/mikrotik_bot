@@ -48,7 +48,8 @@ class TestStart:
         context = _make_context()
         context.user_data["add_username"] = "data"
 
-        with patch("bot.handlers.common.mikrotik_api"):
+        with patch("bot.handlers.common.mikrotik_api") as mock_api:
+            mock_api.check_connection_health.return_value = (True, "OK")
             result = await start(update, context)
 
         assert result == ConversationHandler.END

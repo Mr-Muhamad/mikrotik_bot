@@ -40,14 +40,14 @@ class TestHotspotSearchStart:
     @pytest.mark.asyncio
     async def test_start_prompts_for_term(self, mock_mikrotik_api):
         from database.models import save_user_session
-        from bot.handlers.constants import WAITING_SEARCH
+        from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(text="/search")
         context = _make_context()
 
         result = await hotspot_search_start(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
 
 
 class TestHotspotSearchQuery:
@@ -65,7 +65,7 @@ class TestHotspotSearchQuery:
     @pytest.mark.asyncio
     async def test_search_returns_results(self, mock_mikrotik_api):
         from database.models import save_user_session
-        from bot.handlers.constants import WAITING_SEARCH
+        from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(text="AA:BB:CC")
@@ -77,13 +77,13 @@ class TestHotspotSearchQuery:
              patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()):
             result = await hotspot_search_query(update, context)
 
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
         assert "search_hosts" in context.user_data
 
     @pytest.mark.asyncio
     async def test_search_error_ends_conversation(self, mock_mikrotik_api):
         from database.models import save_user_session
-        from bot.handlers.constants import WAITING_SEARCH
+        from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(text="any")
@@ -97,4 +97,4 @@ class TestHotspotSearchQuery:
              patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("timeout"))):
             result = await hotspot_search_query(update, context)
 
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH

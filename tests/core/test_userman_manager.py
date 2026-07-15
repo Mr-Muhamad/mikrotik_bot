@@ -338,6 +338,7 @@ class TestUserManagerCreateCardsCallerId:
 
         mikrotik_api.get_userman_base_path = MagicMock(return_value="user-manager")
         mikrotik_api.execute = MagicMock()
+        self.manager._get_user_id = MagicMock(return_value="*123")
 
         self.manager.set_user_caller_id(
             self.router_key, "testuser", "AA:BB:CC:DD:EE:FF"

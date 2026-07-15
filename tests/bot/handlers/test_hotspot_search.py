@@ -9,9 +9,9 @@ from bot.handlers.hotspot_search import (
     hotspot_search_query,
     hotspot_search_back,
     hotspot_show_host,
-    hotspot_host_kick,
+    hotspot_host_action,
 )
-from bot.handlers.constants import WAITING_SEARCH
+from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
 from utils import admin_decorator
 
 
@@ -57,7 +57,7 @@ class TestHotspotSearchStart:
 
         with patch("bot.handlers.hotspot_search.edit_clean", new=AsyncMock()):
             result = await hotspot_search_start(update, _ctx())
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
 
     @pytest.mark.asyncio
     async def test_start_without_callback(self):
@@ -69,7 +69,7 @@ class TestHotspotSearchStart:
 
         with patch("bot.handlers.hotspot_search.send_step", new=AsyncMock()):
             result = await hotspot_search_start(update, _ctx())
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
 
 
 class TestHotspotSearchQuery:
@@ -108,7 +108,7 @@ class TestHotspotSearchQuery:
              patch("bot.handlers.hotspot_search.send_step", new=AsyncMock()), \
              patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(return_value=hosts)):
             result = await hotspot_search_query(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
         assert context.user_data["search_hosts"] == hosts
 
     @pytest.mark.asyncio
@@ -130,7 +130,7 @@ class TestHotspotSearchQuery:
              patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("net down"))), \
              patch("bot.handlers.hotspot_search.reply_final", new=AsyncMock()):
             result = await hotspot_search_query(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
 
     @pytest.mark.asyncio
     async def test_no_results(self):
@@ -170,7 +170,7 @@ class TestHotspotSearchBack:
 
         with patch("bot.handlers.hotspot_search.edit_clean", new=AsyncMock()):
             result = await hotspot_search_back(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
         assert "kick_host_idx" not in context.user_data
 
     @pytest.mark.asyncio
@@ -186,7 +186,7 @@ class TestHotspotSearchBack:
 
         with patch("bot.handlers.hotspot_search.edit_clean", new=AsyncMock()):
             result = await hotspot_search_back(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
         assert "search_hosts" not in context.user_data
 
     @pytest.mark.asyncio
@@ -201,7 +201,7 @@ class TestHotspotSearchBack:
 
         with patch("bot.handlers.hotspot_search.edit_clean", new=AsyncMock()):
             result = await hotspot_search_back(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
 
 
 class TestHotspotShowHost:
@@ -222,7 +222,7 @@ class TestHotspotShowHost:
         ]
 
         result = await hotspot_show_host(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
         assert context.user_data["kick_host_idx"] == 0
 
     @pytest.mark.asyncio
@@ -242,7 +242,7 @@ class TestHotspotShowHost:
         ]
 
         result = await hotspot_show_host(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
 
     @pytest.mark.asyncio
     async def test_show_host_invalid_index_ends(self):
@@ -278,7 +278,7 @@ class TestHotspotShowHost:
         ]
 
         result = await hotspot_show_host(update, context)
-        assert result == WAITING_SEARCH
+        assert result == WAITING_HOTSPOT_SEARCH
 
 
 class TestHotspotHostKick:
@@ -299,7 +299,7 @@ class TestHotspotHostKick:
 
         with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
              patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(return_value=(True, "Phone"))):
-            result = await hotspot_host_kick(update, context)
+            result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
@@ -319,7 +319,7 @@ class TestHotspotHostKick:
 
         with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
              patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(return_value=(False, ""))):
-            result = await hotspot_host_kick(update, context)
+            result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
@@ -335,7 +335,7 @@ class TestHotspotHostKick:
         update.effective_chat = MagicMock(type="private")
         context = _ctx()
 
-        result = await hotspot_host_kick(update, context)
+        result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
@@ -354,7 +354,7 @@ class TestHotspotHostKick:
         context.user_data["kick_host_idx"] = 5
 
         with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"):
-            result = await hotspot_host_kick(update, context)
+            result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
@@ -374,5 +374,5 @@ class TestHotspotHostKick:
 
         with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
              patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("boom"))):
-            result = await hotspot_host_kick(update, context)
+            result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END

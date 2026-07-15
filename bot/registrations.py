@@ -34,8 +34,11 @@ from bot.handlers.hotspot_delete import (
     hotspot_delete_start, hotspot_delete_search, hotspot_delete_select,
     confirm_callback, confirm_reprompt,
 )
+from bot.handlers.userman_search import (
+    userman_search_start, userman_search_query, userman_search_back,
+    userman_search_select, userman_search_action,
+)
 from bot.handlers.hotspot_search import (
-    search_system_selected,
     hotspot_search_start, hotspot_search_query, hotspot_search_back,
     hotspot_show_host, hotspot_host_action,
 )
@@ -263,20 +266,22 @@ state("WAITING_DELETE_SELECT").callback(PATTERNS["page_delete_user"])(handle_pag
 state("WAITING_DELETE_SELECT").message(filters.TEXT & ~filters.COMMAND)(reprompt_select_user)
 
 # hotspot_search flow
-state("WAITING_SEARCH_SYSTEM").callback(PATTERNS["search_sys_hotspot"])(search_system_selected)
-state("WAITING_SEARCH_SYSTEM").callback(PATTERNS["search_sys_userman"])(search_system_selected)
+state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["search_back"])(hotspot_search_back)
+state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["host_sel"])(hotspot_show_host)
+state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["host_kick_execute"])(hotspot_host_action)
+state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["host_reset_counters"])(hotspot_host_action)
+state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["host_toggle_disabled"])(hotspot_host_action)
+state("WAITING_HOTSPOT_SEARCH").message(filters.TEXT & ~filters.COMMAND)(hotspot_search_query)
 
-state("WAITING_SEARCH").callback(PATTERNS["search_back"])(hotspot_search_back)
-state("WAITING_SEARCH").callback(PATTERNS["host_sel"])(hotspot_show_host)
-state("WAITING_SEARCH").callback(PATTERNS["um_sel"])(hotspot_show_host)
-state("WAITING_SEARCH").callback(PATTERNS["host_kick_execute"])(hotspot_host_action)
-state("WAITING_SEARCH").callback(PATTERNS["host_reset_counters"])(hotspot_host_action)
-state("WAITING_SEARCH").callback(PATTERNS["host_toggle_disabled"])(hotspot_host_action)
-state("WAITING_SEARCH").callback(PATTERNS["um_kick_execute"])(hotspot_host_action)
-state("WAITING_SEARCH").callback(PATTERNS["um_reset_counters"])(hotspot_host_action)
-state("WAITING_SEARCH").callback(PATTERNS["um_toggle_disabled"])(hotspot_host_action)
-state("WAITING_SEARCH").callback(PATTERNS["um_delete"])(hotspot_host_action)
-state("WAITING_SEARCH").message(filters.TEXT & ~filters.COMMAND)(hotspot_search_query)
+# userman_search flow
+state("WAITING_USERMAN_SEARCH").callback(PATTERNS["search_back"])(userman_search_back)
+state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_sel"])(userman_search_select)
+state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_kick_execute"])(userman_search_action)
+state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_reset_counters"])(userman_search_action)
+state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_toggle_disabled"])(userman_search_action)
+state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_delete"])(userman_search_action)
+state("WAITING_USERMAN_SEARCH").message(filters.TEXT & ~filters.COMMAND)(userman_search_query)
+standalone(CallbackQueryHandler(userman_search_start, pattern=PATTERNS["userman_search"]))
 
 # hotspot_edit flow
 state("WAITING_EDIT_FIELD").message(filters.TEXT & ~filters.COMMAND)(hotspot_edit_search)
