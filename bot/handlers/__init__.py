@@ -18,8 +18,12 @@ from bot.handlers.hotspot_delete import (
     confirm_callback, confirm_reprompt,
 )
 from bot.handlers.hotspot_search import (
-    hotspot_search_start, hotspot_search_query, hotspot_search_back,
-    hotspot_show_host, hotspot_host_kick,
+    search_system_selected,
+    hotspot_search_start,
+    hotspot_search_query,
+    hotspot_search_back,
+    hotspot_show_host,
+    hotspot_host_action,
 )
 from bot.handlers.hotspot_edit import (
     hotspot_edit_start, hotspot_edit_search, hotspot_edit_select,
