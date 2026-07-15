@@ -149,16 +149,8 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
             card_type,
             profile,
             prefix=prefix,
+            caller_id=caller_id,
         )
-
-        if caller_id:
-            for c in cards:
-                await run_blocking(
-                    userman_manager.set_user_caller_id,
-                    router_key=router_key,
-                    username=c["username"],
-                    caller_id=caller_id,
-                )
 
         await run_blocking(log_action, "create_cards", f"{count} cards", router_key, update.effective_user.id)
 

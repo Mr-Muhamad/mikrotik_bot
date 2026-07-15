@@ -108,6 +108,22 @@ class HotspotManager:
         logger.info(f"Reset counters for hotspot user {user_id} on {router_key}")
         return result
 
+    def enable_user(self, router_key: str, user_id: str) -> list[dict]:
+        """Enable a hotspot user by its .id."""
+        result = self._api.execute(
+            router_key, "ip/hotspot/user/enable", **{"numbers": user_id}
+        )
+        logger.info(f"Enabled hotspot user {user_id} on {router_key}")
+        return result
+
+    def disable_user(self, router_key: str, user_id: str) -> list[dict]:
+        """Disable a hotspot user by its .id."""
+        result = self._api.execute(
+            router_key, "ip/hotspot/user/disable", **{"numbers": user_id}
+        )
+        logger.info(f"Disabled hotspot user {user_id} on {router_key}")
+        return result
+
     def delete_user(self, router_key: str, user_id: str) -> list[dict]:
         """Delete a hotspot user by its .id."""
         result = self._api.execute(
@@ -151,86 +167,125 @@ class HotspotManager:
 
     def search_hosts(self, router_key: str, search_term: str) -> list[dict]:
         """Search hotspot hosts by IP or MAC address with enriched host names from DHCP leases."""
-        hosts = self._api.execute(router_key, "ip/hotspot/host/print")
-        search_lower = search_term.lower()
-        results = []
-        matched_macs = set()
-        for h in hosts:
-            mac = str(h.get("mac-address", "")).lower()
-            ip = str(h.get("address", "")).lower()
-            if search_lower in ip or search_lower in mac:
-                results.append(h)
-                if mac:
-                    matched_macs.add(mac)
+        search_lower = search_term.lower().strip()
+        hosts = []
+        
+        try:
+            hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": search_lower})
+            if not hosts:
+                hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?address": search_lower})
+        except Exception:
+            pass
 
-        if not results:
-            return results
+        if not hosts:
+            all_hosts = self._api.execute(router_key, "ip/hotspot/host/print")
+            for h in all_hosts:
+                mac = str(h.get("mac-address", "")).lower()
+                ip = str(h.get("address", "")).lower()
+                if search_lower in ip or search_lower in mac:
+                    hosts.append(h)
 
+        if not hosts:
+            return []
+
+        matched_macs = {str(h.get("mac-address", "")).lower() for h in hosts if h.get("mac-address")}
         lease_by_mac = self._get_leases_by_mac(router_key, matched_macs)
-        for h in results:
+        for h in hosts:
             mac = str(h.get("mac-address", "")).lower()
             lease = lease_by_mac.get(mac, {})
             h["host-name"] = lease.get("host-name", "")
-        return results
+        return hosts
 
     def kick_host(self, router_key: str, mac_or_ip: str) -> tuple[bool, str | None]:
         """Remove a hotspot host by MAC or IP address."""
-        hosts = self._api.execute(router_key, "ip/hotspot/host/print")
         target = mac_or_ip.lower().strip()
-        for h in hosts:
-            mac = str(h.get("mac-address", "")).lower()
-            ip = str(h.get("address", "")).lower()
-            if target == mac or target == ip:
-                host_id = h.get(".id")
-                lease_by_mac = self._get_leases_by_mac(router_key, {mac})
-                lease = lease_by_mac.get(mac, {})
-                host_name = lease.get("host-name") or h.get("user") or mac or ip
-                self._api.execute(router_key, "ip/hotspot/host/remove", **{".id": host_id})
-                return True, host_name
-        return False, None
+        hosts = []
+        
+        try:
+            hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": target})
+            if not hosts:
+                hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?address": target})
+        except Exception:
+            pass
+            
+        if not hosts:
+            all_hosts = self._api.execute(router_key, "ip/hotspot/host/print")
+            for h in all_hosts:
+                if str(h.get("mac-address", "")).lower() == target or str(h.get("address", "")).lower() == target:
+                    hosts.append(h)
+                    break
+
+        if not hosts:
+            return False, None
+            
+        h = hosts[0]
+        mac = str(h.get("mac-address", "")).lower()
+        ip = str(h.get("address", "")).lower()
+        host_id = h.get(".id")
+        
+        lease_by_mac = self._get_leases_by_mac(router_key, {mac}) if mac else {}
+        lease = lease_by_mac.get(mac, {})
+        host_name = lease.get("host-name") or h.get("user") or mac or ip
+        
+        self._api.execute(router_key, "ip/hotspot/host/remove", **{".id": host_id})
+        return True, host_name
 
     def kick_user(self, router_key: str, username: str) -> list[str]:
         """Kick an active hotspot user and remove all matching host entries."""
         target = str(username).lower().strip()
-
-        macs_to_kick = set()
-        active = self._api.execute(router_key, "ip/hotspot/active/print")
-        for s in active:
-            if str(s.get("user", "")).lower() == target:
-                mac = s.get("mac-address", "")
-                if mac:
-                    macs_to_kick.add(mac.lower())
-
-        hosts = self._api.execute(router_key, "ip/hotspot/host/print")
         is_mac_target = bool(re.match(r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$', target))
 
-        matched_hosts = []
-        matched_macs = set()
-        for h in hosts:
-            mac = str(h.get("mac-address", "")).lower()
-            ip = str(h.get("address", "")).lower()
-            user_match = str(h.get("user", "")).lower() == target
-            mac_match = mac in macs_to_kick
-            direct_mac = is_mac_target and mac == target
-            ip_match = ip == target
-            if user_match or mac_match or direct_mac or ip_match:
-                matched_hosts.append(h)
-                if mac:
-                    matched_macs.add(mac)
+        kicked = []
+        macs_to_kick = set()
+        
+        active_sessions = []
+        try:
+            active_sessions = self._api.execute(router_key, "ip/hotspot/active/print", **{"?user": target})
+        except Exception:
+            active = self._api.execute(router_key, "ip/hotspot/active/print")
+            active_sessions = [s for s in active if str(s.get("user", "")).lower() == target]
+            
+        for s in active_sessions:
+            mac = s.get("mac-address", "")
+            if mac:
+                macs_to_kick.add(mac.lower())
+            self._api.execute(router_key, "ip/hotspot/active/remove", **{".id": s.get(".id")})
 
-        if not matched_hosts:
+        matched_hosts = []
+        try:
+            if is_mac_target:
+                matched_hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": target})
+            else:
+                matched_hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?user": target})
+                for mac in macs_to_kick:
+                    mac_hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": mac})
+                    matched_hosts.extend(mac_hosts)
+        except Exception:
+            all_hosts = self._api.execute(router_key, "ip/hotspot/host/print")
+            for h in all_hosts:
+                mac = str(h.get("mac-address", "")).lower()
+                ip = str(h.get("address", "")).lower()
+                if str(h.get("user", "")).lower() == target or mac in macs_to_kick or (is_mac_target and mac == target) or ip == target:
+                    matched_hosts.append(h)
+
+        unique_hosts = {h.get(".id"): h for h in matched_hosts if h.get(".id")}.values()
+        
+        if not unique_hosts:
             return []
 
+        matched_macs = {str(h.get("mac-address", "")).lower() for h in unique_hosts if h.get("mac-address")}
         lease_by_mac = self._get_leases_by_mac(router_key, matched_macs)
-        kicked = []
-        for h in matched_hosts:
+        
+        for h in unique_hosts:
             mac = str(h.get("mac-address", "")).lower()
             host_id = h.get(".id")
             lease = lease_by_mac.get(mac, {})
             host_name = lease.get("host-name") or h.get("user") or mac or h.get("address", "")
+            
             self._api.execute(router_key, "ip/hotspot/host/remove", **{".id": host_id})
             kicked.append(host_name)
-        return kicked
+            
+        return list(set(kicked))
 
     def list_users(self, router_key: str, limit: int = 50) -> list[dict]:
         """Return up to limit hotspot users from the router."""
