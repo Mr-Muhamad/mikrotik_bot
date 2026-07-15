@@ -421,22 +421,51 @@ def get_cancel_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_search_results_keyboard(hosts):
+def get_search_system_keyboard():
+    """Return a keyboard to choose between Hotspot and User Manager search."""
+    keyboard = [
+        [
+            InlineKeyboardButton("📡 Hotspot", callback_data="search_sys_hotspot"),
+            InlineKeyboardButton("🎫 User Manager", callback_data="search_sys_userman"),
+        ],
+        [InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_search_results_keyboard(hosts, is_userman=False):
     """Return a keyboard listing search result hosts for selection."""
     keyboard = []
+    prefix = "um_sel_" if is_userman else "host_sel_"
     for i, h in enumerate(hosts):
-        name = str(h.get("host-name") or h.get("user") or "") or "غير معروف"
+        name = str(h.get("name") or h.get("host-name") or h.get("user") or "") or "غير معروف"
         ip = str(h.get("address") or "") or "—"
         label = f"{i+1}. {name}" if name else f"{i+1}. {ip}"
-        keyboard.append([InlineKeyboardButton(label, callback_data=f"host_sel_{i}")])
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"{prefix}{i}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="search_back")])
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_host_detail_keyboard():
-    """Return the host detail keyboard with kick option."""
+def get_host_detail_keyboard(is_disabled=False):
+    """Return the host detail keyboard with kick option and toggles."""
+    toggle_text = "🟢 تفعيل المستخدم" if is_disabled else "🔴 تعطيل المستخدم"
     keyboard = [
-        [InlineKeyboardButton("⛔ طرد الجهاز", callback_data="host_kick_execute")],
+        [InlineKeyboardButton("⛔ طرد من الشبكة", callback_data="host_kick_execute"),
+         InlineKeyboardButton("🔄 تصفير العداد", callback_data="host_reset_counters")],
+        [InlineKeyboardButton(toggle_text, callback_data="host_toggle_disabled")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="search_back")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_userman_detail_keyboard(is_disabled=False):
+    """Return the User Manager detail keyboard with management options."""
+    toggle_text = "🟢 تفعيل المستخدم" if is_disabled else "🔴 تعطيل المستخدم"
+    keyboard = [
+        [InlineKeyboardButton("⛔ طرد الجلسة", callback_data="um_kick_execute"),
+         InlineKeyboardButton("🔄 تصفير العداد", callback_data="um_reset_counters")],
+        [InlineKeyboardButton(toggle_text, callback_data="um_toggle_disabled")],
+        [InlineKeyboardButton("🗑️ حذف المستخدم", callback_data="um_delete")],
         [InlineKeyboardButton("🔙 رجوع", callback_data="search_back")],
     ]
     return InlineKeyboardMarkup(keyboard)

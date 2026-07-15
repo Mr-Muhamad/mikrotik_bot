@@ -278,6 +278,24 @@ class UserManager:
             normalized.append(entry)
         return normalized[:limit]
 
+    def search_users(self, router_key: str, search_term: str) -> list[dict]:
+        """Search User Manager users by name."""
+        base_path = self._api.get_userman_base_path(router_key)
+        is_v7 = not base_path.startswith("tool/")
+        field = "name" if is_v7 else "username"
+        
+        results = self._api.execute(router_key, f"{base_path}/user/print")
+        search = search_term.lower()
+        matches = []
+        for user in results or []:
+            name = str(user.get(field, "")).lower()
+            if search in name:
+                entry = dict(user)
+                if "name" not in entry and "username" in entry:
+                    entry["name"] = entry["username"]
+                matches.append(entry)
+        return matches
+
     def get_user(self, router_key: str, username: str) -> dict | None:
         """Return a single User Manager user dict by name, or None if not found."""
         uid = self._get_user_id(router_key, username)

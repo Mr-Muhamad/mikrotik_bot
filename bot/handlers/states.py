@@ -59,8 +59,11 @@ class WaitingState(IntEnum):
     # User Manager card payment distinction step (42)
     CARD_PAYMENT = 42
 
-    # User Manager card MAC binding step (43)
-    CARD_MAC = 43
+    # User Manager card MAC binding step (50)
+    CARD_MAC = 50
 
-    # User Manager card prefix step (44)
-    CARD_PREFIX = 44
+    # User Manager card prefix step (51)
+    CARD_PREFIX = 51
+
+    # Search system selection (52)
+    SEARCH_SYSTEM = 52

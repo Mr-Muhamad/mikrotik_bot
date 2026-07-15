@@ -51,3 +51,6 @@ WAITING_CARD_MAC = WaitingState.CARD_MAC.value
 
 # User Manager card prefix step
 WAITING_CARD_PREFIX = WaitingState.CARD_PREFIX.value
+
+# Search system selection
+WAITING_SEARCH_SYSTEM = WaitingState.SEARCH_SYSTEM.value
