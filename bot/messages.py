@@ -265,6 +265,11 @@ MANUAL_ADD_INVALID = "❌ {}"
 # ─── USERMAN ───────────────────────────────────────────────────────────
 
 NO_PROFILES_AVAILABLE = "❌ لا توجد بروفايلات. تأكد من الاتصال بالروتر."
+
+USERMAN_ADD_PROFILE_PROMPT = "📦 اختر الباقة (البروفايل) لإضافتها للمستخدم:"
+USERMAN_ADD_PROFILE_SUCCESS = "✅ تمت إضافة الباقة «{profile}» للمستخدم {username}."
+USERMAN_ADD_PROFILE_FAILED = "❌ فشل إضافة الباقة «{profile}» للمستخدم {username}: {error}"
+USERMAN_NO_PROFILES_TO_ADD = "📭 لا توجد بروفايلات متاحة لإضافتها على هذا الروتر."
 SEND_CARD_COUNT = "🔢 أرسل عدد الكروت:"
 MAX_CARDS_EXCEEDED = "❌ الحد الأقصى 100 كارت"
 CREATING_CARDS = "⏳ جاري إنشاء الكروت..."
@@ -376,3 +381,9 @@ USERMAN_RESTORE_IN_PROGRESS = "⏳ جاري استعادة User Manager..."
 USERMAN_RESTORE_SUCCESS = "✅ تمت الاستعادة بنجاح:\n\n{summary}"
 USERMAN_RESTORE_FAILED = "❌ فشل الاستعادة: {error}"
 USERMAN_RESTORE_PARTIAL = "⚠️ تمت الاستعادة مع بعض الأخطاء:\n\n{summary}"
+
+
+# ─── تنبيهات انتهاء الاشتراك ─────────────────────────────────
+EXPIRY_ALERT_HEADER = "⏰ <b>تنبيه انتهاء الاشتراك — {router_name}</b>\n\nالمستخدمون التالية تنتهي صلاحيتهم خلال {days} أيام:\n"
+EXPIRY_ALERT_USER_ROW = "• <b>{name}</b> | بروفايل: {profile} | متبقي: {remaining_days} يوم"
+EXPIRY_ALERT_EMPTY = "✅ لا توجد اشتراكات منتهية خلال {days} أيام القادمة على {router_name}"

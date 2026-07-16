@@ -33,7 +33,8 @@ class TestBackupScheduler:
         scheduler = BackupScheduler()
         scheduler.start_daily(mock_job_queue, hour=3, minute=0, persist=False)
         assert scheduler._running is True
-        mock_job_queue.run_daily.assert_called_once()
+        # run_daily يُستدعى مرتان: مرة للـ backup ومرة لفحص انتهاء الاشتراكات
+        assert mock_job_queue.run_daily.call_count == 2
 
     async def test_start_daily_persists(self, mock_job_queue):
         with patch("database.models.save_backup_schedule") as mock_save:
@@ -88,7 +89,8 @@ class TestBackupScheduler:
             mock_get.return_value = {"schedule_enabled": True, "schedule_hour": 5, "schedule_minute": 30}
             scheduler = BackupScheduler()
             scheduler.restore(mock_job_queue)
-            mock_job_queue.run_daily.assert_called_once()
+            # run_daily يُستدعى مرتان: مرة للـ backup ومرة لفحص انتهاء الاشتراكات
+            assert mock_job_queue.run_daily.call_count == 2
             assert scheduler._running is True
 
     async def test_restore_skips_when_disabled(self, mock_job_queue):
