@@ -436,15 +436,32 @@ def get_search_results_keyboard(hosts, is_userman=False):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_host_detail_keyboard(is_disabled=False):
-    """Return the host detail keyboard with kick option and toggles."""
+def get_host_detail_keyboard(is_disabled=False, mac: str = ""):
+    """Return the host detail keyboard with kick, block, and toggle options."""
+    from bot.handlers.callback_constants import block_mac_cb
     toggle_text = "🟢 تفعيل المستخدم" if is_disabled else "🔴 تعطيل المستخدم"
     keyboard = [
         [InlineKeyboardButton("⛔ طرد من الشبكة", callback_data="host_kick_execute"),
          InlineKeyboardButton("🔄 تصفير العداد", callback_data="host_reset_counters")],
         [InlineKeyboardButton(toggle_text, callback_data="host_toggle_disabled")],
-        [InlineKeyboardButton("🔙 رجوع", callback_data="search_back")],
     ]
+    if mac:
+        keyboard.append([InlineKeyboardButton("🚫 حظر دائم", callback_data=block_mac_cb(mac))])
+    keyboard.append([InlineKeyboardButton("📋 قائمة المحظورين", callback_data="blocked_list")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="search_back")])
+    return InlineKeyboardMarkup(keyboard)
+
+
+def get_blocked_macs_keyboard(blocked: list[dict]) -> InlineKeyboardMarkup:
+    """لوحة مفاتيح قائمة MACs المحظورة مع زر رفع الحظر لكل عنصر."""
+    from bot.handlers.callback_constants import unblock_mac_cb
+    keyboard = []
+    for entry in blocked:
+        mac = entry.get("address", "")
+        comment = entry.get("comment", "")
+        label = f"🔓 {mac}" + (f" ({comment[:15]})" if comment else "")
+        keyboard.append([InlineKeyboardButton(label, callback_data=unblock_mac_cb(mac))])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="hotspot_search")])
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -455,6 +472,7 @@ def get_userman_detail_keyboard(is_disabled=False):
         [InlineKeyboardButton("⛔ طرد الجلسة", callback_data="um_kick_execute"),
          InlineKeyboardButton("🔄 تصفير العداد", callback_data="um_reset_counters")],
         [InlineKeyboardButton(toggle_text, callback_data="um_toggle_disabled")],
+        [InlineKeyboardButton("➕ إضافة باقة", callback_data="um_add_profile")],
         [InlineKeyboardButton("🗑️ حذف المستخدم", callback_data="um_delete")],
         [InlineKeyboardButton("🔙 رجوع", callback_data="search_back")],
     ]

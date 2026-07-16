@@ -387,3 +387,11 @@ USERMAN_RESTORE_PARTIAL = "⚠️ تمت الاستعادة مع بعض الأخ
 EXPIRY_ALERT_HEADER = "⏰ <b>تنبيه انتهاء الاشتراك — {router_name}</b>\n\nالمستخدمون التالية تنتهي صلاحيتهم خلال {days} أيام:\n"
 EXPIRY_ALERT_USER_ROW = "• <b>{name}</b> | بروفايل: {profile} | متبقي: {remaining_days} يوم"
 EXPIRY_ALERT_EMPTY = "✅ لا توجد اشتراكات منتهية خلال {days} أيام القادمة على {router_name}"
+
+# ─── حظر MAC ──────────────────────────────────────────────────
+BLOCK_MAC_SUCCESS = "🚫 تم حظر الجهاز <code>{mac}</code> بنجاح.\n\n⚠️ تأكد من وجود Firewall Rule تمنع address-list=hotspot_blocked من الاتصال."
+BLOCK_MAC_FAIL = "❌ فشل حظر الجهاز. تحقق من الاتصال بالراوتر."
+UNBLOCK_MAC_SUCCESS = "✅ تم رفع الحظر عن <code>{mac}</code>"
+UNBLOCK_MAC_FAIL = "❌ فشل رفع الحظر. قد لا يكون الجهاز محظوراً."
+BLOCKED_LIST_HEADER = "🚫 <b>الأجهزة المحظورة ({count}):</b>\n\nاضغط على جهاز لرفع حظره:"
+BLOCKED_LIST_EMPTY = "✅ لا توجد أجهزة محظورة حالياً"

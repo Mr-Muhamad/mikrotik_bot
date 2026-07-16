@@ -79,6 +79,7 @@ CALLBACKS: dict[str, str] = {
     "um_reset_counters": "um_reset_counters",
     "um_toggle_disabled": "um_toggle_disabled",
     "um_delete": "um_delete",
+    "um_add_profile": "um_add_profile",
     "reboot_no": "reboot_no",
     "hs_card_type1": "hs_card_type1",
     "hs_card_type2": "hs_card_type2",
@@ -129,6 +130,8 @@ CALLBACKS: dict[str, str] = {
     "card_back_to_mac": "card_back_to_mac",
     "card_back_to_prefix": "card_back_to_prefix",
     "card_skip_prefix": "card_skip_prefix",
+    # حظر MAC
+    "blocked_list": "blocked_list",
 }
 
 # ── Dynamic token builders (prefix + variable) ────────────────
@@ -242,6 +245,16 @@ def manual_add_confirm(yes: bool):
     return f"confirm_manual_add_{'yes' if yes else 'no'}"
 
 
+def block_mac_cb(mac: str) -> str:
+    """بناء callback_data لحظر MAC: block_mac:<mac>"""
+    return f"block_mac:{mac}"
+
+
+def unblock_mac_cb(mac: str) -> str:
+    """بناء callback_data لرفع حظر MAC: unblock_mac:<mac>"""
+    return f"unblock_mac:{mac}"
+
+
 # ── Registration patterns (referenced by bot/registrations.py) ──
 PATTERNS: dict[str, str] = {
     # static exact-match
@@ -313,6 +326,7 @@ PATTERNS: dict[str, str] = {
     "um_reset_counters": r"^um_reset_counters$",
     "um_toggle_disabled": r"^um_toggle_disabled$",
     "um_delete": r"^um_delete$",
+    "um_add_profile": r"^um_add_profile$",
     "reboot_no": r"^reboot_no$",
     "confirm_yes_no": r"^(confirm_yes|confirm_no)$",
     "uptime_type": r"^(uptime_hours|uptime_days|skip_uptime)$",
@@ -352,6 +366,7 @@ PATTERNS: dict[str, str] = {
     "page_delete_user": r"^page_delete_user_\d+$",
     "host_sel": r"^host_sel_\d+$",
     "um_sel": r"^um_sel_\d+$",
+    "um_profile": r"^um_profile_\d+$",
     "edit_user_star": r"^edit_user_\*\S+$",
     "page_edit_user": r"^page_edit_user_\d+$",
     "edit_profile": r"^edit_profile_\d+$",
@@ -365,4 +380,8 @@ PATTERNS: dict[str, str] = {
     "card_back_to_mac": r"^card_back_to_mac$",
     "card_back_to_prefix": r"^card_back_to_prefix$",
     "card_skip_prefix": r"^card_skip_prefix$",
+    # حظر MAC — من الأكثر تحديداً للأعم
+    "block_mac": r"^block_mac:[0-9A-Fa-f:]+$",
+    "unblock_mac": r"^unblock_mac:[0-9A-Fa-f:]+$",
+    "blocked_list": r"^blocked_list$",
 }

@@ -37,10 +37,12 @@ from bot.handlers.hotspot_delete import (
 from bot.handlers.userman_search import (
     userman_search_start, userman_search_query, userman_search_back,
     userman_search_select, userman_search_action,
+    userman_search_add_profile, userman_search_add_profile_selected,
 )
 from bot.handlers.hotspot_search import (
     hotspot_search_start, hotspot_search_query, hotspot_search_back,
     hotspot_show_host, hotspot_host_action,
+    block_mac_handler, unblock_mac_handler, show_blocked_list,
 )
 from bot.handlers.hotspot_common import handle_page_callback
 from bot.handlers.hotspot_edit import (
@@ -185,6 +187,8 @@ standalone(CommandHandler, command="batches")(batches_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batch_sel"])(batch_select)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batch_regen"])(batch_regen)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batches_refresh"])(batches_command)
+# حظر MAC — standalone لأن unblock قد يأتي من خارج conversation
+standalone(CallbackQueryHandler, pattern=PATTERNS["unblock_mac"])(unblock_mac_handler)
 
 # ─── ERROR HANDLER ────────────────────────────────────────────
 
@@ -224,7 +228,6 @@ fallback(CallbackQueryHandler, pattern=PATTERNS["hotspot_search"])(hotspot_searc
 fallback(CallbackQueryHandler, pattern=PATTERNS["hotspot_edit"])(hotspot_edit_start)
 fallback(CallbackQueryHandler, pattern=PATTERNS["hotspot_cards"])(hotspot_cards_start)
 fallback(CallbackQueryHandler, pattern=PATTERNS["userman_cards"])(userman_cards_start)
-fallback(CallbackQueryHandler, pattern=PATTERNS["search_back"])(hotspot_search_back)
 fallback(CallbackQueryHandler, pattern=PATTERNS["menu_userman"])(menu_userman_from_conversation)
 fallback(CallbackQueryHandler, pattern=PATTERNS["main_menu"])(end_conversation_to_main)
 fallback(CallbackQueryHandler, pattern=PATTERNS["menu_hotspot"])(end_conversation_to_hotspot)
@@ -271,17 +274,22 @@ state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["host_sel"])(hotspot_show_host
 state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["host_kick_execute"])(hotspot_host_action)
 state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["host_reset_counters"])(hotspot_host_action)
 state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["host_toggle_disabled"])(hotspot_host_action)
+state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["block_mac"])(block_mac_handler)
+state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["blocked_list"])(show_blocked_list)
+state("WAITING_HOTSPOT_SEARCH").callback(PATTERNS["unblock_mac"])(unblock_mac_handler)
 state("WAITING_HOTSPOT_SEARCH").message(filters.TEXT & ~filters.COMMAND)(hotspot_search_query)
 
 # userman_search flow
+entry_point(CallbackQueryHandler, pattern=PATTERNS["userman_search"])(userman_search_start)
 state("WAITING_USERMAN_SEARCH").callback(PATTERNS["search_back"])(userman_search_back)
 state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_sel"])(userman_search_select)
 state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_kick_execute"])(userman_search_action)
 state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_reset_counters"])(userman_search_action)
 state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_toggle_disabled"])(userman_search_action)
 state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_delete"])(userman_search_action)
+state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_add_profile"])(userman_search_add_profile)
+state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_profile"])(userman_search_add_profile_selected)
 state("WAITING_USERMAN_SEARCH").message(filters.TEXT & ~filters.COMMAND)(userman_search_query)
-standalone(CallbackQueryHandler(userman_search_start, pattern=PATTERNS["userman_search"]))
 
 # hotspot_edit flow
 state("WAITING_EDIT_FIELD").message(filters.TEXT & ~filters.COMMAND)(hotspot_edit_search)

@@ -4,14 +4,18 @@ from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.keyboards import (
+    get_blocked_macs_keyboard,
     get_cancel_keyboard,
     get_host_detail_keyboard,
     get_hotspot_keyboard,
     get_router_keyboard,
     get_search_results_keyboard,
-    
 )
 from bot.messages import (
+    BLOCK_MAC_FAIL,
+    BLOCK_MAC_SUCCESS,
+    BLOCKED_LIST_EMPTY,
+    BLOCKED_LIST_HEADER,
     DEVICE_NOT_FOUND,
     DEVICE_NOT_SELECTED,
     HOST_KICK_FAILED,
@@ -20,6 +24,8 @@ from bot.messages import (
     NO_ROUTER_SELECTED,
     SEARCH_PROMPT,
     SEARCHING_HOSTS,
+    UNBLOCK_MAC_FAIL,
+    UNBLOCK_MAC_SUCCESS,
     UNKNOWN_NAME,
     SEARCH_ADVANCED_HINT,
 )
@@ -62,9 +68,6 @@ async def hotspot_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
         await reply_final(update, context, NO_ROUTER_SELECTED, get_router_keyboard())
         cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
-
-    text = update.message.text.strip()
-    loading = await send_loading(update, context, SEARCHING_HOSTS)
 
     text = update.message.text.strip()
     loading = await send_loading(update, context, SEARCHING_HOSTS)
@@ -206,7 +209,8 @@ async def hotspot_show_host(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ip = host.get("address") or "—"
         mac = host.get("mac-address") or "—"
         text = f"🏠 {name}\n🌐 {ip}\n🔗 {mac}"
-        await safe_edit_plain(query, context, text, reply_markup=get_host_detail_keyboard())
+        is_disabled = str(host.get("_disabled", "false")).lower() == "true"
+        await safe_edit_plain(query, context, text, reply_markup=get_host_detail_keyboard(is_disabled=is_disabled, mac=mac if mac != "—" else ""))
     except Exception as e:
         await send_error(update, context, e, log_extra="hotspot_show_host", reply_markup=get_hotspot_keyboard())
         cleanup_state(query.from_user.id, context.user_data)
@@ -248,4 +252,68 @@ async def hotspot_host_action(update: Update, context: ContextTypes.DEFAULT_TYPE
     return ConversationHandler.END
 
 
+@admin_only
+async def block_mac_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """حظر MAC دائم في address-list=hotspot_blocked على الراوتر."""
+    from utils.callback_utils import is_duplicate_callback
+    query = update.callback_query
+    await safe_answer_callback(query)
+    if is_duplicate_callback(query):
+        return WAITING_HOTSPOT_SEARCH
+    router_key = get_selected_router(query.from_user.id)
+    if not router_key:
+        await safe_edit_plain(query, context, NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+        return ConversationHandler.END
+    try:
+        mac = query.data.split(":", 1)[1]
+    except (IndexError, ValueError):
+        await safe_edit_plain(query, context, "❌ بيانات الحظر غير صالحة", reply_markup=get_hotspot_keyboard())
+        return WAITING_HOTSPOT_SEARCH
+    success = await run_blocking(hotspot_manager.block_mac, router_key, mac)
+    if success:
+        await safe_edit_plain(query, context, BLOCK_MAC_SUCCESS.format(mac=mac), reply_markup=get_hotspot_keyboard())
+    else:
+        await safe_edit_plain(query, context, BLOCK_MAC_FAIL, reply_markup=get_hotspot_keyboard())
+    cleanup_state(query.from_user.id, context.user_data)
+    return ConversationHandler.END
+
+
+@admin_only
+async def unblock_mac_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """رفع حظر MAC من address-list=hotspot_blocked."""
+    query = update.callback_query
+    await safe_answer_callback(query)
+    router_key = get_selected_router(query.from_user.id)
+    if not router_key:
+        await safe_edit_plain(query, context, NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+        return ConversationHandler.END
+    try:
+        mac = query.data.split(":", 1)[1]
+    except (IndexError, ValueError):
+        await safe_edit_plain(query, context, "❌ بيانات رفع الحظر غير صالحة", reply_markup=get_hotspot_keyboard())
+        return ConversationHandler.END
+    success = await run_blocking(hotspot_manager.unblock_mac, router_key, mac)
+    if success:
+        await safe_edit_plain(query, context, UNBLOCK_MAC_SUCCESS.format(mac=mac), reply_markup=get_hotspot_keyboard())
+    else:
+        await safe_edit_plain(query, context, UNBLOCK_MAC_FAIL, reply_markup=get_hotspot_keyboard())
+    return ConversationHandler.END
+
+
+@admin_only
+async def show_blocked_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """عرض قائمة MACs المحظورة على الراوتر الحالي."""
+    query = update.callback_query
+    await safe_answer_callback(query)
+    router_key = get_selected_router(query.from_user.id)
+    if not router_key:
+        await safe_edit_plain(query, context, NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+        return ConversationHandler.END
+    blocked = await run_blocking(hotspot_manager.get_blocked_macs, router_key)
+    if not blocked:
+        await safe_edit_plain(query, context, BLOCKED_LIST_EMPTY, reply_markup=get_blocked_macs_keyboard([]))
+    else:
+        text = BLOCKED_LIST_HEADER.format(count=len(blocked))
+        await safe_edit_plain(query, context, text, reply_markup=get_blocked_macs_keyboard(blocked))
+    return WAITING_HOTSPOT_SEARCH
 
