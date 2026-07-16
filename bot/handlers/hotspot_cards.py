@@ -22,7 +22,8 @@ from bot.messages import (
     ERROR_OCCURRED,
     SEND_UPTIME_TYPE,
 )
-from bot.router_selector import cleanup_state, get_selected_router, nav_set, set_current_action, require_router
+from bot.router_selector import cleanup_state, get_selected_router, nav_set, set_current_action
+from bot.handlers.handler_utils import make_back_step
 from bot.helpers.profiles import fetch_and_cache_profiles, PROFILE_SOURCE_HOTSPOT
 from core.card_models import CardSystem,serialize_cards
 from core.hotspot_manager import hotspot_manager
@@ -64,7 +65,6 @@ def get_card_type_keyboard():
 
 @require_role("operator")
 @admin_only
-@require_router
 async def hotspot_cards_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
@@ -361,20 +361,8 @@ async def _create_cards(update, context, query=None):
     return ConversationHandler.END
 
 
-@admin_only
-async def hs_back_to_length(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(ENTER_CARD_LENGTH, reply_markup=get_cancel_keyboard())
-    return WAITING_HOTSPOT_CARD_LENGTH
-
-
-@admin_only
-async def hs_back_to_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(CHOOSE_CARD_SYSTEM, reply_markup=get_card_type_keyboard())
-    return WAITING_HOTSPOT_CARD_TYPE
+hs_back_to_length = make_back_step(ENTER_CARD_LENGTH, get_cancel_keyboard, WAITING_HOTSPOT_CARD_LENGTH)
+hs_back_to_type = make_back_step(CHOOSE_CARD_SYSTEM, get_card_type_keyboard, WAITING_HOTSPOT_CARD_TYPE)
 
 
 @admin_only
@@ -404,12 +392,8 @@ async def hs_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE)
     return WAITING_HOTSPOT_CARD_PROFILE
 
 
-@admin_only
-async def hs_back_to_uptime(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(
-        SEND_UPTIME_TYPE,
-        reply_markup=get_skip_keyboard("hs_skip_uptime", "hs_back_to_profile"),
-    )
-    return WAITING_HOTSPOT_CARD_UPTIME
+hs_back_to_uptime = make_back_step(
+    SEND_UPTIME_TYPE,
+    lambda: get_skip_keyboard("hs_skip_uptime", "hs_back_to_profile"),
+    WAITING_HOTSPOT_CARD_UPTIME,
+)

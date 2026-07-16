@@ -24,6 +24,7 @@ from bot.messages import (
     USER_NOT_SELECTED,
 )
 from bot.router_selector import cleanup_state, get_selected_router, nav_set, set_current_action
+from bot.handlers.handler_utils import make_back_step
 from bot.helpers.profiles import fetch_and_cache_profiles, PROFILE_SOURCE_HOTSPOT
 from core.hotspot_manager import hotspot_manager
 from database.models import log_action
@@ -312,12 +313,7 @@ async def edit_back_to_fields(update: Update, context: ContextTypes.DEFAULT_TYPE
     return WAITING_EDIT_VALUE
 
 
-@admin_only
-async def edit_back_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(EDIT_USER_PROMPT, reply_markup=get_cancel_keyboard())
-    return WAITING_EDIT_FIELD
+edit_back_search = make_back_step(EDIT_USER_PROMPT, get_cancel_keyboard, WAITING_EDIT_FIELD)
 
 
 @admin_only

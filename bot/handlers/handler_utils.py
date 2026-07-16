@@ -3,10 +3,15 @@
 تلخّص العمليات المتكررة في handlers دون تغيير السلوك:
 - الإجابة الآمنة على callback query في بداية كل معالج.
 - استخراج معرّف الراوتر الصحيح من بيانات callback مع معالجة خطأ موحّدة.
+- make_back_step: factory لدوال "الرجوع" البسيطة المتكررة.
 
 الهدف تقليل التكرار والحفاظ على سلوك Telegram الحالي بدقة.
 """
+from __future__ import annotations
+from typing import Callable
+
 from telegram import CallbackQuery, Update
+from telegram.ext import ContextTypes
 
 from bot.keyboards import get_router_keyboard
 from bot.messages import ERROR_OCCURRED
@@ -53,3 +58,26 @@ async def parse_router_id(
     except (ValueError, IndexError):
         await query.edit_message_text(ERROR_OCCURRED.format(""), reply_markup=error_markup)
         return None
+
+
+def make_back_step(message: str, keyboard_fn: Callable, next_state: int):
+    """Factory لدوال "الرجوع" البسيطة المتكررة.
+
+    تُنشئ دالة async تستقبل (update, context)، تجيب على الـ callback query،
+    تعرض رسالة بـ keyboard محدد، وتعيد next_state.
+
+    تُستخدم فقط للدوال التي لا تحتوي منطقاً إضافياً (profile fetch، error handling، إلخ).
+
+    مثال:
+        add_back_to_username = make_back_step(ADD_USER_PROMPT, get_cancel_keyboard, WAITING_USERNAME)
+    """
+    from utils.admin_decorator import admin_only
+
+    @admin_only
+    async def _back_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        query = update.callback_query
+        await safe_answer_callback(query)
+        await query.edit_message_text(message, reply_markup=keyboard_fn())
+        return next_state
+
+    return _back_handler

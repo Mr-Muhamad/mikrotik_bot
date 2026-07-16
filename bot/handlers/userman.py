@@ -20,7 +20,8 @@ from bot.messages import (
     PROFILES_HEADER, NO_PROFILES, CHOOSE_PAYMENT, PAYMENT_PAID, PAYMENT_UNPAID,
     CHOOSE_MAC_BIND, ENTER_CARD_PREFIX,
 )
-from bot.router_selector import get_selected_router, cleanup_state, nav_set, set_current_action, require_router
+from bot.router_selector import get_selected_router, cleanup_state, nav_set, set_current_action
+from bot.handlers.handler_utils import make_back_step
 from bot.helpers.profiles import fetch_and_cache_profiles, PROFILE_SOURCE_USERMAN
 from core.userman_manager import userman_manager
 from core.profile_sync import profile_sync
@@ -51,7 +52,6 @@ logger = logging.getLogger(__name__)
 
 
 @admin_only
-@require_router
 async def userman_cards_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
@@ -289,13 +289,7 @@ async def userman_card_skip_prefix(update: Update, context: ContextTypes.DEFAULT
 
 # ─── USERMAN BACK HANDLERS ────────────────────────────────────
 
-
-@admin_only
-async def userman_back_to_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(CARDS_PROMPT, reply_markup=get_card_type_keyboard())
-    return WAITING_CARD_TYPE
+userman_back_to_type = make_back_step(CARDS_PROMPT, get_card_type_keyboard, WAITING_CARD_TYPE)
 
 
 @admin_only
@@ -315,38 +309,19 @@ async def userman_back_to_profile(update: Update, context: ContextTypes.DEFAULT_
     return WAITING_CARD_PROFILE
 
 
-@admin_only
-async def userman_back_to_payment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(CHOOSE_PAYMENT, reply_markup=get_card_payment_keyboard())
-    return WAITING_CARD_PAYMENT
-
-
-@admin_only
-async def userman_back_to_mac(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(CHOOSE_MAC_BIND, reply_markup=get_card_mac_keyboard())
-    return WAITING_CARD_MAC
-
-
-@admin_only
-async def userman_back_to_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(
-        ENTER_CARD_PREFIX,
-        reply_markup=get_skip_keyboard("card_skip_prefix", "card_back_to_mac")
-    )
-    return WAITING_CARD_PREFIX
+userman_back_to_payment = make_back_step(CHOOSE_PAYMENT, get_card_payment_keyboard, WAITING_CARD_PAYMENT)
+userman_back_to_mac = make_back_step(CHOOSE_MAC_BIND, get_card_mac_keyboard, WAITING_CARD_MAC)
+userman_back_to_prefix = make_back_step(
+    ENTER_CARD_PREFIX,
+    lambda: get_skip_keyboard("card_skip_prefix", "card_back_to_mac"),
+    WAITING_CARD_PREFIX,
+)
 
 
 # ─── USERMAN LIST ─────────────────────────────────────────────
 
 
 @admin_only
-@require_router
 async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
@@ -369,7 +344,6 @@ async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @admin_only
-@require_router
 async def userman_profiles(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)

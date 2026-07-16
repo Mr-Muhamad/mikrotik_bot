@@ -27,12 +27,13 @@ from bot.messages import (
     SEND_UPTIME_TYPE,
     SUCCESS_ADD,
 )
-from bot.router_selector import cleanup_state, get_selected_router, nav_set, set_current_action, require_router
+from bot.router_selector import cleanup_state, get_selected_router, nav_set, set_current_action
 from bot.handlers.hotspot_flow_utils import (
     convert_uptime_value,
     get_uptime_type_keyboard,
     set_uptime_unit,
 )
+from bot.handlers.handler_utils import make_back_step
 from bot.profile_callbacks import resolve_profile_from_callback
 from utils.admin_decorator import admin_only, require_role
 from utils.callback_utils import safe_answer_callback
@@ -57,7 +58,6 @@ logger = logging.getLogger(__name__)
 
 @require_role("operator")
 @admin_only
-@require_router
 async def hotspot_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
@@ -221,23 +221,12 @@ async def hotspot_add_comment(update: Update, context: ContextTypes.DEFAULT_TYPE
     return ConversationHandler.END
 
 
-@admin_only
-async def add_back_to_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(ADD_USER_PROMPT, reply_markup=get_cancel_keyboard())
-    return WAITING_USERNAME
-
-
-@admin_only
-async def add_back_to_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(
-        SEND_PASSWORD,
-        reply_markup=get_skip_keyboard("skip_password", "add_back_to_username"),
-    )
-    return WAITING_PASSWORD
+add_back_to_username = make_back_step(ADD_USER_PROMPT, get_cancel_keyboard, WAITING_USERNAME)
+add_back_to_password = make_back_step(
+    SEND_PASSWORD,
+    lambda: get_skip_keyboard("skip_password", "add_back_to_username"),
+    WAITING_PASSWORD,
+)
 
 
 @admin_only
@@ -265,26 +254,14 @@ async def add_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
     return WAITING_PROFILE
 
 
-@admin_only
-async def add_back_to_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(
-        SEND_BYTES_LIMIT_SHORT,
-        reply_markup=get_skip_keyboard("skip_bytes", "add_back_to_profile"),
-    )
-    return WAITING_BYTES_TOTAL
-
-
-@admin_only
-async def add_back_to_uptime_from_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await safe_answer_callback(query)
-    await query.edit_message_text(
-        SEND_UPTIME_TYPE,
-        reply_markup=get_uptime_type_keyboard(),
-    )
-    return WAITING_UPTIME_TYPE
+add_back_to_bytes = make_back_step(
+    SEND_BYTES_LIMIT_SHORT,
+    lambda: get_skip_keyboard("skip_bytes", "add_back_to_profile"),
+    WAITING_BYTES_TOTAL,
+)
+add_back_to_uptime_from_comment = make_back_step(
+    SEND_UPTIME_TYPE, get_uptime_type_keyboard, WAITING_UPTIME_TYPE
+)
 
 
 @admin_only
