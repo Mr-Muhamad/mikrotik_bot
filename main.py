@@ -28,6 +28,9 @@ logger = logging.getLogger(__name__)
 
 async def post_init(app: Application):
     await set_bot_commands(app)
+    # استعادة حالة الـ watchdog من DB قبل بدء الجدولة
+    from core.watchdog import load_status_from_db
+    load_status_from_db()
     if app.job_queue:
         backup_scheduler.restore(app.job_queue)
         logger.info("Backup schedule restored from database")

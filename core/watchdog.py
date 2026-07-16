@@ -4,6 +4,7 @@ from datetime import datetime
 from librouteros.exceptions import LibRouterosError
 from core.mikrotik_api import mikrotik_api
 from core.stats import stats_manager
+from database.repositories.router_health import record_health, get_all_latest_health
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,13 @@ def check_router_health(router_key: str) -> dict:
             _router_status.setdefault(router_key, {})
             _router_status[router_key]["last_ok"] = datetime.now()
             _router_status[router_key]["alert_sent"] = False
+        record_health(router_key, "online")
         return {"online": True, "error": None}
     except (LibRouterosError, ConnectionError, OSError) as e:
         with _router_status_lock:
             _router_status.setdefault(router_key, {})
             _router_status[router_key]["last_fail"] = datetime.now()
+        record_health(router_key, "offline", str(e))
         return {"online": False, "error": str(e)}
 
 
@@ -114,3 +117,33 @@ def clear_status(router_key: str):
     with _router_status_lock:
         _router_status.pop(router_key, None)
         _last_known_status.pop(router_key, None)
+
+
+def load_status_from_db() -> None:
+    """تحميل آخر حالة معروفة لكل الراوترات من DB إلى الـ in-memory dicts.
+
+    يُستدعى مرة واحدة عند startup (في post_init) لاستعادة الحالة بعد restart.
+    """
+    try:
+        all_latest = get_all_latest_health()
+        with _router_status_lock:
+            for router_key, row in all_latest.items():
+                is_online = row["status"] == "online"
+                checked_at_str = row.get("checked_at", "")
+                # تحويل النص إلى datetime للتوافق مع get_router_status_detail
+                try:
+                    from datetime import datetime as _dt
+                    checked_at = _dt.strptime(checked_at_str, "%Y-%m-%d %H:%M:%S")
+                except (ValueError, TypeError):
+                    checked_at = None
+                _last_known_status[router_key] = is_online
+                _router_status.setdefault(router_key, {})
+                if is_online and checked_at:
+                    _router_status[router_key]["last_ok"] = checked_at
+                elif not is_online and checked_at:
+                    _router_status[router_key]["last_fail"] = checked_at
+                # alert_sent يبدأ دائماً كـ False بعد restart لضمان إرسال تنبيه جديد إذا ظل offline
+                _router_status[router_key].setdefault("alert_sent", False)
+        logger.info(f"Watchdog: loaded status for {len(all_latest)} routers from DB")
+    except Exception as e:
+        logger.warning(f"Watchdog: failed to load status from DB: {e}")

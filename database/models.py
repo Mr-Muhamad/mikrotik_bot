@@ -76,6 +76,7 @@ def _create_indexes():
             "CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id)",
             "CREATE INDEX IF NOT EXISTS idx_backup_jobs_router ON backup_jobs(router_key)",
             "CREATE INDEX IF NOT EXISTS idx_backup_jobs_created ON backup_jobs(created_at DESC)",
+            "CREATE INDEX IF NOT EXISTS idx_health_router_time ON router_health_log(router_key, checked_at DESC)",
         ]
         for idx in indexes:
             try:
@@ -227,6 +228,16 @@ def init_db():
                 details TEXT DEFAULT '',
                 file_name TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS router_health_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                router_key TEXT NOT NULL,
+                status TEXT NOT NULL,
+                checked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                error_msg TEXT DEFAULT ''
             )
         """)
 

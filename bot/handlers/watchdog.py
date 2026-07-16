@@ -91,10 +91,10 @@ async def watchdog_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if detail.get("online"):
             indicator = "🟢"
-            detail_line = f"آخر اتصال: {last_ok.strftime('%H:%M')}" if last_ok else "متصل"
+            detail_line = f"آخر اتصال: {last_ok.strftime('%Y-%m-%d %H:%M')}" if last_ok else "متصل"
         elif last_fail:
             indicator = "🔴"
-            detail_line = f"آخر فشل: {last_fail.strftime('%H:%M')}"
+            detail_line = f"آخر فشل: {last_fail.strftime('%Y-%m-%d %H:%M')}"
         else:
             indicator = "⚪"
             detail_line = "لم يتم الفحص بعد"
