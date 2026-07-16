@@ -415,3 +415,9 @@ SHARE_CARD_SUCCESS = "✅ تم إرسال بيانات الكرت للعميل �
 SHARE_CARD_FAIL = "❌ فشل الإرسال — تأكد من صحة الـ ID وأن العميل لم يحظر البوت"
 SHARE_CARD_NO_CARDS = "⚠️ لا توجد كروت في هذه الدفعة"
 SHARE_CARD_INVALID_ID = "❌ الـ ID غير صالح — أرسل رقماً صحيحاً"
+
+# ─── إحصائيات تاريخية (Snapshots) ─────────────────────────────────────
+STATS_TREND_HEADER = "\n\n📈 <b>آخر 7 أيام (المستخدمون النشطون):</b>\n<pre>"
+STATS_TREND_FOOTER = "</pre>"
+STATS_VS_YESTERDAY = "\n\n🔄 <b>مقارنة بالأمس:</b> {comparison}"
+STATS_NO_HISTORY = "\n\n📭 لا توجد بيانات تاريخية بعد"

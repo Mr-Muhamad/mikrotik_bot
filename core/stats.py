@@ -2,6 +2,7 @@ import logging
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient
 from utils.formatters import format_bytes
+from utils.async_blocking import run_blocking
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,52 @@ class StatsManager:
         for r in report.get("top_consumers", [])[:5]:
             lines.append(f"• {r['name']}: {r['total_str']} ({r['percent']:.0f}%)")
         return "\n".join(lines)
+
+
+    def get_week_trend(self, router_key: str) -> list[dict]:
+        """قراءة snapshots آخر 7 أيام من DB لعرض الـ trend.
+
+        يُعيد قائمة dicts بترتيب من الأقدم للأحدث:
+        {"snapshot_date", "active_users", "total_users", "bytes_in", "bytes_out"}
+        """
+        from database.repositories.stats_snapshots import get_week_snapshots
+
+        return get_week_snapshots(router_key)
+
+    def format_trend_chart(self, snapshots: list[dict]) -> str:
+        """تنسيق آخر 7 أيام كـ ASCII bar chart نصي بسيط.
+
+        كل سطر: التاريخ | شريط | عدد المستخدمين
+        """
+        if not snapshots:
+            return ""
+        max_active = max((s.get("active_users", 0) for s in snapshots), default=1) or 1
+        lines = []
+        for s in snapshots:
+            day = s.get("snapshot_date", "")[-5:]  # MM-DD فقط
+            active = s.get("active_users", 0)
+            bar_len = round((active / max_active) * 8)
+            bar = "█" * bar_len
+            lines.append(f"{day} | {bar:<8} {active}")
+        return "\n".join(lines)
+
+    def format_vs_yesterday(self, current: dict, yesterday: dict | None) -> str:
+        """مقارنة المستخدمين النشطين اليوم مقابل الأمس.
+
+        يُعيد نص HTML مثل: ↑5 مقارنةً بالأمس (25 → 30)
+        """
+        if not yesterday:
+            return ""
+        prev = yesterday.get("active_users", 0)
+        curr = current.get("active_users", 0)
+        diff = curr - prev
+        if diff > 0:
+            arrow = "↑"
+        elif diff < 0:
+            arrow = "↓"
+        else:
+            arrow = "↔"
+        return f"{arrow}{abs(diff)} مقارنةً بالأمس ({prev} → {curr})"
 
 
 stats_manager = StatsManager()

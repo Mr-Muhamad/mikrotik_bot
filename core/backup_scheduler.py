@@ -145,6 +145,33 @@ class BackupScheduler:
                 except Exception as e:
                     logger.warning(f"Failed to notify admin {admin_id} about expiry: {e}")
 
+    async def _do_stats_snapshot(self, context):
+        """حفظ snapshot يومي لإحصائيات كل راوتر في قاعدة البيانات."""
+        from core.stats import stats_manager
+        from config import ROUTER_KEY_PREFIX
+        from database.models import get_saved_routers
+        from database.repositories.stats_snapshots import save_snapshot
+
+        routers = await run_blocking(get_saved_routers, active_only=True)
+        for r in routers:
+            if not r.get("username"):
+                continue
+            router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+            try:
+                raw = await run_blocking(stats_manager.get_hotspot_stats, router_key)
+                if not raw:
+                    continue
+                snapshot_data = {
+                    "active_users": raw.get("active_users", 0),
+                    "total_users": raw.get("total_users", 0),
+                    "bytes_in": 0,
+                    "bytes_out": 0,
+                }
+                await run_blocking(save_snapshot, router_key, snapshot_data)
+                logger.info(f"Stats snapshot saved for {router_key}")
+            except Exception as e:
+                logger.warning(f"Stats snapshot failed for {router_key}: {e}")
+
     def start_daily(
         self, job_queue, hour: int = 3, minute: int = 0, persist: bool = True
     ) -> None:
@@ -167,6 +194,15 @@ class BackupScheduler:
             time=expiry_time.time(),
             name=f"{JOB_NAME}_expiry",
         )
+        # snapshot إحصائيات بعد 10 دقائق من الـ backup
+        snapshot_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0) + timedelta(minutes=10)
+        if snapshot_time <= now:
+            snapshot_time += timedelta(days=1)
+        job_queue.run_daily(
+            self._do_stats_snapshot,
+            time=snapshot_time.time(),
+            name=f"{JOB_NAME}_snapshot",
+        )
         self._running = True
         if persist:
             from database.models import save_backup_schedule
@@ -180,6 +216,8 @@ class BackupScheduler:
             for job in job_queue.get_jobs_by_name(JOB_NAME):
                 job.schedule_removal()
             for job in job_queue.get_jobs_by_name(f"{JOB_NAME}_expiry"):
+                job.schedule_removal()
+            for job in job_queue.get_jobs_by_name(f"{JOB_NAME}_snapshot"):
                 job.schedule_removal()
         if persist:
             from database.models import get_backup_schedule, save_backup_schedule

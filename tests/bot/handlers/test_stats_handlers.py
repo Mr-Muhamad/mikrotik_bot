@@ -68,9 +68,12 @@ class TestStatsHotspot:
         update = _query_update()
         stats = {"total_users": 5, "active_users": 3, "inactive_users": 2, "total_bytes": 1000}
 
-        with patch("bot.handlers.stats.run_blocking", new=AsyncMock(side_effect=["Router1", stats])), \
+        # run_blocking يُستدعى 4 مرات: router_name, get_hotspot_stats, get_yesterday_snapshot, get_week_snapshots
+        with patch("bot.handlers.stats.run_blocking", new=AsyncMock(side_effect=["Router1", stats, None, []])), \
              patch("bot.handlers.stats.stats_manager") as mock_sm:
             mock_sm.format_hotspot_stats.return_value = "📊 Stats: 5 users"
+            mock_sm.format_vs_yesterday.return_value = ""
+            mock_sm.format_trend_chart.return_value = ""
             await stats_module.stats_hotspot(update, ctx)
         text = update.callback_query.edit_message_text.call_args.args[0]
         assert "5 users" in text

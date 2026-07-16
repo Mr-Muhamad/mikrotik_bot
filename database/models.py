@@ -77,6 +77,7 @@ def _create_indexes():
             "CREATE INDEX IF NOT EXISTS idx_backup_jobs_router ON backup_jobs(router_key)",
             "CREATE INDEX IF NOT EXISTS idx_backup_jobs_created ON backup_jobs(created_at DESC)",
             "CREATE INDEX IF NOT EXISTS idx_health_router_time ON router_health_log(router_key, checked_at DESC)",
+            "CREATE INDEX IF NOT EXISTS idx_snapshots_router_date ON stats_snapshots(router_key, snapshot_date DESC)",
         ]
         for idx in indexes:
             try:
@@ -247,6 +248,19 @@ def init_db():
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS stats_snapshots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                router_key TEXT NOT NULL,
+                snapshot_date DATE NOT NULL,
+                active_users INTEGER DEFAULT 0,
+                total_users INTEGER DEFAULT 0,
+                bytes_in INTEGER DEFAULT 0,
+                bytes_out INTEGER DEFAULT 0,
+                UNIQUE(router_key, snapshot_date)
+            )
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_sessions (
                 user_id INTEGER PRIMARY KEY,
                 selected_router TEXT DEFAULT 'router1',
@@ -292,6 +306,14 @@ def init_db():
     migrate_card_batches_columns()
 
     _create_indexes()
+
+
+# ─── Re-export stats_snapshots functions ──────────────────────────────
+from database.repositories.stats_snapshots import (
+    save_snapshot,
+    get_yesterday_snapshot,
+    get_week_snapshots,
+)
 
 
 # ─── Re-exports from cohesive repository modules ──────────────────

@@ -6,9 +6,14 @@ from bot.keyboards import get_stats_keyboard
 from core.stats import stats_manager
 from core.mikrotik_api import mikrotik_api
 from utils.admin_decorator import admin_only
-from bot.router_selector import require_router
 from utils.error_response import send_error
 from utils.callback_utils import safe_answer_callback
+from bot.messages import (
+    STATS_TREND_HEADER,
+    STATS_TREND_FOOTER,
+    STATS_VS_YESTERDAY,
+    STATS_NO_HISTORY,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +27,30 @@ async def _show_stats(update, context, stat_type):
         if stat_type == "hotspot":
             stats = await run_blocking(stats_manager.get_hotspot_stats, router_key)
             text = stats_manager.format_hotspot_stats(stats, router_name)
+
+            # إضافة المقارنة مع الأمس والـ trend الأسبوعي
+            if stats:
+                from database.repositories.stats_snapshots import (
+                    get_yesterday_snapshot,
+                    get_week_snapshots,
+                )
+
+                yesterday = await run_blocking(get_yesterday_snapshot, router_key)
+                vs_yesterday = stats_manager.format_vs_yesterday(stats, yesterday)
+                if vs_yesterday:
+                    text += STATS_VS_YESTERDAY.format(comparison=vs_yesterday)
+
+                snapshots = await run_blocking(get_week_snapshots, router_key)
+                if snapshots:
+                    chart = stats_manager.format_trend_chart(snapshots)
+                    text += STATS_TREND_HEADER + chart + STATS_TREND_FOOTER
+                else:
+                    text += STATS_NO_HISTORY
         else:
             stats = await run_blocking(stats_manager.get_userman_stats, router_key)
             text = stats_manager.format_userman_stats(stats, router_name)
-        await query.edit_message_text(text, reply_markup=get_stats_keyboard())
+
+        await query.edit_message_text(text, reply_markup=get_stats_keyboard(), parse_mode="HTML")
     except Exception as e:
         await send_error(
             update, context, e,
@@ -36,12 +61,10 @@ async def _show_stats(update, context, stat_type):
 
 
 @admin_only
-@require_router
 async def stats_hotspot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _show_stats(update, context, "hotspot")
 
 
 @admin_only
-@require_router
 async def stats_userman(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _show_stats(update, context, "userman")
