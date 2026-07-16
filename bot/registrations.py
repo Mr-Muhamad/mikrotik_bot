@@ -105,7 +105,7 @@ from bot.handlers.watchdog import watchdog_start, watchdog_stop, watchdog_status
 from bot.handlers.usage import usage_start, usage_query
 from bot.handlers.roles import roles_command, role_set_command
 from bot.handlers.hotspot_report import report_command, report_export_csv
-from bot.handlers.batch import batches_command, batch_select, batch_regen
+from bot.handlers.batch import batches_command, batch_select, batch_regen, mark_batch_paid_handler, show_sales_summary
 import bot.handlers.constants as constants
 
 # ─── STANDALONE HANDLERS ──────────────────────────────────────
@@ -187,6 +187,8 @@ standalone(CommandHandler, command="batches")(batches_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batch_sel"])(batch_select)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batch_regen"])(batch_regen)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batches_refresh"])(batches_command)
+standalone(CallbackQueryHandler, pattern=PATTERNS["mark_payment"])(mark_batch_paid_handler)
+standalone(CommandHandler, command="sales")(show_sales_summary)
 # حظر MAC — standalone لأن unblock قد يأتي من خارج conversation
 standalone(CallbackQueryHandler, pattern=PATTERNS["unblock_mac"])(unblock_mac_handler)
 

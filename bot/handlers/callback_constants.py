@@ -245,6 +245,11 @@ def manual_add_confirm(yes: bool):
     return f"confirm_manual_add_{'yes' if yes else 'no'}"
 
 
+def mark_payment_cb(batch_id: int, status: str) -> str:
+    """بناء callback_data لتغيير حالة الدفع: mark_paid:5 / mark_unpaid:5 / mark_deferred:5"""
+    return f"mark_{status}:{batch_id}"
+
+
 def block_mac_cb(mac: str) -> str:
     """بناء callback_data لحظر MAC: block_mac:<mac>"""
     return f"block_mac:{mac}"
@@ -384,4 +389,6 @@ PATTERNS: dict[str, str] = {
     "block_mac": r"^block_mac:[0-9A-Fa-f:]+$",
     "unblock_mac": r"^unblock_mac:[0-9A-Fa-f:]+$",
     "blocked_list": r"^blocked_list$",
+    # نظام الفواتير — pattern واحد يغطي paid/unpaid/deferred
+    "mark_payment": r"^mark_(paid|unpaid|deferred):\d+$",
 }

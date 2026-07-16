@@ -121,3 +121,69 @@ def delete_card_batch(batch_id):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM card_batches WHERE id = ?", (batch_id,))
         return cursor.rowcount
+
+
+def update_batch_payment(batch_id: int, status: str, customer_name: str = "", price: float = 0.0) -> bool:
+    """تحديث حالة الدفع والبيانات التجارية لدفعة كروت.
+
+    status: 'paid' | 'unpaid' | 'deferred'
+    يُعيد True عند النجاح.
+    """
+    from database.models import get_db, _now_utc
+
+    valid_statuses = ("paid", "unpaid", "deferred")
+    if status not in valid_statuses:
+        return False
+    sold_at = _now_utc() if status == "paid" else None
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """UPDATE card_batches
+               SET payment_status = ?, customer_name = ?, sale_price = ?, sold_at = ?
+               WHERE id = ?""",
+            (status, customer_name or "", price or 0.0, sold_at, batch_id),
+        )
+        return cursor.rowcount > 0
+
+
+def get_sales_summary(days: int = 7) -> dict:
+    """ملخص المبيعات خلال الـ `days` الماضية.
+
+    يُعيد: total_batches, paid_count, total_revenue, unpaid_count, deferred_count
+    """
+    from database.models import get_db
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        if days:
+            cursor.execute(
+                """SELECT
+                       COUNT(*) AS total_batches,
+                       SUM(CASE WHEN payment_status='paid' THEN 1 ELSE 0 END) AS paid_count,
+                       SUM(CASE WHEN payment_status='unpaid' THEN 1 ELSE 0 END) AS unpaid_count,
+                       SUM(CASE WHEN payment_status='deferred' THEN 1 ELSE 0 END) AS deferred_count,
+                       SUM(CASE WHEN payment_status='paid' THEN sale_price ELSE 0 END) AS total_revenue
+                   FROM card_batches
+                   WHERE created_at >= datetime('now', ?)""",
+                (f"-{days} days",),
+            )
+        else:
+            cursor.execute(
+                """SELECT
+                       COUNT(*) AS total_batches,
+                       SUM(CASE WHEN payment_status='paid' THEN 1 ELSE 0 END) AS paid_count,
+                       SUM(CASE WHEN payment_status='unpaid' THEN 1 ELSE 0 END) AS unpaid_count,
+                       SUM(CASE WHEN payment_status='deferred' THEN 1 ELSE 0 END) AS deferred_count,
+                       SUM(CASE WHEN payment_status='paid' THEN sale_price ELSE 0 END) AS total_revenue
+                   FROM card_batches"""
+            )
+        row = cursor.fetchone()
+        if not row:
+            return {"total_batches": 0, "paid_count": 0, "unpaid_count": 0, "deferred_count": 0, "total_revenue": 0.0}
+        return {
+            "total_batches": row["total_batches"] or 0,
+            "paid_count": row["paid_count"] or 0,
+            "unpaid_count": row["unpaid_count"] or 0,
+            "deferred_count": row["deferred_count"] or 0,
+            "total_revenue": row["total_revenue"] or 0.0,
+        }

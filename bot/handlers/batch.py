@@ -4,9 +4,16 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.keyboards import get_batches_keyboard, get_batch_detail_keyboard
-from bot.router_selector import cleanup_state, nav_set, require_router
+from bot.messages import (
+    MARK_PAID_FAIL,
+    MARK_PAID_SUCCESS,
+    PAYMENT_STATUS_LABELS,
+    SALES_SUMMARY_HEADER,
+    SALES_SUMMARY_ROW,
+)
+from bot.router_selector import cleanup_state, nav_set
 from core.card_models import deserialize_cards
-from database.models import list_card_batches, get_card_batch
+from database.models import list_card_batches, get_card_batch, update_batch_payment, get_sales_summary
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
@@ -15,15 +22,12 @@ from pdf.card_generator import card_generator
 import json
 
 logger = logging.getLogger(__name__)
-
-
 def _batch_label(batch: dict) -> str:
     btype = "هوت سبوت" if batch.get("batch_type") == "hotspot" else "User Manager"
     return f"#{batch['id']} • {batch['name']} • {btype} • {batch.get('count', 0)} كارت"
 
 
 @admin_only
-@require_router
 async def batches_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query:
@@ -90,7 +94,15 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     if batch.get("created_by"):
         lines.append(f"👤 المُنشئ: {batch['created_by']}")
-    await query.edit_message_text("\n".join(lines), reply_markup=get_batch_detail_keyboard(batch["id"]))
+    payment_status = batch.get("payment_status", "unpaid")
+    customer_name = batch.get("customer_name", "")
+    if customer_name:
+        lines.append(f"🧑 العميل: {customer_name}")
+    status_label = PAYMENT_STATUS_LABELS.get(payment_status, payment_status)
+    lines.append(f"💰 حالة الدفع: {status_label}")
+    if batch.get("sold_at"):
+        lines.append(f"📅 تاريخ البيع: {batch['sold_at']}")
+    await query.edit_message_text("\n".join(lines), reply_markup=get_batch_detail_keyboard(batch["id"], payment_status=payment_status))
 
 
 async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -140,4 +152,53 @@ def _dump(cards):
     return json.dumps(cards, ensure_ascii=False)
 
 
-__all__ = ["batches_command", "batch_select", "batch_regen"]
+@admin_only
+async def mark_batch_paid_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """تغيير حالة الدفع لدفعة كروت (مدفوع/غير مدفوع/مرحّل)."""
+    query = update.callback_query
+    await query.answer()
+    try:
+        parts = query.data.split(":", 1)
+        # query.data = mark_paid:5 | mark_unpaid:5 | mark_deferred:5
+        status = parts[0].replace("mark_", "")
+        batch_id = int(parts[1])
+    except (IndexError, ValueError):
+        await query.answer(MARK_PAID_FAIL, show_alert=True)
+        return
+    success = await run_blocking(update_batch_payment, batch_id, status)
+    if success:
+        status_label = PAYMENT_STATUS_LABELS.get(status, status)
+        await query.answer(MARK_PAID_SUCCESS.format(status_label=status_label), show_alert=False)
+        # أعد رسم keyboard بحالة الدفع الجديدة
+        try:
+            batch = await run_blocking(get_card_batch, batch_id)
+            if batch:
+                await query.edit_message_reply_markup(
+                    reply_markup=get_batch_detail_keyboard(batch_id, payment_status=status)
+                )
+        except Exception:
+            pass
+    else:
+        await query.answer(MARK_PAID_FAIL, show_alert=True)
+
+
+@admin_only
+async def show_sales_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """عرض ملخص المبيعات لآخر 7 أيام."""
+    query = update.callback_query
+    if query:
+        await query.answer()
+    days = 7
+    try:
+        summary = await run_blocking(get_sales_summary, days)
+    except Exception as e:
+        logger.error(f"Failed to get sales summary: {e}")
+        summary = {"total_batches": 0, "paid_count": 0, "unpaid_count": 0, "deferred_count": 0, "total_revenue": 0.0}
+    text = (
+        SALES_SUMMARY_HEADER.format(days=days)
+        + SALES_SUMMARY_ROW.format(**summary)
+    )
+    await send_step(update, context, text)
+
+
+__all__ = ["batches_command", "batch_select", "batch_regen", "mark_batch_paid_handler", "show_sales_summary"]

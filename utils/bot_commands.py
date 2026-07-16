@@ -34,6 +34,7 @@ async def set_bot_commands(app: Application):
         BotCommand("watchdog_start", "🟢 بدء مراقبة الروترات"),
         BotCommand("roles", "👥 أدوار المشرفين"),
         BotCommand("batches", "📦 دفعات الكروت المحفوظة"),
+        BotCommand("sales", "💰 ملخص المبيعات"),
         BotCommand("addrouter", "🌐 إضافة روتر يدوياً"),
         BotCommand("cancel", "❌ إلغاء"),
     ]

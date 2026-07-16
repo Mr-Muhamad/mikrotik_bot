@@ -113,12 +113,22 @@ def get_batches_keyboard(batches):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_batch_detail_keyboard(batch_id):
-    """Return the detail keyboard for a single batch (regenerate / back)."""
+def get_batch_detail_keyboard(batch_id, payment_status: str = "unpaid"):
+    """Return the action keyboard for a single card batch with payment controls."""
+    from bot.handlers.callback_constants import mark_payment_cb
+    payment_row = []
+    if payment_status != "paid":
+        payment_row.append(InlineKeyboardButton("✅ مدفوع", callback_data=mark_payment_cb(batch_id, "paid")))
+    if payment_status != "unpaid":
+        payment_row.append(InlineKeyboardButton("🆓 غير مدفوع", callback_data=mark_payment_cb(batch_id, "unpaid")))
+    if payment_status != "deferred":
+        payment_row.append(InlineKeyboardButton("⏳ مرحّل", callback_data=mark_payment_cb(batch_id, "deferred")))
     keyboard = [
         [InlineKeyboardButton("🔄 إعادة توليد PDF", callback_data=f"batch_regen:{batch_id}")],
-        [InlineKeyboardButton("🔙 قائمة الدفعات", callback_data="batches_refresh")],
     ]
+    if payment_row:
+        keyboard.append(payment_row)
+    keyboard.append([InlineKeyboardButton("🔙 قائمة الدفعات", callback_data="batches_refresh")])
     return InlineKeyboardMarkup(keyboard)
 
 

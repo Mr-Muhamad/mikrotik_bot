@@ -142,6 +142,11 @@ def migrate_card_batches_columns():
         cursor = conn.cursor()
         # Older databases created card_batches without created_by; add it idempotently.
         _add_column_if_missing(cursor, "card_batches", "created_by INTEGER")
+        # نظام الفواتير: بيانات البيع والدفع
+        _add_column_if_missing(cursor, "card_batches", "customer_name TEXT DEFAULT ''")
+        _add_column_if_missing(cursor, "card_batches", "payment_status TEXT DEFAULT 'unpaid'")
+        _add_column_if_missing(cursor, "card_batches", "sale_price REAL DEFAULT 0")
+        _add_column_if_missing(cursor, "card_batches", "sold_at DATETIME")
 
 
 def init_db():
@@ -311,6 +316,8 @@ from database.repositories.card_batches import (
     list_card_batches,
     get_card_batch,
     delete_card_batch,
+    update_batch_payment,
+    get_sales_summary,
 )
 from database.repositories.user_sessions import (
     get_user_session,

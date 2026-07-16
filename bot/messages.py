@@ -395,3 +395,10 @@ UNBLOCK_MAC_SUCCESS = "✅ تم رفع الحظر عن <code>{mac}</code>"
 UNBLOCK_MAC_FAIL = "❌ فشل رفع الحظر. قد لا يكون الجهاز محظوراً."
 BLOCKED_LIST_HEADER = "🚫 <b>الأجهزة المحظورة ({count}):</b>\n\nاضغط على جهاز لرفع حظره:"
 BLOCKED_LIST_EMPTY = "✅ لا توجد أجهزة محظورة حالياً"
+
+# ─── نظام الفواتير ─────────────────────────────────────────────
+SALES_SUMMARY_HEADER = "💰 <b>ملخص المبيعات — آخر {days} يوم</b>\n\n"
+SALES_SUMMARY_ROW = "📦 إجمالي الدفعات: {total_batches}\n✅ مدفوعة: {paid_count}\n🆓 غير مدفوعة: {unpaid_count}\n⏳ مرحّلة: {deferred_count}\n💵 الإيرادات: {total_revenue:.2f}"
+MARK_PAID_SUCCESS = "✅ تم تحديث حالة الدفع إلى: {status_label}"
+MARK_PAID_FAIL = "❌ فشل تحديث حالة الدفع"
+PAYMENT_STATUS_LABELS = {"paid": "مدفوع ✅", "unpaid": "غير مدفوع 🆓", "deferred": "مرحّل ⏳"}
