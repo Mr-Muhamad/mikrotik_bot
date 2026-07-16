@@ -391,4 +391,6 @@ PATTERNS: dict[str, str] = {
     "blocked_list": r"^blocked_list$",
     # نظام الفواتير — pattern واحد يغطي paid/unpaid/deferred
     "mark_payment": r"^mark_(paid|unpaid|deferred):\d+$",
+    # مشاركة كرت WiFi
+    "share_card": r"^share_card:\d+$",
 }

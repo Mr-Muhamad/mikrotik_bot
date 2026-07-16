@@ -1,7 +1,7 @@
 import logging
 import os
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.keyboards import get_batches_keyboard, get_batch_detail_keyboard
 from bot.messages import (
@@ -10,10 +10,18 @@ from bot.messages import (
     PAYMENT_STATUS_LABELS,
     SALES_SUMMARY_HEADER,
     SALES_SUMMARY_ROW,
+    SHARE_CARD_FAIL,
+    SHARE_CARD_INVALID_ID,
+    SHARE_CARD_NO_CARDS,
+    SHARE_CARD_PROMPT,
+    SHARE_CARD_SUCCESS,
+    SHARE_CARD_TEMPLATE,
 )
 from bot.router_selector import cleanup_state, nav_set
+from bot.handlers.constants import WAITING_SHARE_RECIPIENT
 from core.card_models import deserialize_cards
 from database.models import list_card_batches, get_card_batch, update_batch_payment, get_sales_summary
+from database.repositories.pdf_settings import get_pdf_settings
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
@@ -201,4 +209,95 @@ async def show_sales_summary(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await send_step(update, context, text)
 
 
-__all__ = ["batches_command", "batch_select", "batch_regen", "mark_batch_paid_handler", "show_sales_summary"]
+@admin_only
+async def share_card_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """يبدأ تدفق مشاركة كرت WiFi — يحفظ batch_id ويطلب Telegram ID للعميل."""
+    query = update.callback_query
+    await query.answer()
+    try:
+        batch_id = int(query.data.split(":", 1)[1])
+    except (IndexError, ValueError):
+        await query.answer("❌ بيانات غير صالحة", show_alert=True)
+        return ConversationHandler.END
+    # احفظ الـ batch_id في user_data للخطوة التالية
+    context.user_data["share_batch_id"] = batch_id
+    await query.edit_message_text(SHARE_CARD_PROMPT)
+    return WAITING_SHARE_RECIPIENT
+
+
+@admin_only
+async def share_card_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """يستقبل Telegram ID للعميل ويرسل له بيانات أول كرت في الدفعة."""
+    recipient_text = (update.message.text or "").strip()
+    try:
+        recipient_id = int(recipient_text)
+    except ValueError:
+        await update.message.reply_text(SHARE_CARD_INVALID_ID)
+        return WAITING_SHARE_RECIPIENT
+
+    batch_id = context.user_data.pop("share_batch_id", None)
+    if not batch_id:
+        await update.message.reply_text("⚠️ انتهت صلاحية الجلسة، ابدأ من جديد.")
+        return ConversationHandler.END
+
+    try:
+        batch = await run_blocking(get_card_batch, batch_id)
+    except Exception as e:
+        logger.error(f"share_card_send: failed to load batch {batch_id}: {e}")
+        await update.message.reply_text(SHARE_CARD_FAIL)
+        return ConversationHandler.END
+
+    if not batch:
+        await update.message.reply_text(SHARE_CARD_NO_CARDS)
+        return ConversationHandler.END
+
+    cards = batch.get("cards", [])
+    if not cards:
+        await update.message.reply_text(SHARE_CARD_NO_CARDS)
+        return ConversationHandler.END
+
+    # أول كرت في الدفعة
+    card = cards[0] if isinstance(cards[0], dict) else vars(cards[0])
+    username = card.get("username") or card.get("name") or "—"
+    password = card.get("password") or ""
+    profile = batch.get("profile") or card.get("profile") or "—"
+
+    # جلب إعدادات PDF لاستخراج SSID/DNS
+    try:
+        pdf_settings = await run_blocking(get_pdf_settings)
+        dns = pdf_settings.get("hotspot_dns", "")
+        ssid = pdf_settings.get("brand_name", "")
+    except Exception:
+        dns = ssid = ""
+
+    dns_line = f"\n🌐 DNS/رابط الدخول: <code>{dns}</code>" if dns else ""
+    ssid_line = f"\n📶 اسم الشبكة: <b>{ssid}</b>" if ssid else ""
+    pass_text = f"<code>{password}</code>" if password else "<i>بدون كلمة مرور</i>"
+
+    msg = SHARE_CARD_TEMPLATE.format(
+        username=username,
+        password=pass_text,
+        dns_line=dns_line,
+        ssid_line=ssid_line,
+        profile=profile,
+    )
+
+    try:
+        await update.get_bot().send_message(
+            chat_id=recipient_id,
+            text=msg,
+            parse_mode="HTML",
+        )
+        await update.message.reply_text(SHARE_CARD_SUCCESS)
+    except Exception as e:
+        logger.warning(f"share_card_send: failed to send to {recipient_id}: {e}")
+        await update.message.reply_text(SHARE_CARD_FAIL)
+
+    return ConversationHandler.END
+
+
+__all__ = [
+    "batches_command", "batch_select", "batch_regen",
+    "mark_batch_paid_handler", "show_sales_summary",
+    "share_card_start", "share_card_send",
+]

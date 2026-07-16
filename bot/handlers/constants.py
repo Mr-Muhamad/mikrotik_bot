@@ -54,3 +54,6 @@ WAITING_CARD_PREFIX = WaitingState.CARD_PREFIX.value
 
 # User Manager search
 WAITING_USERMAN_SEARCH = WaitingState.USERMAN_SEARCH.value
+
+# مشاركة كرت WiFi للعميل
+WAITING_SHARE_RECIPIENT = WaitingState.SHARE_RECIPIENT.value

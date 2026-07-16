@@ -125,6 +125,7 @@ def get_batch_detail_keyboard(batch_id, payment_status: str = "unpaid"):
         payment_row.append(InlineKeyboardButton("⏳ مرحّل", callback_data=mark_payment_cb(batch_id, "deferred")))
     keyboard = [
         [InlineKeyboardButton("🔄 إعادة توليد PDF", callback_data=f"batch_regen:{batch_id}")],
+        [InlineKeyboardButton("📤 إرسال للعميل", callback_data=f"share_card:{batch_id}")],
     ]
     if payment_row:
         keyboard.append(payment_row)

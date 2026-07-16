@@ -105,7 +105,11 @@ from bot.handlers.watchdog import watchdog_start, watchdog_stop, watchdog_status
 from bot.handlers.usage import usage_start, usage_query
 from bot.handlers.roles import roles_command, role_set_command
 from bot.handlers.hotspot_report import report_command, report_export_csv
-from bot.handlers.batch import batches_command, batch_select, batch_regen, mark_batch_paid_handler, show_sales_summary
+from bot.handlers.batch import (
+    batches_command, batch_select, batch_regen,
+    mark_batch_paid_handler, show_sales_summary,
+    share_card_start, share_card_send,
+)
 import bot.handlers.constants as constants
 
 # ─── STANDALONE HANDLERS ──────────────────────────────────────
@@ -189,6 +193,7 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["batch_regen"])(batch_regen)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batches_refresh"])(batches_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["mark_payment"])(mark_batch_paid_handler)
 standalone(CommandHandler, command="sales")(show_sales_summary)
+entry_point(CallbackQueryHandler, pattern=PATTERNS["share_card"])(share_card_start)
 # حظر MAC — standalone لأن unblock قد يأتي من خارج conversation
 standalone(CallbackQueryHandler, pattern=PATTERNS["unblock_mac"])(unblock_mac_handler)
 
@@ -292,6 +297,9 @@ state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_delete"])(userman_search_a
 state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_add_profile"])(userman_search_add_profile)
 state("WAITING_USERMAN_SEARCH").callback(PATTERNS["um_profile"])(userman_search_add_profile_selected)
 state("WAITING_USERMAN_SEARCH").message(filters.TEXT & ~filters.COMMAND)(userman_search_query)
+
+# share_card flow — مشاركة كرت WiFi للعميل
+state("WAITING_SHARE_RECIPIENT").message(filters.TEXT & ~filters.COMMAND)(share_card_send)
 
 # hotspot_edit flow
 state("WAITING_EDIT_FIELD").message(filters.TEXT & ~filters.COMMAND)(hotspot_edit_search)

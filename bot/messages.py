@@ -402,3 +402,16 @@ SALES_SUMMARY_ROW = "📦 إجمالي الدفعات: {total_batches}\n✅ مد
 MARK_PAID_SUCCESS = "✅ تم تحديث حالة الدفع إلى: {status_label}"
 MARK_PAID_FAIL = "❌ فشل تحديث حالة الدفع"
 PAYMENT_STATUS_LABELS = {"paid": "مدفوع ✅", "unpaid": "غير مدفوع 🆓", "deferred": "مرحّل ⏳"}
+
+# ─── مشاركة كروت WiFi ─────────────────────────────────────────
+SHARE_CARD_PROMPT = "📤 أرسل Telegram User ID للعميل الذي تريد إرسال الكرت إليه:\n\n💡 يمكنك إيجاد الـ ID عبر بوت @userinfobot"
+SHARE_CARD_TEMPLATE = """📶 <b>بيانات اتصال WiFi</b>
+
+👤 اسم المستخدم: <code>{username}</code>
+🔑 كلمة المرور: <code>{password}</code>{dns_line}{ssid_line}
+
+🎫 بروفايل: {profile}"""
+SHARE_CARD_SUCCESS = "✅ تم إرسال بيانات الكرت للعميل بنجاح"
+SHARE_CARD_FAIL = "❌ فشل الإرسال — تأكد من صحة الـ ID وأن العميل لم يحظر البوت"
+SHARE_CARD_NO_CARDS = "⚠️ لا توجد كروت في هذه الدفعة"
+SHARE_CARD_INVALID_ID = "❌ الـ ID غير صالح — أرسل رقماً صحيحاً"

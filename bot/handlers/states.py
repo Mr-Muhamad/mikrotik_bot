@@ -67,3 +67,6 @@ class WaitingState(IntEnum):
 
     # User Manager search (52)
     USERMAN_SEARCH = 52
+
+    # مشاركة كرت WiFi للعميل (53)
+    SHARE_RECIPIENT = 53
