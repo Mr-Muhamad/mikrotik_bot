@@ -65,7 +65,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_healthy, reason = await run_blocking(mikrotik_api.check_connection_health, router_key)
         try:
             await context.bot.delete_message(chat_id, temp_msg.message_id)
-        except:
+        except Exception:
             pass
 
         router_part = await _get_router_part(router_key)

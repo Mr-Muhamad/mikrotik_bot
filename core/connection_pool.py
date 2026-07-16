@@ -24,58 +24,76 @@ _MAX_CACHE_SIZE = 100       # الحد الأقصى لعناصر الكاش
 
 
 class TTLCache:
-    """Cache مع صلاحية محددة (TTL) لتخزين البيانات المؤقتة."""
+    """Cache مع صلاحية محددة (TTL) لتخزين البيانات المؤقتة.
+
+    Thread-safe: كل عملية قراءة/كتابة/حذف محمية بـ _cache_lock منفصل عن
+    قفل ConnectionPool حتى لا يحدث deadlock عند الاستخدام المتداخل.
+    """
 
     def __init__(self, max_size: int = _MAX_CACHE_SIZE, ttl: int = _CACHE_TTL):
         self._cache: OrderedDict[str, tuple[object, float]] = OrderedDict()
         self._max_size = max_size
         self._ttl = ttl
+        self._cache_lock = threading.Lock()
 
     def get(self, key: str) -> object | None:
-        if key in self._cache:
-            value, timestamp = self._cache[key]
-            if time.time() - timestamp < self._ttl:
-                self._cache.move_to_end(key)
-                return value
-            else:
-                del self._cache[key]
-        return None
+        with self._cache_lock:
+            if key in self._cache:
+                value, timestamp = self._cache[key]
+                if time.time() - timestamp < self._ttl:
+                    self._cache.move_to_end(key)
+                    return value
+                else:
+                    del self._cache[key]
+            return None
 
     def set(self, key: str, value: object):
-        if key in self._cache:
-            del self._cache[key]
-        elif len(self._cache) >= self._max_size:
-            self._cache.popitem(last=False)
-        self._cache[key] = (value, time.time())
+        with self._cache_lock:
+            if key in self._cache:
+                del self._cache[key]
+            elif len(self._cache) >= self._max_size:
+                self._cache.popitem(last=False)
+            self._cache[key] = (value, time.time())
 
     def invalidate(self, key: str):
-        self._cache.pop(key, None)
+        with self._cache_lock:
+            self._cache.pop(key, None)
 
     def clear(self):
-        self._cache.clear()
+        with self._cache_lock:
+            self._cache.clear()
 
     def __contains__(self, key: str) -> bool:
-        if key in self._cache:
-            value, timestamp = self._cache[key]
-            if time.time() - timestamp < self._ttl:
-                return True
-            del self._cache[key]
-        return False
+        with self._cache_lock:
+            if key in self._cache:
+                value, timestamp = self._cache[key]
+                if time.time() - timestamp < self._ttl:
+                    return True
+                del self._cache[key]
+            return False
 
     def __len__(self) -> int:
-        self._evict_expired()
-        return len(self._cache)
+        with self._cache_lock:
+            self._evict_expired_unsafe()
+            return len(self._cache)
 
-    def _evict_expired(self):
+    def _evict_expired_unsafe(self):
+        """طرد العناصر المنتهية — يُستدعى فقط من داخل _cache_lock."""
         now = time.time()
         expired = [k for k, (_, ts) in self._cache.items() if now - ts >= self._ttl]
         for k in expired:
             del self._cache[k]
 
+    def _evict_expired(self):
+        """طرد العناصر المنتهية — واجهة آمنة لـ thread خارج الكلاس."""
+        with self._cache_lock:
+            self._evict_expired_unsafe()
+
     def __eq__(self, other) -> bool:
         if isinstance(other, dict):
             self._evict_expired()
-            return {k: v for k, (v, _) in self._cache.items()} == other
+            with self._cache_lock:
+                return {k: v for k, (v, _) in self._cache.items()} == other
         return NotImplemented
 
 
