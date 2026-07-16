@@ -7,6 +7,7 @@ import pytest
 from librouteros.exceptions import LibRouterosError
 
 from core.connection_pool import ConnectionPool, MAX_RETRIES
+from core.exceptions import RouterNotFoundError
 
 
 @pytest.fixture
@@ -43,11 +44,11 @@ class TestConnectionPoolInit:
 
 class TestRouterInfo:
     def test_invalid_key_raises(self, pool):
-        with pytest.raises(ValueError, match="not configured"):
+        with pytest.raises(RouterNotFoundError, match="not configured"):
             pool.get_router_info("invalid_key")
 
     def test_nonexistent_id_raises(self, pool):
-        with pytest.raises(ValueError, match="not found"):
+        with pytest.raises(RouterNotFoundError, match="not found"):
             pool.get_router_info("discovered_99999")
 
 

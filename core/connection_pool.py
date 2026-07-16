@@ -8,6 +8,7 @@ from librouteros.exceptions import LibRouterosError
 
 from database.models import get_router_by_id
 from config import ROUTER_KEY_PREFIX
+from core.exceptions import RouterNotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +124,7 @@ class ConnectionPool:
             db_id = router_key.replace(ROUTER_KEY_PREFIX, "")
             router_cfg = get_router_by_id(int(db_id))
             if not router_cfg:
-                raise ValueError(f"Discovered router #{db_id} not found")
+                raise RouterNotFoundError(f"Discovered router #{db_id} not found in database")
             return {
                 "host": router_cfg["ip_address"],
                 "port": router_cfg["port"],
@@ -131,7 +132,7 @@ class ConnectionPool:
                 "password": router_cfg["password"],
                 "name": router_cfg.get("identity", router_cfg["ip_address"]),
             }
-        raise ValueError(
+        raise RouterNotFoundError(
             f"Router '{router_key}' not configured. Please discover and select a router first."
         )
 

@@ -1,6 +1,7 @@
 import logging
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
+from core.exceptions import RouterNotFoundError
 from bot.keyboards import (
     get_router_keyboard,
     get_main_keyboard,
@@ -44,6 +45,9 @@ async def _get_router_part(router_key: str | None, fmt: str = "\n📡 {}") -> st
     try:
         name = await run_blocking(mikrotik_api.get_router_name, router_key)
         return fmt.format(name) if name else ""
+    except RouterNotFoundError as e:
+        logger.warning(f"Router not found while getting name for {router_key}: {e}")
+        return ""
     except Exception:
         return ""
 
