@@ -261,6 +261,16 @@ def init_db():
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS operator_router_permissions (
+                operator_id INTEGER NOT NULL,
+                router_id INTEGER NOT NULL,
+                assigned_by INTEGER,
+                assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (operator_id, router_id)
+            )
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_sessions (
                 user_id INTEGER PRIMARY KEY,
                 selected_router TEXT DEFAULT 'router1',
@@ -313,6 +323,14 @@ from database.repositories.stats_snapshots import (
     save_snapshot,
     get_yesterday_snapshot,
     get_week_snapshots,
+)
+
+# ─── Re-export operator_permissions functions ─────────────────────────
+from database.repositories.operator_permissions import (
+    assign_router_to_operator,
+    revoke_router_from_operator,
+    get_operator_routers,
+    is_operator_allowed,
 )
 
 

@@ -11,6 +11,12 @@ ROLE_SET_NOT_ADMIN = "المعرّف ليس ضمن المشرفين المسجّ
 ROLE_SET_SELF_DEMOTE = "لا يمكنك خفض دورك الخاص عن الأدمن."
 ROLE_SET_DONE = "✅ تم تعيين دور {label} للمشرف {admin_id}."
 
+OP_ASSIGN_ROUTER_USAGE = "الاستخدام: /assign_router <operator_id> — ثم اختر الروترات"
+OP_NO_ROUTERS = "⚠️ لا توجد روترات محفوظة لإسنادها."
+OP_ASSIGN_SUCCESS = "✅ تم إسناد الراوتر #{router_id} للمشغّل {operator_id}"
+OP_REVOKE_SUCCESS = "✅ تم سحب الراوتر #{router_id} من المشغّل {operator_id}"
+OP_NO_ROUTERS_FOR_OP = "⚠️ لا توجد روترات مخصصة لك. تواصل مع المسؤول."
+
 
 @admin_only
 @require_role("admin")
@@ -64,3 +70,100 @@ async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     label = ROLE_LABELS.get(new_role, new_role)
     await update.message.reply_text(ROLE_SET_DONE.format(label=label, admin_id=target))
+
+
+@admin_only
+@require_role("admin")
+async def assign_router_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """عرض واجهة إسناد الروترات لمشغّل معين.
+
+    الاستخدام: /assign_router <operator_id>
+    """
+    from database.models import get_saved_routers, get_operator_routers
+    from bot.keyboards import get_operator_router_assignment_keyboard
+
+    parts = (update.message.text or "").split()
+    if len(parts) < 2:
+        await update.message.reply_text(OP_ASSIGN_ROUTER_USAGE)
+        return
+
+    try:
+        operator_id = int(parts[1])
+    except ValueError:
+        await update.message.reply_text("❌ معرّف المشغّل يجب أن يكون رقماً صحيحاً.")
+        return
+
+    all_routers = get_saved_routers(active_only=True)
+    if not all_routers:
+        await update.message.reply_text(OP_NO_ROUTERS)
+        return
+
+    assigned = get_operator_routers(operator_id)
+    keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)
+    label = ROLE_LABELS.get("operator", "مشغّل")
+    await update.message.reply_text(
+        f"🛠️ إسناد الروترات للمشغّل <b>{operator_id}</b>\n"
+        f"اضغط على راوتر لإسناده أو سحبه:\n"
+        f"✅ = مُسنَد حالياً | ⬜ = غير مُسنَد",
+        reply_markup=keyboard,
+        parse_mode="HTML",
+    )
+
+
+@admin_only
+@require_role("admin")
+async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """معالجة callback إسناد راوتر لمشغّل."""
+    from database.models import get_saved_routers, get_operator_routers, assign_router_to_operator
+    from bot.keyboards import get_operator_router_assignment_keyboard
+    from utils.callback_utils import safe_answer_callback
+
+    query = update.callback_query
+    await safe_answer_callback(query)
+
+    parts = query.data.split(":")  # op_assign:<op_id>:<router_id>
+    if len(parts) != 3:
+        return
+    try:
+        operator_id = int(parts[1])
+        router_id = int(parts[2])
+    except ValueError:
+        return
+
+    actor = update.effective_user.id
+    assign_router_to_operator(operator_id, router_id, actor)
+
+    # تحديث الـ keyboard
+    all_routers = get_saved_routers(active_only=True)
+    assigned = get_operator_routers(operator_id)
+    keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)
+    await query.edit_message_reply_markup(reply_markup=keyboard)
+
+
+@admin_only
+@require_role("admin")
+async def op_revoke_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """معالجة callback سحب راوتر من مشغّل."""
+    from database.models import get_saved_routers, get_operator_routers, revoke_router_from_operator
+    from bot.keyboards import get_operator_router_assignment_keyboard
+    from utils.callback_utils import safe_answer_callback
+
+    query = update.callback_query
+    await safe_answer_callback(query)
+
+    parts = query.data.split(":")  # op_revoke:<op_id>:<router_id>
+    if len(parts) != 3:
+        return
+    try:
+        operator_id = int(parts[1])
+        router_id = int(parts[2])
+    except ValueError:
+        return
+
+    revoke_router_from_operator(operator_id, router_id)
+
+    # تحديث الـ keyboard
+    all_routers = get_saved_routers(active_only=True)
+    assigned = get_operator_routers(operator_id)
+    keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)
+    await query.edit_message_reply_markup(reply_markup=keyboard)

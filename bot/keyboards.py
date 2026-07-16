@@ -616,3 +616,30 @@ def get_userman_restore_confirm_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
+
+def get_operator_router_assignment_keyboard(
+    operator_id: int,
+    all_routers: list[dict],
+    assigned_router_ids: list[int],
+) -> InlineKeyboardMarkup:
+    """لوحة مفاتيح إسناد/سحب الروترات لمشغّل معيّن.
+
+    كل راوتر يظهر بزر: ✅ (مُسنَد → اضغط لسحب) أو ⬜ (غير مُسنَد → اضغط لإسناد).
+    """
+    from bot.handlers.callback_constants import op_assign_cb, op_revoke_cb
+
+    keyboard = []
+    for r in all_routers:
+        rid = r.get("id")
+        name = r.get("name_alias") or r.get("identity") or str(rid)
+        ip = r.get("ip_address", "")
+        label_name = f"{name} ({ip})" if ip else name
+        if rid in assigned_router_ids:
+            label = f"✅ {label_name}"
+            cb = op_revoke_cb(operator_id, rid)
+        else:
+            label = f"⬜ {label_name}"
+            cb = op_assign_cb(operator_id, rid)
+        keyboard.append([InlineKeyboardButton(label, callback_data=cb)])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع لقائمة الأدوار", callback_data="roles_back")])
+    return InlineKeyboardMarkup(keyboard)

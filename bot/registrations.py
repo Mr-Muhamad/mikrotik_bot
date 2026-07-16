@@ -103,7 +103,10 @@ from bot.handlers.audit import (
 from bot.handlers.backup_restore import backup_restore_start, backup_restore_select, backup_restore_confirm, userman_restore_start, userman_restore_select, userman_restore_execute
 from bot.handlers.watchdog import watchdog_start, watchdog_stop, watchdog_status
 from bot.handlers.usage import usage_start, usage_query
-from bot.handlers.roles import roles_command, role_set_command
+from bot.handlers.roles import (
+    roles_command, role_set_command,
+    assign_router_command, op_assign_router_callback, op_revoke_router_callback,
+)
 from bot.handlers.hotspot_report import report_command, report_export_csv
 from bot.handlers.batch import (
     batches_command, batch_select, batch_regen,
@@ -196,6 +199,10 @@ standalone(CommandHandler, command="sales")(show_sales_summary)
 entry_point(CallbackQueryHandler, pattern=PATTERNS["share_card"])(share_card_start)
 # حظر MAC — standalone لأن unblock قد يأتي من خارج conversation
 standalone(CallbackQueryHandler, pattern=PATTERNS["unblock_mac"])(unblock_mac_handler)
+# Tenant Isolation — إسناد الروترات للمشغلين
+standalone(CommandHandler, command="assign_router")(assign_router_command)
+standalone(CallbackQueryHandler, pattern=PATTERNS["op_assign_router"])(op_assign_router_callback)
+standalone(CallbackQueryHandler, pattern=PATTERNS["op_revoke_router"])(op_revoke_router_callback)
 
 # ─── ERROR HANDLER ────────────────────────────────────────────
 

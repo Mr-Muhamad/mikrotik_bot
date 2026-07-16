@@ -260,6 +260,21 @@ def unblock_mac_cb(mac: str) -> str:
     return f"unblock_mac:{mac}"
 
 
+def op_assign_cb(operator_id: int, router_id: int) -> str:
+    """بناء callback_data لإسناد راوتر لمشغّل: op_assign:<op_id>:<router_id>"""
+    return f"op_assign:{operator_id}:{router_id}"
+
+
+def op_revoke_cb(operator_id: int, router_id: int) -> str:
+    """بناء callback_data لسحب راوتر من مشغّل: op_revoke:<op_id>:<router_id>"""
+    return f"op_revoke:{operator_id}:{router_id}"
+
+
+def op_list_cb(operator_id: int) -> str:
+    """بناء callback_data لعرض روترات مشغّل: op_list:<op_id>"""
+    return f"op_list:{operator_id}"
+
+
 # ── Registration patterns (referenced by bot/registrations.py) ──
 PATTERNS: dict[str, str] = {
     # static exact-match
@@ -393,4 +408,8 @@ PATTERNS: dict[str, str] = {
     "mark_payment": r"^mark_(paid|unpaid|deferred):\d+$",
     # مشاركة كرت WiFi
     "share_card": r"^share_card:\d+$",
+    # Tenant Isolation — إسناد روترات للمشغلين
+    "op_assign_router": r"^op_assign:\d+:\d+$",
+    "op_revoke_router": r"^op_revoke:\d+:\d+$",
+    "op_list_routers": r"^op_list:\d+$",
 }

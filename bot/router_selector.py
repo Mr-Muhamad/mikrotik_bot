@@ -10,6 +10,51 @@ from bot.messages import NO_ROUTER_SELECTED
 
 logger = logging.getLogger(__name__)
 
+# ── Navigation guard allowlist ────────────────────────────────
+# Operational features require an active router session (business rule).
+# Handlers matching these commands/patterns are ROUTER-MANAGEMENT screens and
+# must stay accessible even when no router is selected. The guard classifies a
+# registered handler purely from its registration kwargs (command= / pattern=),
+# so no per-handler opt-in is needed.
+
+ROUTER_MGMT_COMMANDS = frozenset({
+    "start", "help", "cancel", "clean", "sync", "routers", "addrouter",
+    "reboot", "roles", "role", "watchdog", "watchdog_start", "metrics",
+    "assign_router",
+})
+
+# Exact-match callback tokens that belong to router management.
+ROUTER_MGMT_TOKENS = frozenset({
+    "select_router", "main_menu", "saved_routers", "saved_router",
+    "discover_routers", "connect_router", "delete_router", "confirm_delete_router",
+    "refresh_routers", "reboot_yes", "reboot_no", "reboot_router", "rename_router",
+    "manual_add_router", "confirm_manual_add", "disc_router", "cancel_edit",
+    "go_back",
+})
+
+# Callback pattern *names* (keys of PATTERNS) exempt from the router requirement.
+ROUTER_MGMT_PATTERN_NAMES = frozenset({
+    "select_router", "main_menu", "saved_routers", "saved_router",
+    "discover_routers", "connect_router", "delete_router", "confirm_delete_router",
+    "refresh_routers", "reboot_yes", "reboot_no", "reboot_router", "rename_router",
+    "manual_add_router", "confirm_manual_add", "disc_router", "cancel_edit",
+    "go_back",
+})
+
+# Resolved regex strings (from PATTERNS) for the exempt callback names.
+# Built lazily to avoid importing callback_constants at module import time.
+_ROUTER_MGMT_PATTERN_REGEXES = None
+
+
+def _router_mgmt_regexes():
+    global _ROUTER_MGMT_PATTERN_REGEXES
+    if _ROUTER_MGMT_PATTERN_REGEXES is None:
+        from bot.handlers.callback_constants import PATTERNS
+        _ROUTER_MGMT_PATTERN_REGEXES = frozenset(
+            PATTERNS[name] for name in ROUTER_MGMT_PATTERN_NAMES
+        )
+    return _ROUTER_MGMT_PATTERN_REGEXES
+
 PRESERVED_USER_DATA_KEYS = {
     "nav_back",
     "router_key",
@@ -20,6 +65,7 @@ CONVERSATION_USER_DATA_KEYS = (
     "add_username", "add_password", "add_profile", "add_bytes", "add_uptime",
     "edit_user_id", "edit_user_data", "edit_field",
     "delete_user_id", "search_hosts", "kick_host_idx", "users_cache",
+    "search_um_hosts", "kick_um_idx", "add_profile_username", "add_profile_list",
     "card_type", "card_profile", "card_payment", "card_caller_id", "pdf_option",
     "disc_ip", "disc_username", "disc_router_id",
     "rename_router_id", "last_msg",
@@ -32,6 +78,28 @@ CONVERSATION_USER_DATA_KEYS = (
     "restore_backup_list", "restore_backup_name",
     "userman_restore_list", "userman_restore_tar",
 )
+
+
+def get_user_routers(user_id: int) -> list[dict]:
+    """Return the list of routers this user is allowed to manage.
+
+    - للـ admin (ADMIN_IDS): كل الروترات النشطة
+    - للمشغّل (operator/viewer): الروترات المخصصة له فقط
+    - إن لم تكن له روترات مخصصة: قائمة فارغة مع رسالة
+    """
+    from config import ADMIN_IDS
+    from database.models import get_saved_routers, get_operator_routers, get_router_by_id
+
+    all_routers = get_saved_routers(active_only=True)
+
+    if user_id in ADMIN_IDS:
+        return all_routers
+
+    # مشغّل — نُصفّي حسب الأذونات
+    allowed_ids = get_operator_routers(user_id)
+    if not allowed_ids:
+        return []
+    return [r for r in all_routers if r.get("id") in allowed_ids]
 
 
 def get_selected_router(user_id):
@@ -108,5 +176,53 @@ def require_router(func):
         context.user_data["router_key"] = router_key
         return await func(update, context)
     return wrapper
+
+
+def navigation_guard(func):
+    """Central navigation guard: enforce an active router session.
+
+    Wraps any handler and, when no router is selected, shows the router
+    picker instead of running the handler. Used by the handler registry to
+    guard every *operational* handler automatically (string-based
+    classification), so individual handlers never repeat the check.
+    """
+    @wraps(func)
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_id = update.effective_user.id
+        router_key = get_selected_router(user_id)
+        if not router_key:
+            keyboard = get_router_keyboard()
+            if update.callback_query:
+                await update.callback_query.answer()
+                await update.callback_query.edit_message_text(
+                    NO_ROUTER_SELECTED, reply_markup=keyboard
+                )
+            elif update.message:
+                await update.message.reply_text(
+                    NO_ROUTER_SELECTED, reply_markup=keyboard
+                )
+            return
+        context.user_data["router_key"] = router_key
+        return await func(update, context)
+    return wrapper
+
+
+def requires_router_check(command: str | None, pattern: str | None) -> bool:
+    """Classify a registered handler from its kwargs.
+
+    Returns True when the handler is OPERATIONAL and must be guarded
+    (i.e. it is NOT a router-management screen). Pure string-based decision
+    so no per-handler opt-in is required.
+
+    Args:
+        command: the CommandHandler command string, or None.
+        pattern: the CallbackQueryHandler regex string, or None.
+    """
+    if command is not None:
+        return command not in ROUTER_MGMT_COMMANDS
+    if pattern is not None:
+        return pattern not in _router_mgmt_regexes()
+    # MessageHandler / other: treat as operational (guarded).
+    return True
 
 
