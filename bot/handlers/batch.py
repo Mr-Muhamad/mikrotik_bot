@@ -81,6 +81,9 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("⚠️ الدفعة غير موجودة.", reply_markup=get_batches_keyboard([]))
         return
 
+    await query.edit_message_text(_format_batch_text(batch), reply_markup=get_batch_detail_keyboard(batch["id"], payment_status=batch.get("payment_status", "unpaid")))
+
+def _format_batch_text(batch: dict) -> str:
     cards = batch.get("cards", [])
     total_bytes = 0
     for c in cards:
@@ -111,7 +114,8 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lines.append(f"💰 حالة الدفع: {status_label}")
     if batch.get("sold_at"):
         lines.append(f"📅 تاريخ البيع: {batch['sold_at']}")
-    await query.edit_message_text("\n".join(lines), reply_markup=get_batch_detail_keyboard(batch["id"], payment_status=payment_status))
+    return "\n".join(lines)
+
 
 
 async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -186,7 +190,8 @@ async def mark_batch_paid_handler(update: Update, context: ContextTypes.DEFAULT_
         try:
             batch = await run_blocking(get_card_batch, batch_id)
             if batch:
-                await query.edit_message_reply_markup(
+                await query.edit_message_text(
+                    text=_format_batch_text(batch),
                     reply_markup=get_batch_detail_keyboard(batch_id, payment_status=status)
                 )
         except Exception:
