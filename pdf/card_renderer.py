@@ -208,7 +208,7 @@ class CardRenderer:
         qr_y = y + 5 * mm
 
         buf = io.BytesIO()
-        qr.save(buf, format='PNG')
+        qr.save(buf, "PNG")
         buf.seek(0)
         c.drawImage(ImageReader(buf), qr_x, qr_y, width=qr_size, height=qr_size)
 

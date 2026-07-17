@@ -4,6 +4,7 @@ import threading
 from collections import OrderedDict
 
 from librouteros import connect
+from librouteros.api import Api
 from librouteros.exceptions import LibRouterosError
 
 from database.models import get_router_by_id
@@ -105,7 +106,7 @@ class ConnectionPool:
         # RLock يسمح لنفس الـ thread بأخذ القفل عدة مرات (recursive).
         # مفيد في retry path حيث نحتاج lock داخل lock.
         self._lock = threading.RLock()
-        self.connections: dict[str, object] = {}
+        self.connections: dict[str, Api] = {}
         self.connection_times: dict[str, float] = {}
         self._last_used: dict[str, float] = {}
         self.router_versions = TTLCache(max_size=50, ttl=86400)  # 24 ساعة
@@ -136,7 +137,7 @@ class ConnectionPool:
             f"Router '{router_key}' not configured. Please discover and select a router first."
         )
 
-    def _connect(self, router_info: dict, timeout: int | None = None) -> object:
+    def _connect(self, router_info: dict, timeout: int | None = None) -> Api:
         timeout = timeout or CONNECT_TIMEOUT
         api = connect(
             username=router_info["user"],
@@ -148,11 +149,11 @@ class ConnectionPool:
         )
         return api
 
-    def _connect_long_running(self, router_info: dict) -> object:
+    def _connect_long_running(self, router_info: dict) -> Api:
         return self._connect(router_info, timeout=LONG_TIMEOUT)
 
-    def _connect_with_retry(self, router_info: dict, router_key: str, timeout: int | None = None) -> object:
-        last_error = None
+    def _connect_with_retry(self, router_info: dict, router_key: str, timeout: int | None = None) -> Api:
+        last_error: LibRouterosError | None = None
         for attempt in range(1 + MAX_RETRIES):
             with self._lock:
                 self.total_connection_attempts += 1
@@ -185,9 +186,9 @@ class ConnectionPool:
         logger.error(
             f"Failed to connect to {router_info['name']} after {1 + MAX_RETRIES} attempts"
         )
-        raise last_error
+        raise last_error  # type: ignore[misc]  # always set after at least one attempt
 
-    def _get_or_create_connection(self, router_key: str, timeout: int | None) -> object:
+    def _get_or_create_connection(self, router_key: str, timeout: int | None) -> Api:
         """Core connection retrieval: check idle timeout, evict LRU if full, then connect."""
         self._maybe_cleanup()
         idle_api = None
@@ -206,9 +207,9 @@ class ConnectionPool:
                 self._last_used.pop(router_key, None)
             if len(self.connections) >= MAX_CONNECTIONS:
                 lru_key = (
-                    min(self._last_used, key=self._last_used.get)
+                    min(self._last_used, key=lambda k: self._last_used[k])
                     if self._last_used
-                    else min(self.connection_times, key=self.connection_times.get)
+                    else min(self.connection_times, key=lambda k: self.connection_times[k])
                 )
                 logger.info(f"Connection pool full ({MAX_CONNECTIONS}), evicting LRU: {lru_key}")
                 evict_api = self.connections.pop(lru_key, None)
@@ -224,17 +225,17 @@ class ConnectionPool:
         router_info = self.get_router_info(router_key)
         return self._connect_with_retry(router_info, router_key, timeout=timeout)
 
-    def get_connection(self, router_key: str = "router1") -> object:
+    def get_connection(self, router_key: str = "router1") -> Api:
         return self._get_or_create_connection(router_key, timeout=None)
 
-    def get_long_connection(self, router_key: str = "router1") -> object:
+    def get_long_connection(self, router_key: str = "router1") -> Api:
         return self._get_or_create_connection(router_key, timeout=LONG_TIMEOUT)
 
     def _maybe_cleanup(self):
         now = time.time()
         if now - self._last_cleanup < self._cleanup_interval:
             return
-        connections_to_close: list[tuple[str, object]] = []
+        connections_to_close: list[tuple[str, Api]] = []
         with self._lock:
             if now - self._last_cleanup < self._cleanup_interval:
                 return
@@ -259,14 +260,14 @@ class ConnectionPool:
             except OSError as e:
                 logger.debug(f"Error closing stale connection for {key}: {e}")
 
-    def reconnect(self, router_key: str, timeout: int | None = None) -> object:
+    def reconnect(self, router_key: str, timeout: int | None = None) -> Api:
         """Close and re-establish a connection for a given router key."""
         self.close_connection(router_key)
         self.router_versions.invalidate(router_key)
         router_info = self.get_router_info(router_key)
         return self._connect_with_retry(router_info, router_key, timeout=timeout)
 
-    def replace_connection(self, router_key: str, new_api: object):
+    def replace_connection(self, router_key: str, new_api: Api):
         """Replace an existing connection atomically."""
         now = time.time()
         with self._lock:
@@ -302,7 +303,7 @@ class ConnectionPool:
     def get_version(self, router_key: str = "router1") -> str:
         with self._lock:
             cached = self.router_versions.get(router_key)
-            return cached if cached else ""
+            return str(cached) if cached else ""
 
     def set_version(self, router_key: str, version: str):
         with self._lock:
@@ -310,7 +311,8 @@ class ConnectionPool:
 
     def get_cached_name(self, router_key: str) -> str | None:
         with self._lock:
-            return self.router_names.get(router_key)
+            cached = self.router_names.get(router_key)
+            return str(cached) if cached is not None else None
 
     def set_cached_name(self, router_key: str, name: str):
         with self._lock:

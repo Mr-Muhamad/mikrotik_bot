@@ -11,6 +11,7 @@ import logging
 import logging.handlers
 import json
 import sys
+import io
 import os
 from uuid import uuid4
 from contextlib import contextmanager
@@ -97,7 +98,9 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
     for _stream in (sys.stdout, sys.stderr):
         try:
             if hasattr(_stream, "reconfigure"):
-                _stream.reconfigure(encoding="utf-8")
+                cast_stream = _stream
+                if isinstance(cast_stream, io.TextIOWrapper):
+                    cast_stream.reconfigure(encoding="utf-8")
         except Exception:
             pass
 
