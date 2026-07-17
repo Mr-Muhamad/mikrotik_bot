@@ -35,12 +35,13 @@ class HotspotManager:
         return ''.join(secrets.choice(string.digits) for _ in range(length))
 
     def _get_all_users_cached(self, router_key: str) -> list[dict]:
+        from typing import cast
         cached = self._users_cache.get(router_key)
         if cached is not None:
-            return cached
+            return cast(list[dict], cached)
         users = self._api.execute(router_key, "ip/hotspot/user/print")
         self._users_cache.set(router_key, users)
-        return users
+        return cast(list[dict], users)
 
     def invalidate_users_cache(self, router_key: str):
         self._users_cache.invalidate(router_key)
@@ -328,13 +329,14 @@ class HotspotManager:
 
     def get_profiles(self, router_key: str) -> list[dict]:
         """Return list of hotspot user profiles from the router."""
+        from typing import cast
         cached = self._profiles_cache.get(router_key)
         if cached is not None:
-            return cached
+            return cast(list[dict], cached)
         try:
             results = self._api.execute(router_key, "ip/hotspot/user/profile/print")
             self._profiles_cache.set(router_key, results)
-            return results
+            return cast(list[dict], results)
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.error("Failed to fetch hotspot profiles: %s", e)
             return []

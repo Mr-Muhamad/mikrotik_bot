@@ -243,9 +243,9 @@ class MikrotikAPI:
                 timeout=API_TIMEOUT,
             )
             result = list(api.path("system", "resource")("print"))
-            version = result[0].get("version", "unknown") if result else "unknown"
+            version = str(result[0].get("version", "unknown")) if result else "unknown"
             identity_result = list(api.path("system", "identity")("print"))
-            identity = identity_result[0].get("name", ip) if identity_result else ip
+            identity = str(identity_result[0].get("name", ip)) if identity_result else ip
             return True, version, identity
         except LibRouterosError as e:
             logger.error(f"test_connection LibRouterosError for {ip}:{port}: {e}")

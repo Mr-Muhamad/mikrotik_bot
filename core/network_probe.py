@@ -341,9 +341,12 @@ class MNDPListenerProbe:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             # SO_REUSEADDR is required on Windows; SO_REUSEPORT on POSIX
             # so we can coexist with WinBox or another MNDP listener.
-            try:
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-            except (AttributeError, OSError):
+            if hasattr(socket, "SO_REUSEPORT"):
+                try:
+                    sock.setsockopt(socket.SOL_SOCKET, getattr(socket, "SO_REUSEPORT"), 1)
+                except OSError:
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            else:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind(("", MNDP_PORT))
             sock.settimeout(1.0)

@@ -46,12 +46,13 @@ class UserManager:
         return self._api_override if self._api_override is not None else mikrotik_api
 
     def _get_all_users_cached(self, router_key: str, base_path: str) -> list[dict]:
+        from typing import cast
         cached = self._users_cache.get(router_key)
         if cached is not None:
-            return cached
+            return cast(list[dict], cached)
         users = self._api.execute(router_key, f"{base_path}/user/print")
         self._users_cache.set(router_key, users)
-        return users
+        return cast(list[dict], users)
 
     def invalidate_users_cache(self, router_key: str):
         self._users_cache.invalidate(router_key)
