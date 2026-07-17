@@ -33,7 +33,7 @@ from bot.handlers.hotspot_flow_utils import (
     get_uptime_type_keyboard,
     set_uptime_unit,
 )
-from bot.handlers.handler_utils import make_back_step
+from bot.handlers.handler_utils import make_back_step, get_query_message
 from bot.profile_callbacks import resolve_profile_from_callback
 from utils.admin_decorator import admin_only, require_role
 from utils.callback_utils import safe_answer_callback
@@ -383,7 +383,9 @@ async def skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     success, error = await execute_add_user(context, query.from_user.id, router_key, "")
     if success:
         await query.edit_message_text(SUCCESS_ADD, reply_markup=get_hotspot_keyboard())
-        await schedule_delete(context, query.message.chat_id, query.message.message_id)
+        msg = get_query_message(query)
+        if msg is not None:
+            await schedule_delete(context, msg.chat_id, msg.message_id)
     elif error == "duplicate":
         await query.edit_message_text(
             DUPLICATE_USER + "\n\n" + ADD_USER_PROMPT, reply_markup=get_cancel_keyboard()

@@ -7,13 +7,14 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.keyboards import get_report_keyboard
-from bot.router_selector import nav_set, cleanup_state, require_router
+from bot.router_selector import nav_set, cleanup_state
 from core.hotspot_manager import hotspot_manager
 from core.stats import stats_manager
 from core.mikrotik_api import mikrotik_api
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
+from bot.handlers.handler_utils import get_query_message
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +44,6 @@ def build_csv(report: dict) -> str:
 
 
 @admin_only
-@require_router
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query:
@@ -82,8 +82,12 @@ async def report_export_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with os.fdopen(fd, "wb") as f:
             f.write(csv_text.encode("utf-8-sig"))
         with open(path, "rb") as f:
+            msg = get_query_message(query)
+            if msg is None:
+                await query.answer("❌ فشل إرسال الملف", show_alert=True)
+                return
             await context.bot.send_document(
-                chat_id=query.message.chat_id,
+                chat_id=msg.chat_id,
                 document=f,
                 filename=filename,
                 caption="📊 تقرير استخدام Hotspot (CSV)",

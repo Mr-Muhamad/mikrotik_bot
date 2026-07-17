@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from functools import wraps
 import logging
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -9,6 +12,12 @@ from bot.keyboards import get_router_keyboard
 from bot.messages import NO_ROUTER_SELECTED
 
 logger = logging.getLogger(__name__)
+
+
+def _get_user_id(update: Update) -> int | None:
+    """أعد معرّف المستخدم أو None إن غاب ``effective_user`` (تجنّب الدورة الاستيرادية)."""
+    user = update.effective_user
+    return user.id if user is not None else None
 
 # ── Navigation guard allowlist ────────────────────────────────
 # Operational features require an active router session (business rule).
@@ -139,14 +148,15 @@ def nav_get(context):
     return context.user_data.get("nav_back", "main_menu")
 
 
-def cleanup_state(user_id, user_data):
+def cleanup_state(user_id: int, user_data: dict[str, Any] | None) -> None:
     """Clear the user's database action state and conversation-specific user_data keys.
-    
+
     Preserves nav_back, router_key, and profile_names to maintain navigation state.
     """
     clear_action(user_id)
-    for key in CONVERSATION_USER_DATA_KEYS:
-        user_data.pop(key, None)
+    if user_data is not None:
+        for key in CONVERSATION_USER_DATA_KEYS:
+            user_data.pop(key, None)
 
 
 def require_router(func):
@@ -158,8 +168,9 @@ def require_router(func):
     """
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-        user_id = update.effective_user.id
+        user_id = _get_user_id(update)
+        if user_id is None:
+            return
         router_key = get_selected_router(user_id)
         if not router_key:
             keyboard = get_router_keyboard()
@@ -188,7 +199,9 @@ def navigation_guard(func):
     """
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        user_id = update.effective_user.id
+        user_id = _get_user_id(update)
+        if user_id is None:
+            return
         router_key = get_selected_router(user_id)
         if not router_key:
             keyboard = get_router_keyboard()

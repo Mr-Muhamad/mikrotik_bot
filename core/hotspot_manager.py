@@ -8,6 +8,7 @@ from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient
 from core.card_models import CardData, CardSystem
 from utils.formatters import format_bytes, parse_bytes
+from core.cache import TTLCache
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,8 @@ class HotspotManager:
 
     def __init__(self, api: MikrotikClient | None = None):
         self._api_override = api
+        self._users_cache = TTLCache(max_size=20, ttl=5)
+        self._profiles_cache = TTLCache(max_size=20, ttl=10)
 
     @property
     def _api(self) -> MikrotikClient:
@@ -31,14 +34,22 @@ class HotspotManager:
         """Generate a cryptographically secure random number of specified length."""
         return ''.join(secrets.choice(string.digits) for _ in range(length))
 
+    def _get_all_users_cached(self, router_key: str) -> list[dict]:
+        cached = self._users_cache.get(router_key)
+        if cached is not None:
+            return cached
+        users = self._api.execute(router_key, "ip/hotspot/user/print")
+        self._users_cache.set(router_key, users)
+        return users
+
+    def invalidate_users_cache(self, router_key: str):
+        self._users_cache.invalidate(router_key)
+
     def _get_existing_usernames(self, router_key: str) -> set:
         """Fetch all existing hotspot usernames from the router."""
-        try:
-            users = self._api.execute(router_key, "ip/hotspot/user/print")
-            return {u.get("name", "") for u in users if isinstance(u, dict)}
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Failed to fetch existing usernames: {e}")
-            return set()
+        users = self._get_all_users_cached(router_key)
+        return {u.get("name", "") for u in users if isinstance(u, dict)}
+
 
     def user_exists(self, router_key: str, name: str) -> bool:
         """Return True if a hotspot user with the given name already exists on the router.
@@ -94,7 +105,7 @@ class HotspotManager:
         for key, value in kwargs.items():
             normalized = key.replace("_", "-")
             if normalized in allowed_fields and value is not None:
-                params[normalized] = value
+                params[normalized] = value if isinstance(value, str) else str(value)
 
         result = self._api.execute(router_key, "ip/hotspot/user/set", **params)
         logger.info(f"Edited hotspot user {user_id} on {router_key}")
@@ -129,6 +140,7 @@ class HotspotManager:
         result = self._api.execute(
             router_key, "ip/hotspot/user/remove", **{".id": user_id}
         )
+        self.invalidate_users_cache(router_key)
         logger.info(f"Deleted hotspot user {user_id} on {router_key}")
         return result
 
@@ -156,7 +168,7 @@ class HotspotManager:
                 logger.debug("API-side filtered search for '%s' on %s failed: %s", search, field, e)
 
         if not results:
-            all_users = self._api.execute(router_key, "ip/hotspot/user/print")
+            all_users = self._get_all_users_cached(router_key)
             for user in all_users:
                 name = str(user.get("name", "")).lower()
                 comment = str(user.get("comment", "")).lower()
@@ -174,8 +186,8 @@ class HotspotManager:
             hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": search_lower})
             if not hosts:
                 hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?address": search_lower})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Error searching hotspot hosts: {e}")
 
         if not hosts:
             all_hosts = self._api.execute(router_key, "ip/hotspot/host/print")
@@ -205,8 +217,8 @@ class HotspotManager:
             hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": target})
             if not hosts:
                 hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?address": target})
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Error fetching host details for '{target}': {e}")
             
         if not hosts:
             all_hosts = self._api.execute(router_key, "ip/hotspot/host/print")
@@ -289,13 +301,13 @@ class HotspotManager:
 
     def list_users(self, router_key: str, limit: int = 50) -> list[dict]:
         """Return up to limit hotspot users from the router."""
-        results = self._api.execute(router_key, "ip/hotspot/user/print")
-        return results[:limit]
+        all_users = self._get_all_users_cached(router_key)
+        return all_users[:limit] if all_users else []
 
     def get_user(self, router_key: str, user_id: str) -> dict | None:
         """Return a single hotspot user dict by its .id, or None if not found."""
-        results = self._api.execute(router_key, "ip/hotspot/user/print")
-        for user in results:
+        all_users = self._get_all_users_cached(router_key)
+        for user in all_users:
             if user.get(".id") == user_id:
                 return user
         return None
@@ -311,8 +323,16 @@ class HotspotManager:
 
     def get_profiles(self, router_key: str) -> list[dict]:
         """Return list of hotspot user profiles from the router."""
-        results = self._api.execute(router_key, "ip/hotspot/user/profile/print")
-        return [r for r in results if isinstance(r, dict)]
+        cached = self._profiles_cache.get(router_key)
+        if cached is not None:
+            return cached
+        try:
+            results = self._api.execute(router_key, "ip/hotspot/user/profile/print")
+            self._profiles_cache.set(router_key, results)
+            return results
+        except (LibRouterosError, ConnectionError, OSError) as e:
+            logger.error("Failed to fetch hotspot profiles: %s", e)
+            return []
 
     def create_cards(self, router_key: str, count: int, length: int,
                      card_system: CardSystem, profile: str,
@@ -441,7 +461,7 @@ class HotspotManager:
                             elif 30 <= limit_gb < 40:
                                 categories["30 GB"] += 1
                             elif 40 <= limit_gb < 50:
-                                categories["40 GB"] += 1
+                                categories["50 GB"] += 1
                             elif limit_gb >= 50:
                                 categories["50 GB"] += 1
                             else:

@@ -1,6 +1,8 @@
 import logging
 import time
 
+from telegram import Message
+
 logger = logging.getLogger(__name__)
 
 DELETE_DELAY = 120  # دقيقتين — وقت مناسب للمستخدم للقراءة والتفاعل
@@ -288,7 +290,7 @@ async def safe_edit_plain(query, context, text, reply_markup=None):
     return msg
 
 
-async def _send_replacing_last(update, context, text, keyboard) -> object:
+async def _send_replacing_last(update, context, text, keyboard) -> Message | None:
     """Delete the triggering message and the previous step, then send a fresh message.
 
     الرسالة المُطلِقة (رسالة المستخدم) تُحذف في المحادثة الخاصة فقط، لأن بوت
@@ -308,18 +310,19 @@ async def _send_replacing_last(update, context, text, keyboard) -> object:
     return msg
 
 
-async def send_step(update, context, text, keyboard=None):
+async def send_step(update, context, text, keyboard=None) -> Message | None:
     """Send a new step message while cleaning up the previous step message."""
     text = _truncate(text)
     msg = await _send_replacing_last(update, context, text, keyboard)
-    context.user_data["last_msg"] = msg.message_id
+    if msg is not None:
+        context.user_data["last_msg"] = msg.message_id
     return msg
 
 
-async def reply_final(update, context, text, keyboard=None):
+async def reply_final(update, context, text, keyboard=None) -> Message | None:
     """Send a final reply message while cleaning up the previous step message."""
     text = _truncate(text)
-    await _send_replacing_last(update, context, text, keyboard)
+    return await _send_replacing_last(update, context, text, keyboard)
 
 
 def get_cleanup_stats() -> dict:

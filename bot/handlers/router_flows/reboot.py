@@ -12,7 +12,7 @@ from bot.messages import (
     ROUTER_NOT_FOUND,
 )
 from bot.router_selector import get_selected_router
-from bot.handlers.handler_utils import ack_callback, parse_router_id
+from bot.handlers.handler_utils import ack_callback, parse_router_id, get_query_message
 from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
 from database.models import get_router_by_id, log_action
@@ -49,6 +49,8 @@ async def reboot_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    if query is None:
+        return
     if is_duplicate_callback(query.data, update.effective_user.id):
         return
     await safe_answer_callback(query)
@@ -66,14 +68,18 @@ async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_T
                 f"✅ تم بدء إعادة تشغيل {router_name}\n\n⏳ قد يستغرق الأمر 10-30 ثانية حتى يعود الراوتر متاحاً",
                 reply_markup=get_main_keyboard()
             )
-            await schedule_delete(context, query.message.chat_id, query.message.message_id)
+            msg = get_query_message(query)
+            if msg is not None:
+                await schedule_delete(context, msg.chat_id, msg.message_id)
         except Exception as e:
             logger.info(f"Reboot command sent (connection may be lost): {e}")
             await query.edit_message_text(
                 f"✅ تم بدء إعادة تشغيل {router_name}\n\n⏳ قد يستغرق الأمر 10-30 ثانية حتى يعود الراوتر متاحاً",
                 reply_markup=get_main_keyboard()
             )
-            await schedule_delete(context, query.message.chat_id, query.message.message_id)
+            msg = get_query_message(query)
+            if msg is not None:
+                await schedule_delete(context, msg.chat_id, msg.message_id)
     elif query.data == "reboot_no":
         await query.edit_message_text(REBOOT_CANCELLED, reply_markup=get_main_keyboard())
 

@@ -1,0 +1,17 @@
+{
+  "include": ["tests"],
+  "exclude": [
+    "**/__pycache__",
+    "**/venv",
+    "**/node_modules"
+  ],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "standard",
+  "reportOptionalMemberAccess": "none",
+  "reportOptionalSubscript": "none",
+  "reportOptionalCall": "none",
+  "reportOptionalIterable": "none",
+  "reportRedeclaration": "warning",
+  "reportFunctionMemberAccess": "warning",
+  "reportMissingModuleSource": false
+}

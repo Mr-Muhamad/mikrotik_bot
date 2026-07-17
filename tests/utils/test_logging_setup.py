@@ -48,7 +48,7 @@ class TestRequestIdFilter:
         )
         f = RequestIdFilter()
         f.filter(record)
-        assert record.request_id == "hello"
+        assert getattr(record, "request_id", None) == "hello"
 
     def test_filter_default_dash(self):
         set_request_id("-")
@@ -58,7 +58,7 @@ class TestRequestIdFilter:
         )
         f = RequestIdFilter()
         f.filter(record)
-        assert record.request_id == "-"
+        assert getattr(record, "request_id", None) == "-"
 
 
 class TestConfigureLogging:

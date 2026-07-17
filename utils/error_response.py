@@ -3,11 +3,12 @@ import re
 from typing import Any
 
 from librouteros.exceptions import LibRouterosError
-from telegram import Update
+from telegram import Message, Update
 from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from utils.chat_cleaner import _track_msg
+from bot.handlers.handler_utils import get_query_message, get_query_chat_id
 
 logger = logging.getLogger(__name__)
 
@@ -129,13 +130,15 @@ async def _dispatch_message(
     error_label: str,
 ) -> None:
     try:
-        if update and update.callback_query and update.callback_query.message:
-            msg = await update.callback_query.edit_message_text(text=text, reply_markup=reply_markup)
+        query = update.callback_query if update else None
+        query_msg = get_query_message(query)
+        if query is not None and query_msg is not None:
+            msg = await query.edit_message_text(text=text, reply_markup=reply_markup)
         elif update and update.effective_message:
             msg = await update.effective_message.reply_text(text=text, reply_markup=reply_markup)
         else:
             msg = await context.bot.send_message(chat_id=target_id, text=text, reply_markup=reply_markup)
-        if msg is not None:
+        if msg is not None and isinstance(msg, Message):
             _track_msg(context, target_id, msg.message_id)
     except Exception as send_err:
         if is_benign_telegram_error(send_err):
@@ -190,8 +193,9 @@ async def send_text(
 def _get_chat_id(update: Update | None) -> int | None:
     if update is None:
         return None
-    if update.callback_query and update.callback_query.message:
-        return update.callback_query.message.chat_id
+    chat_id = get_query_chat_id(update.callback_query)
+    if chat_id is not None:
+        return chat_id
     if update.effective_message:
         return update.effective_message.chat_id
     if update.effective_chat:

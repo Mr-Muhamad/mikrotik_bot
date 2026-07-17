@@ -108,6 +108,7 @@ class TestCardBatchesRepository:
             profile="default", cards=cards, created_by=123,
         )
         batch = card_batches.get_card_batch(bid)
+        assert batch is not None
         assert batch["name"] == "batch1"
         assert batch["count"] == 2
         assert batch["cards"] == cards  # decrypted + parsed

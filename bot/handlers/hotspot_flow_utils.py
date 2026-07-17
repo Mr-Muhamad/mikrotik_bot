@@ -23,7 +23,9 @@ def convert_uptime_value(value: str, unit: str) -> str:
     if unit == "hours":
         return f"{num:02d}:00:00"
     return f"{num}d00:00:00"
-def set_uptime_unit(user_data: dict, key: str, unit: str) -> tuple[str, str]:
+def set_uptime_unit(user_data: dict | None, key: str, unit: str) -> tuple[str, str]:
+    if user_data is None:
+        user_data = {}
     user_data[key] = unit
     if unit == "hours":
         return SEND_UPTIME_HOURS, "hours"

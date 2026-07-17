@@ -68,7 +68,7 @@ async def fetch_profiles(
 
 async def fetch_and_cache_profiles(
     context,
-    router_key: str,
+    router_key: str | None,
     source: str = PROFILE_SOURCE_HOTSPOT,
 ) -> list[str]:
     """جلب البروفايلات وتخزينها في ``context.user_data`` لربط الـ callback.
@@ -81,6 +81,8 @@ async def fetch_and_cache_profiles(
     Returns:
         قائمة بأسماء البروفايلات.
     """
+    if not router_key:
+        return []
     names = await fetch_profiles(router_key, source=source)
     cache_profile_names(context, names)
     return names

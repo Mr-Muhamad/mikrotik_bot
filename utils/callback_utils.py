@@ -15,7 +15,9 @@ _DEDUP_CLEANUP_INTERVAL = 30.0
 _last_cleanup: float = 0.0
 
 
-def is_duplicate_callback(callback_data: str, user_id: int | None = None) -> bool:
+def is_duplicate_callback(callback_data: str | None, user_id: int | None = None) -> bool:
+    if not callback_data:
+        return False
     global _last_cleanup
     now = time.monotonic()
     key = f"{user_id}:{callback_data}" if user_id else callback_data

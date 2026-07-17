@@ -16,7 +16,7 @@ from bot.messages import (
 )
 from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only
-from bot.router_selector import require_router, cleanup_state, nav_set
+from bot.router_selector import cleanup_state, nav_set
 from bot.handlers.constants import WAITING_STATS_DAY
 from utils.async_blocking import run_blocking
 from utils.error_response import send_error
@@ -57,7 +57,6 @@ def _reset_block_text(stats: dict) -> str:
 
 
 @admin_only
-@require_router
 async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show hotspot statistics summary and ask for the reset day as text input."""
     query = update.callback_query
@@ -102,7 +101,6 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @admin_only
-@require_router
 async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle a day number typed by the user and show that day's reset list."""
     router_key = context.user_data["router_key"]

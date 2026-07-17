@@ -143,7 +143,7 @@ class TestExecuteAddUser:
             ctx.user_data["add_profile"] = "1M"
             ok, err = await execute_add_user(ctx, ADMIN_ID, "discovered_1", "test")
         assert ok is False
-        assert "connection timeout" in err
+        assert "connection timeout" in (err or "")
 
     @pytest.mark.asyncio
     async def test_optional_fields_use_defaults(self):

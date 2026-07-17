@@ -22,7 +22,7 @@ async def test_batches_command_lists_batches():
     update.effective_user = MagicMock(id=1)
     update.effective_chat = MagicMock(id=1, type="private")
     ctx = MagicMock()
-    ctx.user_data = {}
+    ctx.user_data = {"router_key": "discovered_1"}
 
     batches = [{"id": 1, "name": "b1", "batch_type": "hotspot", "count": 3, "created_at": "2026-01-01 00:00:00"}]
     mock_send = AsyncMock()

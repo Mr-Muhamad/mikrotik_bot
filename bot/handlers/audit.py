@@ -175,7 +175,8 @@ async def logs_subnav_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     query = update.callback_query
     await safe_answer_callback(query)
     current = context.user_data.get("logs_sub_page", 0)
-    context.user_data["logs_sub_page"] = current + (1 if "next" in query.data else -1)
+    data = query.data
+    context.user_data["logs_sub_page"] = current + (1 if data is not None and "next" in data else -1)
     await _show_submenu(update, context)
 
 
@@ -195,7 +196,7 @@ async def logs_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def _show_submenu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     menu = context.user_data.get("logs_menu")
     page = context.user_data.get("logs_sub_page", 0)
-    title = SUBMENU_TITLES.get(menu, "اختر")
+    title = SUBMENU_TITLES.get(menu or "", "اختر")
     if menu == "time":
         options = [name for name, _ in TIME_OPTIONS]
         suffix = "time"

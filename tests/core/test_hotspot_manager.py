@@ -145,6 +145,7 @@ class TestHotspotManager:
 
     def test_get_hotspot_stats(self, mock_mikrotik_api):
         stats = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY)
+        assert stats is not None
         assert stats["total"] >= 1
         assert stats["active"] >= 1
         assert "categories" in stats
@@ -179,5 +180,6 @@ class TestHotspotManager:
 
     def test_format_user(self, mock_mikrotik_api):
         user = hotspot_manager.get_user(self.ROUTER_KEY, "*1")
+        assert user is not None
         formatted = hotspot_manager.format_user(user)
         assert "testuser1" in formatted

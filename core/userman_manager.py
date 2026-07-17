@@ -4,6 +4,7 @@ import string
 from datetime import datetime
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
+from core.cache import TTLCache
 from core.mikrotik_client import MikrotikClient
 
 _CARD_TYPE_MAP = {
@@ -36,11 +37,25 @@ class UserManager:
 
     def __init__(self, api: MikrotikClient | None = None):
         self._api_override = api
+        self._users_cache = TTLCache(max_size=20, ttl=5)
+        self._sessions_cache = TTLCache(max_size=20, ttl=5)
 
     @property
     def _api(self) -> MikrotikClient:
         """Injected client, or the shared module singleton (late-bound for tests)."""
         return self._api_override if self._api_override is not None else mikrotik_api
+
+    def _get_all_users_cached(self, router_key: str, base_path: str) -> list[dict]:
+        cached = self._users_cache.get(router_key)
+        if cached is not None:
+            return cached
+        users = self._api.execute(router_key, f"{base_path}/user/print")
+        self._users_cache.set(router_key, users)
+        return users
+
+    def invalidate_users_cache(self, router_key: str):
+        self._users_cache.invalidate(router_key)
+        self._sessions_cache.invalidate(router_key)
 
     def _generate_digits(self, length: int) -> str:
         return "".join(secrets.choice(string.digits) for _ in range(length))
@@ -53,7 +68,7 @@ class UserManager:
         """Generate a random numeric password of the given length."""
         return self._generate_digits(length)
 
-    def create_cards(self, router_key: str, count: int, card_system: CardSystem | str,
+    def create_cards(self, router_key: str, count: int, card_system: CardSystem | str | None,
                      profile: str, username_length: int = 8, prefix: str = "", caller_id: str = "") -> list[dict]:
         """Create multiple User Manager cards with the specified type and profile.
         
@@ -61,8 +76,8 @@ class UserManager:
         """
         if isinstance(card_system, str):
             card_system = _CARD_TYPE_MAP.get(card_system)
-            if card_system is None:
-                return []
+        if not isinstance(card_system, CardSystem):
+            return []
 
         cards = []
         try:
@@ -240,12 +255,12 @@ class UserManager:
             
         # Fallback to full list if filter not supported
         try:
-            results = self._api.execute(router_key, f"{base_path}/user/print")
+            results = self._get_all_users_cached(router_key, base_path)
             for user in results or []:
                 if str(user.get(field)) == str(username):
                     return user.get(".id")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Error checking user by field '{field}': {e}")
         return None
 
     def set_user_caller_id(self, router_key: str, username: str, caller_id: str) -> None:
@@ -269,7 +284,7 @@ class UserManager:
         callers receive a normalized ``name`` key.
         """
         base_path = self._api.get_userman_base_path(router_key)
-        results = self._api.execute(router_key, f"{base_path}/user/print")
+        results = self._get_all_users_cached(router_key, base_path)
         normalized = []
         for user in results:
             entry = dict(user)
@@ -284,7 +299,7 @@ class UserManager:
         is_v7 = not base_path.startswith("tool/")
         field = "name" if is_v7 else "username"
         
-        results = self._api.execute(router_key, f"{base_path}/user/print")
+        results = self._get_all_users_cached(router_key, base_path)
         search = search_term.lower()
         matches = []
         for user in results or []:
@@ -310,6 +325,23 @@ class UserManager:
                     entry["name"] = entry["username"]
                 return entry
         return None
+
+    def add_profile_to_user(self, router_key: str, username: str, profile: str) -> tuple[bool, str | None]:
+        """Link an additional User Manager profile to an existing user.
+
+        A User Manager user may hold multiple profiles. The link is added via
+        the version-correct command and verified by a read-back so a silent
+        failure is never reported as success:
+          - v7: ``user-manager/user-profile/add user=<name> profile=<profile>``
+          - v6: ``tool/user-manager/user/create-and-activate-profile ...``
+
+        Returns ``(linked, error)``.
+        """
+        base_path = self._api.get_userman_base_path(router_key)
+        is_v7 = not base_path.startswith("tool/")
+        if is_v7:
+            return self._attach_v7_profile(router_key, base_path, username, profile)
+        return self._attach_v6_profile(router_key, base_path, username, profile)
 
     def delete_user(self, router_key: str, username: str) -> list[dict]:
         """Delete a User Manager user by name."""

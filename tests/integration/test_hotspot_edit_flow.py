@@ -73,6 +73,7 @@ class TestHotspotEditSelect:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("editme")
+        assert user is not None
         uid = user[".id"]
         update = make_mock_update(callback_data=f"edit_user_{uid}")
         context = _make_context()
@@ -169,6 +170,7 @@ class TestHotspotEditValue:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("updme")
+        assert user is not None
         uid = user[".id"]
         update = make_mock_update(text="newpass")
         context = _make_context()
@@ -189,6 +191,7 @@ class TestHotspotEditValue:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("profupd")
+        assert user is not None
         uid = user[".id"]
         update = make_mock_update(text="premium")
         context = _make_context()
@@ -209,6 +212,7 @@ class TestHotspotEditValue:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("bytesupd")
+        assert user is not None
         uid = user[".id"]
         update = make_mock_update(text="1G")
         context = _make_context()
@@ -241,6 +245,7 @@ class TestHotspotEditValue:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("errupd")
+        assert user is not None
         uid = user[".id"]
         update = make_mock_update(text="newpass")
         context = _make_context()

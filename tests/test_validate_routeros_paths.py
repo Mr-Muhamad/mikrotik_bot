@@ -7,6 +7,7 @@ from pathlib import Path
 
 _SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "validate_routeros_paths.py"
 _spec = importlib.util.spec_from_file_location("validate_routeros_paths", _SCRIPT)
+assert _spec is not None, f"Could not load spec for {_SCRIPT}"
 guard = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(guard)
 

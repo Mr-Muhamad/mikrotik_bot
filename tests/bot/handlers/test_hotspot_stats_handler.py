@@ -10,8 +10,12 @@ ADMIN_ID = 724730774
 
 
 def _direct_hotspot_stats(update, context):
-    """Direct invocation bypassing @admin_only/@require_router decorators."""
-    return hotspot_module._original_hotspot_stats(update, context)
+    """Direct invocation bypassing @admin_only decorator."""
+    original = getattr(hotspot_module, "_original_hotspot_stats", None)
+    if original is None:
+        original = getattr(hotspot_module.hotspot_stats, "__wrapped__")
+        setattr(hotspot_module, "_original_hotspot_stats", original)
+    return original(update, context)
 
 
 @pytest.fixture(autouse=True)
@@ -25,20 +29,25 @@ def _reset_rate_limit():
 def _bypass_decorators():
     """Replace handlers with the unwrapped functions to bypass decorators.
 
-    The handlers are decorated as @admin_only(@require_router(original)).
-    __wrapped__ from @admin_only points to the @require_router wrapper,
-    so we need __wrapped__.__wrapped__ to get the actual original function.
+    The handlers are decorated as @admin_only(original). __wrapped__ from
+    @admin_only points to the actual original function.
     """
     if not hasattr(hotspot_module, "_original_hotspot_stats"):
-        hotspot_module._original_hotspot_stats = (
-            hotspot_module.hotspot_stats.__wrapped__.__wrapped__
+        setattr(
+            hotspot_module,
+            "_original_hotspot_stats",
+            getattr(hotspot_module.hotspot_stats, "__wrapped__"),
         )
-    hotspot_module.hotspot_stats = hotspot_module._original_hotspot_stats
+    hotspot_module.hotspot_stats = getattr(hotspot_module, "_original_hotspot_stats")
     if not hasattr(hotspot_module, "_original_hotspot_stats_day_input"):
-        hotspot_module._original_hotspot_stats_day_input = (
-            hotspot_module.hotspot_stats_day_input.__wrapped__.__wrapped__
+        setattr(
+            hotspot_module,
+            "_original_hotspot_stats_day_input",
+            getattr(hotspot_module.hotspot_stats_day_input, "__wrapped__"),
         )
-    hotspot_module.hotspot_stats_day_input = hotspot_module._original_hotspot_stats_day_input
+    hotspot_module.hotspot_stats_day_input = getattr(
+        hotspot_module, "_original_hotspot_stats_day_input"
+    )
     yield
 
 

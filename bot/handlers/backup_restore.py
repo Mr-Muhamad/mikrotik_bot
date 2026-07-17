@@ -3,6 +3,8 @@ import os
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
+from utils.tg_helpers import get_from_user_id
+
 from bot.keyboards import (
     get_backup_restore_keyboard,
     get_restore_confirm_keyboard,
@@ -80,9 +82,10 @@ async def backup_restore_start(update: Update, context: ContextTypes.DEFAULT_TYP
 async def backup_restore_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show confirmation dialog for selected backup."""
     query = update.callback_query
+    assert query is not None
     await safe_answer_callback(query)
 
-    idx = int(query.data.split(":")[-1])
+    idx = int(query.data.split(":")[-1]) if query.data else 0
     backups = context.user_data.get("restore_backup_list", [])
     backup_name = backups[idx]["name"] if 0 <= idx < len(backups) else ""
     context.user_data["restore_backup_name"] = backup_name
@@ -97,10 +100,11 @@ async def backup_restore_select(update: Update, context: ContextTypes.DEFAULT_TY
 async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Execute backup restore after confirmation."""
     query = update.callback_query
+    assert query is not None
     await safe_answer_callback(query)
 
     backup_name = context.user_data.get("restore_backup_name", "")
-    router_key = get_selected_router(query.from_user.id)
+    router_key = get_selected_router(get_from_user_id(query))
 
     if not router_key:
         await query.edit_message_text(ROUTER_NO_CREDENTIALS)
@@ -110,7 +114,7 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
 
     try:
         result = await run_blocking(backup_restore.restore_backup, router_key, backup_name)
-        await run_blocking(log_action, "restore_backup", backup_name, router_key, query.from_user.id)
+        await run_blocking(log_action, "restore_backup", backup_name, router_key, get_from_user_id(query))
 
         if result.get("success"):
             await query.edit_message_text(BACKUP_RESTORE_SUCCESS.format(name=backup_name))
@@ -165,9 +169,10 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
 async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show confirmation dialog for selected userman backup."""
     query = update.callback_query
+    assert query is not None
     await safe_answer_callback(query)
 
-    idx = int(query.data.split(":")[-1])
+    idx = int(query.data.split(":")[-1]) if query.data else 0
     tar_files = context.user_data.get("userman_restore_list", [])
     tar_filename = tar_files[idx].get("filename", "") if 0 <= idx < len(tar_files) else ""
     context.user_data["userman_restore_tar"] = tar_filename
@@ -182,10 +187,11 @@ async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_T
 async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Execute User Manager restore from selected tar file."""
     query = update.callback_query
+    assert query is not None
     await safe_answer_callback(query)
 
     tar_filename = context.user_data.get("userman_restore_tar", "")
-    router_key = get_selected_router(query.from_user.id)
+    router_key = get_selected_router(get_from_user_id(query))
 
     if not router_key:
         await query.edit_message_text(ROUTER_NO_CREDENTIALS)
@@ -205,7 +211,7 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
 
     try:
         result = await run_blocking(backup_service.userman_restore, router_key, tar_path)
-        await run_blocking(log_action, "userman_restore", tar_filename, router_key, query.from_user.id)
+        await run_blocking(log_action, "userman_restore", tar_filename, router_key, get_from_user_id(query))
 
         if result["success"] and not result.get("errors"):
             parts = []

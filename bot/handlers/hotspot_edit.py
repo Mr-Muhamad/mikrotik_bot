@@ -329,6 +329,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return ConversationHandler.END
 
     api_field = FIELD_API_KEYS.get(field, field)
+    api_field = str(api_field)
     if api_field == "name":
         valid, name_msg = validate_username(new_value)
         if not valid:

@@ -7,6 +7,7 @@ from bot.keyboards import (
     get_search_results_keyboard,
     get_userman_detail_keyboard,
     get_router_keyboard,
+    get_profile_keyboard,
 )
 from bot.messages import (
     USERMAN_SEARCH_PROMPT,
@@ -14,12 +15,17 @@ from bot.messages import (
     INVALID_SELECTION,
     UNKNOWN_NAME,
     NO_RESULTS,
+    USERMAN_ADD_PROFILE_PROMPT,
+    USERMAN_ADD_PROFILE_SUCCESS,
+    USERMAN_ADD_PROFILE_FAILED,
+    USERMAN_NO_PROFILES_TO_ADD,
 )
+from core.profile_sync import profile_sync
 from bot.router_selector import get_selected_router, set_current_action, nav_set, cleanup_state
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from core.userman_manager import userman_manager
-from utils.callback_utils import safe_answer_callback
+from utils.callback_utils import safe_answer_callback, is_duplicate_callback
 from utils.chat_cleaner import delete_now, edit_clean, reply_final, safe_edit_plain, send_loading, send_step
 from bot.handlers.constants import WAITING_USERMAN_SEARCH
 
@@ -96,7 +102,7 @@ async def userman_search_select(update: Update, context: ContextTypes.DEFAULT_TY
     idx = int(query.data.split("_")[-1])
     hosts = context.user_data.get("search_um_hosts")
     if not hosts or idx >= len(hosts):
-        await safe_edit_plain(query, INVALID_SELECTION, get_cancel_keyboard())
+        await safe_edit_plain(query, context, INVALID_SELECTION, get_cancel_keyboard())
         return WAITING_USERMAN_SEARCH
 
     context.user_data["kick_um_idx"] = idx
@@ -112,16 +118,21 @@ async def userman_search_select(update: Update, context: ContextTypes.DEFAULT_TY
 async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
+    if is_duplicate_callback(query.data, update.effective_user.id):
+        return
     action = query.data
-    
+
     idx = context.user_data.get("kick_um_idx")
     hosts = context.user_data.get("search_um_hosts")
-    router_key = context.user_data.get("router_key")
+    router_key = get_selected_router(update.effective_user.id)
     if idx is None or not hosts or not router_key:
+        await safe_edit_plain(query, context, "⚠️ انتهت الجلسة أو بيانات غير صالحة.", get_cancel_keyboard())
+        cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
 
     h = hosts[idx]
     username = h.get("name") or h.get("username")
+    msg = ""
     
     try:
         if action == "um_kick_execute":
@@ -156,7 +167,7 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
         is_disabled = str(h.get("disabled", "false")).lower() == "true"
         await query.edit_message_text(f"{msg}\n\n" + _format_userman_detail(h), reply_markup=get_userman_detail_keyboard(is_disabled))
     except Exception as e:
-        await safe_edit_plain(query, f"❌ خطأ: {e}", get_userman_detail_keyboard(str(h.get("disabled", "false")).lower() == "true"))
+        await safe_edit_plain(query, context, f"❌ خطأ: {e}", get_userman_detail_keyboard(str(h.get("disabled", "false")).lower() == "true"))
 
     return WAITING_USERMAN_SEARCH
 
@@ -165,11 +176,90 @@ async def userman_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE
     query = update.callback_query
     await safe_answer_callback(query)
     hosts = context.user_data.get("search_um_hosts")
-    
+
     if hosts:
         context.user_data.pop("kick_um_idx", None)
         res_text = _format_userman_search_results(hosts)
         await edit_clean(query, context, res_text, get_search_results_keyboard(hosts, is_userman=True))
     else:
-        await edit_clean(query, context, SEARCH_PROMPT, get_cancel_keyboard())
+        await edit_clean(query, context, USERMAN_SEARCH_PROMPT, get_cancel_keyboard())
+    return WAITING_USERMAN_SEARCH
+
+
+@admin_only
+async def userman_search_add_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await safe_answer_callback(query)
+
+    idx = context.user_data.get("kick_um_idx")
+    hosts = context.user_data.get("search_um_hosts")
+    router_key = get_selected_router(update.effective_user.id)
+    if idx is None or not hosts or not router_key:
+        return ConversationHandler.END
+
+    h = hosts[idx]
+    username = h.get("name") or h.get("username")
+    context.user_data["add_profile_username"] = username
+
+    try:
+        profiles = await run_blocking(profile_sync.get_userman_profiles, router_key)
+    except Exception:
+        profiles = []
+
+    if not profiles:
+        await safe_edit_plain(
+            query, context, USERMAN_NO_PROFILES_TO_ADD,
+            get_userman_detail_keyboard(str(h.get("disabled", "false")).lower() == "true"),
+        )
+        return WAITING_USERMAN_SEARCH
+
+    context.user_data["add_profile_list"] = profiles
+    await safe_edit_plain(
+        query, context, USERMAN_ADD_PROFILE_PROMPT,
+        get_profile_keyboard(profiles, "um_profile", back_callback="search_back"),
+    )
+    return WAITING_USERMAN_SEARCH
+
+
+@admin_only
+async def userman_search_add_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await safe_answer_callback(query)
+    if is_duplicate_callback(query.data, update.effective_user.id):
+        return
+
+    username = context.user_data.get("add_profile_username")
+    profiles = context.user_data.get("add_profile_list")
+    router_key = get_selected_router(update.effective_user.id)
+    if not username or not profiles or not router_key:
+        return ConversationHandler.END
+
+    try:
+        idx = int(query.data.split("_")[-1])
+        profile = profiles[idx]
+    except (ValueError, IndexError):
+        await safe_edit_plain(query, context, INVALID_SELECTION, get_userman_detail_keyboard(False))
+        return WAITING_USERMAN_SEARCH
+
+    try:
+        linked, err = await run_blocking(
+            userman_manager.add_profile_to_user, router_key, username, profile
+        )
+    except Exception as e:
+        linked, err = False, str(e)
+
+    if linked:
+        msg = USERMAN_ADD_PROFILE_SUCCESS.format(profile=profile, username=username)
+    else:
+        msg = USERMAN_ADD_PROFILE_FAILED.format(
+            profile=profile, username=username, error=err or "غير معروف"
+        )
+
+    hosts = context.user_data.get("search_um_hosts")
+    sel_idx = context.user_data.get("kick_um_idx")
+    selected = hosts[sel_idx] if (hosts and sel_idx is not None and sel_idx < len(hosts)) else {}
+    is_disabled = str(selected.get("disabled", "false")).lower() == "true"
+    await safe_edit_plain(query, context, msg, get_userman_detail_keyboard(is_disabled))
+    context.user_data.pop("add_profile_username", None)
+    context.user_data.pop("add_profile_list", None)
     return WAITING_USERMAN_SEARCH

@@ -80,8 +80,8 @@ def decode_mndp_packet(data: bytes) -> dict[str, str]:
             try:
                 value = bytes(payload).decode("utf-8", errors="replace")
                 parts[type_map[part_type]] = value
-            except (UnicodeDecodeError, AttributeError):
-                pass
+            except (UnicodeDecodeError, AttributeError) as e:
+                logger.debug(f"Failed to decode MNDP part {part_type}: {e}")
         elif part_type == MNDP_TYPE_UPTIME and len(payload) >= 4:
             seconds = struct.unpack("<I", bytes(payload[:4]))[0]
             days, remainder = divmod(seconds, 86400)
@@ -91,8 +91,8 @@ def decode_mndp_packet(data: bytes) -> dict[str, str]:
         elif part_type == MNDP_TYPE_IPV4:
             try:
                 parts["ipv4"] = socket.inet_ntop(socket.AF_INET, bytes(payload))
-            except (OSError, ValueError):
-                pass
+            except (OSError, ValueError) as e:
+                logger.debug(f"Failed to parse ipv4 in MNDP: {e}")
     return parts
 
 
@@ -287,7 +287,8 @@ def _get_local_ips() -> set[str]:
     local_ips: set[str] = set()
     try:
         for info in socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET):
-            local_ips.add(info[4][0])
+            addr = info[4][0]
+            local_ips.add(addr if isinstance(addr, str) else str(addr))
     except (OSError, socket.gaierror):
         pass
     local_ips.add("127.0.0.1")

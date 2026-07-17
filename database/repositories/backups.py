@@ -84,7 +84,7 @@ def record_backup_result(
         )
         job_id = cursor.lastrowid
         _prune_backup_jobs(cursor, router_key)
-    return job_id
+    return job_id if job_id is not None else 0
 
 
 def _prune_backup_jobs(cursor, router_key: str) -> None:

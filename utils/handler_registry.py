@@ -35,6 +35,13 @@ ConversationHandler,
 )
 from utils.request_id import bind_request_id_from_update
 
+
+def _load_guard():
+    """Lazily import the navigation-guard functions (avoids import cycles)."""
+    from bot.router_selector import navigation_guard, requires_router_check
+    return navigation_guard, requires_router_check
+
+
 _registry = {
     "entry_points": [],
     "states": defaultdict(list),
@@ -183,7 +190,13 @@ def state(state_name):
 
 
 def _build_handler(entry):
-    wrapped = bind_request_id_from_update(entry["func"])
+    func = entry["func"]
+    command = entry["kwargs"].get("command")
+    pattern = entry["kwargs"].get("pattern")
+    navigation_guard, requires_router_check = _load_guard()
+    if requires_router_check(command, pattern):
+        func = navigation_guard(func)
+    wrapped = bind_request_id_from_update(func)
     return entry["cls"](callback=wrapped, **entry["kwargs"])
 
 

@@ -67,6 +67,7 @@ class TestHotspotAddFlow:
             profile="default",
         )
         stats = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY)
+        assert stats is not None
         assert stats["total"] >= 1
         assert "categories" in stats
 

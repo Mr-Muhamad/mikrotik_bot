@@ -95,8 +95,8 @@ class UserManagerBackupService:
             if os.path.isfile(tar_path):
                 try:
                     os.remove(tar_path)
-                except OSError:
-                    pass
+                except OSError as cleanup_err:
+                    logger.warning(f"Failed to cleanup partial tar file {tar_path}: {cleanup_err}")
             return {"success": False, "message": f"فشل الباكوب: {str(e)}"}
 
     @staticmethod

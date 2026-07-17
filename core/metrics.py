@@ -47,8 +47,10 @@ def get_uptime() -> float:
     return time.time() - _bot_start_time
 
 
-def get_metrics_text(pool_metrics: Dict = None) -> str:
+def get_metrics_text(pool_metrics: Dict | None = None) -> str:
     """Generate Prometheus metrics in text format."""
+    if pool_metrics is None:
+        pool_metrics = {}
     lines = [
         "# HELP bot_uptime Bot uptime in seconds",
         "# TYPE bot_uptime gauge",

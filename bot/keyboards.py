@@ -631,15 +631,18 @@ def get_operator_router_assignment_keyboard(
     keyboard = []
     for r in all_routers:
         rid = r.get("id")
-        name = r.get("name_alias") or r.get("identity") or str(rid)
+        if rid is None:
+            continue
+        rid_int = int(rid)
+        name = r.get("name_alias") or r.get("identity") or str(rid_int)
         ip = r.get("ip_address", "")
         label_name = f"{name} ({ip})" if ip else name
-        if rid in assigned_router_ids:
+        if rid_int in assigned_router_ids:
             label = f"✅ {label_name}"
-            cb = op_revoke_cb(operator_id, rid)
+            cb = op_revoke_cb(operator_id, rid_int)
         else:
             label = f"⬜ {label_name}"
-            cb = op_assign_cb(operator_id, rid)
+            cb = op_assign_cb(operator_id, rid_int)
         keyboard.append([InlineKeyboardButton(label, callback_data=cb)])
     keyboard.append([InlineKeyboardButton("🔙 رجوع لقائمة الأدوار", callback_data="roles_back")])
     return InlineKeyboardMarkup(keyboard)

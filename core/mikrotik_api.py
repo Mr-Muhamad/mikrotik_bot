@@ -2,6 +2,7 @@ import logging
 import re
 import time
 import threading
+import contextlib
 
 from librouteros import connect
 from librouteros.exceptions import LibRouterosError
@@ -99,15 +100,37 @@ class MikrotikAPI:
     def get_router_info(self, router_key: str) -> dict:
         return self._pool.get_router_info(router_key)
 
+    @contextlib.contextmanager
+    def _connection_ctx(self, router_key: str, timeout: int, force_reconnect: bool = False):
+        if force_reconnect:
+            api = self._pool.reconnect(router_key, timeout=timeout)
+        else:
+            api = self._pool.get_connection(router_key, timeout=timeout)
+        
+        broken = False
+        try:
+            yield api
+        except (LibRouterosError, ConnectionError, OSError) as e:
+            if any(pat in str(e) for pat in NON_RETRYABLE_ERRORS):
+                broken = False
+            else:
+                broken = True
+            raise
+        except Exception:
+            broken = True
+            raise
+        finally:
+            self._pool.release_connection(router_key, api, broken=broken)
+
     def check_connection_health(self, router_key: str) -> tuple[bool, str]:
         """فحص صحة الاتصال بالروتر بشكل استباقي."""
         try:
             self._throttle(router_key)
-            api = self._pool.get_connection(router_key)
-            result = self._call_command(api, "system/resource/print")
-            if result:
-                return True, "healthy"
-            return False, "empty_response"
+            with self._connection_ctx(router_key, timeout=API_TIMEOUT) as api:
+                result = self._call_command(api, "system/resource/print")
+                if result:
+                    return True, "healthy"
+                return False, "empty_response"
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.warning(f"Health check failed for {router_key}: {e}")
             return False, str(e)
@@ -146,10 +169,6 @@ class MikrotikAPI:
                          for k, v in kwargs.items()}
             logger.debug(f"{method} {command} kwargs={sanitized}")
 
-    def _replace_connection(self, router_key: str, timeout: int):
-        """يغلق الاتصال القديم وينشئ اتصالاً جديداً ويحدّث الكاش."""
-        return self._pool.reconnect(router_key, timeout=timeout)
-
     # ──────────────────────────────────────────────────────────────
     #  Core execution template
     # ──────────────────────────────────────────────────────────────
@@ -159,10 +178,10 @@ class MikrotikAPI:
     ) -> list[dict]:
         """القالب الأساسي: throttle → تنفيذ → retry عند الخطأ القابل للإصلاح."""
         self._throttle(router_key)
-        api = self._pool.get_connection(router_key)
         try:
-            self._debug_log("_execute_with_retry", command, kwargs)
-            return self._call_command(api, command, **kwargs)
+            with self._connection_ctx(router_key, timeout=timeout) as api:
+                self._debug_log("_execute_with_retry", command, kwargs)
+                return self._call_command(api, command, **kwargs)
         except (LibRouterosError, ConnectionError, OSError) as e:
             if command == "system/reboot":
                 logger.info(f"Reboot command sent - connection may be lost: {e}")
@@ -170,19 +189,17 @@ class MikrotikAPI:
             if any(pat in str(e) for pat in NON_RETRYABLE_ERRORS):
                 logger.debug(f"Non-retryable error for {command} on {router_key}: {e}")
                 raise
+            
             logger.warning(
                 f"Error executing {command} on {router_key}: {e}, "
                 f"retrying with fresh connection..."
             )
             try:
-                new_api = self._replace_connection(router_key, timeout)
-                return self._call_command(new_api, command, **kwargs)
+                with self._connection_ctx(router_key, timeout=timeout, force_reconnect=True) as new_api:
+                    return self._call_command(new_api, command, **kwargs)
             except (LibRouterosError, ConnectionError, OSError) as e2:
                 logger.error(f"Retry failed for {command} on {router_key}: {e2}")
                 raise
-        except Exception as e:
-            logger.exception(f"Unexpected error executing {command} on {router_key}: {e}")
-            raise
 
     # ──────────────────────────────────────────────────────────────
     #  Public API — thin wrappers
@@ -199,10 +216,10 @@ class MikrotikAPI:
     def execute_non_blocking(self, router_key: str, command: str, **kwargs: object) -> None:
         """أمر غير متزامن — لا يعيد المحاولة، يسجل الخطأ ويتجاوزه."""
         try:
-            api = self._pool.get_connection(router_key)
-            self._debug_log("execute_non_blocking", command, kwargs)
-            self._call_command(api, command, **kwargs)
-            logger.info(f"Non-blocking command sent: {command}")
+            with self._connection_ctx(router_key, timeout=API_TIMEOUT) as api:
+                self._debug_log("execute_non_blocking", command, kwargs)
+                self._call_command(api, command, **kwargs)
+                logger.info(f"Non-blocking command sent: {command}")
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.info(f"Non-blocking command sent - connection may be lost: {e}")
         except Exception as e:

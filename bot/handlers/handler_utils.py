@@ -8,14 +8,61 @@
 الهدف تقليل التكرار والحفاظ على سلوك Telegram الحالي بدقة.
 """
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, cast
 
-from telegram import CallbackQuery, Update
+from telegram import CallbackQuery, Message, Update
 from telegram.ext import ContextTypes
 
 from bot.keyboards import get_router_keyboard
 from bot.messages import ERROR_OCCURRED
 from utils.callback_utils import safe_answer_callback
+from utils.tg_helpers import get_query_data
+
+
+def get_user_id(update: Update) -> int | None:
+    """أعد معرّف المستخدم من التحديث، أو None إن غاب ``effective_user``.
+
+    تستبدل النمط المتكرر ``update.effective_user.id`` الذي يرفع
+    ``reportOptionalMemberAccess`` لأن ``effective_user`` اختياري في نوع المكتبة.
+    """
+    user = update.effective_user
+    return user.id if user is not None else None
+
+
+def get_callback_data(update: Update) -> str | None:
+    """أعد بيانات الـ callback query، أو None إن غاب الـ query."""
+    query = update.callback_query
+    return query.data if query is not None else None
+
+
+def get_message_text(update: Update) -> str | None:
+    """أعد نص الرسالة الفعّالة، أو None إن غابت الرسالة."""
+    msg = update.effective_message
+    return msg.text if msg is not None else None
+
+
+def get_effective_message(update: Update) -> Message | None:
+    """أعد الرسالة الفعّالة (لتجنّب الوصول المباشر الاختياري)."""
+    return update.effective_message
+
+
+def get_query_message(query: CallbackQuery | None) -> Message | None:
+    """أعد رسالة الـ callback مضيّقةً إلى ``Message``، أو None.
+
+    ``query.message`` من نوع ``Message | MaybeInaccessibleMessage`` ولا يمكن
+    الوصول إلى ``chat_id``/``message_id`` عليه مباشرة؛ نضيّقه هنا. نستخدم
+    ``cast`` بدل ``isinstance`` ليتوافق مع الـ mocks في الاختبارات (التي تكون
+    من نوع MagicMock لا ترث من ``Message``).
+    """
+    if query is None or query.message is None:
+        return None
+    return cast("Message", query.message)
+
+
+def get_query_chat_id(query: CallbackQuery | None) -> int | None:
+    """أعد معرّف المحادثة لرسالة الـ callback، أو None."""
+    msg = get_query_message(query)
+    return msg.chat_id if msg is not None else None
 
 
 async def ack_callback(update: Update) -> CallbackQuery | None:
@@ -35,7 +82,7 @@ async def ack_callback(update: Update) -> CallbackQuery | None:
 
 
 async def parse_router_id(
-    query: CallbackQuery,
+    query: CallbackQuery | None,
     prefix: str,
     *,
     error_markup=None,
@@ -53,8 +100,10 @@ async def parse_router_id(
     """
     if error_markup is None:
         error_markup = get_router_keyboard()
+    if query is None:
+        return None
     try:
-        return int(query.data.replace(prefix, ""))
+        return int(get_query_data(query).replace(prefix, ""))
     except (ValueError, IndexError):
         await query.edit_message_text(ERROR_OCCURRED.format(""), reply_markup=error_markup)
         return None
@@ -75,9 +124,9 @@ def make_back_step(message: str, keyboard_fn: Callable, next_state: int):
 
     @admin_only
     async def _back_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await safe_answer_callback(query)
-        await query.edit_message_text(message, reply_markup=keyboard_fn())
+        query = await ack_callback(update)
+        if query is not None:
+            await query.edit_message_text(message, reply_markup=keyboard_fn())
         return next_state
 
     return _back_handler

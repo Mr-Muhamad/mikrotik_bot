@@ -121,12 +121,14 @@ async def userman_card_payment_selected(update: Update, context: ContextTypes.DE
 
 @admin_only
 async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    valid, msg = validate_positive_int(update.message.text)
+    text = update.message.text if update.message is not None else ""
+    text = text or ""
+    valid, msg = validate_positive_int(text)
     if not valid:
         await send_step(update, context, msg)
         return WAITING_CARD_COUNT
 
-    count = int(update.message.text)
+    count = int(text)
     if count > 100:
         await send_step(update, context, MAX_CARDS_EXCEEDED)
         return WAITING_CARD_COUNT

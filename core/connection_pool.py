@@ -1,7 +1,10 @@
 import logging
 import time
 import threading
+import queue
 from collections import OrderedDict
+
+from core.cache import TTLCache
 
 from librouteros import connect
 from librouteros.api import Api
@@ -18,103 +21,28 @@ RETRY_DELAY = 1
 CONNECT_TIMEOUT = 10       # مهلة إنشاء الاتصال بالثواني
 API_TIMEOUT = 30            # مهلة عامة لأوامر API (قراءة وكتابة)
 LONG_TIMEOUT = 120          # مهلة للعمليات الطويلة (باكوب، جلب 1000+ مستخدم)
-MAX_CONNECTIONS = 20        # الحد الأقصى لعدد الاتصالات المتزامنة
+MAX_CONNECTIONS_PER_ROUTER = 3 # عدد الاتصالات المسموح بها لكل راوتر معاً
 
 # إعدادات Cache
 _CACHE_TTL = 3600           # صلاحية الكاش لمدة ساعة
 _MAX_CACHE_SIZE = 100       # الحد الأقصى لعناصر الكاش
 
 
-class TTLCache:
-    """Cache مع صلاحية محددة (TTL) لتخزين البيانات المؤقتة.
-
-    Thread-safe: كل عملية قراءة/كتابة/حذف محمية بـ _cache_lock منفصل عن
-    قفل ConnectionPool حتى لا يحدث deadlock عند الاستخدام المتداخل.
-    """
-
-    def __init__(self, max_size: int = _MAX_CACHE_SIZE, ttl: int = _CACHE_TTL):
-        self._cache: OrderedDict[str, tuple[object, float]] = OrderedDict()
-        self._max_size = max_size
-        self._ttl = ttl
-        self._cache_lock = threading.Lock()
-
-    def get(self, key: str) -> object | None:
-        with self._cache_lock:
-            if key in self._cache:
-                value, timestamp = self._cache[key]
-                if time.time() - timestamp < self._ttl:
-                    self._cache.move_to_end(key)
-                    return value
-                else:
-                    del self._cache[key]
-            return None
-
-    def set(self, key: str, value: object):
-        with self._cache_lock:
-            if key in self._cache:
-                del self._cache[key]
-            elif len(self._cache) >= self._max_size:
-                self._cache.popitem(last=False)
-            self._cache[key] = (value, time.time())
-
-    def invalidate(self, key: str):
-        with self._cache_lock:
-            self._cache.pop(key, None)
-
-    def clear(self):
-        with self._cache_lock:
-            self._cache.clear()
-
-    def __contains__(self, key: str) -> bool:
-        with self._cache_lock:
-            if key in self._cache:
-                value, timestamp = self._cache[key]
-                if time.time() - timestamp < self._ttl:
-                    return True
-                del self._cache[key]
-            return False
-
-    def __len__(self) -> int:
-        with self._cache_lock:
-            self._evict_expired_unsafe()
-            return len(self._cache)
-
-    def _evict_expired_unsafe(self):
-        """طرد العناصر المنتهية — يُستدعى فقط من داخل _cache_lock."""
-        now = time.time()
-        expired = [k for k, (_, ts) in self._cache.items() if now - ts >= self._ttl]
-        for k in expired:
-            del self._cache[k]
-
-    def _evict_expired(self):
-        """طرد العناصر المنتهية — واجهة آمنة لـ thread خارج الكلاس."""
-        with self._cache_lock:
-            self._evict_expired_unsafe()
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, dict):
-            self._evict_expired()
-            with self._cache_lock:
-                return {k: v for k, (v, _) in self._cache.items()} == other
-        return NotImplemented
-
-
 class ConnectionPool:
-    """Manages MikroTik RouterOS API connections with pooling, retry, and cleanup."""
+    """Manages MikroTik RouterOS API connections with thread-safe queues per router."""
 
     def __init__(self):
-        # RLock يسمح لنفس الـ thread بأخذ القفل عدة مرات (recursive).
-        # مفيد في retry path حيث نحتاج lock داخل lock.
         self._lock = threading.RLock()
-        self.connections: dict[str, Api] = {}
-        self.connection_times: dict[str, float] = {}
-        self._last_used: dict[str, float] = {}
+        
+        # Mapping router_key -> queue of IDLE Api objects
+        self.pools: dict[str, queue.Queue[Api]] = {}
+        # Mapping router_key -> total active + idle connections created
+        self.active_counts: dict[str, int] = {}
+        
+        # Meta caches
         self.router_versions = TTLCache(max_size=50, ttl=86400)  # 24 ساعة
         self.router_names = TTLCache(max_size=50, ttl=86400)     # 24 ساعة
-        self._last_cleanup = 0.0
-        self._cleanup_interval = 300
-        self._max_connection_age = 3600
-        self._idle_timeout = 600  # إعادة الاتصال بعد 10 دقائق خمول
+        
         self.total_connection_attempts = 0
         self.successful_connections = 0
         self.failed_connections = 0
@@ -149,27 +77,14 @@ class ConnectionPool:
         )
         return api
 
-    def _connect_long_running(self, router_info: dict) -> Api:
-        return self._connect(router_info, timeout=LONG_TIMEOUT)
-
-    def _connect_with_retry(self, router_info: dict, router_key: str, timeout: int | None = None) -> Api:
+    def _connect_with_retry(self, router_info: dict, timeout: int | None = None) -> Api:
         last_error: LibRouterosError | None = None
         for attempt in range(1 + MAX_RETRIES):
             with self._lock:
                 self.total_connection_attempts += 1
             try:
                 api = self._connect(router_info, timeout=timeout)
-                now = time.time()
                 with self._lock:
-                    existing = self.connections.get(router_key)
-                    if existing is not None and existing is not api:
-                        try:
-                            existing.close()
-                        except OSError as e:
-                            logger.debug(f"Error closing old connection for {router_key}: {e}")
-                    self.connections[router_key] = api
-                    self.connection_times[router_key] = now
-                    self._last_used[router_key] = now
                     self.successful_connections += 1
                 logger.info(f"Connected to {router_info['name']} (attempt {attempt + 1})")
                 return api
@@ -186,117 +101,116 @@ class ConnectionPool:
         logger.error(
             f"Failed to connect to {router_info['name']} after {1 + MAX_RETRIES} attempts"
         )
-        raise last_error  # type: ignore[misc]  # always set after at least one attempt
+        raise last_error  # type: ignore[misc]
 
-    def _get_or_create_connection(self, router_key: str, timeout: int | None) -> Api:
-        """Core connection retrieval: check idle timeout, evict LRU if full, then connect."""
-        self._maybe_cleanup()
-        idle_api = None
-        evict_api = None
+    def get_connection(self, router_key: str = "router1", timeout: int | None = None) -> Api:
+        """
+        يحصل على اتصال جاهز من الطابور، أو ينشئ اتصالاً جديداً إذا لم يتجاوز الحد.
+        إذا تجاوز الحد (MAX_CONNECTIONS_PER_ROUTER)، سينتظر حتى يفرغ اتصال من الطابور.
+        """
         with self._lock:
-            if router_key in self.connections:
-                now = time.time()
-                idle_secs = now - self._last_used.get(router_key, now)
-                if idle_secs <= self._idle_timeout:
-                    self.cache_hits += 1
-                    self._last_used[router_key] = now
-                    return self.connections[router_key]
-                logger.debug(f"Connection for {router_key} idle {idle_secs:.0f}s, reconnecting proactively")
-                idle_api = self.connections.pop(router_key, None)
-                self.connection_times.pop(router_key, None)
-                self._last_used.pop(router_key, None)
-            if len(self.connections) >= MAX_CONNECTIONS:
-                lru_key = (
-                    min(self._last_used, key=lambda k: self._last_used[k])
-                    if self._last_used
-                    else min(self.connection_times, key=lambda k: self.connection_times[k])
-                )
-                logger.info(f"Connection pool full ({MAX_CONNECTIONS}), evicting LRU: {lru_key}")
-                evict_api = self.connections.pop(lru_key, None)
-                self.connection_times.pop(lru_key, None)
-                self._last_used.pop(lru_key, None)
-                self.router_versions.invalidate(lru_key)
-                self.router_names.invalidate(lru_key)
-        for api_to_close in filter(None, [idle_api, evict_api]):
+            if router_key not in self.pools:
+                self.pools[router_key] = queue.Queue(maxsize=MAX_CONNECTIONS_PER_ROUTER)
+                self.active_counts[router_key] = 0
+            
+            q = self.pools[router_key]
+            count = self.active_counts[router_key]
+
+            if q.empty() and count < MAX_CONNECTIONS_PER_ROUTER:
+                # لا يوجد اتصال فارغ ويمكننا إنشاء واحد جديد
+                self.active_counts[router_key] += 1
+                create_new = True
+            else:
+                # إما أن الطابور به اتصالات فارغة، أو وصلنا للحد الأقصى ويجب أن ننتظر
+                create_new = False
+        
+        if create_new:
             try:
-                api_to_close.close()
-            except OSError as e:
-                logger.debug(f"Error closing connection: {e}")
-        router_info = self.get_router_info(router_key)
-        return self._connect_with_retry(router_info, router_key, timeout=timeout)
+                router_info = self.get_router_info(router_key)
+                api = self._connect_with_retry(router_info, timeout)
+                return api
+            except Exception:
+                # إذا فشل إنشاء الاتصال، ننقص العداد
+                with self._lock:
+                    self.active_counts[router_key] -= 1
+                raise
+        else:
+            try:
+                # انتظار 30 ثانية كحد أقصى للحصول على اتصال فارغ (Throttle)
+                api = q.get(timeout=30)
+                with self._lock:
+                    self.cache_hits += 1
+                return api
+            except queue.Empty:
+                logger.error(f"Connection pool timeout for {router_key}. Too many concurrent requests.")
+                raise TimeoutError("Connection pool timeout: too many concurrent requests to the router")
 
-    def get_connection(self, router_key: str = "router1") -> Api:
-        return self._get_or_create_connection(router_key, timeout=None)
-
-    def get_long_connection(self, router_key: str = "router1") -> Api:
-        return self._get_or_create_connection(router_key, timeout=LONG_TIMEOUT)
-
-    def _maybe_cleanup(self):
-        now = time.time()
-        if now - self._last_cleanup < self._cleanup_interval:
-            return
-        connections_to_close: list[tuple[str, Api]] = []
-        with self._lock:
-            if now - self._last_cleanup < self._cleanup_interval:
-                return
-            self._last_cleanup = now
-            stale_keys = [
-                k
-                for k, t in self.connection_times.items()
-                if now - t > self._max_connection_age
-            ]
-            for key in stale_keys:
-                logger.info(f"Cleaning up stale connection for {key}")
-                api = self.connections.pop(key, None)
-                self.connection_times.pop(key, None)
-                self._last_used.pop(key, None)
-                self.router_versions.invalidate(key)
-                self.router_names.invalidate(key)
-                if api:
-                    connections_to_close.append((key, api))
-        for key, api in connections_to_close:
+    def release_connection(self, router_key: str, api: Api, broken: bool = False):
+        """
+        يجب مناداة هذه الدالة دائماً لإعادة الاتصال للطابور بعد الانتهاء.
+        إذا كان broken=True، سيتم تدمير الاتصال وإنقاص العداد ليتم إنشاء غيره لاحقاً.
+        """
+        if broken:
+            with self._lock:
+                if self.active_counts.get(router_key, 0) > 0:
+                    self.active_counts[router_key] -= 1
             try:
                 api.close()
-            except OSError as e:
-                logger.debug(f"Error closing stale connection for {key}: {e}")
+            except Exception as e:
+                logger.debug(f"Error closing broken connection for {router_key}: {e}")
+        else:
+            with self._lock:
+                if router_key in self.pools:
+                    try:
+                        self.pools[router_key].put_nowait(api)
+                    except queue.Full:
+                        # Should not happen unless logic is flawed
+                        api.close()
+                        self.active_counts[router_key] -= 1
 
     def reconnect(self, router_key: str, timeout: int | None = None) -> Api:
-        """Close and re-establish a connection for a given router key."""
-        self.close_connection(router_key)
+        """Close cache and establish a fresh connection."""
         self.router_versions.invalidate(router_key)
-        router_info = self.get_router_info(router_key)
-        return self._connect_with_retry(router_info, router_key, timeout=timeout)
-
-    def replace_connection(self, router_key: str, new_api: Api):
-        """Replace an existing connection atomically."""
-        now = time.time()
+        self.router_names.invalidate(router_key)
+        
         with self._lock:
-            existing = self.connections.get(router_key)
-            if existing is not None and existing is not new_api:
-                try:
-                    existing.close()
-                except OSError as e:
-                    logger.debug(f"Error closing old connection for {router_key}: {e}")
-            self.connections[router_key] = new_api
-            self.connection_times[router_key] = now
-            self._last_used[router_key] = now
+            if router_key not in self.pools:
+                self.pools[router_key] = queue.Queue(maxsize=MAX_CONNECTIONS_PER_ROUTER)
+                self.active_counts[router_key] = 0
+            
+            # We are assuming this is used when a connection is marked broken 
+            # and we need a replacement immediately.
+            self.active_counts[router_key] += 1
+            
+        try:
+            router_info = self.get_router_info(router_key)
+            return self._connect_with_retry(router_info, timeout)
+        except Exception:
+            with self._lock:
+                self.active_counts[router_key] -= 1
+            raise
 
     def close_connection(self, router_key: str):
+        """Closes all idle connections for a specific router."""
         with self._lock:
-            api = self.connections.pop(router_key, None)
-            self.connection_times.pop(router_key, None)
-            self._last_used.pop(router_key, None)
             self.router_versions.invalidate(router_key)
             self.router_names.invalidate(router_key)
-        if api:
-            try:
-                api.close()
-            except OSError as e:
-                logger.debug(f"Error closing connection for {router_key}: {e}")
+            q = self.pools.get(router_key)
+            if not q:
+                return
+            
+            # Empty the queue and close each
+            while not q.empty():
+                try:
+                    api = q.get_nowait()
+                    api.close()
+                    self.active_counts[router_key] -= 1
+                except (queue.Empty, Exception):
+                    pass
 
     def close_all(self):
         with self._lock:
-            keys = list(self.connections.keys())
+            keys = list(self.pools.keys())
         for key in keys:
             self.close_connection(key)
 
@@ -328,16 +242,13 @@ class ConnectionPool:
 
     def get_metrics(self) -> dict:
         with self._lock:
-            active = len(self.connections)
-            stale = sum(
-                1 for t in self.connection_times.values()
-                if time.time() - t > self._max_connection_age
-            )
+            active = sum(self.active_counts.values())
+            idle = sum(q.qsize() for q in self.pools.values())
             cached_names = len(self.router_names)
             cached_versions = len(self.router_versions)
         return {
             "active_connections": active,
-            "stale_connections": stale,
+            "idle_connections": idle,
             "total_attempts": self.total_connection_attempts,
             "successful": self.successful_connections,
             "failed": self.failed_connections,

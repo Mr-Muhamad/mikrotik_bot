@@ -12,7 +12,7 @@ from core.mikrotik_api import mikrotik_api
 logger = logging.getLogger(__name__)
 
 # Plaintext FTP transmits the router password unencrypted. This project operates
-# inside an isolated management network (see AGENTS.md); this warning makes the
+# inside an isolated management network (see CLAUDE.md); this warning makes the
 # exposure explicit. Switch to SFTP (e.g. paramiko) if the routers expose SSH.
 _ftp_plaintext_warned = False
 
@@ -24,7 +24,7 @@ def _warn_plaintext_ftp() -> None:
         logger.warning(
             "Backup download uses plaintext FTP (port 21); the router password is "
             "transmitted unencrypted. Run the bot only inside an isolated management "
-            "network and restrict the FTP service to the bot host (see AGENTS.md)."
+            "network and restrict the FTP service to the bot host (see CLAUDE.md)."
         )
 
 
@@ -122,6 +122,6 @@ class SystemBackupService:
             if os.path.isdir(backup_dir):
                 try:
                     shutil.rmtree(backup_dir)
-                except OSError:
-                    pass
+                except OSError as cleanup_err:
+                    logger.warning(f"Failed to cleanup partial backup directory {backup_dir}: {cleanup_err}")
             return {"success": False, "message": f"فشل نسخ إحتياطى: {str(e)}"}

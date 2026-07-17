@@ -25,6 +25,7 @@ from database.repositories.pdf_settings import get_pdf_settings
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
+from bot.handlers.handler_utils import get_query_message
 from utils.formatters import format_bytes
 from pdf.card_generator import card_generator
 import json
@@ -140,9 +141,13 @@ async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
 
         pdf_path = await run_blocking(card_generator.generate_pdf, cards)
+        msg = get_query_message(query)
+        if msg is None:
+            await query.answer("❌ فشل إرسال الملف", show_alert=True)
+            return
         with open(pdf_path, "rb") as f:
             await context.bot.send_document(
-                chat_id=query.message.chat_id,
+                chat_id=msg.chat_id,
                 document=f,
                 filename=f"batch_{batch_id}.pdf",
                 caption=f"📦 دفعة #{batch_id} — {batch['name']}",
