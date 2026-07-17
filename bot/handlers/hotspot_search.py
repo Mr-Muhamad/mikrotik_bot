@@ -258,7 +258,7 @@ async def block_mac_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from utils.callback_utils import is_duplicate_callback
     query = update.callback_query
     await safe_answer_callback(query)
-    if is_duplicate_callback(query):
+    if is_duplicate_callback(query.data, update.effective_user.id):
         return WAITING_HOTSPOT_SEARCH
     router_key = get_selected_router(query.from_user.id)
     if not router_key:

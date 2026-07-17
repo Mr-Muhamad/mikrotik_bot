@@ -5,7 +5,7 @@ from cryptography.fernet import Fernet
 
 load_dotenv()
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN: str = os.getenv("BOT_TOKEN") or ""
 if not BOT_TOKEN:
     print("FATAL: BOT_TOKEN is not set in .env file", file=sys.stderr)
     sys.exit(1)
@@ -20,7 +20,7 @@ if not ADMIN_IDS:
     print("FATAL: ADMIN_IDS is not set or empty in .env file", file=sys.stderr)
     sys.exit(1)
 
-ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")
+ENCRYPTION_KEY: str = os.getenv("ENCRYPTION_KEY") or ""
 if not ENCRYPTION_KEY:
     print("FATAL: ENCRYPTION_KEY is not set in .env file", file=sys.stderr)
     sys.exit(1)

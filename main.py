@@ -90,14 +90,16 @@ def main():
 
         # Run polling with shutdown support
         async def run_with_shutdown():
+            assert application.updater is not None, "Updater was not initialized by PTB"
+            updater = application.updater
             try:
                 await application.initialize()
                 await application.start()
-                await application.updater.start_polling()
+                await updater.start_polling()
                 await shutdown_event.wait()
                 logger.info("Shutting down polling...")
             finally:
-                await application.updater.stop()
+                await updater.stop()
                 await application.stop()
                 await application.shutdown()
                 mikrotik_api.close()
