@@ -51,6 +51,8 @@ def mock_mikrotik_api():
     (since `from core.mikrotik_api import mikrotik_api` creates local refs).
     """
     mock = MikrotikAPIMock()
+    from core.hotspot_manager import hotspot_manager
+    hotspot_manager._users_cache.clear()
     with patch("core.mikrotik_api.mikrotik_api", mock), \
          patch("core.hotspot_manager.mikrotik_api", mock), \
          patch("core.backup.system.mikrotik_api", mock), \

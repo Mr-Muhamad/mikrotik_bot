@@ -167,6 +167,7 @@ class TestHotspotManager:
             {"name": "u3", "comment": "BATCH_2026-07-04_09:00", "limit-bytes-total": "1000000000", "disabled": "false"},
         ]
         mikrotik_api.execute = MagicMock(return_value=users)
+        hotspot_manager.invalidate_users_cache(self.ROUTER_KEY)
 
         stats = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY)
         assert stats["reset_days"] == [5, 4]

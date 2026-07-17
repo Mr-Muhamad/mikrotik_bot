@@ -95,6 +95,7 @@ class HotspotManager:
             params["comment"] = comment
 
         result = self._api.execute(router_key, "ip/hotspot/user/add", **params)
+        self.invalidate_users_cache(router_key)
         logger.info(f"Added hotspot user '{name}' on {router_key}")
         return result
 
@@ -108,6 +109,7 @@ class HotspotManager:
                 params[normalized] = value if isinstance(value, str) else str(value)
 
         result = self._api.execute(router_key, "ip/hotspot/user/set", **params)
+        self.invalidate_users_cache(router_key)
         logger.info(f"Edited hotspot user {user_id} on {router_key}")
         return result
 
@@ -116,6 +118,7 @@ class HotspotManager:
         result = self._api.execute(
             router_key, "ip/hotspot/user/reset-counters", **{"numbers": user_id}
         )
+        self.invalidate_users_cache(router_key)
         logger.info(f"Reset counters for hotspot user {user_id} on {router_key}")
         return result
 
@@ -124,6 +127,7 @@ class HotspotManager:
         result = self._api.execute(
             router_key, "ip/hotspot/user/enable", **{"numbers": user_id}
         )
+        self.invalidate_users_cache(router_key)
         logger.info(f"Enabled hotspot user {user_id} on {router_key}")
         return result
 
@@ -132,6 +136,7 @@ class HotspotManager:
         result = self._api.execute(
             router_key, "ip/hotspot/user/disable", **{"numbers": user_id}
         )
+        self.invalidate_users_cache(router_key)
         logger.info(f"Disabled hotspot user {user_id} on {router_key}")
         return result
 
@@ -378,6 +383,7 @@ class HotspotManager:
             except (LibRouterosError, ConnectionError, OSError) as e:
                 logger.error(f"Failed to create card user at index {i}: {e}")
 
+        self.invalidate_users_cache(router_key)
         return cards
 
     def format_user(self, user: dict) -> str:

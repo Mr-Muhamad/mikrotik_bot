@@ -1,99 +1,101 @@
-import sys
-import os
 import asyncio
-import psutil
 import time
-import logging
+import psutil
+import os
+import random
+from unittest.mock import patch
 
-# إضافة مسار المشروع الرئيسي
+import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from database.models import get_saved_routers
 from core.hotspot_manager import HotspotManager
-from utils.async_blocking import run_blocking
+from tests.mocks.mikrotik_api_mock import MikrotikAPIMock
 
-# تقليل إزعاج السجلات
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("librouteros").setLevel(logging.WARNING)
-logging.getLogger("core.mikrotik_api").setLevel(logging.ERROR)
-logging.basicConfig(level=logging.WARNING)
-
-hotspot_manager = HotspotManager()
-
-async def test_worker(router_key: str, num_requests: int):
-    """عامل ينفذ عدد محدد من الطلبات بشكل متتالٍ."""
-    success = 0
-    failed = 0
-    for _ in range(num_requests):
-        try:
-            # نستخدم عملية قراءة بسيطة من Hotspot
-            await run_blocking(hotspot_manager.search_users, router_key, "")
-            success += 1
-        except Exception:
-            failed += 1
-    return success, failed
-
-async def main():
-    print("=== بدء اختبار الضغط (Stress Test) ===")
-    
-    # محاولة الحصول على راوتر نشط من قاعدة البيانات
-    routers = get_saved_routers(active_only=True)
-    if not routers:
-        print("❌ لم يتم العثور على أي راوتر نشط في قاعدة البيانات. يرجى إضافة راوتر عبر البوت أولاً.")
-        return
-    
-    router = routers[0]
-    router_key = f"discovered_{router['id']}"
-    router_name = router.get('name_alias') or router.get('identity') or 'Unknown'
-    print(f"📡 سيتم إجراء الاختبار على الراوتر: {router_name} ({router_key})")
-    
-    process = psutil.Process(os.getpid())
-    mem_before = process.memory_info().rss / (1024 * 1024)
-    print(f"📊 الذاكرة قبل الاختبار: {mem_before:.2f} MB")
-    
-    # إعدادات الاختبار
-    TASKS_COUNT = 30         # عدد المهام المتزامنة (Concurrency)
-    REQUESTS_PER_TASK = 5    # عدد الطلبات لكل مهمة
-    TOTAL_REQUESTS = TASKS_COUNT * REQUESTS_PER_TASK
-    
-    print(f"🚀 سيتم إرسال {TOTAL_REQUESTS} طلب بشكل متزامن ({TASKS_COUNT} threads)...")
-    
-    # تصفير عداد الـ CPU
-    psutil.cpu_percent(interval=None)
+async def monitor_resources(duration: int, process: psutil.Process):
+    """Monitors CPU and RAM usage in the background."""
+    print(f"--- Starting Resource Monitor for {duration} seconds ---")
+    cpu_measurements = []
+    mem_measurements = []
     
     start_time = time.time()
-    
-    # إنشاء وتشغيل المهام المتزامنة
-    tasks = []
-    for _ in range(TASKS_COUNT):
-        tasks.append(asyncio.create_task(test_worker(router_key, REQUESTS_PER_TASK)))
+    while time.time() - start_time < duration:
+        cpu = process.cpu_percent(interval=0.5)
+        mem = process.memory_info().rss / (1024 * 1024) # MB
+        cpu_measurements.append(cpu)
+        mem_measurements.append(mem)
+        print(f"[Resource Monitor] CPU: {cpu}% | RAM: {mem:.2f} MB")
         
-    results = await asyncio.gather(*tasks)
-    
-    end_time = time.time()
-    
-    # قراءة الموارد بعد الاختبار
-    cpu_usage = psutil.cpu_percent(interval=None)
-    mem_after = process.memory_info().rss / (1024 * 1024)
-    
-    total_success = sum(r[0] for r in results)
-    total_failed = sum(r[1] for r in results)
-    elapsed = end_time - start_time
-    
-    print("\n=== نتائج الاختبار ===")
-    print(f"✅ الطلبات الناجحة: {total_success}")
-    print(f"❌ الطلبات الفاشلة: {total_failed}")
-    print(f"⏱️ الوقت الإجمالي: {elapsed:.2f} ثانية")
-    if elapsed > 0:
-        print(f"⚡ معدل الطلبات: {TOTAL_REQUESTS / elapsed:.2f} طلب/ثانية")
-    
-    print("\n=== استهلاك الموارد ===")
-    print(f"🧠 استهلاك المعالج (CPU): {cpu_usage}%")
-    print(f"📈 الذاكرة بعد الاختبار: {mem_after:.2f} MB")
-    print(f"🔄 فرق الذاكرة: {mem_after - mem_before:.2f} MB")
+    avg_cpu = sum(cpu_measurements) / len(cpu_measurements) if cpu_measurements else 0
+    avg_mem = sum(mem_measurements) / len(mem_measurements) if mem_measurements else 0
+    print(f"--- Monitor Finished. Avg CPU: {avg_cpu:.2f}%, Avg RAM: {avg_mem:.2f} MB ---")
+    return avg_cpu, avg_mem
 
+async def simulate_load(hotspot_manager, router_key: str, num_requests: int):
+    """Simulates high concurrent load on the HotspotManager."""
+    print(f"--- Simulating {num_requests} concurrent requests ---")
+    start_time = time.time()
+    
+    async def worker(worker_id):
+        op_type = random.choice(["list", "search", "add", "format", "stats"])
+        try:
+            if op_type == "list":
+                hotspot_manager.list_users(router_key, limit=50)
+            elif op_type == "search":
+                hotspot_manager.search_users(router_key, f"test_{worker_id}")
+            elif op_type == "add":
+                hotspot_manager.add_user(router_key, f"user_{worker_id}", "pass", "default")
+            elif op_type == "format":
+                user = hotspot_manager.get_user(router_key, "*1")
+                if user:
+                    hotspot_manager.format_user(user)
+            elif op_type == "stats":
+                hotspot_manager.get_hotspot_stats(router_key)
+        except Exception:
+            pass # Ignore errors in stress test, we just want load
+
+    tasks = [asyncio.create_task(worker(i)) for i in range(num_requests)]
+    await asyncio.gather(*tasks)
+    
+    duration = time.time() - start_time
+    print(f"--- Simulated {num_requests} requests in {duration:.2f} seconds ({num_requests/duration:.2f} req/s) ---")
+
+async def main():
+    # Setup mock environment
+    mock_api = MikrotikAPIMock()
+    process = psutil.Process(os.getpid())
+    process.cpu_percent() # initial call
+    
+    with patch("core.mikrotik_api.mikrotik_api", mock_api), \
+         patch("core.hotspot_manager.mikrotik_api", mock_api):
+        
+        hm = HotspotManager()
+        
+        print("\n[Test 1] Light Load (100 concurrent requests)")
+        monitor_task = asyncio.create_task(monitor_resources(3, process))
+        await simulate_load(hm, "discovered_1", 100)
+        await monitor_task
+        
+        print("\n[Test 2] Heavy Load (1000 concurrent requests)")
+        monitor_task = asyncio.create_task(monitor_resources(5, process))
+        await simulate_load(hm, "discovered_1", 1000)
+        await monitor_task
+        
+        print("\n[Test 3] Cache Performance (2000 concurrent reads)")
+        
+        async def read_worker(i):
+            try:
+                hm.list_users("discovered_1", limit=100)
+                hm.get_hotspot_stats("discovered_1")
+            except Exception:
+                pass
+
+        monitor_task = asyncio.create_task(monitor_resources(5, process))
+        start_time = time.time()
+        tasks = [asyncio.create_task(read_worker(i)) for i in range(2000)]
+        await asyncio.gather(*tasks)
+        dur = time.time() - start_time
+        print(f"--- Read Load: 2000 requests in {dur:.2f}s ({2000/dur:.2f} req/s) ---")
+        await monitor_task
+        
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        print("\nتم إيقاف الاختبار يدوياً.")
+    asyncio.run(main())
