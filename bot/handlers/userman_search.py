@@ -176,13 +176,17 @@ async def userman_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE
     query = update.callback_query
     await safe_answer_callback(query)
     hosts = context.user_data.get("search_um_hosts")
+    on_detail = context.user_data.get("kick_um_idx") is not None
 
-    if hosts:
+    if on_detail and hosts:
         context.user_data.pop("kick_um_idx", None)
         res_text = _format_userman_search_results(hosts)
         await edit_clean(query, context, res_text, get_search_results_keyboard(hosts, is_userman=True))
-    else:
-        await edit_clean(query, context, USERMAN_SEARCH_PROMPT, get_cancel_keyboard())
+        return WAITING_USERMAN_SEARCH
+
+    context.user_data.pop("search_um_hosts", None)
+    context.user_data.pop("kick_um_idx", None)
+    await edit_clean(query, context, USERMAN_SEARCH_PROMPT, get_cancel_keyboard())
     return WAITING_USERMAN_SEARCH
 
 
