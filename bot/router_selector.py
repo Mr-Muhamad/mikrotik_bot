@@ -88,7 +88,7 @@ def get_user_routers(user_id: int) -> list[dict]:
     - إن لم تكن له روترات مخصصة: قائمة فارغة مع رسالة
     """
     from config import ADMIN_IDS
-    from database.models import get_saved_routers, get_operator_routers, get_router_by_id
+    from database.models import get_saved_routers, get_operator_routers
 
     all_routers = get_saved_routers(active_only=True)
 

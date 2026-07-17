@@ -100,7 +100,6 @@ async def assign_router_command(update: Update, context: ContextTypes.DEFAULT_TY
 
     assigned = get_operator_routers(operator_id)
     keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)
-    label = ROLE_LABELS.get("operator", "مشغّل")
     await update.message.reply_text(
         f"🛠️ إسناد الروترات للمشغّل <b>{operator_id}</b>\n"
         f"اضغط على راوتر لإسناده أو سحبه:\n"

@@ -253,8 +253,6 @@ async def _show_logs_page(
             await send_step(update, context, text, keyboard)
         return
 
-    has_prev = page > 0
-    has_next = offset + PAGE_SIZE < total
     start = offset + 1
     end = min(offset + PAGE_SIZE, total)
 
