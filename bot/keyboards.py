@@ -16,9 +16,9 @@ def get_router_keyboard():
     from bot.handlers.callback_constants import CALLBACKS
 
     keyboard = [
-        [InlineKeyboardButton("📋 الروترات المحفوظة", callback_data="saved_routers")],
-        [InlineKeyboardButton("🔍 اكتشاف روترات جديدة", callback_data="discover_routers")],
-        [InlineKeyboardButton("➕ إضافة روتر يدوياً", callback_data=CALLBACKS["manual_add_router"])],
+        [InlineKeyboardButton("📋 أجهزة الراوتر", callback_data="saved_routers")],
+        [InlineKeyboardButton("🔍 بحث عن راوتر", callback_data="discover_routers")],
+        [InlineKeyboardButton("➕ إضافة راوتر", callback_data=CALLBACKS["manual_add_router"])],
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -27,19 +27,19 @@ def get_main_keyboard():
     """Return the main bot menu keyboard with all feature sections."""
     keyboard = [
         [
-            InlineKeyboardButton("📡 Hotspot", callback_data="menu_hotspot"),
-            InlineKeyboardButton("🎫 User Manager", callback_data="menu_userman"),
+            InlineKeyboardButton("📡 هوتسبوت", callback_data="menu_hotspot"),
+            InlineKeyboardButton("🎫 يوزر مانيجر", callback_data="menu_userman"),
         ],
         [
-            InlineKeyboardButton("📊 الإحصائيات", callback_data="menu_stats"),
-            InlineKeyboardButton("💾 Backup", callback_data="menu_backup"),
+            InlineKeyboardButton("📊 إحصائيات", callback_data="menu_stats"),
+            InlineKeyboardButton("💾 نسخ احتياطي", callback_data="menu_backup"),
         ],
         [
-            InlineKeyboardButton("⚙️ إعدادات PDF", callback_data="menu_pdf_settings"),
-            InlineKeyboardButton("🌐 تغيير الروتر", callback_data="select_router"),
+            InlineKeyboardButton("⚙️ إعدادات الطباعة", callback_data="menu_pdf_settings"),
+            InlineKeyboardButton("🌐 تبديل الراوتر", callback_data="select_router"),
         ],
         [
-            InlineKeyboardButton("🧹 تنظيف الشات", callback_data="clean_chat"),
+            InlineKeyboardButton("🧹 مسح المحادثة", callback_data="clean_chat"),
         ],
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -49,15 +49,15 @@ def get_hotspot_keyboard():
     """Return the Hotspot management submenu keyboard."""
     keyboard = [
         [
-            InlineKeyboardButton("➕ إضافة مستخدم", callback_data="hotspot_add"),
-            InlineKeyboardButton("✏️ تعديل مستخدم", callback_data="hotspot_edit"),
+            InlineKeyboardButton("➕ إضافة", callback_data="hotspot_add"),
+            InlineKeyboardButton("✏️ تعديل", callback_data="hotspot_edit"),
         ],
         [
-            InlineKeyboardButton("🗑️ حذف مستخدم", callback_data="hotspot_delete"),
+            InlineKeyboardButton("🗑️ حذف", callback_data="hotspot_delete"),
             InlineKeyboardButton("🔍 بحث", callback_data="hotspot_search"),
         ],
         [
-            InlineKeyboardButton("🎫 إنشاء كروت", callback_data="hotspot_cards"),
+            InlineKeyboardButton("🎫 توليد كروت", callback_data="hotspot_cards"),
             InlineKeyboardButton("📊 إحصائيات", callback_data="hotspot_stats"),
         ],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
@@ -69,13 +69,13 @@ def get_userman_keyboard():
     """Return the User Manager submenu keyboard."""
     keyboard = [
         [
-            InlineKeyboardButton("🎫 إنشاء كروت", callback_data="userman_cards"),
-            InlineKeyboardButton("📋 عرض المستخدمين", callback_data="userman_list"),
+            InlineKeyboardButton("🎫 توليد كروت", callback_data="userman_cards"),
+            InlineKeyboardButton("📋 قائمة المستخدمين", callback_data="userman_list"),
         ],
         [
-            InlineKeyboardButton("📝 قوالب (Profiles)", callback_data="userman_profiles"),
+            InlineKeyboardButton("📝 الباقات (Profiles)", callback_data="userman_profiles"),
         ],
-        [InlineKeyboardButton("🔍 بحث عن مستخدم", callback_data="userman_search")],
+        [InlineKeyboardButton("🔍 بحث", callback_data="userman_search")],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -96,8 +96,8 @@ def get_stats_keyboard():
 def get_report_keyboard():
     """Return the Hotspot usage report keyboard with export and refresh options."""
     keyboard = [
-        [InlineKeyboardButton("📄 تصدير CSV", callback_data="report_csv")],
-        [InlineKeyboardButton("🔄 تحديث", callback_data="report_refresh")],
+        [InlineKeyboardButton("📄 ملف إكسيل (CSV)", callback_data="report_csv")],
+        [InlineKeyboardButton("🔄 تحديث بيانات", callback_data="report_refresh")],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -118,13 +118,13 @@ def get_batch_detail_keyboard(batch_id, payment_status: str = "unpaid"):
     from bot.handlers.callback_constants import mark_payment_cb
     payment_row = []
     if payment_status != "paid":
-        payment_row.append(InlineKeyboardButton("✅ مدفوع", callback_data=mark_payment_cb(batch_id, "paid")))
+        payment_row.append(InlineKeyboardButton("✅ تم الدفع", callback_data=mark_payment_cb(batch_id, "paid")))
     if payment_status != "unpaid":
-        payment_row.append(InlineKeyboardButton("🆓 غير مدفوع", callback_data=mark_payment_cb(batch_id, "unpaid")))
+        payment_row.append(InlineKeyboardButton("🆓 لم يُدفع", callback_data=mark_payment_cb(batch_id, "unpaid")))
     if payment_status != "deferred":
-        payment_row.append(InlineKeyboardButton("⏳ مرحّل", callback_data=mark_payment_cb(batch_id, "deferred")))
+        payment_row.append(InlineKeyboardButton("⏳ آجل", callback_data=mark_payment_cb(batch_id, "deferred")))
     keyboard = [
-        [InlineKeyboardButton("🔄 إعادة توليد PDF", callback_data=f"batch_regen:{batch_id}")],
+        [InlineKeyboardButton("🔄 إعادة طباعة", callback_data=f"batch_regen:{batch_id}")],
         [InlineKeyboardButton("📤 إرسال للعميل", callback_data=f"share_card:{batch_id}")],
     ]
     if payment_row:
@@ -137,13 +137,13 @@ def get_backup_keyboard():
     """Return the backup submenu keyboard."""
     keyboard = [
         [
-            InlineKeyboardButton("💾 Full System Backup", callback_data="backup_full"),
-            InlineKeyboardButton("🎫 User Manager Backup", callback_data="backup_userman"),
+            InlineKeyboardButton("💾 نسخة للنظام بالكامل", callback_data="backup_full"),
+            InlineKeyboardButton("🎫 نسخة لليوزر مانيجر", callback_data="backup_userman"),
         ],
-        [InlineKeyboardButton("⏰ باكوب آلي", callback_data="menu_schedule")],
+        [InlineKeyboardButton("⏰ جدولة النسخ", callback_data="menu_schedule")],
         [
-            InlineKeyboardButton("📥 استعادة نسخة احتياطية", callback_data="backup_restore"),
-            InlineKeyboardButton("🎫 استعادة User Manager", callback_data="userman_restore"),
+            InlineKeyboardButton("📥 استعادة النظام", callback_data="backup_restore"),
+            InlineKeyboardButton("🎫 استعادة يوزر مانيجر", callback_data="userman_restore"),
         ],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]

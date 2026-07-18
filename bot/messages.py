@@ -1,64 +1,54 @@
 MAIN_MENU = """👤 {admin_name}{router_part}
 🏠 القائمة الرئيسية
 
-اختر الروتر ثم اختر العملية:"""
+اختر الراوتر ثم العملية:"""
 
-SELECT_ROUTER = "🌐 اختر الروتر:"
+SELECT_ROUTER = "🌐 اختر الراوتر:"
 
 HOTSPOT_MENU = """👤 {admin_name}{router_part}
-📡 إدارة Hotspot
+📡 إدارة هوتسبوت
 
 اختر العملية:"""
 
 USERMAN_MENU = """👤 {admin_name}{router_part}
-🎫 إدارة User Manager
+🎫 إدارة يوزر مانيجر
 
 اختر العملية:"""
 
 ADD_USER_PROMPT = "👤 أرسل اسم المستخدم:"
 
-EDIT_USER_PROMPT = """✏️ تعديل مستخدم
+EDIT_USER_PROMPT = """✏️ تعديل
+أرسل اسم المستخدم أو التعليق:"""
 
-أرسل اسم المستخدم أو جزء من التعليق للبحث:"""
+EDIT_SELECT_FIELD = "✏️ اختر الحقل:\n\n{}"
 
-EDIT_SELECT_FIELD = "✏️ اختر الحقل لتعديله:\n\n{}"
+DELETE_USER_PROMPT = """🗑️ حذف
+أرسل اسم المستخدم أو التعليق:"""
 
-DELETE_USER_PROMPT = """🗑️ حذف مستخدم
-
-أرسل اسم المستخدم أو جزء من التعليق للبحث:"""
-
-SEARCH_PROMPT = """🔍 بحث عن الأجهزة
-
+SEARCH_PROMPT = """🔍 بحث في الأجهزة
 أرسل الـ MAC أو الـ IP:"""
 
 USERMAN_SEARCH_PROMPT = """🔍 بحث عن مستخدم
-
 أرسل اسم المستخدم (Username):"""
 SEARCH_ADVANCED_HINT = """
+مثال: mac:XX أو ip:1.1 أو user:اسم أو comment:تعليق"""
 
-مثال: mac:XX:XX:XX:XX:XX أو ip:192.168.1.1 أو user:اسم أو comment:تعليق"""
+CARDS_PROMPT = """🎫 توليد كروت
 
-CARDS_PROMPT = """🎫 إنشاء كروت User Manager
-
-اختر نوع الكروت:
-1️⃣ اسم مستخدم + كلمة سر مختلفين
-2️⃣ اسم مستخدم + كلمة سر متشابهين
-3️⃣ اسم مستخدم + كلمة سر فارغة
+اختر نوع الكروت المطلوبة:
+1️⃣ اسم وكلمة سر مختلفين
+2️⃣ اسم وكلمة سر متشابهين
+3️⃣ اسم فقط (بدون كلمة سر)
 
 ثم أرسل عدد الكروت"""
 
 STATS_MENU = """👤 {admin_name}{router_part}
-📊 الإحصائيات
-
-اختر نوع الإحصائيات:"""
+📊 الإحصائيات"""
 
 BACKUP_MENU = """👤 {admin_name}{router_part}
-💾 نظام Backup
+💾 النسخ الاحتياطي"""
 
-اختر نوع الباكوب:"""
-
-PDF_SETTINGS_MENU = """⚙️ إعدادات PDF
-
+PDF_SETTINGS_MENU = """⚙️ إعدادات الطباعة
 اختر الإعداد لتعديله:"""
 
 CANCELLED = "❌ تم الإلغاء"
@@ -73,11 +63,9 @@ NO_RESULTS = "📭 لا توجد نتائج"
 CONFIRM_DELETE = "⚠️ هل أنت متأكد من حذف المستخدم؟\n\n{}"
 
 WELCOME = """👤 {admin_name}
-👋 مرحباً بك في بوت إدارة ميكروتيك
+👋 أهلاً بك. اختر الراوتر للبدء:"""
 
-اختر الروتر للبدء:"""
-
-NO_ROUTER_SELECTED = "⚠️ لم يتم اختيار روتر بعد!\n\nاختر روتر من القائمة أو اكتشف روترات جديدة."
+NO_ROUTER_SELECTED = "⚠️ لم يتم اختيار راوتر!\nاختر راوتر أو ابحث عن أجهزة جديدة."
 
 DISCOVERY_START = "⏳ جاري البحث عن روترات ميكروتيك على الشبكة..."
 DISCOVERY_RESULTS = "📡 تم العثور على {} روتر:\n\n{}"
@@ -98,18 +86,18 @@ DELETE_ROUTER_CONFIRM = "⚠️ هل أنت متأكد من حذف الروتر 
 ROUTER_DELETED = "✅ تم حذف الروتر"
 REFRESHING_ROUTERS = "🔄 جاري تحديث حالة الروترات المحفوظة..."
 
-REBOOT_CONFIRM = "⚠️ هل أنت متأكد من إعادة تشغيل الروتر {}؟\n\n⛔ سيتم فصل جميع المستخدمين!"
-REBOOT_IN_PROGRESS = "⏳ جاري إعادة تشغيل الروتر..."
-REBOOT_SUCCESS = "✅ تم إعادة تشغيل الروتر بنجاح"
-REBOOT_FAILED = "❌ فشل إعادة التشغيل: {}"
-REBOOT_CANCELLED = "❌ تم إلغاء إعادة التشغيل"
-NO_REBOOT_ROUTER = "⚠️ لم يتم اختيار روتر بعد!"
+REBOOT_CONFIRM = "⚠️ هل أنت متأكد من إعادة تشغيل الراوتر {}؟\n⛔ سيتم فصل جميع المستخدمين!"
+REBOOT_IN_PROGRESS = "⏳ جاري إعادة التشغيل..."
+REBOOT_SUCCESS = "✅ تمت إعادة التشغيل بنجاح"
+REBOOT_FAILED = "❌ فشل: {}"
+REBOOT_CANCELLED = "❌ تم الإلغاء"
+NO_REBOOT_ROUTER = "⚠️ اختر راوتر أولاً!"
 
-SCHEDULE_MENU = """⏰ نظام الباكوب الآلي
+SCHEDULE_MENU = """⏰ جدولة النسخ
 
 الحالة: {status}
 {time_line}
-📌 النطاق: جميع الراوترات المحفوظة التي لها بيانات اتصال — نسخ User Manager يومياً لكل منها.
+📌 النطاق: جميع الراوترات. نسخ احتياطي للنظام واليوزر مانيجر.
 
 اختر العملية:"""
 SCHEDULE_TIME_LINE = "⏱ الوقت: {hour:02d}:{minute:02d}"
@@ -132,63 +120,44 @@ METRICS_SUCCESS = "✅ الناجحة: {success}"
 METRICS_FAILED = "❌ الفاشلة: {failed}"
 METRICS_CACHE = "💾 استخدام الكاش: {cache_hits}"
 
-HELP = """👋 <b>مرحباً بك في بوت إدارة ميكروتيك</b>
+HELP = """👋 <b>مساعدة</b>
 
-<b>الأوامر المتاحة:</b>
-/start - 🏠 بدء البوت والعودة للقائمة الرئيسية
-/help - ℹ️ عرض رسالة المساعدة هذه
-/add - ➕ إضافة مستخدم Hotspot
-/edit - ✏️ تعديل مستخدم Hotspot
-/delete - 🗑️ حذف مستخدم Hotspot
-/search - 🔍 بحث عن جهاز في Hotspot
-/cards - 🎫 إنشاء كروت Hotspot
-/userman - 🎫 إدارة User Manager
-/backup - 📦 النسخ الاحتياطي
-/routers - 🌐 إدارة الروترات
-/addrouter - 🌐 إضافة روتر يدوياً
-/settings - ⚙️ إعدادات PDF
-/reboot - 🔄 إعادة تشغيل الراوتر
-/metrics - 📊 أداء الاتصال
-/logs - 📋 سجل التدقيق
-/sync - 🔄 تحديث قائمة الأوامر
-/clean - 🧹 تنظيف الشات
-/usage - 📊 تقرير استخدام مستخدم
-/watchdog - 🔍 حالة الروترات
-/watchdog_start - 🟢 بدء مراقبة الروترات
+<b>الأوامر السريعة:</b>
+/start - 🏠 القائمة الرئيسية
+/add - ➕ إضافة هوتسبوت
+/edit - ✏️ تعديل هوتسبوت
+/delete - 🗑️ حذف هوتسبوت
+/search - 🔍 بحث هوتسبوت
+/cards - 🎫 توليد كروت
+/userman - 🎫 يوزر مانيجر
+/backup - 📦 نسخ احتياطي
+/routers - 🌐 أجهزة الراوتر
+/reboot - 🔄 إعادة التشغيل
+/settings - ⚙️ إعدادات الطباعة
+/clean - 🧹 مسح المحادثة
 /cancel - ❌ إلغاء العملية
-
-<b>القوائم الرئيسية:</b>
-• 📡 <b>Hotspot</b> - إضافة، تعديل، حذف، بحث، عرض المستخدمين
-• 🎫 <b>User Manager</b> - إنشاء كروت، عرض المستخدمين، جلب البروفايلات
-• 📊 <b>الإحصائيات</b> - إحصائيات Hotspot و User Manager
-• 💾 <b>Backup</b> - نسخ احتياطي يدوي وتلقائي
-• ⚙️ <b>إعدادات PDF</b> - تعديل إعدادات طباعة الكروت
-
-<b>ملاحظات:</b>
-• يجب اختيار روتر أولاً قبل تنفيذ أي عملية
-• للعودة للقائمة الرئيسية من أي شاشة استخدم 🏠 الرئيسية
-• الأزرار الزرقاء هي للتنقل، والحمراء للإلغاء"""
+"""
 
 # ─── COMMON ────────────────────────────────────────────────────────────
 
-CMD_START_DESC = "🏠 القائمة الرئيسية"
+CMD_START_DESC = "🏠 الرئيسية"
 CMD_HELP_DESC = "❓ مساعدة"
-CMD_REBOOT_DESC = "🔄 اعادة تشغيل الراوتر"
-CMD_ADD_DESC = "➕ اضافة مستخدم هوت سبوت"
-CMD_DELETE_DESC = "🗑️ حذف مستخدم هوت سبوت"
-CMD_SEARCH_DESC = "🔍 بحث عن مستخدم"
-CMD_CARDS_DESC = "🎫 إنشاء كروت هوت سبوت"
-CMD_USERMAN_DESC = "🎫 إدارة User Manager"
-CMD_BACKUP_DESC = "📦 الباكوب"
-CMD_ROUTERS_DESC = "🌐 إدارة الروترات"
-CMD_SETTINGS_DESC = "⚙️ الإعدادات"
-CMD_CANCEL_DESC = "❌ الغاء العملية"
-CMD_CLEAN_DESC = "🧹 تنظيف الشات"
-CMD_USAGE_DESC = "📊 تقرير استخدام مستخدم"
+CMD_REBOOT_DESC = "🔄 إعادة تشغيل"
+CMD_ADD_DESC = "➕ إضافة هوتسبوت"
+CMD_DELETE_DESC = "🗑️ حذف هوتسبوت"
+CMD_SEARCH_DESC = "🔍 بحث هوتسبوت"
+CMD_CARDS_DESC = "🎫 كروت هوتسبوت"
+CMD_USERMAN_DESC = "🎫 يوزر مانيجر"
+CMD_BACKUP_DESC = "📦 النسخ الاحتياطي"
+CMD_ROUTERS_DESC = "🌐 أجهزة الراوتر"
+CMD_SETTINGS_DESC = "⚙️ إعدادات الطباعة"
+CMD_CANCEL_DESC = "❌ إلغاء"
+CMD_CLEAN_DESC = "🧹 مسح المحادثة"
+CMD_USAGE_DESC = "📊 تقرير الاستخدام"
 CMD_WATCHDOG_DESC = "🔍 حالة الروترات"
-CMD_WATCHDOG_START_DESC = "🟢 بدء مراقبة الروترات"
+CMD_WATCHDOG_START_DESC = "🟢 بدء المراقبة"
 CMD_METRICS_DESC = "📊 أداء الاتصال"
-CMD_SYNC_DESC = "🔄 تحديث قائمة الأوامر"
+CMD_SYNC_DESC = "🔄 تحديث القائمة"
 
 # ─── SHARED ────────────────────────────────────────────────────────────
 
@@ -251,14 +220,14 @@ ROUTER_NAME_EMPTY = "❌ الاسم لا يمكن أن يكون فارغاً"
 ROUTER_NO_CREDENTIALS = "❌ الروتر ليس لديه بيانات اتصال. احذفه وأعد الاكتشاف."
 
 # Manual router add flow
-MANUAL_ADD_IP_PROMPT = "🌐 أدخل عنوان IP للروتر الجديد:"
-MANUAL_ADD_PORT_PROMPT = "🔌 أدخل المنفذ (اتركه فارغاً للافتراضي {}):"
-MANUAL_ADD_USER_PROMPT = "👤 أدخل اسم المستخدم (username):"
-MANUAL_ADD_PASS_PROMPT = "🔑 أدخل كلمة المرور:"
-MANUAL_ADD_ALIAS_PROMPT = "🏷️ أدخل اسماً مستعاراً اختيارياً (أرسل /skip للتخطي):"
-MANUAL_ADD_CONFIRM = "تأكيد إضافة الروتر:\n\n📍 IP: {}\n🔌 المنفذ: {}\n👤 المستخدم: {}\n🏷️ الاسم: {}"
-MANUAL_ADD_DUPLICATE = "⚠️ الروتر {} مسجل مسبقاً ({})"
-MANUAL_ADD_SAVED = "✅ تم حفظ الروتر {}\n📍 {}"
+MANUAL_ADD_IP_PROMPT = "🌐 IP الراوتر الجديد:"
+MANUAL_ADD_PORT_PROMPT = "🔌 المنفذ (فارغ للافتراضي {}):"
+MANUAL_ADD_USER_PROMPT = "👤 اسم المستخدم (User):"
+MANUAL_ADD_PASS_PROMPT = "🔑 كلمة المرور:"
+MANUAL_ADD_ALIAS_PROMPT = "🏷️ الاسم المستعار (أو /skip):"
+MANUAL_ADD_CONFIRM = "تأكيد الإضافة:\n📍 IP: {}\n🔌 Port: {}\n👤 User: {}\n🏷️ Name: {}"
+MANUAL_ADD_DUPLICATE = "⚠️ الراوتر {} مسجل مسبقاً ({})"
+MANUAL_ADD_SAVED = "✅ تم حفظ الراوتر {}\n📍 {}"
 MANUAL_ADD_CONN_FAILED = "✅ تم الحفظ، لكن تعذّر الاتصال للتحقق:\n{}\n📍 الروتر محفوظ بياناته."
 MANUAL_ADD_INVALID = "❌ {}"
 
