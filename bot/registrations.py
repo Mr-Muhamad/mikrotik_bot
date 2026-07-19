@@ -712,23 +712,14 @@ state("WAITING_STATS_DAY").message(filters.TEXT & ~filters.COMMAND)(
 # ─── BUILD WRAPPER ────────────────────────────────────────────
 
 
-def build_all(application):
-    """Build all handlers from registry and add to application.
+def _build_rename_handler() -> CH:
+    """Build the separate rename ConversationHandler.
 
-    Creates:
-      1. Main ConversationHandler (hotspot add/edit/delete/search, cards, userman, etc.)
-      2. Rename ConversationHandler (separate shorter conversation)
-      3. All standalone handlers (commands, navigation callbacks, etc.)
+    This is a short conversation: trigger -> enter new name -> done.
+    Must be registered before standalone handlers so its ``/cancel`` fallback
+    takes precedence while active.
     """
-
-    # Separate ConversationHandlers must be registered BEFORE the standalone
-    # handlers (added inside build_application) so their fallbacks
-    # (cancel/start/go_back) take precedence while a conversation is active.
-    # Otherwise the standalone `cancel` CommandHandler preempts them and the
-    # conversation is never properly ended (its state stays STUCK).
-
-    # 1. Rename ConversationHandler (separate — needs its own CH instance)
-    rename_conv = CH(
+    return CH(
         entry_points=[
             CallbackQueryHandler(rename_router_start, pattern=PATTERNS["rename_router"])
         ],
@@ -745,10 +736,16 @@ def build_all(application):
         per_message=False,
         conversation_timeout=300,
     )
-    application.add_handler(rename_conv)
 
-    # 2. Manual router add ConversationHandler (separate — needs its own CH instance)
-    manual_add_conv = CH(
+
+def _build_manual_add_handler() -> CH:
+    """Build the separate manual-router-add ConversationHandler.
+
+    Multi-step: IP -> port -> user -> pass -> alias -> confirm.
+    Must be registered before standalone handlers so its ``/cancel`` fallback
+    takes precedence while active.
+    """
+    return CH(
         entry_points=[
             CallbackQueryHandler(
                 manual_add_start, pattern=PATTERNS["manual_add_router"]
@@ -785,9 +782,23 @@ def build_all(application):
         per_message=False,
         conversation_timeout=300,
     )
-    application.add_handler(manual_add_conv)
 
-    # 3. Main ConversationHandler + standalone handlers (added LAST so the
-    #    separate CHs above win while active; main CH keeps priority over
-    #    standalone for its own fallback commands).
+
+def build_all(application):
+    """Build all handlers from registry and add to application.
+
+    Registration order is critical:
+
+    1. **Separate ConversationHandlers** (rename, manual_add) — registered
+       FIRST so their ``/cancel`` and ``/start`` fallbacks take precedence
+       while a conversation is active. Otherwise the standalone ``cancel``
+       CommandHandler preempts them and the conversation state stays STUCK.
+
+    2. **Main ConversationHandler + standalone handlers** — registered LAST
+       via ``build_application`` so the separate CHs above win while active,
+       and the main CH keeps priority over standalone for its own fallback
+       commands.
+    """
+    application.add_handler(_build_rename_handler())
+    application.add_handler(_build_manual_add_handler())
     build_application(application, constants)
