@@ -63,20 +63,30 @@ def get_router_status(router_key: str) -> dict:
 def get_router_status_detail(router_key: str) -> dict:
     """Return enriched cached status with best-effort version and active users.
 
-    The online determination relies only on cached health results, so this
-    function never performs a fresh connectivity probe. Live data (RouterOS
-    version, active Hotspot users) is fetched only when the router is considered
-    online, and failures are swallowed so a partial outage never breaks the board.
+    Hybrid Check (Option 2): If the router has an active connection in the pool,
+    it is immediately considered online regardless of the cache. Otherwise, falls
+    back to cache. Live data (version, users) is fetched only when online.
     """
+    has_active = mikrotik_api.has_active_connection(router_key)
+
     with _router_status_lock:
         status = dict(_router_status.get(router_key, {}))
+
     last_ok = status.get("last_ok")
     last_fail = status.get("last_fail")
-    online = bool(last_ok and (not last_fail or last_ok > last_fail))
+
+    if has_active:
+        online = True
+        if not last_ok or (last_fail and last_fail >= last_ok):
+            status["last_ok"] = datetime.now()
+    else:
+        online = bool(last_ok and (not last_fail or last_ok > last_fail))
+
     status["online"] = online
     status["version"] = None
     status["active_users"] = None
-    if online:
+
+    if has_active:
         try:
             version = mikrotik_api.get_version(router_key)
             status["version"] = version if version and version != "unknown" else None
@@ -89,6 +99,12 @@ def get_router_status_detail(router_key: str) -> dict:
             )
         except Exception:
             status["active_users"] = None
+    else:
+        # إذا لم يكن هناك اتصال نشط، نكتفي بالإصدار المكيّش إن وُجد ولا نحاول جلب الإحصائيات الحية
+        # لتجنب تجميد البوت لمدة 90 ثانية إذا كان الراوتر غير متصل فعلياً.
+        version = mikrotik_api.get_cached_version(router_key)
+        status["version"] = version if version and version != "unknown" else None
+    
     return status
 
 

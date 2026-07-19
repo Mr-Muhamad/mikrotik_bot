@@ -78,6 +78,8 @@ def _create_indexes():
             "CREATE INDEX IF NOT EXISTS idx_backup_jobs_created ON backup_jobs(created_at DESC)",
             "CREATE INDEX IF NOT EXISTS idx_health_router_time ON router_health_log(router_key, checked_at DESC)",
             "CREATE INDEX IF NOT EXISTS idx_snapshots_router_date ON stats_snapshots(router_key, snapshot_date DESC)",
+            "CREATE INDEX IF NOT EXISTS idx_tracked_messages_chat ON tracked_messages(chat_id)",
+            "CREATE INDEX IF NOT EXISTS idx_tracked_messages_date ON tracked_messages(tracked_at)",
         ]
         for idx in indexes:
             try:
@@ -248,6 +250,15 @@ def init_db():
         """)
 
         cursor.execute("""
+            CREATE TABLE IF NOT EXISTS tracked_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER NOT NULL,
+                message_id INTEGER NOT NULL,
+                tracked_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS stats_snapshots (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 router_key TEXT NOT NULL,
@@ -388,6 +399,12 @@ from database.repositories.backups import (
     get_recent_backups,
     BACKUP_JOBS_RETENTION_PER_ROUTER,
 )
+from database.repositories.chat_messages import (
+    add_tracked_message,
+    get_tracked_messages,
+    remove_tracked_messages,
+    delete_stale_records,
+)
 
 __all__ = [
     "DB_PATH",
@@ -436,4 +453,8 @@ __all__ = [
     "get_last_backup",
     "get_recent_backups",
     "BACKUP_JOBS_RETENTION_PER_ROUTER",
+    "add_tracked_message",
+    "get_tracked_messages",
+    "remove_tracked_messages",
+    "delete_stale_records",
 ]

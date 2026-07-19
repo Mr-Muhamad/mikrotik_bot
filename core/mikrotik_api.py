@@ -59,8 +59,12 @@ class MikrotikAPI:
         """
         self._pool.invalidate_version(router_key)
 
+    def get_cached_version(self, router_key: str = "router1") -> str | None:
+        """Returns the version from cache without hitting the network."""
+        return self._pool.get_version(router_key)
+
     def get_version(self, router_key: str = "router1") -> str:
-        cached = self._pool.get_version(router_key)
+        cached = self.get_cached_version(router_key)
         if cached:
             return cached
         try:
@@ -99,6 +103,9 @@ class MikrotikAPI:
 
     def get_router_info(self, router_key: str) -> dict:
         return self._pool.get_router_info(router_key)
+
+    def has_active_connection(self, router_key: str) -> bool:
+        return self._pool.has_active_connection(router_key)
 
     @contextlib.contextmanager
     def _connection_ctx(self, router_key: str, timeout: int, force_reconnect: bool = False):
