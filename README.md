@@ -7,6 +7,7 @@
 - اكتشاف روترات MikroTik على الشبكة عبر MNDP وحفظها محلياً.
 - اختيار راوتر نشط لكل مشرف وحفظ الاختيار في SQLite.
 - إدارة مستخدمي Hotspot: إضافة، تعديل، حذف، بحث، طرد أجهزة، وتقرير استخدام.
+- دعم عرض القوائم الطويلة (Pagination) في الكروت، وعمليات البحث و User Manager.
 - إنشاء كروت Hotspot عشوائية وإرسال PDF جاهز للطباعة.
 - إدارة User Manager: إنشاء كروت، عرض المستخدمين، جلب البروفايلات.
 - نسخ احتياطي يدوي للنظام وUser Manager، وجدولة نسخ يومية عبر JobQueue.
@@ -17,6 +18,8 @@
 - سجل تدقيق `/logs` للعمليات المهمة.
 - تشفير كلمات مرور الروترات المحفوظة باستخدام Fernet.
 - حماية إدارية عبر `ADMIN_IDS`، rate limit، deduplication للـ callbacks، وتعقيم للأخطاء الحساسة.
+- نماذج بيانات محكمة (Typed Dataclasses) لإدارة تدفق المحادثات بشكل آمن.
+- قاعدة بيانات متطورة تدار عبر `Alembic` لدعم ترقيات المخططات مستقبلاً بأمان.
 
 ## المتطلبات
 
@@ -66,7 +69,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 python main.py
 ```
 
-`main.py` يقوم بتهيئة قاعدة البيانات، بناء تطبيق Telegram، تسجيل المعالجات من `utils/registrations.py`، ضبط أوامر Telegram من `utils/bot_commands.py`، استعادة جدولة النسخ الاحتياطي، وتشغيل watchdog مع graceful shutdown عبر signal handlers.
+`main.py` يقوم بتهيئة قاعدة البيانات (مع تشغيل ترقيات Alembic بشكل آلي)، بناء تطبيق Telegram، تسجيل المعالجات من `bot/registrations.py`، ضبط أوامر Telegram من `utils/bot_commands.py`، استعادة جدولة النسخ الاحتياطي، وتشغيل watchdog مع graceful shutdown عبر signal handlers.
 
 ## الأوامر
 
@@ -121,7 +124,9 @@ mikrotik_bot/
 │   │   ├── router_flows/      # discover, saved, rename, reboot flows
 │   │   ├── hotspot_*.py       # Hotspot add/edit/delete/search/cards
 │   │   ├── hotspot_flow_utils.py # أدوات مساعدة مشتركة محدودة لبعض تدفقات Hotspot
+│   │   ├── session_models.py  # نماذج بيانات قوية (Dataclasses) لبيانات المحادثات
 │   │   ├── userman.py         # User Manager
+│   │   ├── userman_search.py  # البحث عن مستخدمي User Manager
 │   │   ├── backup.py          # النسخ الاحتياطي والجدولة
 │   │   ├── backup_restore.py  # الاستعادة
 │   │   ├── stats.py           # الإحصائيات
@@ -131,7 +136,7 @@ mikrotik_bot/
 │   │   └── watchdog.py        # مراقبة الروترات
 │   ├── helpers/profiles.py    # جلب وكاش البروفايلات
 │   ├── keyboards.py           # أزرار InlineKeyboard
-│   ├── messages.py            # النصوص العربية
+│   ├── messages.py            # مركز النصوص العربية والرسائل
 │   └── router_selector.py     # حالة الراوتر والجلسة
 ├── core/
 │   ├── mikrotik_api.py        # تنفيذ أوامر RouterOS
@@ -151,7 +156,10 @@ mikrotik_bot/
 │   ├── profile_sync.py        # جلب بروفايلات User Manager
 │   ├── stats.py               # إحصائيات عامة
 │   └── watchdog.py            # فحص صحة الراوترات
-├── database/models.py         # SQLite schema وCRUD وmigrations خفيفة
+├── database/                  # قواعد البيانات
+│   ├── models.py              # النماذج وعمليات CRUD
+│   └── alembic/               # ترقيات المخطط (Migrations)
+├── alembic.ini                # إعدادات أداة Alembic
 ├── pdf/                       # توليد PDF للكروت
 ├── scripts/                   # أدوات التحقق والإصدار
 └── tests/                     # اختبارات pytest
@@ -159,8 +167,8 @@ mikrotik_bot/
 
 ## المعمارية
 
-- يعتمد البوت على `python-telegram-bot` و`ConversationHandler` لتدفقات المحادثة متعددة الخطوات.
-- التسجيل الفعلي للمعالجات موجود في `utils/registrations.py`، وليس داخل `main.py` مباشرة.
+- يعتمد البوت على `python-telegram-bot` و`ConversationHandler` لتدفقات المحادثة متعددة الخطوات، مدعوماً بنماذج بيانات `Dataclasses` لضمان النوعية (`Type Safety`).
+- التسجيل الفعلي للمعالجات موجود في `bot/registrations.py`.
 - `utils/handler_registry.py` يبني `ConversationHandler` الرئيسي، ويدعم أيضاً `ConversationHandler`ات مستقلة لبعض التدفقات.
 - `concurrent_updates(False)` مفعل لضمان استقرار FSM.
 - عمليات MikroTik المتزامنة يتم تنفيذها عبر `run_blocking()` حتى لا يتم حجب event loop.
@@ -184,6 +192,8 @@ cryptography>=41.0
 qrcode>=7.0
 arabic-reshaper>=3.0.0
 python-bidi>=0.4.0
+alembic>=1.13.1
+sqlalchemy>=2.0.0
 ruff>=0.3.0
 ```
 
