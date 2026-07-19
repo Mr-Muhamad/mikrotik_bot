@@ -1,0 +1,41 @@
+{
+  "project_name": "mikrotik_bot",
+  "version": "1.0.0",
+  "last_updated": "2026-07-19T14:00:00Z",
+  "architecture": {
+    "framework": "python-telegram-bot v21+",
+    "database": "SQLite + Alembic",
+    "bot_routing": "ConversationHandler (Centralized in bot/registrations.py)",
+    "state_management": "Typed Dataclasses (bot/handlers/session_models.py)",
+    "localization": "Centralized strings (bot/messages.py)",
+    "mikrotik_api": "librouteros with in-memory connection pooling"
+  },
+  "key_decisions": [
+    {
+      "decision": "Use Alembic for database migrations",
+      "reason": "Avoid manual CREATE TABLE scripts and safely evolve the schema without losing production data.",
+      "date": "2026-07-19"
+    },
+    {
+      "decision": "Use Dataclasses for Hotspot/User Manager sessions",
+      "reason": "Eliminate Primitive Obsession, prevent typos in dict keys, and ensure type safety.",
+      "date": "2026-07-19"
+    },
+    {
+      "decision": "Centralize all Arabic strings",
+      "reason": "Remove Magic Strings from handlers, simplify translation, and standardize the UX.",
+      "date": "2026-07-19"
+    },
+    {
+      "decision": "Pagination for long lists (Server-side and In-memory)",
+      "reason": "Telegram limits message size and callback data. Paginating results prevents memory bloat and API crashes.",
+      "date": "2026-07-19"
+    },
+    {
+      "decision": "Move general Telegram helpers to utils/tg_helpers.py",
+      "reason": "Prevent circular imports between utils/error_response.py and bot/handlers/.",
+      "date": "2026-07-19"
+    }
+  ],
+  "testing_status": "All 808 tests passing. Circular imports and Pyright type issues resolved."
+}
