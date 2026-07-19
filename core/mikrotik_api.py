@@ -240,6 +240,15 @@ class MikrotikAPI:
         self, ip: str, username: str, password: str, port: int = DEFAULT_API_PORT
     ) -> tuple[bool, str, str]:
         api = None
+        # Fast reachability check (2 seconds) before full Mikrotik authentication
+        import socket
+        try:
+            with socket.create_connection((ip, port), timeout=2.0):
+                pass
+        except OSError as e:
+            logger.warning(f"Fast port check failed for {ip}:{port} - {e}")
+            return False, f"Port {port} closed/unreachable", ""
+            
         try:
             api = connect(
                 username=username,

@@ -92,29 +92,53 @@ CONVERSATION_USER_DATA_KEYS = (
 def get_user_routers(user_id: int) -> list[dict]:
     """Return the list of routers this user is allowed to manage.
 
-    - للـ admin (ADMIN_IDS): كل الروترات النشطة
-    - للمشغّل (operator/viewer): الروترات المخصصة له فقط
-    - إن لم تكن له روترات مخصصة: قائمة فارغة مع رسالة
+    - للـ Super Admin (ADMIN_IDS): كل الروترات النشطة.
+    - للعميل (المسجل في roles): الروترات التي يملكها فقط (owner_id).
+    - إن لم يملك روترات: قائمة فارغة.
     """
     from config import ADMIN_IDS
-    from database.models import get_saved_routers, get_operator_routers
-
-    all_routers = get_saved_routers(active_only=True)
+    from database.models import get_saved_routers
 
     if user_id in ADMIN_IDS:
-        return all_routers
+        return get_saved_routers(active_only=True)
 
-    # مشغّل — نُصفّي حسب الأذونات
-    allowed_ids = get_operator_routers(user_id)
-    if not allowed_ids:
-        return []
-    return [r for r in all_routers if r.get("id") in allowed_ids]
+    # عميل — نُصفّي حسب المالك
+    return get_saved_routers(active_only=True, owner_id=user_id)
 
 
 def get_selected_router(user_id):
-    """Return the currently selected router key for a user, or None."""
+    """Return the currently selected router key for a user, or None if expired/not set."""
     session = get_user_session(user_id)
-    selected_router = session.get("selected_router") if session else None
+    if not session:
+        return None
+
+    selected_router = session.get("selected_router")
+    if not selected_router:
+        return None
+
+    # Check session timeout
+    from datetime import datetime, timezone
+    from database.models import UTC_TIMESTAMP_FORMAT
+    from database.repositories.user_sessions import clear_router_session
+
+    last_activity_str = session.get("last_activity")
+    timeout_mins = session.get("session_timeout", 15) or 15
+
+    # Only enforce if timeout_mins is > 0. If timeout_mins <= 0, it means no timeout.
+    if last_activity_str and timeout_mins > 0:
+        try:
+            last_activity = datetime.strptime(last_activity_str, UTC_TIMESTAMP_FORMAT).replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            diff = (now - last_activity).total_seconds() / 60.0
+            
+            if diff > timeout_mins:
+                # Session expired
+                logger.info(f"User {user_id} session expired after {diff:.1f} minutes of inactivity.")
+                clear_router_session(user_id)
+                return None
+        except Exception as e:
+            logger.warning(f"Failed to parse last_activity for user {user_id}: {e}")
+
     return selected_router
 
 
@@ -159,6 +183,42 @@ def cleanup_state(user_id: int, user_data: dict[str, Any] | None) -> None:
             user_data.pop(key, None)
 
 
+async def _try_auto_connect(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int) -> str | None:
+    """محاولة الاتصال التلقائي إذا كان لدى المستخدم راوتر واحد فقط محفوظ."""
+    routers = get_user_routers(user_id)
+    if len(routers) == 1:
+        router = routers[0]
+        if router.get("username"):
+            from core.mikrotik_api import mikrotik_api
+            from utils.async_blocking import run_blocking
+            from config import ROUTER_KEY_PREFIX
+
+            # Notify user to show progress
+            if update.callback_query:
+                try:
+                    await update.callback_query.answer("جاري الاتصال بالراوتر الوحيد...")
+                except Exception:
+                    pass
+
+            success, _, _ = await run_blocking(
+                mikrotik_api.test_connection,
+                router["ip_address"], router["username"], router["password"], router["port"]
+            )
+            if success:
+                router_id = router["id"]
+                router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
+                set_selected_router(user_id, router_key)
+                
+                # تحديث حالة الـ Watchdog
+                from core.watchdog import check_router_health
+                from database.models import update_router_last_seen
+                await run_blocking(update_router_last_seen, router_id)
+                await run_blocking(check_router_health, router_key)
+                
+                return router_key
+    return None
+
+
 def require_router(func):
     """Ensure a router is selected before running a handler.
 
@@ -172,6 +232,9 @@ def require_router(func):
         if user_id is None:
             return
         router_key = get_selected_router(user_id)
+        if not router_key:
+            router_key = await _try_auto_connect(update, context, user_id)
+            
         if not router_key:
             keyboard = get_router_keyboard()
             if update.callback_query:
@@ -203,6 +266,9 @@ def navigation_guard(func):
         if user_id is None:
             return
         router_key = get_selected_router(user_id)
+        if not router_key:
+            router_key = await _try_auto_connect(update, context, user_id)
+            
         if not router_key:
             keyboard = get_router_keyboard()
             if update.callback_query:
