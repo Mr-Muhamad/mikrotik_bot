@@ -74,6 +74,8 @@ def mock_mikrotik_api():
     ), patch(
         "bot.handlers.common.mikrotik_api", mock
     ), patch(
+        "bot.handlers.router_system.mikrotik_api", mock
+    ), patch(
         "bot.handlers.stats.mikrotik_api", mock
     ), patch(
         "core.stats.mikrotik_api", mock
