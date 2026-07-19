@@ -120,3 +120,94 @@ def format_user_list(users: list[dict], max_items: int = 20) -> str:
         lines.append(f"... و {len(users) - max_items} مستخدمين آخرين")
 
     return "\n".join(lines)
+
+
+def format_hotspot_stats(stats: dict | None, router_name: str) -> str:
+    """Format hotspot stats dict into an Arabic display string."""
+    if not stats:
+        return "❌ خطأ في جلب إحصائيات Hotspot"
+
+    bytes_str = format_bytes(str(stats["total_bytes"]))
+
+    return (
+        f"📊 إحصائيات Hotspot - {router_name}\n\n"
+        f"👥 إجمالي المستخدمين: {stats['total_users']}\n"
+        f"🟢 نشط: {stats['active_users']}\n"
+        f"🔴 غير نشط: {stats['inactive_users']}\n"
+        f"📦 إجمالي البيانات: {bytes_str}"
+    )
+
+
+def format_userman_stats(stats: dict | None, router_name: str) -> str:
+    """Format User Manager stats dict into an Arabic display string."""
+    if not stats:
+        return "❌ خطأ في جلب إحصائيات User Manager"
+
+    return (
+        f"📊 إحصائيات User Manager - {router_name}\n\n"
+        f"🎫 إجمالي الكروت: {stats['total_users']}\n"
+        f"🟢 نشطة: {stats['enabled_users']}\n"
+        f"🔴 منتهية/معطلة: {stats['disabled_users']}"
+    )
+
+
+def format_hotspot_usage_report(report: dict, router_name: str) -> str:
+    """Format a Hotspot usage report dict into an Arabic Telegram summary."""
+    if not report or report.get("total", 0) == 0:
+        return f"📊 تقرير استخدام Hotspot - {router_name}\n\n📭 لا يوجد مستخدمون لإنشاء تقرير."
+
+    lines = [
+        f"📊 تقرير استخدام Hotspot - {router_name}",
+        "",
+        f"👥 إجمالي المستخدمين: {report['total']}",
+        f"🟢 نشط: {report['active']}",
+        f"🔴 معطل: {report['disabled']}",
+        f"📊 بحد بيانات: {report['with_limit']}",
+        f"📦 إجمالي البيانات: {report['total_bytes_str']}",
+        "",
+        f"⏳ مقترب من الحد: {len(report['near_limit'])}",
+        f"⌛ منتهٍ (وصل الحد): {len(report['expired'])}",
+        f"💤 غير نشط: {len(report['inactive'])}",
+        "",
+        "🔝 الأكثر استهلاكاً:",
+    ]
+    for r in report.get("top_consumers", [])[:5]:
+        lines.append(f"• {r['name']}: {r['total_str']} ({r['percent']:.0f}%)")
+    return "\n".join(lines)
+
+
+def format_trend_chart(snapshots: list[dict]) -> str:
+    """تنسيق آخر 7 أيام كـ ASCII bar chart نصي بسيط.
+
+    كل سطر: التاريخ | شريط | عدد المستخدمين
+    """
+    if not snapshots:
+        return ""
+    max_active = max((s.get("active_users", 0) for s in snapshots), default=1) or 1
+    lines = []
+    for s in snapshots:
+        day = s.get("snapshot_date", "")[-5:]  # MM-DD فقط
+        active = s.get("active_users", 0)
+        bar_len = round((active / max_active) * 8)
+        bar = "█" * bar_len
+        lines.append(f"{day} | {bar:<8} {active}")
+    return "\n".join(lines)
+
+
+def format_vs_yesterday(current: dict, yesterday: dict | None) -> str:
+    """مقارنة المستخدمين النشطين اليوم مقابل الأمس.
+
+    يُعيد نص HTML مثل: ↑5 مقارنةً بالأمس (25 → 30)
+    """
+    if not yesterday:
+        return ""
+    prev = yesterday.get("active_users", 0)
+    curr = current.get("active_users", 0)
+    diff = curr - prev
+    if diff > 0:
+        arrow = "↑"
+    elif diff < 0:
+        arrow = "↓"
+    else:
+        arrow = "↔"
+    return f"{arrow}{abs(diff)} مقارنةً بالأمس ({prev} → {curr})"

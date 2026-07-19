@@ -136,7 +136,7 @@ class BackupScheduler:
         from core.hotspot_manager import hotspot_manager
         from config import ROUTER_KEY_PREFIX, ADMIN_IDS
         from database.models import get_saved_routers
-        from bot.messages import EXPIRY_ALERT_HEADER, EXPIRY_ALERT_USER_ROW
+        from core.messages_expiry import EXPIRY_ALERT_HEADER, EXPIRY_ALERT_USER_ROW
 
         routers = await run_blocking(get_saved_routers, active_only=True)
         days = 3
