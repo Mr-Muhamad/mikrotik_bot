@@ -1,5 +1,5 @@
 {
-  "include": ["bot", "core", "database", "utils", "pdf", "main.py", "config.py"],
+  "include": ["bot", "core", "database", "utils", "pdf", "alembic", "main.py", "config.py"],
   "exclude": [
     "**/__pycache__",
     "**/venv",
@@ -8,6 +8,7 @@
     "**/node_modules"
   ],
   "pythonVersion": "3.12",
+  "pythonPath": "C:/Users/Administrator/AppData/Local/Programs/Python/Python312/python.exe",
   "typeCheckingMode": "standard",
   "reportOptionalMemberAccess": "none",
   "reportOptionalSubscript": "none",
