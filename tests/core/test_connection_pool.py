@@ -27,8 +27,10 @@ def fake_api():
 
 def _router_db_row(router_id=1, ip="10.0.0.1"):
     return {
-        "ip_address": ip, "port": 8728,
-        "username": "admin", "password": "pass",
+        "ip_address": ip,
+        "port": 8728,
+        "username": "admin",
+        "password": "pass",
         "identity": f"Router{router_id}",
     }
 
@@ -57,43 +59,54 @@ class TestRouterInfo:
 
 class TestGetConnection:
     def test_first_call_creates_connection(self, pool, fake_api):
-        with patch("core.connection_pool.get_router_by_id", return_value=_router_db_row()), \
-             patch("core.connection_pool.connect", return_value=fake_api) as mock_connect:
+        with patch(
+            "core.connection_pool.get_router_by_id", return_value=_router_db_row()
+        ), patch("core.connection_pool.connect", return_value=fake_api) as mock_connect:
             api = pool.get_connection("discovered_1")
             assert api is fake_api
             assert "discovered_1" in pool.pools
             assert mock_connect.called
 
     def test_repeated_calls_use_cache(self, pool, fake_api):
-        with patch("core.connection_pool.get_router_by_id", return_value=_router_db_row()), \
-             patch("core.connection_pool.connect", return_value=fake_api) as mock_connect:
+        with patch(
+            "core.connection_pool.get_router_by_id", return_value=_router_db_row()
+        ), patch("core.connection_pool.connect", return_value=fake_api) as mock_connect:
             api1 = pool.get_connection("discovered_1")
             pool.release_connection("discovered_1", api1)
-            
+
             api2 = pool.get_connection("discovered_1")
             pool.release_connection("discovered_1", api2)
-            
+
             api3 = pool.get_connection("discovered_1")
             pool.release_connection("discovered_1", api3)
-            
+
             assert mock_connect.call_count == 1
             assert pool.cache_hits == 2
 
 
 class TestRetry:
     def test_connect_fails_after_max_retries(self, pool):
-        with patch("core.connection_pool.get_router_by_id", return_value=_router_db_row()), \
-             patch("core.connection_pool.connect", side_effect=LibRouterosError("refused")) as mock_connect, \
-             patch("core.connection_pool.time.sleep"):
+        with patch(
+            "core.connection_pool.get_router_by_id", return_value=_router_db_row()
+        ), patch(
+            "core.connection_pool.connect", side_effect=LibRouterosError("refused")
+        ) as mock_connect, patch(
+            "core.connection_pool.time.sleep"
+        ):
             with pytest.raises(LibRouterosError):
                 pool.get_connection("discovered_1")
             assert mock_connect.call_count == 1 + MAX_RETRIES
             assert pool.failed_connections == 1 + MAX_RETRIES
 
     def test_connect_succeeds_on_retry(self, pool, fake_api):
-        with patch("core.connection_pool.get_router_by_id", return_value=_router_db_row()), \
-             patch("core.connection_pool.connect", side_effect=[LibRouterosError("refused"), fake_api]), \
-             patch("core.connection_pool.time.sleep"):
+        with patch(
+            "core.connection_pool.get_router_by_id", return_value=_router_db_row()
+        ), patch(
+            "core.connection_pool.connect",
+            side_effect=[LibRouterosError("refused"), fake_api],
+        ), patch(
+            "core.connection_pool.time.sleep"
+        ):
             api = pool.get_connection("discovered_1")
             assert api is fake_api
             assert pool.successful_connections == 1
@@ -102,37 +115,41 @@ class TestRetry:
 
 class TestReleaseConnection:
     def test_release_connection_adds_to_queue(self, pool, fake_api):
-        with patch("core.connection_pool.get_router_by_id", return_value=_router_db_row()), \
-             patch("core.connection_pool.connect", return_value=fake_api):
+        with patch(
+            "core.connection_pool.get_router_by_id", return_value=_router_db_row()
+        ), patch("core.connection_pool.connect", return_value=fake_api):
             api = pool.get_connection("discovered_1")
             q = pool.pools["discovered_1"]
             assert q.empty()
-            
+
             pool.release_connection("discovered_1", api)
             assert not q.empty()
             assert pool.active_counts["discovered_1"] == 1
 
     def test_release_broken_connection_closes_and_discards(self, pool, fake_api):
-        with patch("core.connection_pool.get_router_by_id", return_value=_router_db_row()), \
-             patch("core.connection_pool.connect", return_value=fake_api):
+        with patch(
+            "core.connection_pool.get_router_by_id", return_value=_router_db_row()
+        ), patch("core.connection_pool.connect", return_value=fake_api):
             api = pool.get_connection("discovered_1")
             pool.release_connection("discovered_1", api, broken=True)
-            
+
             fake_api.close.assert_called_once()
             q = pool.pools["discovered_1"]
             assert q.empty()
             assert pool.active_counts["discovered_1"] == 0
 
+
 class TestCloseAll:
     def test_close_all_clears_everything(self, pool, fake_api):
-        with patch("core.connection_pool.get_router_by_id", return_value=_router_db_row()), \
-             patch("core.connection_pool.connect", return_value=fake_api):
+        with patch(
+            "core.connection_pool.get_router_by_id", return_value=_router_db_row()
+        ), patch("core.connection_pool.connect", return_value=fake_api):
             api1 = pool.get_connection("discovered_1")
             pool.release_connection("discovered_1", api1)
-            
+
             api2 = pool.get_connection("discovered_2")
             pool.release_connection("discovered_2", api2)
-            
+
             pool.close_all()
             metrics = pool.get_metrics()
             assert metrics["idle_connections"] == 0
@@ -180,14 +197,15 @@ class TestMetrics:
         assert metrics["active_connections"] == 0
 
     def test_get_metrics_after_connection(self, pool, fake_api):
-        with patch("core.connection_pool.get_router_by_id", return_value=_router_db_row()), \
-             patch("core.connection_pool.connect", return_value=fake_api):
+        with patch(
+            "core.connection_pool.get_router_by_id", return_value=_router_db_row()
+        ), patch("core.connection_pool.connect", return_value=fake_api):
             api = pool.get_connection("discovered_1")
             metrics = pool.get_metrics()
             assert metrics["total_attempts"] == 1
             assert metrics["active_connections"] == 1
             assert metrics["idle_connections"] == 0
-            
+
             pool.release_connection("discovered_1", api)
             metrics2 = pool.get_metrics()
             assert metrics2["active_connections"] == 1

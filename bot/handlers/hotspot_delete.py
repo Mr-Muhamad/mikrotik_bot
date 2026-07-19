@@ -1,7 +1,11 @@
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from bot.keyboards import get_cancel_keyboard, get_confirm_keyboard, get_hotspot_keyboard
+from bot.keyboards import (
+    get_cancel_keyboard,
+    get_confirm_keyboard,
+    get_hotspot_keyboard,
+)
 from bot.messages import (
     CANCELLED,
     CONFIRM_DELETE,
@@ -10,12 +14,17 @@ from bot.messages import (
     SUCCESS_DELETE,
     USER_NOT_FOUND,
 )
-from bot.router_selector import cleanup_state, get_selected_router, nav_set, set_current_action
+from bot.router_selector import (
+    cleanup_state,
+    get_selected_router,
+    nav_set,
+    set_current_action,
+)
 from core.hotspot_manager import hotspot_manager
 from database.models import log_action
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
-from utils.callback_utils import safe_answer_callback,is_duplicate_callback
+from utils.callback_utils import safe_answer_callback, is_duplicate_callback
 from utils.chat_cleaner import delete_now, edit_clean, send_step
 from utils.error_response import send_error
 from .constants import WAITING_DELETE_ID, WAITING_INPUT
@@ -59,7 +68,10 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
         return WAITING_INPUT
     except Exception as e:
         await send_error(
-            update, context, e, router_key=router_key,
+            update,
+            context,
+            e,
+            router_key=router_key,
             log_extra="hotspot_delete_select",
             reply_markup=get_hotspot_keyboard(),
         )
@@ -84,17 +96,24 @@ async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = context.user_data.get("delete_user_id")
 
         if not router_key or not user_id:
-            await query.edit_message_text(INCOMPLETE_DATA, reply_markup=get_hotspot_keyboard())
+            await query.edit_message_text(
+                INCOMPLETE_DATA, reply_markup=get_hotspot_keyboard()
+            )
             cleanup_state(query.from_user.id, context.user_data)
             return ConversationHandler.END
 
         try:
             await run_blocking(hotspot_manager.delete_user, router_key, user_id)
-            await run_blocking(log_action, "delete_user", user_id, router_key, query.from_user.id)
+            await run_blocking(
+                log_action, "delete_user", user_id, router_key, query.from_user.id
+            )
             await edit_clean(query, context, SUCCESS_DELETE, get_hotspot_keyboard())
         except Exception as e:
             await send_error(
-                update, context, e, router_key=router_key,
+                update,
+                context,
+                e,
+                router_key=router_key,
                 log_extra="confirm_callback",
                 reply_markup=get_hotspot_keyboard(),
             )

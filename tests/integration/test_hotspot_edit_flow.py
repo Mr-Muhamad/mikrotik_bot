@@ -17,8 +17,8 @@ from bot.handlers.hotspot_edit import (
 )
 from core.hotspot_manager import hotspot_manager
 from tests.fixtures.telegram_mocks import make_mock_update
+from bot.handlers.session_models import get_hotspot_edit_session
 from utils import admin_decorator
-
 
 ADMIN_ID = 724730774
 ROUTER_KEY = "discovered_1"
@@ -41,9 +41,7 @@ def _make_context():
 
 
 def _seed_user(name="edit_user", uid_hint="*99"):
-    hotspot_manager.add_user(
-        ROUTER_KEY, name=name, password="1234", profile="default"
-    )
+    hotspot_manager.add_user(ROUTER_KEY, name=name, password="1234", profile="default")
     users = hotspot_manager.search_users(ROUTER_KEY, name)
     if users:
         return users[0]
@@ -81,8 +79,8 @@ class TestHotspotEditSelect:
         result = await hotspot_edit_select(update, context)
 
         assert result == WAITING_EDIT_VALUE
-        assert context.user_data["edit_user_id"] == uid
-        assert context.user_data["edit_user_data"] == user
+        assert get_hotspot_edit_session(context.user_data).user_id == uid
+        assert get_hotspot_edit_session(context.user_data).user_data == user
 
     @pytest.mark.asyncio
     async def test_select_nonexistent_user_ends(self, mock_mikrotik_api):
@@ -104,7 +102,10 @@ class TestHotspotEditSelect:
         context = _make_context()
 
         with patch("bot.handlers.hotspot_edit.send_error", new=AsyncMock()) as mock_err:
-            with patch("bot.handlers.hotspot_edit.run_blocking", new=AsyncMock(side_effect=Exception("err"))):
+            with patch(
+                "bot.handlers.hotspot_edit.run_blocking",
+                new=AsyncMock(side_effect=Exception("err")),
+            ):
                 result = await hotspot_edit_select(update, context)
         assert result == ConversationHandler.END
         mock_err.assert_called_once()
@@ -120,8 +121,8 @@ class TestHotspotEditField:
         user = _seed_user("pwme")
         update = make_mock_update(callback_data="edit_field_password")
         context = _make_context()
-        context.user_data["edit_user_data"] = user
-        context.user_data["edit_user_id"] = user[".id"]
+        get_hotspot_edit_session(context.user_data).user_data = user
+        get_hotspot_edit_session(context.user_data).user_id = user[".id"]
 
         result = await hotspot_edit_field(update, context)
         assert result == WAITING_EDIT_VALUE
@@ -135,8 +136,8 @@ class TestHotspotEditField:
         user = _seed_user("profme")
         update = make_mock_update(callback_data="edit_field_profile")
         context = _make_context()
-        context.user_data["edit_user_data"] = user
-        context.user_data["edit_user_id"] = user[".id"]
+        get_hotspot_edit_session(context.user_data).user_data = user
+        get_hotspot_edit_session(context.user_data).user_id = user[".id"]
 
         result = await hotspot_edit_field(update, context)
         assert result == WAITING_EDIT_VALUE
@@ -151,12 +152,14 @@ class TestHotspotEditField:
         user = _seed_user("prof_err")
         update = make_mock_update(callback_data="edit_field_profile")
         context = _make_context()
-        context.user_data["edit_user_data"] = user
-        context.user_data["edit_user_id"] = user[".id"]
+        get_hotspot_edit_session(context.user_data).user_data = user
+        get_hotspot_edit_session(context.user_data).user_id = user[".id"]
 
         with patch("bot.handlers.hotspot_edit.send_error", new=AsyncMock()) as mock_err:
-            with patch("bot.handlers.hotspot_edit.fetch_and_cache_profiles",
-                       new=AsyncMock(side_effect=Exception("net"))):
+            with patch(
+                "bot.handlers.hotspot_edit.fetch_and_cache_profiles",
+                new=AsyncMock(side_effect=Exception("net")),
+            ):
                 result = await hotspot_edit_field(update, context)
         assert result == WAITING_EDIT_VALUE
         mock_err.assert_called_once()
@@ -174,9 +177,9 @@ class TestHotspotEditValue:
         uid = user[".id"]
         update = make_mock_update(text="newpass")
         context = _make_context()
-        context.user_data["edit_field"] = "password"
-        context.user_data["edit_user_id"] = uid
-        context.user_data["edit_user_data"] = dict(user)
+        get_hotspot_edit_session(context.user_data).current_field = "password"
+        get_hotspot_edit_session(context.user_data).user_id = uid
+        get_hotspot_edit_session(context.user_data).user_data = dict(user)
 
         result = await hotspot_edit_value(update, context)
         assert result == WAITING_EDIT_VALUE
@@ -195,9 +198,9 @@ class TestHotspotEditValue:
         uid = user[".id"]
         update = make_mock_update(text="premium")
         context = _make_context()
-        context.user_data["edit_field"] = "profile"
-        context.user_data["edit_user_id"] = uid
-        context.user_data["edit_user_data"] = dict(user)
+        get_hotspot_edit_session(context.user_data).current_field = "profile"
+        get_hotspot_edit_session(context.user_data).user_id = uid
+        get_hotspot_edit_session(context.user_data).user_data = dict(user)
 
         result = await hotspot_edit_value(update, context)
         assert result == WAITING_EDIT_VALUE
@@ -216,9 +219,9 @@ class TestHotspotEditValue:
         uid = user[".id"]
         update = make_mock_update(text="1G")
         context = _make_context()
-        context.user_data["edit_field"] = "bytes"
-        context.user_data["edit_user_id"] = uid
-        context.user_data["edit_user_data"] = dict(user)
+        get_hotspot_edit_session(context.user_data).current_field = "bytes"
+        get_hotspot_edit_session(context.user_data).user_id = uid
+        get_hotspot_edit_session(context.user_data).user_data = dict(user)
 
         result = await hotspot_edit_value(update, context)
         assert result == WAITING_EDIT_VALUE
@@ -249,12 +252,15 @@ class TestHotspotEditValue:
         uid = user[".id"]
         update = make_mock_update(text="newpass")
         context = _make_context()
-        context.user_data["edit_field"] = "password"
-        context.user_data["edit_user_id"] = uid
-        context.user_data["edit_user_data"] = dict(user)
+        get_hotspot_edit_session(context.user_data).current_field = "password"
+        get_hotspot_edit_session(context.user_data).user_id = uid
+        get_hotspot_edit_session(context.user_data).user_data = dict(user)
 
         with patch("bot.handlers.hotspot_edit.send_error", new=AsyncMock()) as mock_err:
-            with patch("bot.handlers.hotspot_edit.run_blocking", new=AsyncMock(side_effect=Exception("net"))):
+            with patch(
+                "bot.handlers.hotspot_edit.run_blocking",
+                new=AsyncMock(side_effect=Exception("net")),
+            ):
                 result = await hotspot_edit_value(update, context)
         assert result == WAITING_EDIT_VALUE
         mock_err.assert_called_once()

@@ -10,13 +10,35 @@ from bot.keyboards import (
     get_stats_keyboard,
     get_backup_keyboard,
     get_pdf_settings_keyboard,
+    get_routers_keyboard,
+    get_reports_keyboard,
 )
 from bot.messages import (
-    WELCOME, MAIN_MENU, SELECT_ROUTER, HELP, HOTSPOT_MENU,
-    USERMAN_MENU, STATS_MENU, BACKUP_MENU, PDF_SETTINGS_MENU, CLEAN_DONE,
+    WELCOME,
+    MAIN_MENU,
+    SELECT_ROUTER,
+    HELP,
+    HOTSPOT_MENU,
+    USERMAN_MENU,
+    STATS_MENU,
+    BACKUP_MENU,
+    PDF_SETTINGS_MENU,
+    CLEAN_DONE,
     SYNC_COMMANDS_DONE,
-    METRICS_HEADER, METRICS_ACTIVE, METRICS_STALE, METRICS_TOTAL,
-    METRICS_SUCCESS, METRICS_FAILED, METRICS_CACHE,
+    ROUTERS_MENU,
+    REPORTS_MENU,
+    ROUTER_SYSTEM_BOTH,
+    ROUTER_SYSTEM_HOTSPOT,
+    ROUTER_SYSTEM_USERMAN,
+    ROUTER_SYSTEM_UNKNOWN,
+    METRICS_HEADER,
+    METRICS_ACTIVE,
+    METRICS_STALE,
+    METRICS_TOTAL,
+    METRICS_SUCCESS,
+    METRICS_FAILED,
+    METRICS_CACHE,
+    METRICS_SERVER_HEALTH,
 )
 from bot.router_selector import (
     get_selected_router,
@@ -26,16 +48,31 @@ from bot.router_selector import (
     nav_get,
     cleanup_state,
 )
-from bot.handlers.constants import WAITING_DELETE_SELECT, WAITING_CARD_TYPE, WAITING_CARD_PROFILE
+from bot.handlers.constants import (
+    WAITING_DELETE_SELECT,
+    WAITING_CARD_TYPE,
+    WAITING_CARD_PROFILE,
+)
 from core.mikrotik_api import mikrotik_api
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
-from utils.chat_cleaner import clean_chat_messages, schedule_delete, send_step, send_and_track, delete_now, safe_edit_or_send
+from utils.chat_cleaner import (
+    clean_chat_messages,
+    schedule_delete,
+    send_step,
+    send_and_track,
+    delete_now,
+    safe_edit_or_send,
+)
 from utils.callback_utils import safe_answer_callback
 from utils.bot_commands import set_bot_commands
 from bot.handlers.routers import saved_routers_list as sr
 
 logger = logging.getLogger(__name__)
+
+# Module-level TTL-free cache for detected router subsystem type.
+# Keyed by router_key; invalidated on router switch/cleanup.
+_router_system_cache: dict[str, str] = {}
 
 
 async def _get_router_part(router_key: str | None, fmt: str = "\n📡 {}") -> str:
@@ -52,6 +89,65 @@ async def _get_router_part(router_key: str | None, fmt: str = "\n📡 {}") -> st
         return ""
 
 
+async def _get_router_system_part(router_key: str | None) -> str:
+    """Detect which user-management subsystem is active on the router.
+
+    Hotspot and User Manager are SEPARATE RouterOS subsystems with different
+    APIs and data stores. We probe both quickly and cache the result in
+    user_data to avoid repeated network calls on every menu render.
+    Returns one of ROUTER_SYSTEM_* constants.
+    """
+    if not router_key:
+        return ROUTER_SYSTEM_UNKNOWN
+    cached = context_user_data_get(router_key)
+    if cached:
+        return cached
+    try:
+        is_healthy, _ = await run_blocking(
+            mikrotik_api.check_connection_health, router_key
+        )
+        if not is_healthy:
+            return ROUTER_SYSTEM_UNKNOWN
+
+        has_hotspot = await run_blocking(
+            _probe_path, router_key, "ip/hotspot/user/print"
+        )
+        um_base = mikrotik_api.get_userman_base_path(router_key)
+        has_userman = await run_blocking(
+            _probe_path, router_key, f"{um_base}/user/print"
+        )
+        if has_hotspot and has_userman:
+            result = ROUTER_SYSTEM_BOTH
+        elif has_hotspot:
+            result = ROUTER_SYSTEM_HOTSPOT
+        elif has_userman:
+            result = ROUTER_SYSTEM_USERMAN
+        else:
+            result = ROUTER_SYSTEM_UNKNOWN
+        context_user_data_set(router_key, result)
+        return result
+    except Exception:
+        return ROUTER_SYSTEM_UNKNOWN
+
+
+def _probe_path(router_key: str, path: str) -> bool:
+    """Return True if the given API path is reachable (empty list counts as present)."""
+    try:
+        mikrotik_api.execute(router_key, path)
+        return True
+    except Exception:
+        return False
+
+
+def context_user_data_get(router_key: str) -> str | None:
+    """Best-effort read of cached router system type from module-level cache."""
+    return _router_system_cache.get(router_key)
+
+
+def context_user_data_set(router_key: str, value: str) -> None:
+    _router_system_cache[router_key] = value
+
+
 @admin_only
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -64,22 +160,39 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if router_key:
         # متصل بالفعل — عرض القائمة الرئيسية بدون مسح الجلسة
         cleanup_state(user_id, context.user_data)
-        
-        temp_msg = await context.bot.send_message(chat_id, "⏳ جاري التحقق من حالة الاتصال بالراوتر...")
-        is_healthy, reason = await run_blocking(mikrotik_api.check_connection_health, router_key)
+
+        temp_msg = await context.bot.send_message(
+            chat_id, "⏳ جاري التحقق من حالة الاتصال بالراوتر..."
+        )
+        is_healthy, reason = await run_blocking(
+            mikrotik_api.check_connection_health, router_key
+        )
         try:
             await context.bot.delete_message(chat_id, temp_msg.message_id)
         except Exception:
             pass
 
         router_part = await _get_router_part(router_key)
+        system_part = await _get_router_system_part(router_key)
         if is_healthy:
-            text = MAIN_MENU.format(admin_name=update.effective_user.full_name, router_part=router_part)
+            text = MAIN_MENU.format(
+                admin_name=update.effective_user.full_name,
+                router_part=router_part,
+                system_part=system_part,
+            )
         else:
-            text = f"⚠️ <b>تنبيه:</b> تعذر الاتصال بالراوتر حالياً ({reason}).\n\n" + MAIN_MENU.format(admin_name=update.effective_user.full_name, router_part=router_part)
+            text = (
+                f"⚠️ <b>تنبيه:</b> تعذر الاتصال بالراوتر حالياً ({reason}).\n\n"
+                + MAIN_MENU.format(
+                    admin_name=update.effective_user.full_name,
+                    router_part=router_part,
+                    system_part=system_part,
+                )
+            )
 
         await send_and_track(
-            context, chat_id,
+            context,
+            chat_id,
             text,
             get_main_keyboard(),
         )
@@ -90,7 +203,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     await clean_chat_messages(context, chat_id)
     await send_and_track(
-        context, chat_id,
+        context,
+        chat_id,
         WELCOME.format(admin_name=update.effective_user.full_name),
         get_router_keyboard(),
     )
@@ -108,7 +222,8 @@ async def select_router_callback(update: Update, context: ContextTypes.DEFAULT_T
     clear_router(update.effective_user.id)
     context.user_data.clear()
     await safe_edit_or_send(
-        query, context,
+        query,
+        context,
         WELCOME.format(admin_name=update.effective_user.full_name),
         get_router_keyboard(),
     )
@@ -125,7 +240,10 @@ async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     router_key = get_selected_router(user_id)
     admin_name = update.effective_user.full_name
     router_part = await _get_router_part(router_key)
-    text = MAIN_MENU.format(admin_name=admin_name, router_part=router_part)
+    system_part = await _get_router_system_part(router_key)
+    text = MAIN_MENU.format(
+        admin_name=admin_name, router_part=router_part, system_part=system_part
+    )
 
     if query:
         await safe_answer_callback(query)
@@ -153,20 +271,29 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
     router_key = get_selected_router(update.effective_user.id)
-    admin_name = update.effective_user.full_name or update.effective_user.username or "مشرف"
+    admin_name = (
+        update.effective_user.full_name or update.effective_user.username or "مشرف"
+    )
     router_part = await _get_router_part(router_key, fmt=" | 🌐 {}")
+    system_part = await _get_router_system_part(router_key)
 
     if update.callback_query:
         await safe_answer_callback(update.callback_query)
         if router_key:
             await safe_edit_or_send(
-                update.callback_query, context,
-                MAIN_MENU.format(admin_name=admin_name, router_part=router_part),
+                update.callback_query,
+                context,
+                MAIN_MENU.format(
+                    admin_name=admin_name,
+                    router_part=router_part,
+                    system_part=system_part,
+                ),
                 get_main_keyboard(),
             )
         else:
             await safe_edit_or_send(
-                update.callback_query, context,
+                update.callback_query,
+                context,
                 SELECT_ROUTER,
                 get_router_keyboard(),
             )
@@ -177,13 +304,20 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.debug(f"Failed to delete user message: {e}")
         if last_msg_id:
             try:
-                await context.bot.delete_message(chat_id=chat_id, message_id=last_msg_id)
+                await context.bot.delete_message(
+                    chat_id=chat_id, message_id=last_msg_id
+                )
             except Exception as e:
                 logger.debug(f"Failed to delete last message {last_msg_id}: {e}")
         if router_key:
             await send_and_track(
-                context, chat_id,
-                MAIN_MENU.format(admin_name=admin_name, router_part=router_part),
+                context,
+                chat_id,
+                MAIN_MENU.format(
+                    admin_name=admin_name,
+                    router_part=router_part,
+                    system_part=system_part,
+                ),
                 get_main_keyboard(),
             )
         else:
@@ -196,8 +330,12 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 _NON_CRITICAL = (
-    "Message is not modified", "Query is too old", "query id is invalid",
-    "Message to edit not found", "httpx.ReadError", "httpx.RemoteProtocolError",
+    "Message is not modified",
+    "Query is too old",
+    "query id is invalid",
+    "Message to edit not found",
+    "httpx.ReadError",
+    "httpx.RemoteProtocolError",
 )
 
 
@@ -214,7 +352,8 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update and update.effective_chat:
         try:
             await send_and_track(
-                context, update.effective_chat.id,
+                context,
+                update.effective_chat.id,
                 "❌ حدث خطأ غير متوقع.\nاستخدم /cancel للخروج من الوضع الحالي\nأو /start للعودة للقائمة.",
             )
         except Exception as e:
@@ -276,15 +415,54 @@ async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     success = metrics.get("successful", 0)
     failed = metrics.get("failed", 0)
     rate = (success * 100 // total) if total > 0 else 0
+
+    server_health_text = ""
+    try:
+        import psutil
+        import os
+        import time
+        from datetime import timedelta
+
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        ram = psutil.virtual_memory()
+        ram_total_gb = ram.total / (1024**3)
+        ram_used_gb = ram.used / (1024**3)
+        ram_percent = ram.percent
+
+        process = psutil.Process(os.getpid())
+        bot_ram_mb = process.memory_info().rss / (1024**2)
+        bot_uptime_seconds = time.time() - process.create_time()
+        bot_uptime_str = str(timedelta(seconds=int(bot_uptime_seconds)))
+
+        server_health_text = METRICS_SERVER_HEALTH.format(
+            cpu=cpu_percent,
+            ram_used=ram_used_gb,
+            ram_total=ram_total_gb,
+            ram_percent=ram_percent,
+            bot_ram=bot_ram_mb,
+            bot_uptime=bot_uptime_str,
+        )
+    except ImportError:
+        logger.warning("psutil is not installed. Server health metrics disabled.")
+    except Exception as e:
+        logger.error(f"Failed to fetch system metrics: {e}")
+
     text = (
         METRICS_HEADER
-        + METRICS_ACTIVE.format(active=metrics.get("active_connections", 0)) + "\n"
-        + METRICS_STALE.format(stale=metrics.get("stale_connections", 0)) + "\n"
-        + METRICS_TOTAL.format(total=total) + "\n"
-        + METRICS_SUCCESS.format(success=success) + "\n"
-        + METRICS_FAILED.format(failed=failed) + "\n"
-        + METRICS_CACHE.format(cache_hits=metrics.get("cache_hits", 0)) + "\n"
-        + f"📈 نسبة النجاح: {rate}%"
+        + METRICS_ACTIVE.format(active=metrics.get("active_connections", 0))
+        + "\n"
+        + METRICS_STALE.format(stale=metrics.get("stale_connections", 0))
+        + "\n"
+        + METRICS_TOTAL.format(total=total)
+        + "\n"
+        + METRICS_SUCCESS.format(success=success)
+        + "\n"
+        + METRICS_FAILED.format(failed=failed)
+        + "\n"
+        + METRICS_CACHE.format(cache_hits=metrics.get("cache_hits", 0))
+        + "\n"
+        + f"📈 نسبة النجاح: {rate}%\n"
+        + server_health_text
     )
     chat_id = update.effective_chat.id
     msg = await context.bot.send_message(chat_id, text, parse_mode="HTML")
@@ -301,15 +479,20 @@ async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _show_menu(update, context, menu_text, keyboard_func):
     query = update.callback_query
-    await safe_answer_callback(query)
-    router_key = get_selected_router(query.from_user.id)
+    if query:
+        await safe_answer_callback(query)
+    user_id = update.effective_user.id
+    router_key = get_selected_router(user_id)
     admin_name = update.effective_user.full_name
     router_part = await _get_router_part(router_key)
-    await safe_edit_or_send(
-        query, context,
-        menu_text.format(admin_name=admin_name, router_part=router_part),
-        keyboard_func(),
-    )
+
+    text = menu_text.format(admin_name=admin_name, router_part=router_part)
+
+    if query:
+        await safe_edit_or_send(query, context, text, keyboard_func())
+    else:
+        # Command invocation (e.g. /routers)
+        await send_and_track(context, update.effective_chat.id, text, keyboard_func())
 
 
 # ─── INTERNAL MENU FUNCTIONS (no @admin_only) ──────────────
@@ -332,10 +515,20 @@ async def _internal_backup_menu(update, context):
     await _show_menu(update, context, BACKUP_MENU, get_backup_keyboard)
 
 
+async def _internal_routers_menu(update, context):
+    await _show_menu(update, context, ROUTERS_MENU, get_routers_keyboard)
+
+
+async def _internal_reports_menu(update, context):
+    await _show_menu(update, context, REPORTS_MENU, get_reports_keyboard)
+
+
 async def _internal_pdf_settings_menu(update, context):
     query = update.callback_query
     await safe_answer_callback(query)
-    await safe_edit_or_send(query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard())
+    await safe_edit_or_send(
+        query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard()
+    )
 
 
 async def _internal_main_menu(update, context):
@@ -345,12 +538,17 @@ async def _internal_main_menu(update, context):
     router_key = get_selected_router(user_id)
     admin_name = update.effective_user.full_name
     router_part = await _get_router_part(router_key)
-    text = MAIN_MENU.format(admin_name=admin_name, router_part=router_part)
+    system_part = await _get_router_system_part(router_key)
+    text = MAIN_MENU.format(
+        admin_name=admin_name, router_part=router_part, system_part=system_part
+    )
     if query:
         await safe_answer_callback(query)
         await safe_edit_or_send(query, context, text, get_main_keyboard())
     else:
-        await send_and_track(context, update.effective_chat.id, text, get_main_keyboard())
+        await send_and_track(
+            context, update.effective_chat.id, text, get_main_keyboard()
+        )
 
 
 # ─── EXTERNAL MENU HANDLERS (with @admin_only) ─────────────
@@ -379,7 +577,9 @@ async def backup_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_answer_callback(query)
         await safe_edit_or_send(query, context, BACKUP_MENU, get_backup_keyboard())
     else:
-        await send_and_track(context, update.effective_chat.id, BACKUP_MENU, get_backup_keyboard())
+        await send_and_track(
+            context, update.effective_chat.id, BACKUP_MENU, get_backup_keyboard()
+        )
 
 
 @admin_only
@@ -387,9 +587,28 @@ async def pdf_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query:
         await safe_answer_callback(query)
-        await safe_edit_or_send(query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard())
+        await safe_edit_or_send(
+            query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard()
+        )
     else:
-        await send_and_track(context, update.effective_chat.id, PDF_SETTINGS_MENU, get_pdf_settings_keyboard())
+        await send_and_track(
+            context,
+            update.effective_chat.id,
+            PDF_SETTINGS_MENU,
+            get_pdf_settings_keyboard(),
+        )
+
+
+@admin_only
+async def routers_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show the router management submenu (discover / saved / manual add)."""
+    await _show_menu(update, context, ROUTERS_MENU, get_routers_keyboard)
+
+
+@admin_only
+async def reports_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show the reports submenu (usage / sales / batches / audit log)."""
+    await _show_menu(update, context, REPORTS_MENU, get_reports_keyboard)
 
 
 # ─── CONVERSATION MANAGEMENT ────────────────────────────────
@@ -405,7 +624,9 @@ async def _end_conversation(update, context, target="main_menu"):
 
 
 @admin_only
-async def menu_userman_from_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def menu_userman_from_conversation(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     return await _end_conversation(update, context, "menu_userman")
 
 
@@ -415,7 +636,9 @@ async def end_conversation_to_main(update: Update, context: ContextTypes.DEFAULT
 
 
 @admin_only
-async def end_conversation_to_hotspot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def end_conversation_to_hotspot(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     return await _end_conversation(update, context, "menu_hotspot")
 
 
@@ -425,13 +648,31 @@ async def end_conversation_to_stats(update: Update, context: ContextTypes.DEFAUL
 
 
 @admin_only
-async def end_conversation_to_backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def end_conversation_to_backup(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     return await _end_conversation(update, context, "menu_backup")
 
 
 @admin_only
-async def end_conversation_to_pdf_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def end_conversation_to_pdf_settings(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     return await _end_conversation(update, context, "menu_pdf_settings")
+
+
+@admin_only
+async def end_conversation_to_routers(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    return await _end_conversation(update, context, "menu_routers")
+
+
+@admin_only
+async def end_conversation_to_reports(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    return await _end_conversation(update, context, "menu_reports")
 
 
 NAV_TARGETS = {
@@ -441,6 +682,8 @@ NAV_TARGETS = {
     "menu_stats": _internal_stats_menu,
     "menu_backup": _internal_backup_menu,
     "menu_pdf_settings": _internal_pdf_settings_menu,
+    "menu_routers": _internal_routers_menu,
+    "menu_reports": _internal_reports_menu,
 }
 
 
@@ -472,11 +715,15 @@ async def reprompt_select_user(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def reprompt_card_type_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await send_step(update, context, "❌ الرجاء اختيار نوع الكروت من الأزرار (1 أو 2 أو 3).")
+    await send_step(
+        update, context, "❌ الرجاء اختيار نوع الكروت من الأزرار (1 أو 2 أو 3)."
+    )
     return WAITING_CARD_TYPE
 
 
 @admin_only
-async def reprompt_card_profile_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def reprompt_card_profile_text(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     await send_step(update, context, "❌ الرجاء اختيار البروفايل من الأزرار أعلاه.")
     return WAITING_CARD_PROFILE

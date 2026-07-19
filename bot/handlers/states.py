@@ -6,6 +6,7 @@ class WaitingState(IntEnum):
 
     All values are integers 0-27, matching PTB ConversationHandler requirements.
     """
+
     # Base states (0-14)
     INPUT = 0
     USERNAME = 1

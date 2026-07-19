@@ -14,6 +14,7 @@ Platform support:
     - Windows: msvcrt.locking on a writable file
     - POSIX (Linux/macOS): fcntl.flock on a lock file
 """
+
 import logging
 import os
 import sys
@@ -50,6 +51,7 @@ def acquire_lock(force: bool = False) -> bool:
     try:
         if sys.platform == "win32":
             import msvcrt
+
             _lock_handle = open(lock_path, "w+")
             try:
                 msvcrt.locking(_lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
@@ -59,6 +61,7 @@ def acquire_lock(force: bool = False) -> bool:
                 return False
         else:
             import fcntl
+
             _lock_handle = open(lock_path, "w+")
             try:
                 fcntl.flock(_lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -85,12 +88,14 @@ def release_lock() -> None:
     try:
         if sys.platform == "win32":
             import msvcrt
+
             try:
                 msvcrt.locking(_lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
             except OSError:
                 pass
         else:
             import fcntl
+
             try:
                 fcntl.flock(_lock_handle.fileno(), fcntl.LOCK_UN)
             except OSError:

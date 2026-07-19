@@ -51,7 +51,11 @@ def _build_router_status_text(routers: list[dict]) -> str:
         identity = r.get("identity", "Unknown")
         ip = r.get("ip_address", "")
         name = identity if identity != "Unknown" else ip
-        status = SAVED_ROUTER_ONLINE.format(name, ip) if r.get("version") else SAVED_ROUTER_OFFLINE.format(name, ip)
+        status = (
+            SAVED_ROUTER_ONLINE.format(name, ip)
+            if r.get("version")
+            else SAVED_ROUTER_OFFLINE.format(name, ip)
+        )
         lines.append(status)
     return SAVED_ROUTERS.format("\n\n".join(lines))
 
@@ -63,7 +67,9 @@ async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE)
         routers = await run_blocking(get_saved_routers, active_only=True)
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             log_extra="saved_routers_list",
             reply_markup=get_router_keyboard(),
         )
@@ -80,7 +86,9 @@ async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if query:
         await edit_clean(query, context, text, get_saved_routers_keyboard(routers))
     else:
-        await update.message.reply_text(text, reply_markup=get_saved_routers_keyboard(routers))
+        await update.message.reply_text(
+            text, reply_markup=get_saved_routers_keyboard(routers)
+        )
     reset_rate_limit(update.effective_user.id)
 
 
@@ -101,7 +109,8 @@ async def saved_router_selected(update: Update, context: ContextTypes.DEFAULT_TY
     port = router["port"]
     has_creds = "✅" if router.get("username") else "❌"
     await edit_clean(
-        query, context,
+        query,
+        context,
         f"🌐 {name}\n📍 {ip}:{port}\n📋 v{version}\n🔧 {board}\n🔑 بيانات الاتصال: {has_creds}",
         get_router_action_keyboard(router_id),
     )
@@ -118,11 +127,16 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not router or not router.get("username"):
         await query.edit_message_text(ROUTER_NO_CREDENTIALS)
         return
-    await query.edit_message_text(f"⏳ جاري الاتصال بـ {router.get('identity', router['ip_address'])}...")
+    await query.edit_message_text(
+        f"⏳ جاري الاتصال بـ {router.get('identity', router['ip_address'])}..."
+    )
     try:
         success, version, identity = await run_blocking(
             mikrotik_api.test_connection,
-            router["ip_address"], router["username"], router["password"], router["port"]
+            router["ip_address"],
+            router["username"],
+            router["password"],
+            router["port"],
         )
         if success:
             await run_blocking(update_router_last_seen, router_id)
@@ -131,9 +145,16 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
             set_selected_router(query.from_user.id, router_key)
             await run_blocking(check_router_health, router_key)
-            await run_blocking(log_action, "connect_saved", router["ip_address"], identity, query.from_user.id)
+            await run_blocking(
+                log_action,
+                "connect_saved",
+                router["ip_address"],
+                identity,
+                query.from_user.id,
+            )
             await edit_clean(
-                query, context,
+                query,
+                context,
                 f"✅ تم الاتصال بنجاح!\n\n🌐 {identity}\n📋 v{version}\n📍 {router['ip_address']}",
                 get_main_keyboard(),
             )
@@ -145,7 +166,9 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=f"{ROUTER_KEY_PREFIX}{router_id}",
             log_extra="connect_router",
         )
@@ -163,7 +186,12 @@ async def delete_router_confirm(update: Update, context: ContextTypes.DEFAULT_TY
         await query.edit_message_text(ROUTER_NOT_FOUND)
         return
     name = router.get("identity", router["ip_address"])
-    await edit_clean(query, context, DELETE_ROUTER_CONFIRM.format(name), get_delete_router_confirm_keyboard(router_id))
+    await edit_clean(
+        query,
+        context,
+        DELETE_ROUTER_CONFIRM.format(name),
+        get_delete_router_confirm_keyboard(router_id),
+    )
 
 
 @require_role("admin")
@@ -175,10 +203,22 @@ async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TY
         if router_id is None:
             return
         router = await run_blocking(get_router_by_id, router_id, decrypt=False)
-        router_identity = router.get("identity", router.get("ip_address", "")) if router else "unknown"
+        router_identity = (
+            router.get("identity", router.get("ip_address", ""))
+            if router
+            else "unknown"
+        )
         await run_blocking(delete_router, router_id)
-        await run_blocking(log_action, "delete_router", router_identity, f"id:{router_id}", query.from_user.id)
-        await query.edit_message_text(ROUTER_DELETED, reply_markup=get_router_keyboard())
+        await run_blocking(
+            log_action,
+            "delete_router",
+            router_identity,
+            f"id:{router_id}",
+            query.from_user.id,
+        )
+        await query.edit_message_text(
+            ROUTER_DELETED, reply_markup=get_router_keyboard()
+        )
     elif query.data.startswith("confirm_delete_router_no_"):
         await query.edit_message_text(CANCELLED, reply_markup=get_router_keyboard())
 
@@ -194,13 +234,18 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 success, version, identity = await run_blocking(
                     mikrotik_api.test_connection,
-                    r["ip_address"], r.get("username", ""), r.get("password", ""), r["port"]
+                    r["ip_address"],
+                    r.get("username", ""),
+                    r.get("password", ""),
+                    r["port"],
                 )
                 if success:
                     await run_blocking(update_router_last_seen, r["id"])
                     updated += 1
             except Exception as e:
-                logger.warning(f"refresh_routers: connection failed for {r.get('identity', r['ip_address'])}: {e}")
+                logger.warning(
+                    f"refresh_routers: connection failed for {r.get('identity', r['ip_address'])}: {e}"
+                )
 
         routers = await run_blocking(get_saved_routers, active_only=True)
         text = _build_router_status_text(routers)
@@ -211,6 +256,8 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reset_rate_limit(query.from_user.id)
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             log_extra="refresh_routers",
         )

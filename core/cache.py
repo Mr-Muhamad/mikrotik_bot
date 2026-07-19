@@ -2,11 +2,13 @@ import threading
 import time
 from collections import OrderedDict
 
-_CACHE_TTL = 3600           # صلاحية الكاش لمدة ساعة كافتراضي
-_MAX_CACHE_SIZE = 100       # الحد الأقصى لعناصر الكاش
+_CACHE_TTL = 3600  # صلاحية الكاش لمدة ساعة كافتراضي
+_MAX_CACHE_SIZE = 100  # الحد الأقصى لعناصر الكاش
+
 
 class TTLCache:
     """Cache مع صلاحية محددة (TTL) لتخزين البيانات المؤقتة."""
+
     def __init__(self, max_size: int = _MAX_CACHE_SIZE, ttl: int = _CACHE_TTL):
         self._cache: OrderedDict[str, tuple[object, float]] = OrderedDict()
         self._max_size = max_size
@@ -50,4 +52,3 @@ class TTLCache:
         with self._cache_lock:
             now = time.time()
             return len([k for k, v in self._cache.items() if now - v[1] < self._ttl])
-

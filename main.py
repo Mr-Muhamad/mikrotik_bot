@@ -30,6 +30,7 @@ async def post_init(app: Application):
     await set_bot_commands(app)
     # استعادة حالة الـ watchdog من DB قبل بدء الجدولة
     from core.watchdog import load_status_from_db
+
     load_status_from_db()
     if app.job_queue:
         backup_scheduler.restore(app.job_queue)
@@ -37,6 +38,7 @@ async def post_init(app: Application):
         existing = app.job_queue.get_jobs_by_name("router_watchdog")
         if not existing:
             from bot.handlers.watchdog import _check_all_routers
+
             app.job_queue.run_repeating(
                 _check_all_routers,
                 interval=WATCHDOG_INTERVAL,
@@ -44,6 +46,14 @@ async def post_init(app: Application):
                 name="router_watchdog",
             )
             logger.info("Router watchdog auto-started")
+
+        # Chat Cleaner Background GC (runs every 1 hour)
+        from utils.chat_cleaner import run_background_cleanup
+
+        app.job_queue.run_repeating(
+            run_background_cleanup, interval=3600, first=60, name="chat_cleaner_gc"
+        )
+        logger.info("Chat cleaner GC job scheduled")
 
 
 def main():
@@ -77,14 +87,14 @@ def main():
         atexit.register(_cleanup_pool)
 
         logger.info("🐱 Bot is running...")
-        
+
         # Signal handlers for graceful shutdown
         shutdown_event = asyncio.Event()
-        
+
         def signal_handler(signum, frame):
             logger.info(f"Received signal {signum}, initiating graceful shutdown...")
             shutdown_event.set()
-        
+
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
 
@@ -104,7 +114,7 @@ def main():
                 await application.shutdown()
                 mikrotik_api.close()
                 logger.info("Graceful shutdown complete")
-        
+
         try:
             asyncio.run(run_with_shutdown())
         except KeyboardInterrupt:

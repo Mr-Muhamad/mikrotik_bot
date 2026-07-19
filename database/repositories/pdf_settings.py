@@ -3,16 +3,30 @@
 Holds the tunable PDF label/card layout settings. Isolated from the former
 god-object ``database.models``.
 """
+
 from __future__ import annotations
 
 PDF_ALLOWED_COLUMNS = {
-    "margin_top", "margin_bottom", "margin_left", "margin_right",
-    "border_width", "card_width", "card_height",
-    "spacing_x", "spacing_y", "cards_per_row",
-    "footer_text", "header_text",
-    "brand_name", "hotspot_dns", "show_qr", "cards_per_page",
-    "label_spacing_single", "label_spacing_dual",
-    "value_max_font_single", "value_max_font_dual",
+    "margin_top",
+    "margin_bottom",
+    "margin_left",
+    "margin_right",
+    "border_width",
+    "card_width",
+    "card_height",
+    "spacing_x",
+    "spacing_y",
+    "cards_per_row",
+    "footer_text",
+    "header_text",
+    "brand_name",
+    "hotspot_dns",
+    "show_qr",
+    "cards_per_page",
+    "label_spacing_single",
+    "label_spacing_dual",
+    "value_max_font_single",
+    "value_max_font_dual",
 }
 
 

@@ -15,16 +15,22 @@ class TestHotspotManager:
 
     def test_add_user_minimal(self, mock_mikrotik_api):
         result = hotspot_manager.add_user(
-            self.ROUTER_KEY, name="newuser", password="pass",
+            self.ROUTER_KEY,
+            name="newuser",
+            password="pass",
             profile="default",
         )
         assert isinstance(result, list)
 
     def test_add_user_with_all_options(self, mock_mikrotik_api):
         result = hotspot_manager.add_user(
-            self.ROUTER_KEY, name="fulluser", password="pass",
-            profile="vip", bytes_total="1000000000",
-            uptime="1d", comment="test card",
+            self.ROUTER_KEY,
+            name="fulluser",
+            password="pass",
+            profile="vip",
+            bytes_total="1000000000",
+            uptime="1d",
+            comment="test card",
         )
         assert isinstance(result, list)
 
@@ -74,7 +80,9 @@ class TestHotspotManager:
 
     def test_search_hosts_by_mac(self, mock_mikrotik_api):
         hosts = hotspot_manager.search_hosts(self.ROUTER_KEY, "AA:BB:CC:DD:EE:01")
-        found = [h for h in hosts if h.get("mac-address", "").lower() == "aa:bb:cc:dd:ee:01"]
+        found = [
+            h for h in hosts if h.get("mac-address", "").lower() == "aa:bb:cc:dd:ee:01"
+        ]
         assert len(found) >= 1
 
     def test_search_hosts_skips_leases_when_no_match(self):
@@ -106,7 +114,9 @@ class TestHotspotManager:
 
     def test_create_cards(self, mock_mikrotik_api):
         cards = hotspot_manager.create_cards(
-            self.ROUTER_KEY, count=3, length=4,
+            self.ROUTER_KEY,
+            count=3,
+            length=4,
             card_system=CardSystem.DIFFERENT_CREDENTIALS,
             profile="default",
         )
@@ -118,7 +128,9 @@ class TestHotspotManager:
 
     def test_create_cards_unique_usernames(self, mock_mikrotik_api):
         cards = hotspot_manager.create_cards(
-            self.ROUTER_KEY, count=5, length=6,
+            self.ROUTER_KEY,
+            count=5,
+            length=6,
             card_system=CardSystem.DIFFERENT_CREDENTIALS,
             profile="default",
         )
@@ -127,7 +139,9 @@ class TestHotspotManager:
 
     def test_create_cards_same_credentials(self, mock_mikrotik_api):
         cards = hotspot_manager.create_cards(
-            self.ROUTER_KEY, count=2, length=4,
+            self.ROUTER_KEY,
+            count=2,
+            length=4,
             card_system=CardSystem.SAME_CREDENTIALS,
             profile="default",
         )
@@ -136,7 +150,9 @@ class TestHotspotManager:
 
     def test_create_cards_empty_credentials(self, mock_mikrotik_api):
         cards = hotspot_manager.create_cards(
-            self.ROUTER_KEY, count=2, length=4,
+            self.ROUTER_KEY,
+            count=2,
+            length=4,
             card_system=CardSystem.EMPTY_PASSWORD,
             profile="default",
         )
@@ -162,9 +178,24 @@ class TestHotspotManager:
         from core.hotspot_manager import mikrotik_api
 
         users = [
-            {"name": "u1", "comment": "BATCH_2026-07-05_10:00", "limit-bytes-total": "1000000000", "disabled": "false"},
-            {"name": "u2", "comment": "BATCH_2026-07-05_11:00", "limit-bytes-total": "2000000000", "disabled": "false"},
-            {"name": "u3", "comment": "BATCH_2026-07-04_09:00", "limit-bytes-total": "1000000000", "disabled": "false"},
+            {
+                "name": "u1",
+                "comment": "BATCH_2026-07-05_10:00",
+                "limit-bytes-total": "1000000000",
+                "disabled": "false",
+            },
+            {
+                "name": "u2",
+                "comment": "BATCH_2026-07-05_11:00",
+                "limit-bytes-total": "2000000000",
+                "disabled": "false",
+            },
+            {
+                "name": "u3",
+                "comment": "BATCH_2026-07-04_09:00",
+                "limit-bytes-total": "1000000000",
+                "disabled": "false",
+            },
         ]
         mikrotik_api.execute = MagicMock(return_value=users)
         hotspot_manager.invalidate_users_cache(self.ROUTER_KEY)

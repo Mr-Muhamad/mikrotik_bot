@@ -1,4 +1,5 @@
 """Repository for daily stats snapshots — تاريخ إحصائيات الروترات."""
+
 from __future__ import annotations
 
 import logging

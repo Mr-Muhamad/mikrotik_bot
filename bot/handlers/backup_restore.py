@@ -13,6 +13,12 @@ from bot.keyboards import (
     get_userman_restore_confirm_keyboard,
 )
 from bot.messages import (
+    BACKUP_RESTORE_INVALID_NAME,
+    BACKUP_RESTORE_NOT_FOUND,
+    BACKUP_RESTORE_PROFILES_COUNT,
+    BACKUP_RESTORE_USERS_COUNT,
+    BACKUP_RESTORE_SKIPPED,
+    BACKUP_RESTORE_NONE,
     BACKUP_RESTORE_AVAILABLE,
     BACKUP_RESTORE_CONFIRM,
     BACKUP_RESTORE_IN_PROGRESS,
@@ -29,7 +35,11 @@ from bot.messages import (
     USERMAN_RESTORE_PARTIAL,
 )
 from bot.router_selector import get_selected_router, nav_set, cleanup_state
-from core.backup_service import backup_restore, backup_service, resolve_userman_backup_file
+from core.backup_service import (
+    backup_restore,
+    backup_service,
+    resolve_userman_backup_file,
+)
 from database.models import log_action
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
@@ -59,7 +69,10 @@ async def backup_restore_start(update: Update, context: ContextTypes.DEFAULT_TYP
         backups = await run_blocking(backup_restore.list_router_backups, router_key)
     except Exception as e:
         await send_error(
-            update, context, e, router_key=router_key,
+            update,
+            context,
+            e,
+            router_key=router_key,
             log_extra="backup_restore_start",
         )
 
@@ -113,18 +126,33 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text(BACKUP_RESTORE_IN_PROGRESS.format(name=backup_name))
 
     try:
-        result = await run_blocking(backup_restore.restore_backup, router_key, backup_name)
-        await run_blocking(log_action, "restore_backup", backup_name, router_key, get_from_user_id(query))
+        result = await run_blocking(
+            backup_restore.restore_backup, router_key, backup_name
+        )
+        await run_blocking(
+            log_action,
+            "restore_backup",
+            backup_name,
+            router_key,
+            get_from_user_id(query),
+        )
 
         if result.get("success"):
-            await query.edit_message_text(BACKUP_RESTORE_SUCCESS.format(name=backup_name))
+            await query.edit_message_text(
+                BACKUP_RESTORE_SUCCESS.format(name=backup_name)
+            )
         else:
             await query.edit_message_text(
-                BACKUP_RESTORE_FAILED.format(error=result.get("message", "Unknown error"))
+                BACKUP_RESTORE_FAILED.format(
+                    error=result.get("message", "Unknown error")
+                )
             )
     except Exception as e:
         await send_error(
-            update, context, e, router_key=router_key,
+            update,
+            context,
+            e,
+            router_key=router_key,
             log_extra="backup_restore_confirm",
         )
 
@@ -147,7 +175,9 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
         tar_files = await run_blocking(backup_service.list_local_userman_backups)
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             log_extra="userman_restore_start",
         )
         return ConversationHandler.END
@@ -174,7 +204,9 @@ async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_T
 
     idx = int(query.data.split(":")[-1]) if query.data else 0
     tar_files = context.user_data.get("userman_restore_list", [])
-    tar_filename = tar_files[idx].get("filename", "") if 0 <= idx < len(tar_files) else ""
+    tar_filename = (
+        tar_files[idx].get("filename", "") if 0 <= idx < len(tar_files) else ""
+    )
     context.user_data["userman_restore_tar"] = tar_filename
 
     text = USERMAN_RESTORE_CONFIRM.format(name=tar_filename)
@@ -200,41 +232,62 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
     try:
         tar_path = resolve_userman_backup_file(tar_filename)
     except ValueError:
-        await query.edit_message_text(USERMAN_RESTORE_FAILED.format(error="اسم ملف الاستعادة غير صالح"))
+        await query.edit_message_text(
+            USERMAN_RESTORE_FAILED.format(error=BACKUP_RESTORE_INVALID_NAME)
+        )
         return
 
     if not os.path.isfile(tar_path):
-        await query.edit_message_text(USERMAN_RESTORE_FAILED.format(error="الملف غير موجود"))
+        await query.edit_message_text(
+            USERMAN_RESTORE_FAILED.format(error=BACKUP_RESTORE_NOT_FOUND)
+        )
         return
 
     await query.edit_message_text(USERMAN_RESTORE_IN_PROGRESS)
 
     try:
-        result = await run_blocking(backup_service.userman_restore, router_key, tar_path)
-        await run_blocking(log_action, "userman_restore", tar_filename, router_key, get_from_user_id(query))
+        result = await run_blocking(
+            backup_service.userman_restore, router_key, tar_path
+        )
+        await run_blocking(
+            log_action,
+            "userman_restore",
+            tar_filename,
+            router_key,
+            get_from_user_id(query),
+        )
 
         if result["success"] and not result.get("errors"):
             parts = []
             if result.get("profiles_restored"):
-                parts.append(f"📋 {result['profiles_restored']} بروفايل")
+                parts.append(BACKUP_RESTORE_PROFILES_COUNT.format(count=result["profiles_restored"]))
             if result.get("users_restored"):
-                parts.append(f"👥 {result['users_restored']} مستخدم")
-            if result.get("skipped", {}).get("profiles") or result.get("skipped", {}).get("users"):
+                parts.append(BACKUP_RESTORE_USERS_COUNT.format(count=result["users_restored"]))
+            if result.get("skipped", {}).get("profiles") or result.get(
+                "skipped", {}
+            ).get("users"):
                 skipped = result["skipped"]["profiles"] + result["skipped"]["users"]
-                parts.append(f"⏭️ {skipped} تم تخطيها")
-            summary = "، ".join(parts) if parts else "لا شيء"
-            await query.edit_message_text(USERMAN_RESTORE_SUCCESS.format(summary=summary))
+                parts.append(BACKUP_RESTORE_SKIPPED.format(skipped=skipped))
+            summary = "، ".join(parts) if parts else BACKUP_RESTORE_NONE
+            await query.edit_message_text(
+                USERMAN_RESTORE_SUCCESS.format(summary=summary)
+            )
         elif result.get("errors"):
             await query.edit_message_text(
                 USERMAN_RESTORE_PARTIAL.format(summary=result.get("message", ""))
             )
         else:
             await query.edit_message_text(
-                USERMAN_RESTORE_FAILED.format(error=result.get("message", "Unknown error"))
+                USERMAN_RESTORE_FAILED.format(
+                    error=result.get("message", "Unknown error")
+                )
             )
     except Exception as e:
         await send_error(
-            update, context, e, router_key=router_key,
+            update,
+            context,
+            e,
+            router_key=router_key,
             log_extra="userman_restore_execute",
         )
     return ConversationHandler.END

@@ -1,4 +1,5 @@
 """Repository for operator-router permission assignments — Tenant Isolation."""
+
 from __future__ import annotations
 
 import logging
@@ -8,7 +9,9 @@ from database.models import get_db
 logger = logging.getLogger(__name__)
 
 
-def assign_router_to_operator(operator_id: int, router_id: int, assigned_by: int) -> bool:
+def assign_router_to_operator(
+    operator_id: int, router_id: int, assigned_by: int
+) -> bool:
     """منح مشغّل صلاحية إدارة راوتر معين.
 
     يُعيد True إن تم الحفظ بنجاح (أو كان موجوداً مسبقاً).
@@ -23,7 +26,9 @@ def assign_router_to_operator(operator_id: int, router_id: int, assigned_by: int
             )
         return True
     except Exception as e:
-        logger.warning(f"Failed to assign router {router_id} to operator {operator_id}: {e}")
+        logger.warning(
+            f"Failed to assign router {router_id} to operator {operator_id}: {e}"
+        )
         return False
 
 
@@ -40,7 +45,9 @@ def revoke_router_from_operator(operator_id: int, router_id: int) -> bool:
             )
         return cursor.rowcount > 0
     except Exception as e:
-        logger.warning(f"Failed to revoke router {router_id} from operator {operator_id}: {e}")
+        logger.warning(
+            f"Failed to revoke router {router_id} from operator {operator_id}: {e}"
+        )
         return False
 
 
@@ -74,5 +81,7 @@ def is_operator_allowed(operator_id: int, router_id: int) -> bool:
             ).fetchone()
         return row is not None
     except Exception as e:
-        logger.warning(f"Failed to check permission for operator {operator_id}, router {router_id}: {e}")
+        logger.warning(
+            f"Failed to check permission for operator {operator_id}, router {router_id}: {e}"
+        )
         return False

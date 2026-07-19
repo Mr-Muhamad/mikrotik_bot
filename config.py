@@ -40,15 +40,18 @@ BACKUP_DIR = os.path.join(os.path.dirname(__file__), "backups")
 
 DEFAULT_API_PORT = 8728
 ROUTER_KEY_PREFIX = "discovered_"
-WATCHDOG_INTERVAL = 5 * 60
-WATCHDOG_FIRST_DELAY = 10
+# إعدادات المراقبة الدورية (بالثواني)
+WATCHDOG_INTERVAL = 300
+WATCHDOG_FIRST_DELAY = 1
 
 # When True, the daily scheduled backup also performs a full system backup
 # (system/backup/save + export). When False (default), the scheduler only
 # backs up User Manager users and profiles. The full backup relies on FTP
 # download which transmits the router password in cleartext; keep this
 # disabled unless the bot runs inside an isolated management network.
-SCHEDULE_FULL_BACKUP = (
-    os.getenv("SCHEDULE_FULL_BACKUP", "false").strip().lower()
-    in ("1", "true", "yes", "on")
+SCHEDULE_FULL_BACKUP = os.getenv("SCHEDULE_FULL_BACKUP", "false").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
 )

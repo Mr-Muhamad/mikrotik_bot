@@ -14,6 +14,8 @@ from bot.messages import (
     EDIT_SELECT_FIELD,
     NO_RESULTS,
     NO_ROUTER_SELECTED,
+    HOTSPOT_PAGINATION_DELETE,
+    HOTSPOT_PAGINATION_EDIT,
 )
 from bot.router_selector import cleanup_state, get_selected_router
 from core.hotspot_manager import hotspot_manager
@@ -22,6 +24,7 @@ from utils.async_blocking import run_blocking
 from utils.chat_cleaner import reply_final, send_step
 from utils.error_response import send_error
 from utils.pagination import Paginator
+from .session_models import get_hotspot_add_session, get_hotspot_edit_session
 from .constants import (
     WAITING_DELETE_ID,
     WAITING_DELETE_SELECT,
@@ -48,7 +51,9 @@ async def search_users_for_action(update, context, action):
         )
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=router_key,
             log_extra=f"search_users({action})",
         )
@@ -72,8 +77,8 @@ async def search_users_for_action(update, context, action):
             )
             return WAITING_INPUT
         context.user_data.pop("users_cache", None)
-        context.user_data["edit_user_id"] = user.get(".id", "")
-        context.user_data["edit_user_data"] = user
+        get_hotspot_edit_session(context.user_data).user_id = user.get(".id", "")
+        get_hotspot_edit_session(context.user_data).user_data = user
         await send_step(
             update,
             context,
@@ -86,36 +91,50 @@ async def search_users_for_action(update, context, action):
     context.user_data["users_cache"] = users
 
     if action == "delete":
-        text = f"📋 تم العثور على {len(users)} مستخدم ({paginator.slice_info}):\n\nاختر المستخدم للحذف:"
-        await send_step(update, context, text,
-                        get_paginated_user_keyboard(users, "delete_user", paginator))
+        text = HOTSPOT_PAGINATION_DELETE.format(count=len(users), slice_info=paginator.slice_info)
+        await send_step(
+            update,
+            context,
+            text,
+            get_paginated_user_keyboard(users, "delete_user", paginator),
+        )
         return WAITING_DELETE_SELECT
 
-    text = f"📋 تم العثور على {len(users)} مستخدم ({paginator.slice_info}):\n\nاختر المستخدم للتعديل:"
-    await send_step(update, context, text,
-                    get_paginated_user_keyboard(users, "edit_user", paginator))
+    text = HOTSPOT_PAGINATION_EDIT.format(count=len(users), slice_info=paginator.slice_info)
+    await send_step(
+        update,
+        context,
+        text,
+        get_paginated_user_keyboard(users, "edit_user", paginator),
+    )
     return WAITING_EDIT_VALUE
 
 
 async def execute_add_user(context, user_id, router_key, comment):
+    session = get_hotspot_add_session(context.user_data)
     try:
         await run_blocking(
             hotspot_manager.add_user,
             router_key=router_key,
-            name=context.user_data["add_username"],
-            password=context.user_data.get("add_password", ""),
-            profile=context.user_data["add_profile"],
-            bytes_total=context.user_data.get("add_bytes", ""),
-            uptime=context.user_data.get("add_uptime", ""),
+            name=session.username,
+            password=session.password,
+            profile=session.profile,
+            bytes_total=session.bytes_total,
+            uptime=session.uptime_value,
             comment=comment,
         )
-        await run_blocking(log_action, "add_user", context.user_data["add_username"], router_key, user_id)
+        await run_blocking(
+            log_action,
+            "add_user",
+            session.username,
+            router_key,
+            user_id,
+        )
         return True, None
     except Exception as e:
         logger.exception(f"execute_add_user failed: {e}")
         if "already have user" in str(e):
-            for k in ["add_username", "add_password", "add_profile", "add_bytes", "add_uptime", "uptime_unit"]:
-                context.user_data.pop(k, None)
+            context.user_data.pop("hotspot_add_session", None)
             return False, "duplicate"
         return False, str(e)
 
@@ -143,10 +162,10 @@ async def handle_page_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     paginator = Paginator(users, page=page)
 
     if action == "edit":
-        text = f"📋 تم العثور على {len(users)} مستخدم ({paginator.slice_info}):\n\nاختر المستخدم للتعديل:"
+        text = HOTSPOT_PAGINATION_EDIT.format(count=len(users), slice_info=paginator.slice_info)
         keyboard = get_paginated_user_keyboard(users, "edit_user", paginator)
         await query.edit_message_text(text, reply_markup=keyboard)
     elif action == "delete":
-        text = f"📋 تم العثور على {len(users)} مستخدم ({paginator.slice_info}):\n\nاختر المستخدم للحذف:"
+        text = HOTSPOT_PAGINATION_DELETE.format(count=len(users), slice_info=paginator.slice_info)
         keyboard = get_paginated_user_keyboard(users, "delete_user", paginator)
         await query.edit_message_text(text, reply_markup=keyboard)

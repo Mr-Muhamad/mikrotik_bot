@@ -1,5 +1,6 @@
 import logging
 import time
+import asyncio
 
 from telegram import Message
 
@@ -43,9 +44,8 @@ def _is_benign_edit_error(err: Exception) -> bool:
     return any(s in str(err) for s in _BENIGN_EDIT_ERRORS)
 
 
-
 def _track_msg(context, chat_id, message_id, chat_type=None):
-    """تتبع رسالة للتنظيف التلقائي مع TTL.
+    """تتبع رسالة للتنظيف التلقائي عبر قاعدة البيانات.
 
     لا يُتتبَّع إلا رسائل البوت الصادرة. تُتخطّى القنوات (channel) فقط؛ أمّا
     المجموعات فيُسمح فيها للبوت بحذف رسائله، لذا تُتتبَّع وتُنظَّف عبر /clean.
@@ -54,27 +54,9 @@ def _track_msg(context, chat_id, message_id, chat_type=None):
     if chat_type and chat_type in _PROTECTED_CHAT_TYPES:
         return
 
-    key = f"chat_msgs_{chat_id}"
-    # تخزين القاموس: {message_id: timestamp} بدلاً من list
-    # للسماح بحذف الرسائل القديمة حسب TTL
-    msgs = context.bot_data.get(key, {})
-    if not isinstance(msgs, dict):
-        # ترحيل من تنسيق list قديم
-        msgs = {mid: time.time() for mid in msgs}
-    msgs[message_id] = time.time()
+    from database.models import add_tracked_message
 
-    # تنظيف الرسائل التي تجاوزت TTL (lazy cleanup)
-    cutoff = time.time() - CHAT_MSGS_TTL_SECONDS
-    stale_msgs = [mid for mid, ts in msgs.items() if ts < cutoff]
-    for mid in stale_msgs:
-        del msgs[mid]
-
-    # حد أقصى للعدد (الأحدث أولاً)
-    if len(msgs) > MAX_TRACKED_MSGS:
-        cutoff_time = sorted(msgs.values(), reverse=True)[MAX_TRACKED_MSGS - 1]
-        msgs = {mid: ts for mid, ts in msgs.items() if ts >= cutoff_time}
-
-    context.bot_data[key] = msgs
+    add_tracked_message(chat_id, message_id)
     _stats["messages_tracked"] += 1
 
 
@@ -90,15 +72,18 @@ async def clean_chat_messages(context, chat_id, chat_type=None):
     if cached_type and cached_type in _PROTECTED_CHAT_TYPES:
         return
 
-    key = f"chat_msgs_{chat_id}"
-    msgs = context.bot_data.pop(key, {})
-    if not isinstance(msgs, dict):
-        msgs = {}
+    from database.models import get_tracked_messages, remove_tracked_messages
+
+    msgs_ids = get_tracked_messages(chat_id)
+    if not msgs_ids:
+        return
 
     _stats["cleanup_runs"] += 1
     deleted_count = 0
-    for chunk in _chunks(list(msgs.keys()), DELETE_MESSAGES_CHUNK):
+    for chunk in _chunks(msgs_ids, DELETE_MESSAGES_CHUNK):
         deleted_count += await _delete_message_ids(context, chat_id, chunk)
+        # Always remove from DB even if Telegram failed (e.g. older than 48h or already deleted)
+        remove_tracked_messages(chat_id, chunk)
 
     _stats["messages_deleted"] += deleted_count
 
@@ -125,11 +110,15 @@ async def _delete_message_ids(context, chat_id, message_ids):
             await context.bot.delete_message(chat_id=chat_id, message_id=message_ids[0])
             return 1
         except Exception as e:
-            logger.debug(f"Failed to delete message {message_ids[0]} in chat {chat_id}: {e}")
+            logger.debug(
+                f"Failed to delete message {message_ids[0]} in chat {chat_id}: {e}"
+            )
             return 0
 
     try:
-        result = await context.bot.delete_messages(chat_id=chat_id, message_ids=message_ids)
+        result = await context.bot.delete_messages(
+            chat_id=chat_id, message_ids=message_ids
+        )
         if result is True:
             return len(message_ids)
     except Exception as e:
@@ -142,6 +131,8 @@ async def _delete_message_ids(context, chat_id, message_ids):
             deleted += 1
         except Exception as e:
             logger.debug(f"Failed to delete message {mid} in chat {chat_id}: {e}")
+        # Throttle to prevent FloodWait when deleting many individual messages
+        await asyncio.sleep(0.05)
     return deleted
 
 
@@ -219,7 +210,10 @@ async def send_loading(update, context, text="⏳ جاري العمل..."):
 
 def _truncate(text: str) -> str:
     if len(text) > MAX_MESSAGE_LENGTH:
-        text = text[:MAX_MESSAGE_LENGTH - len(MESSAGE_TRUNCATION_SUFFIX)] + MESSAGE_TRUNCATION_SUFFIX
+        text = (
+            text[: MAX_MESSAGE_LENGTH - len(MESSAGE_TRUNCATION_SUFFIX)]
+            + MESSAGE_TRUNCATION_SUFFIX
+        )
     return text
 
 
@@ -233,7 +227,9 @@ async def safe_edit_or_send(query, context, text, keyboard=None):
     text = _truncate(text)
     chat_id = query.message.chat_id
     try:
-        msg = await query.edit_message_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        msg = await query.edit_message_text(
+            text=text, reply_markup=keyboard, parse_mode="HTML"
+        )
         if msg:
             _track_msg(context, chat_id, msg.message_id)
             context.user_data["last_msg"] = msg.message_id
@@ -257,7 +253,9 @@ async def edit_clean(query, context, text, keyboard=None):
     """Edit a callback query message with new text and track the edit for cleanup."""
     text = _truncate(text)
     try:
-        msg = await query.edit_message_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        msg = await query.edit_message_text(
+            text=text, reply_markup=keyboard, parse_mode="HTML"
+        )
     except Exception as e:
         if _is_benign_edit_error(e):
             # المحتوى لم يتغير أو الرسالة محذوفة — حالة حميدة، نتجاهلها بصمت
@@ -305,7 +303,9 @@ async def _send_replacing_last(update, context, text, keyboard) -> Message | Non
     prev = context.user_data.pop("last_msg", None)
     if prev:
         await delete_now(context, chat_id, prev)
-    msg = await context.bot.send_message(chat_id=chat_id, text=text, reply_markup=keyboard, parse_mode="HTML")
+    msg = await context.bot.send_message(
+        chat_id=chat_id, text=text, reply_markup=keyboard, parse_mode="HTML"
+    )
     _track_msg(context, chat_id, msg.message_id)
     return msg
 
@@ -323,6 +323,26 @@ async def reply_final(update, context, text, keyboard=None) -> Message | None:
     """Send a final reply message while cleaning up the previous step message."""
     text = _truncate(text)
     return await _send_replacing_last(update, context, text, keyboard)
+
+
+async def run_background_cleanup(context):
+    """Background task to remove old tracked messages from the database.
+
+    Messages older than 48 hours cannot be deleted from Telegram anyway,
+    so we just purge them from the database to prevent unbounded growth.
+    """
+    from datetime import datetime, timezone, timedelta
+    from database.models import UTC_TIMESTAMP_FORMAT
+    from database.models import delete_stale_records, cleanup_health_history
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
+    cutoff_str = cutoff.strftime(UTC_TIMESTAMP_FORMAT)
+    delete_stale_records(cutoff_str)
+
+    # Also cleanup old router health logs
+    cleaned_health = cleanup_health_history(days=7)
+    if cleaned_health > 0:
+        logger.debug(f"Cleaned {cleaned_health} old router health records.")
 
 
 def get_cleanup_stats() -> dict:

@@ -1,4 +1,5 @@
 """Repository for router health log — persistent watchdog state across restarts."""
+
 import logging
 from database.models import get_db, _now_utc
 
@@ -46,14 +47,12 @@ def get_all_latest_health() -> dict[str, dict]:
     """
     try:
         with get_db() as conn:
-            rows = conn.execute(
-                """SELECT router_key, status, checked_at, error_msg
+            rows = conn.execute("""SELECT router_key, status, checked_at, error_msg
                    FROM router_health_log AS h1
                    WHERE checked_at = (
                        SELECT MAX(checked_at) FROM router_health_log AS h2
                        WHERE h2.router_key = h1.router_key
-                   )"""
-            ).fetchall()
+                   )""").fetchall()
             return {row["router_key"]: dict(row) for row in rows}
     except Exception as e:
         logger.warning(f"Failed to get all latest health: {e}")
@@ -76,3 +75,24 @@ def get_health_history(router_key: str, limit: int = 10) -> list[dict]:
     except Exception as e:
         logger.warning(f"Failed to get health history for {router_key}: {e}")
         return []
+
+
+def cleanup_health_history(days: int = 7) -> int:
+    """مسح سجلات فحص الصحة الأقدم من العدد المحدد من الأيام.
+    يُعيد عدد السجلات التي تم مسحها.
+    """
+    from datetime import datetime, timedelta, timezone
+    from database.models import UTC_TIMESTAMP_FORMAT
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff_text = cutoff.strftime(UTC_TIMESTAMP_FORMAT)
+    try:
+        with get_db() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "DELETE FROM router_health_log WHERE checked_at < ?", (cutoff_text,)
+            )
+            return cursor.rowcount
+    except Exception as e:
+        logger.warning(f"Failed to cleanup health history: {e}")
+        return 0

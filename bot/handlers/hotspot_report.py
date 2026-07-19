@@ -23,23 +23,35 @@ def build_csv(report: dict) -> str:
     """Build a UTF-8-sig CSV string from a usage report's rows."""
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow([
-        "name", "profile", "status", "bytes_in", "bytes_out",
-        "total_bytes", "total_str", "limit_str", "percent", "comment",
-    ])
+    writer.writerow(
+        [
+            "name",
+            "profile",
+            "status",
+            "bytes_in",
+            "bytes_out",
+            "total_bytes",
+            "total_str",
+            "limit_str",
+            "percent",
+            "comment",
+        ]
+    )
     for r in report.get("rows", []):
-        writer.writerow([
-            r.get("name", ""),
-            r.get("profile", ""),
-            r.get("status", ""),
-            r.get("bytes_in", 0),
-            r.get("bytes_out", 0),
-            r.get("total_bytes", 0),
-            r.get("total_str", ""),
-            r.get("limit_str", ""),
-            f"{r.get('percent', 0.0):.1f}",
-            r.get("comment", ""),
-        ])
+        writer.writerow(
+            [
+                r.get("name", ""),
+                r.get("profile", ""),
+                r.get("status", ""),
+                r.get("bytes_in", 0),
+                r.get("bytes_out", 0),
+                r.get("total_bytes", 0),
+                r.get("total_str", ""),
+                r.get("limit_str", ""),
+                f"{r.get('percent', 0.0):.1f}",
+                r.get("comment", ""),
+            ]
+        )
     return output.getvalue()
 
 

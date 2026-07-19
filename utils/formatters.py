@@ -61,7 +61,7 @@ def parse_bytes(raw: str) -> str:
 @lru_cache(maxsize=256)
 def format_bytes(bytes_val: str) -> str:
     """Format a byte count into a human-readable string with appropriate units.
-    
+
     Results are cached for frequently used values.
     """
     if bytes_val is None or bytes_val == "":
@@ -79,9 +79,14 @@ def format_bytes(bytes_val: str) -> str:
     return f"{val} B"
 
 
-SENSITIVE_API_FIELDS = frozenset({
-    "password", "secret", "shared-users", "encryption-key",
-})
+SENSITIVE_API_FIELDS = frozenset(
+    {
+        "password",
+        "secret",
+        "shared-users",
+        "encryption-key",
+    }
+)
 
 
 def sanitize_api_response(response: list[dict]) -> list[dict]:

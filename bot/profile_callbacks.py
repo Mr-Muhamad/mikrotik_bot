@@ -7,7 +7,9 @@ def cache_profile_names(context, profile_names: list[str]) -> None:
     context.user_data[PROFILE_NAMES_KEY] = list(profile_names)
 
 
-def resolve_profile_from_callback(context, callback_data: str | None, prefix: str) -> str | None:
+def resolve_profile_from_callback(
+    context, callback_data: str | None, prefix: str
+) -> str | None:
     if not callback_data:
         return None
     suffix = callback_data[len(prefix) :]

@@ -1,10 +1,10 @@
 """Tests for bot.handlers.hotspot."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bot.handlers import hotspot as hotspot_module
 from utils import admin_decorator
-
 
 ADMIN_ID = 724730774
 
@@ -81,8 +81,12 @@ def _base_stats(**overrides):
         "active": 30,
         "inactive": 70,
         "categories": {
-            "10 GB": 10, "20 GB": 20, "30 GB": 15,
-            "40 GB": 5, "50 GB": 10, "أخرى": 40
+            "10 GB": 10,
+            "20 GB": 20,
+            "30 GB": 15,
+            "40 GB": 5,
+            "50 GB": 10,
+            "أخرى": 40,
         },
         "resets_by_day": {},
         "reset_days": [],
@@ -109,7 +113,9 @@ class TestHotspotStats:
             },
         )
 
-        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)):
+        with patch(
+            "bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)
+        ):
             result = await hotspot_module.hotspot_stats(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.callback_query.edit_message_text.call_args.args[0]
@@ -124,7 +130,10 @@ class TestHotspotStats:
         ctx.user_data = {"router_key": "discovered_1"}
         update = _query_update()
 
-        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(side_effect=Exception("net down"))):
+        with patch(
+            "bot.handlers.hotspot.run_blocking",
+            new=AsyncMock(side_effect=Exception("net down")),
+        ):
             result = await hotspot_module.hotspot_stats(update, ctx)
         assert result is None
         update.callback_query.edit_message_text.assert_called_once()
@@ -141,7 +150,10 @@ class TestHotspotStats:
         ctx.user_data = {"router_key": "discovered_1"}
         update = _query_update()
 
-        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=_base_stats())):
+        with patch(
+            "bot.handlers.hotspot.run_blocking",
+            new=AsyncMock(return_value=_base_stats()),
+        ):
             result = await hotspot_module.hotspot_stats(update, ctx)
         assert result == ConversationHandler.END
         text = update.callback_query.edit_message_text.call_args.args[0]
@@ -165,7 +177,9 @@ class TestHotspotStatsDayInput:
             reset_list=[("PREFIX_2026-07-05", "10 GB")],
         )
 
-        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)):
+        with patch(
+            "bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)
+        ):
             result = await hotspot_module.hotspot_stats_day_input(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.message.reply_text.call_args.args[0]
@@ -178,7 +192,10 @@ class TestHotspotStatsDayInput:
         ctx.user_data = {"router_key": "discovered_1"}
         update = _message_update("abc")
 
-        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=_base_stats())):
+        with patch(
+            "bot.handlers.hotspot.run_blocking",
+            new=AsyncMock(return_value=_base_stats()),
+        ):
             result = await hotspot_module.hotspot_stats_day_input(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.message.reply_text.call_args.args[0]
@@ -190,7 +207,10 @@ class TestHotspotStatsDayInput:
         ctx.user_data = {"router_key": "discovered_1"}
         update = _message_update("32")
 
-        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=_base_stats())):
+        with patch(
+            "bot.handlers.hotspot.run_blocking",
+            new=AsyncMock(return_value=_base_stats()),
+        ):
             result = await hotspot_module.hotspot_stats_day_input(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.message.reply_text.call_args.args[0]
@@ -210,7 +230,9 @@ class TestHotspotStatsDayInput:
             reset_list=[],
             selected_day=None,
         )
-        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)):
+        with patch(
+            "bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)
+        ):
             result = await hotspot_module.hotspot_stats_day_input(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.message.reply_text.call_args.args[0]

@@ -20,7 +20,12 @@ from bot.messages import (
 from bot.router_selector import cleanup_state, nav_set
 from bot.handlers.constants import WAITING_SHARE_RECIPIENT
 from core.card_models import deserialize_cards
-from database.models import list_card_batches, get_card_batch, update_batch_payment, get_sales_summary
+from database.models import (
+    list_card_batches,
+    get_card_batch,
+    update_batch_payment,
+    get_sales_summary,
+)
 from database.repositories.pdf_settings import get_pdf_settings
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
@@ -31,6 +36,8 @@ from pdf.card_generator import card_generator
 import json
 
 logger = logging.getLogger(__name__)
+
+
 def _batch_label(batch: dict) -> str:
     btype = "هوت سبوت" if batch.get("batch_type") == "hotspot" else "User Manager"
     return f"#{batch['id']} • {batch['name']} • {btype} • {batch.get('count', 0)} كارت"
@@ -43,22 +50,47 @@ async def batches_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
     cleanup_state(update.effective_user.id, context.user_data)
     nav_set(context, "menu_hotspot")
-    router_key = context.user_data["router_key"]
+    await _show_batches_page(update, context, page=0)
+
+async def _show_batches_page(update: Update, context: ContextTypes.DEFAULT_TYPE, page: int):
+    router_key = context.user_data.get("router_key")
+    if not router_key:
+        return
+        
+    page_size = 10
+    offset = page * page_size
     try:
-        batches = await run_blocking(list_card_batches, router_key)
+        from database.models import get_card_batches_count
+        total = await run_blocking(get_card_batches_count, router_key)
+        batches = await run_blocking(list_card_batches, router_key, page_size, offset)
     except Exception as e:
         logger.error(f"Failed to list batches: {e}")
         await send_step(update, context, f"❌ فشل جلب الدفعات: {str(e)[:120]}")
         return
 
-    if not batches:
+    if not batches and page == 0:
         await send_step(update, context, "📭 لا توجد دفعات كروت محفوظة بعد.")
         return
 
     text = "📦 الدفعات المحفوظة (الأحدث أولاً):\n\n" + "\n".join(
         f"• {_batch_label(b)} — {b.get('created_at', '')}" for b in batches
     )
-    await send_step(update, context, text, get_batches_keyboard(batches))
+    
+    keyboard = get_batches_keyboard(batches, page=page, total=total, page_size=page_size)
+    
+    if update.callback_query and update.callback_query.data.startswith("batch_page:"):
+        await update.callback_query.edit_message_text(text, reply_markup=keyboard)
+    else:
+        await send_step(update, context, text, keyboard)
+
+async def batch_page_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    try:
+        page = int(query.data.split(":", 1)[1])
+    except (ValueError, IndexError):
+        page = 0
+    await _show_batches_page(update, context, page=page)
 
 
 async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -74,14 +106,24 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
         batch = await run_blocking(get_card_batch, batch_id)
     except Exception as e:
         logger.error(f"Failed to load batch {batch_id}: {e}")
-        await query.edit_message_text("❌ فشل تحميل الدفعة.", reply_markup=get_batches_keyboard([]))
+        await query.edit_message_text(
+            "❌ فشل تحميل الدفعة.", reply_markup=get_batches_keyboard([])
+        )
         return
 
     if not batch:
-        await query.edit_message_text("⚠️ الدفعة غير موجودة.", reply_markup=get_batches_keyboard([]))
+        await query.edit_message_text(
+            "⚠️ الدفعة غير موجودة.", reply_markup=get_batches_keyboard([])
+        )
         return
 
-    await query.edit_message_text(_format_batch_text(batch), reply_markup=get_batch_detail_keyboard(batch["id"], payment_status=batch.get("payment_status", "unpaid")))
+    await query.edit_message_text(
+        _format_batch_text(batch),
+        reply_markup=get_batch_detail_keyboard(
+            batch["id"], payment_status=batch.get("payment_status", "unpaid")
+        ),
+    )
+
 
 def _format_batch_text(batch: dict) -> str:
     cards = batch.get("cards", [])
@@ -115,7 +157,6 @@ def _format_batch_text(batch: dict) -> str:
     if batch.get("sold_at"):
         lines.append(f"📅 تاريخ البيع: {batch['sold_at']}")
     return "\n".join(lines)
-
 
 
 async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -185,14 +226,18 @@ async def mark_batch_paid_handler(update: Update, context: ContextTypes.DEFAULT_
     success = await run_blocking(update_batch_payment, batch_id, status)
     if success:
         status_label = PAYMENT_STATUS_LABELS.get(status, status)
-        await query.answer(MARK_PAID_SUCCESS.format(status_label=status_label), show_alert=False)
+        await query.answer(
+            MARK_PAID_SUCCESS.format(status_label=status_label), show_alert=False
+        )
         # أعد رسم keyboard بحالة الدفع الجديدة
         try:
             batch = await run_blocking(get_card_batch, batch_id)
             if batch:
                 await query.edit_message_text(
                     text=_format_batch_text(batch),
-                    reply_markup=get_batch_detail_keyboard(batch_id, payment_status=status)
+                    reply_markup=get_batch_detail_keyboard(
+                        batch_id, payment_status=status
+                    ),
                 )
         except Exception:
             pass
@@ -211,11 +256,14 @@ async def show_sales_summary(update: Update, context: ContextTypes.DEFAULT_TYPE)
         summary = await run_blocking(get_sales_summary, days)
     except Exception as e:
         logger.error(f"Failed to get sales summary: {e}")
-        summary = {"total_batches": 0, "paid_count": 0, "unpaid_count": 0, "deferred_count": 0, "total_revenue": 0.0}
-    text = (
-        SALES_SUMMARY_HEADER.format(days=days)
-        + SALES_SUMMARY_ROW.format(**summary)
-    )
+        summary = {
+            "total_batches": 0,
+            "paid_count": 0,
+            "unpaid_count": 0,
+            "deferred_count": 0,
+            "total_revenue": 0.0,
+        }
+    text = SALES_SUMMARY_HEADER.format(days=days) + SALES_SUMMARY_ROW.format(**summary)
     await send_step(update, context, text)
 
 
@@ -307,7 +355,12 @@ async def share_card_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 __all__ = [
-    "batches_command", "batch_select", "batch_regen",
-    "mark_batch_paid_handler", "show_sales_summary",
-    "share_card_start", "share_card_send",
+    "batches_command",
+    "batch_select",
+    "batch_regen",
+    "mark_batch_paid_handler",
+    "show_sales_summary",
+    "share_card_start",
+    "share_card_send",
+    "batch_page_handler",
 ]

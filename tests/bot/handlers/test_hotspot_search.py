@@ -1,4 +1,5 @@
 """Tests for bot.handlers.hotspot_search."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -13,7 +14,6 @@ from bot.handlers.hotspot_search import (
 )
 from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
 from utils import admin_decorator
-
 
 ADMIN_ID = 724730774
 
@@ -83,8 +83,11 @@ class TestHotspotSearchQuery:
         update.message.text = "ali"
         context = _ctx()
 
-        with patch("bot.handlers.hotspot_search.get_selected_router", return_value=None), \
-             patch("bot.handlers.hotspot_search.reply_final", new=AsyncMock()) as mock_reply:
+        with patch(
+            "bot.handlers.hotspot_search.get_selected_router", return_value=None
+        ), patch(
+            "bot.handlers.hotspot_search.reply_final", new=AsyncMock()
+        ) as mock_reply:
             result = await hotspot_search_query(update, context)
         assert result == ConversationHandler.END
         mock_reply.assert_called_once()
@@ -98,15 +101,30 @@ class TestHotspotSearchQuery:
         update.message.text = "ali"
         context = _ctx()
 
-        hosts = [{"host-name": "Phone1", "address": "10.0.0.5", "mac-address": "AA:BB:CC:DD:EE:FF"}]
+        hosts = [
+            {
+                "host-name": "Phone1",
+                "address": "10.0.0.5",
+                "mac-address": "AA:BB:CC:DD:EE:FF",
+            }
+        ]
         loading = MagicMock()
         loading.message_id = 999
 
-        with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
-             patch("bot.handlers.hotspot_search.send_loading", new=AsyncMock(return_value=loading)), \
-             patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()), \
-             patch("bot.handlers.hotspot_search.send_step", new=AsyncMock()), \
-             patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(return_value=hosts)):
+        with patch(
+            "bot.handlers.hotspot_search.get_selected_router",
+            return_value="discovered_1",
+        ), patch(
+            "bot.handlers.hotspot_search.send_loading",
+            new=AsyncMock(return_value=loading),
+        ), patch(
+            "bot.handlers.hotspot_search.delete_now", new=AsyncMock()
+        ), patch(
+            "bot.handlers.hotspot_search.send_step", new=AsyncMock()
+        ), patch(
+            "bot.handlers.hotspot_search.run_blocking",
+            new=AsyncMock(return_value=hosts),
+        ):
             result = await hotspot_search_query(update, context)
         assert result == WAITING_HOTSPOT_SEARCH
         assert context.user_data["search_hosts"] == hosts
@@ -123,12 +141,22 @@ class TestHotspotSearchQuery:
         loading = MagicMock()
         loading.message_id = 999
 
-        with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
-             patch("bot.handlers.hotspot_search.send_loading", new=AsyncMock(return_value=loading)), \
-             patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()), \
-             patch("bot.handlers.hotspot_search.send_step", new=AsyncMock()), \
-             patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("net down"))), \
-             patch("bot.handlers.hotspot_search.reply_final", new=AsyncMock()):
+        with patch(
+            "bot.handlers.hotspot_search.get_selected_router",
+            return_value="discovered_1",
+        ), patch(
+            "bot.handlers.hotspot_search.send_loading",
+            new=AsyncMock(return_value=loading),
+        ), patch(
+            "bot.handlers.hotspot_search.delete_now", new=AsyncMock()
+        ), patch(
+            "bot.handlers.hotspot_search.send_step", new=AsyncMock()
+        ), patch(
+            "bot.handlers.hotspot_search.run_blocking",
+            new=AsyncMock(side_effect=Exception("net down")),
+        ), patch(
+            "bot.handlers.hotspot_search.reply_final", new=AsyncMock()
+        ):
             result = await hotspot_search_query(update, context)
         assert result == WAITING_HOTSPOT_SEARCH
 
@@ -144,11 +172,19 @@ class TestHotspotSearchQuery:
         loading = MagicMock()
         loading.message_id = 999
 
-        with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
-             patch("bot.handlers.hotspot_search.send_loading", new=AsyncMock(return_value=loading)), \
-             patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()), \
-             patch("bot.handlers.hotspot_search.send_step", new=AsyncMock()) as mock_send, \
-             patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(return_value=[])):
+        with patch(
+            "bot.handlers.hotspot_search.get_selected_router",
+            return_value="discovered_1",
+        ), patch(
+            "bot.handlers.hotspot_search.send_loading",
+            new=AsyncMock(return_value=loading),
+        ), patch(
+            "bot.handlers.hotspot_search.delete_now", new=AsyncMock()
+        ), patch(
+            "bot.handlers.hotspot_search.send_step", new=AsyncMock()
+        ) as mock_send, patch(
+            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(return_value=[])
+        ):
             await hotspot_search_query(update, context)
         text = mock_send.call_args.kwargs.get("text") or mock_send.call_args.args[2]
         assert "📭" in text or "لا توجد" in text
@@ -218,7 +254,11 @@ class TestHotspotShowHost:
         update.callback_query = query
         context = _ctx()
         context.user_data["search_hosts"] = [
-            {"host-name": "Phone", "address": "10.0.0.5", "mac-address": "AA:BB:CC:DD:EE:FF"}
+            {
+                "host-name": "Phone",
+                "address": "10.0.0.5",
+                "mac-address": "AA:BB:CC:DD:EE:FF",
+            }
         ]
 
         result = await hotspot_show_host(update, context)
@@ -237,9 +277,7 @@ class TestHotspotShowHost:
         update.effective_chat = MagicMock(type="private")
         update.callback_query = query
         context = _ctx()
-        context.user_data["search_hosts"] = [
-            {"user": "user1", "address": "10.0.0.6"}
-        ]
+        context.user_data["search_hosts"] = [{"user": "user1", "address": "10.0.0.6"}]
 
         result = await hotspot_show_host(update, context)
         assert result == WAITING_HOTSPOT_SEARCH
@@ -297,8 +335,13 @@ class TestHotspotHostKick:
         context.user_data["search_hosts"] = [{"mac-address": "AA:BB:CC:DD:EE:FF"}]
         context.user_data["kick_host_idx"] = 0
 
-        with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
-             patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(return_value=(True, "Phone"))):
+        with patch(
+            "bot.handlers.hotspot_search.get_selected_router",
+            return_value="discovered_1",
+        ), patch(
+            "bot.handlers.hotspot_search.run_blocking",
+            new=AsyncMock(return_value=(True, "Phone")),
+        ):
             result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END
 
@@ -317,8 +360,13 @@ class TestHotspotHostKick:
         context.user_data["search_hosts"] = [{"mac-address": "AA:BB:CC:DD:EE:FF"}]
         context.user_data["kick_host_idx"] = 0
 
-        with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
-             patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(return_value=(False, ""))):
+        with patch(
+            "bot.handlers.hotspot_search.get_selected_router",
+            return_value="discovered_1",
+        ), patch(
+            "bot.handlers.hotspot_search.run_blocking",
+            new=AsyncMock(return_value=(False, "")),
+        ):
             result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END
 
@@ -353,7 +401,10 @@ class TestHotspotHostKick:
         context.user_data["search_hosts"] = []
         context.user_data["kick_host_idx"] = 5
 
-        with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"):
+        with patch(
+            "bot.handlers.hotspot_search.get_selected_router",
+            return_value="discovered_1",
+        ):
             result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END
 
@@ -372,7 +423,12 @@ class TestHotspotHostKick:
         context.user_data["search_hosts"] = [{"mac-address": "AA:BB:CC:DD:EE:FF"}]
         context.user_data["kick_host_idx"] = 0
 
-        with patch("bot.handlers.hotspot_search.get_selected_router", return_value="discovered_1"), \
-             patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("boom"))):
+        with patch(
+            "bot.handlers.hotspot_search.get_selected_router",
+            return_value="discovered_1",
+        ), patch(
+            "bot.handlers.hotspot_search.run_blocking",
+            new=AsyncMock(side_effect=Exception("boom")),
+        ):
             result = await hotspot_host_action(update, context)
         assert result == ConversationHandler.END

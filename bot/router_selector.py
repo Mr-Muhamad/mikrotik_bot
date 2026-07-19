@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import wraps
 import logging
 from typing import Any
+import asyncio
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -19,6 +20,7 @@ def _get_user_id(update: Update) -> int | None:
     user = update.effective_user
     return user.id if user is not None else None
 
+
 # ── Navigation guard allowlist ────────────────────────────────
 # Operational features require an active router session (business rule).
 # Handlers matching these commands/patterns are ROUTER-MANAGEMENT screens and
@@ -26,29 +28,72 @@ def _get_user_id(update: Update) -> int | None:
 # registered handler purely from its registration kwargs (command= / pattern=),
 # so no per-handler opt-in is needed.
 
-ROUTER_MGMT_COMMANDS = frozenset({
-    "start", "help", "cancel", "clean", "sync", "routers", "addrouter",
-    "reboot", "roles", "role", "watchdog", "watchdog_start", "metrics",
-    "assign_router",
-})
+ROUTER_MGMT_COMMANDS = frozenset(
+    {
+        "start",
+        "help",
+        "cancel",
+        "clean",
+        "sync",
+        "routers",
+        "addrouter",
+        "reboot",
+        "roles",
+        "role",
+        "watchdog",
+        "watchdog_start",
+        "metrics",
+        "assign_router",
+    }
+)
 
 # Exact-match callback tokens that belong to router management.
-ROUTER_MGMT_TOKENS = frozenset({
-    "select_router", "main_menu", "saved_routers", "saved_router",
-    "discover_routers", "connect_router", "delete_router", "confirm_delete_router",
-    "refresh_routers", "reboot_yes", "reboot_no", "reboot_router", "rename_router",
-    "manual_add_router", "confirm_manual_add", "disc_router", "cancel_edit",
-    "go_back",
-})
+ROUTER_MGMT_TOKENS = frozenset(
+    {
+        "select_router",
+        "main_menu",
+        "saved_routers",
+        "saved_router",
+        "discover_routers",
+        "connect_router",
+        "delete_router",
+        "confirm_delete_router",
+        "refresh_routers",
+        "reboot_yes",
+        "reboot_no",
+        "reboot_router",
+        "rename_router",
+        "manual_add_router",
+        "confirm_manual_add",
+        "disc_router",
+        "cancel_edit",
+        "go_back",
+    }
+)
 
 # Callback pattern *names* (keys of PATTERNS) exempt from the router requirement.
-ROUTER_MGMT_PATTERN_NAMES = frozenset({
-    "select_router", "main_menu", "saved_routers", "saved_router",
-    "discover_routers", "connect_router", "delete_router", "confirm_delete_router",
-    "refresh_routers", "reboot_yes", "reboot_no", "reboot_router", "rename_router",
-    "manual_add_router", "confirm_manual_add", "disc_router", "cancel_edit",
-    "go_back",
-})
+ROUTER_MGMT_PATTERN_NAMES = frozenset(
+    {
+        "select_router",
+        "main_menu",
+        "saved_routers",
+        "saved_router",
+        "discover_routers",
+        "connect_router",
+        "delete_router",
+        "confirm_delete_router",
+        "refresh_routers",
+        "reboot_yes",
+        "reboot_no",
+        "reboot_router",
+        "rename_router",
+        "manual_add_router",
+        "confirm_manual_add",
+        "disc_router",
+        "cancel_edit",
+        "go_back",
+    }
+)
 
 # Resolved regex strings (from PATTERNS) for the exempt callback names.
 # Built lazily to avoid importing callback_constants at module import time.
@@ -59,10 +104,12 @@ def _router_mgmt_regexes():
     global _ROUTER_MGMT_PATTERN_REGEXES
     if _ROUTER_MGMT_PATTERN_REGEXES is None:
         from bot.handlers.callback_constants import PATTERNS
+
         _ROUTER_MGMT_PATTERN_REGEXES = frozenset(
             PATTERNS[name] for name in ROUTER_MGMT_PATTERN_NAMES
         )
     return _ROUTER_MGMT_PATTERN_REGEXES
+
 
 PRESERVED_USER_DATA_KEYS = {
     "nav_back",
@@ -71,21 +118,50 @@ PRESERVED_USER_DATA_KEYS = {
 }
 
 CONVERSATION_USER_DATA_KEYS = (
-    "add_username", "add_password", "add_profile", "add_bytes", "add_uptime",
-    "edit_user_id", "edit_user_data", "edit_field",
-    "delete_user_id", "search_hosts", "kick_host_idx", "users_cache",
-    "search_um_hosts", "kick_um_idx", "add_profile_username", "add_profile_list",
-    "card_type", "card_profile", "card_payment", "card_caller_id", "pdf_option",
-    "disc_ip", "disc_username", "disc_router_id",
-    "rename_router_id", "last_msg",
-    "hs_card_count", "hs_card_length", "hs_card_prefix",
-    "hs_card_system", "hs_card_profile", "hs_card_uptime",
-    "hs_card_bytes", "hs_uptime_unit", "uptime_unit",
+    "add_username",
+    "add_password",
+    "add_profile",
+    "add_bytes",
+    "add_uptime",
+    "edit_user_id",
+    "edit_user_data",
+    "edit_field",
+    "delete_user_id",
+    "search_hosts",
+    "kick_host_idx",
+    "users_cache",
+    "search_um_hosts",
+    "kick_um_idx",
+    "add_profile_username",
+    "add_profile_list",
+    "card_type",
+    "card_profile",
+    "card_payment",
+    "card_caller_id",
+    "pdf_option",
+    "disc_ip",
+    "disc_username",
+    "disc_router_id",
+    "rename_router_id",
+    "last_msg",
+    "hs_card_count",
+    "hs_card_length",
+    "hs_card_prefix",
+    "hs_card_system",
+    "hs_card_profile",
+    "hs_card_uptime",
+    "hs_card_bytes",
+    "hs_uptime_unit",
+    "uptime_unit",
     "usage_router",
-    "backup_local_path", "backup_downloaded", "backup_type",
+    "backup_local_path",
+    "backup_downloaded",
+    "backup_type",
     "backup_downloaded_list",
-    "restore_backup_list", "restore_backup_name",
-    "userman_restore_list", "userman_restore_tar",
+    "restore_backup_list",
+    "restore_backup_name",
+    "userman_restore_list",
+    "userman_restore_tar",
 )
 
 
@@ -127,13 +203,17 @@ def get_selected_router(user_id):
     # Only enforce if timeout_mins is > 0. If timeout_mins <= 0, it means no timeout.
     if last_activity_str and timeout_mins > 0:
         try:
-            last_activity = datetime.strptime(last_activity_str, UTC_TIMESTAMP_FORMAT).replace(tzinfo=timezone.utc)
+            last_activity = datetime.strptime(
+                last_activity_str, UTC_TIMESTAMP_FORMAT
+            ).replace(tzinfo=timezone.utc)
             now = datetime.now(timezone.utc)
             diff = (now - last_activity).total_seconds() / 60.0
-            
+
             if diff > timeout_mins:
                 # Session expired
-                logger.info(f"User {user_id} session expired after {diff:.1f} minutes of inactivity.")
+                logger.info(
+                    f"User {user_id} session expired after {diff:.1f} minutes of inactivity."
+                )
                 clear_router_session(user_id)
                 return None
         except Exception as e:
@@ -159,7 +239,9 @@ def clear_action(user_id):
 
 def clear_router(user_id):
     """Clear all session state for a user (router selection and current action)."""
-    save_user_session(user_id, selected_router="", current_action=None, action_data=None)
+    save_user_session(
+        user_id, selected_router="", current_action=None, action_data=None
+    )
 
 
 def nav_set(context, back_to):
@@ -183,40 +265,31 @@ def cleanup_state(user_id: int, user_data: dict[str, Any] | None) -> None:
             user_data.pop(key, None)
 
 
-async def _try_auto_connect(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int) -> str | None:
-    """محاولة الاتصال التلقائي إذا كان لدى المستخدم راوتر واحد فقط محفوظ."""
-    routers = get_user_routers(user_id)
-    if len(routers) == 1:
-        router = routers[0]
-        if router.get("username"):
-            from core.mikrotik_api import mikrotik_api
-            from utils.async_blocking import run_blocking
-            from config import ROUTER_KEY_PREFIX
-
-            # Notify user to show progress
-            if update.callback_query:
-                try:
-                    await update.callback_query.answer("جاري الاتصال بالراوتر الوحيد...")
-                except Exception:
-                    pass
-
-            success, _, _ = await run_blocking(
-                mikrotik_api.test_connection,
-                router["ip_address"], router["username"], router["password"], router["port"]
-            )
-            if success:
-                router_id = router["id"]
-                router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
-                set_selected_router(user_id, router_key)
-                
-                # تحديث حالة الـ Watchdog
-                from core.watchdog import check_router_health
-                from database.models import update_router_last_seen
-                await run_blocking(update_router_last_seen, router_id)
-                await run_blocking(check_router_health, router_key)
-                
-                return router_key
-    return None
+async def _fast_reachability_check(router_key: str) -> bool:
+    """إجراء فحص سريع للاتصال بالراوتر (1 ثانية كحد أقصى)."""
+    try:
+        from database.repositories.routers import get_router_by_id
+        from config import ROUTER_KEY_PREFIX
+        
+        db_id = router_key.replace(ROUTER_KEY_PREFIX, "")
+        router_cfg = get_router_by_id(int(db_id))
+        
+        if not router_cfg:
+            return False
+            
+        ip = router_cfg["ip_address"]
+        port = router_cfg["port"]
+        
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(ip, port),
+            timeout=1.0
+        )
+        writer.close()
+        await writer.wait_closed()
+        return True
+    except Exception as e:
+        logger.warning(f"Fast reachability check failed for {router_key}: {e}")
+        return False
 
 
 def require_router(func):
@@ -226,15 +299,14 @@ def require_router(func):
     concerns (keyboards and user-facing messages). It reads the module-level
     ``get_selected_router`` so tests can monkeypatch it.
     """
+
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = _get_user_id(update)
         if user_id is None:
             return
         router_key = get_selected_router(user_id)
-        if not router_key:
-            router_key = await _try_auto_connect(update, context, user_id)
-            
+
         if not router_key:
             keyboard = get_router_keyboard()
             if update.callback_query:
@@ -247,8 +319,18 @@ def require_router(func):
                     NO_ROUTER_SELECTED, reply_markup=keyboard
                 )
             return
+            
+        if not await _fast_reachability_check(router_key):
+            error_msg = "⚠️ الراوتر لا يستجيب حالياً. يرجى التحقق من اتصاله بالإنترنت."
+            if update.callback_query:
+                await update.callback_query.answer(error_msg, show_alert=True)
+            elif update.message:
+                await update.message.reply_text(error_msg)
+            return
+
         context.user_data["router_key"] = router_key
         return await func(update, context)
+
     return wrapper
 
 
@@ -260,15 +342,14 @@ def navigation_guard(func):
     guard every *operational* handler automatically (string-based
     classification), so individual handlers never repeat the check.
     """
+
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user_id = _get_user_id(update)
         if user_id is None:
             return
         router_key = get_selected_router(user_id)
-        if not router_key:
-            router_key = await _try_auto_connect(update, context, user_id)
-            
+
         if not router_key:
             keyboard = get_router_keyboard()
             if update.callback_query:
@@ -281,8 +362,18 @@ def navigation_guard(func):
                     NO_ROUTER_SELECTED, reply_markup=keyboard
                 )
             return
+
+        if not await _fast_reachability_check(router_key):
+            error_msg = "⚠️ الراوتر لا يستجيب حالياً. يرجى التحقق من اتصاله بالإنترنت."
+            if update.callback_query:
+                await update.callback_query.answer(error_msg, show_alert=True)
+            elif update.message:
+                await update.message.reply_text(error_msg)
+            return
+
         context.user_data["router_key"] = router_key
         return await func(update, context)
+
     return wrapper
 
 
@@ -303,5 +394,3 @@ def requires_router_check(command: str | None, pattern: str | None) -> bool:
         return pattern not in _router_mgmt_regexes()
     # MessageHandler / other: treat as operational (guarded).
     return True
-
-

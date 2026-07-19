@@ -4,13 +4,28 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.keyboards import get_back_keyboard
 from bot.messages import (
-    USAGE_PROMPT, USAGE_HEADER, USAGE_STATUS_ACTIVE, USAGE_STATUS_DISABLED,
-    USAGE_SERVER, USAGE_PROFILE_LABEL, USAGE_PASSWORD_LABEL,
-    USAGE_COMMENT_LABEL, USAGE_BYTES_IN, USAGE_BYTES_OUT,
-    USAGE_BYTES_TOTAL, USAGE_UPTIME_LABEL, USAGE_CURRENT_ACTIVE,
-    USAGE_DEVICE_LINE, USAGE_NO_ACTIVE, USAGE_LIMIT_LABEL, USAGE_NO_LIMIT,
-    USER_NOT_FOUND, ERROR_OCCURRED,
-NO_ROUTER_SELECTED,
+    USAGE_NO_ROUTER,
+    USAGE_STATUS,
+    USAGE_PROMPT,
+    USAGE_HEADER,
+    USAGE_STATUS_ACTIVE,
+    USAGE_STATUS_DISABLED,
+    USAGE_SERVER,
+    USAGE_PROFILE_LABEL,
+    USAGE_PASSWORD_LABEL,
+    USAGE_COMMENT_LABEL,
+    USAGE_BYTES_IN,
+    USAGE_BYTES_OUT,
+    USAGE_BYTES_TOTAL,
+    USAGE_UPTIME_LABEL,
+    USAGE_CURRENT_ACTIVE,
+    USAGE_DEVICE_LINE,
+    USAGE_NO_ACTIVE,
+    USAGE_LIMIT_LABEL,
+    USAGE_NO_LIMIT,
+    USER_NOT_FOUND,
+    ERROR_OCCURRED,
+    NO_ROUTER_SELECTED,
 )
 from bot.router_selector import get_selected_router, nav_set, cleanup_state
 from bot.handlers.constants import WAITING_USAGE_QUERY
@@ -47,11 +62,13 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     router_key = context.user_data.get("usage_router")
 
     if not router_key:
-        await send_step(update, context, "⚠️ لم يتم اختيار روتر")
+        await send_step(update, context, USAGE_NO_ROUTER)
         return ConversationHandler.END
 
     try:
-        users = await run_blocking(hotspot_manager.search_users, router_key, search_term)
+        users = await run_blocking(
+            hotspot_manager.search_users, router_key, search_term
+        )
     except Exception as e:
         logger.error(f"Usage search failed: {e}")
         await send_step(update, context, ERROR_OCCURRED.format(str(e)[:100]))
@@ -65,7 +82,9 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-async def _show_usage_report(update: Update, context: ContextTypes.DEFAULT_TYPE, user: dict, router_key: str):
+async def _show_usage_report(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, user: dict, router_key: str
+):
     name = user.get("name", "—")
     disabled = str(user.get("disabled", "false")).lower() == "true"
     status = USAGE_STATUS_DISABLED if disabled else USAGE_STATUS_ACTIVE
@@ -92,7 +111,7 @@ async def _show_usage_report(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     lines = [
         USAGE_HEADER.format(username=name),
-        f"الحالة: {status}",
+        USAGE_STATUS.format(status=status),
         USAGE_SERVER.format(server=server),
         "",
         USAGE_PROFILE_LABEL.format(profile=profile),
@@ -117,14 +136,18 @@ async def _show_usage_report(update: Update, context: ContextTypes.DEFAULT_TYPE,
                 addr = h.get("address", "—")
                 mac = h.get("mac-address", "—")
                 uptime = h.get("uptime", "—")
-                active_lines.append(USAGE_DEVICE_LINE.format(address=addr, mac=mac, uptime=uptime))
+                active_lines.append(
+                    USAGE_DEVICE_LINE.format(address=addr, mac=mac, uptime=uptime)
+                )
             lines.append(USAGE_CURRENT_ACTIVE.format(devices="\n".join(active_lines)))
         else:
             lines.append(USAGE_NO_ACTIVE)
     except Exception:
         lines.append(USAGE_NO_ACTIVE)
 
-    await send_step(update, context, "\n".join(lines), get_back_keyboard("menu_hotspot"))
+    await send_step(
+        update, context, "\n".join(lines), get_back_keyboard("menu_hotspot")
+    )
 
 
 __all__ = ["usage_start", "usage_query"]

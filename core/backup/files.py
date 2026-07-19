@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 MAX_LOCAL_BACKUPS = 10
 MAX_ROUTER_BACKUPS = 5
 FTP_PORT = 21
-BACKUP_FILE_EXTENSIONS = (".backup", ".rsc", ".tar")
+BACKUP_FILE_EXTENSIONS = (".backup", ".rsc", ".tar", ".umb")
 USERMAN_BACKUP_PREFIX = "User_Manager_"
 
 
@@ -53,7 +53,9 @@ def is_safe_filename(filename: str) -> bool:
     return os.path.basename(filename) == filename
 
 
-def safe_join_file(parent_dir: str, filename: str, allowed_extensions: tuple[str, ...]) -> str:
+def safe_join_file(
+    parent_dir: str, filename: str, allowed_extensions: tuple[str, ...]
+) -> str:
     if not is_safe_filename(filename):
         raise ValueError("اسم الملف غير صالح")
     if not filename.endswith(allowed_extensions):
@@ -75,7 +77,7 @@ def resolve_userman_backup_file(filename: str, backup_root: str | None = None) -
         raise ValueError("اسم نسخة User Manager غير صالح")
     backup_root = backup_root or BACKUP_DIR
     userman_dir = os.path.join(backup_root, "userman")
-    return safe_join_file(userman_dir, filename, (".tar",))
+    return safe_join_file(userman_dir, filename, (".tar", ".umb"))
 
 
 def is_valid_router_backup_name(filename: str) -> bool:
@@ -84,6 +86,7 @@ def is_valid_router_backup_name(filename: str) -> bool:
     return (
         (filename.startswith("backup_") and filename.endswith(".backup"))
         or (filename.startswith("export_") and filename.endswith(".rsc"))
+        or (filename.startswith(USERMAN_BACKUP_PREFIX) and filename.endswith(".umb"))
     )
 
 
@@ -98,7 +101,9 @@ def validate_tar_members(tar: tarfile.TarFile, extract_dir: str) -> None:
             raise ValueError("أرشيف الاستعادة يحاول الكتابة خارج مجلد الاستعادة")
 
 
-def cleanup_old_backups(parent_dir: str, router_key: str, keep: int = MAX_LOCAL_BACKUPS) -> int:
+def cleanup_old_backups(
+    parent_dir: str, router_key: str, keep: int = MAX_LOCAL_BACKUPS
+) -> int:
     if not os.path.isdir(parent_dir):
         return 0
     dirs = []
@@ -117,17 +122,25 @@ def cleanup_old_backups(parent_dir: str, router_key: str, keep: int = MAX_LOCAL_
         except OSError as e:
             logger.warning(f"Failed to delete old backup {path}: {e}")
     if deleted:
-        logger.info(f"Cleaned up {deleted} old backup(s) for {router_key} in {parent_dir}")
+        logger.info(
+            f"Cleaned up {deleted} old backup(s) for {router_key} in {parent_dir}"
+        )
     return deleted
 
 
-def cleanup_old_files(parent_dir: str, prefix: str, keep: int = MAX_LOCAL_BACKUPS) -> int:
+def cleanup_old_files(
+    parent_dir: str, prefix: str, keep: int = MAX_LOCAL_BACKUPS
+) -> int:
     if not os.path.isdir(parent_dir):
         return 0
     files = []
     for entry in os.listdir(parent_dir):
         full = os.path.join(parent_dir, entry)
-        if os.path.isfile(full) and entry.startswith(prefix) and entry.endswith(".tar"):
+        if (
+            os.path.isfile(full)
+            and entry.startswith(prefix)
+            and (entry.endswith(".tar") or entry.endswith(".umb"))
+        ):
             files.append((os.path.getmtime(full), full))
     if len(files) <= keep:
         return 0
@@ -140,11 +153,15 @@ def cleanup_old_files(parent_dir: str, prefix: str, keep: int = MAX_LOCAL_BACKUP
         except OSError as e:
             logger.warning(f"Failed to delete old tar {path}: {e}")
     if deleted:
-        logger.info(f"Cleaned up {deleted} old tar(s) with prefix {prefix} in {parent_dir}")
+        logger.info(
+            f"Cleaned up {deleted} old tar(s) with prefix {prefix} in {parent_dir}"
+        )
     return deleted
 
 
-def cleanup_router_files(router_key: str, pattern_prefix: str, keep: int = MAX_ROUTER_BACKUPS) -> int:
+def cleanup_router_files(
+    router_key: str, pattern_prefix: str, keep: int = MAX_ROUTER_BACKUPS
+) -> int:
     deleted = 0
     try:
         files = mikrotik_api.execute(router_key, "file/print")
@@ -162,7 +179,9 @@ def cleanup_router_files(router_key: str, pattern_prefix: str, keep: int = MAX_R
         for item in matching[keep:]:
             name = item.get("name", "")
             try:
-                mikrotik_api.execute(router_key, "file/remove", **{".id": item.get(".id")})
+                mikrotik_api.execute(
+                    router_key, "file/remove", **{".id": item.get(".id")}
+                )
                 deleted += 1
                 logger.debug(f"Removed old router file: {name}")
             except Exception as e:

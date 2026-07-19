@@ -31,7 +31,7 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
     MessageHandler,
-ConversationHandler,
+    ConversationHandler,
 )
 from utils.request_id import bind_request_id_from_update
 
@@ -39,6 +39,7 @@ from utils.request_id import bind_request_id_from_update
 def _load_guard():
     """Lazily import the navigation-guard functions (avoids import cycles)."""
     from bot.router_selector import navigation_guard, requires_router_check
+
     return navigation_guard, requires_router_check
 
 
@@ -66,20 +67,32 @@ class _GroupBuilder:
 
     def entry_point(self, handler_cls, **kwargs):
         """Register an entry point for this group's CH."""
+
         def decorator(func):
-            _registry["groups"][self.name]["entry_points"].append({
-                "cls": handler_cls, "func": func, "kwargs": kwargs,
-            })
+            _registry["groups"][self.name]["entry_points"].append(
+                {
+                    "cls": handler_cls,
+                    "func": func,
+                    "kwargs": kwargs,
+                }
+            )
             return func
+
         return decorator
 
     def fallback(self, handler_cls, **kwargs):
         """Register a fallback for this group's CH."""
+
         def decorator(func):
-            _registry["groups"][self.name]["fallbacks"].append({
-                "cls": handler_cls, "func": func, "kwargs": kwargs,
-            })
+            _registry["groups"][self.name]["fallbacks"].append(
+                {
+                    "cls": handler_cls,
+                    "func": func,
+                    "kwargs": kwargs,
+                }
+            )
             return func
+
         return decorator
 
     def state(self, state_name):
@@ -94,10 +107,15 @@ class _GroupStateBuilder:
 
     def _add(self, handler_cls, **kwargs):
         def decorator(func):
-            _registry["groups"][self._group_name]["states"][self._state_name].append({
-                "cls": handler_cls, "func": func, "kwargs": kwargs,
-            })
+            _registry["groups"][self._group_name]["states"][self._state_name].append(
+                {
+                    "cls": handler_cls,
+                    "func": func,
+                    "kwargs": kwargs,
+                }
+            )
             return func
+
         return decorator
 
     def callback(self, pattern):
@@ -124,12 +142,15 @@ def group(name: str) -> _GroupBuilder:
 
 def _register(target, handler_cls, **kwargs):
     def decorator(func):
-        _registry[target].append({
-            "cls": handler_cls,
-            "func": func,
-            "kwargs": kwargs,
-        })
+        _registry[target].append(
+            {
+                "cls": handler_cls,
+                "func": func,
+                "kwargs": kwargs,
+            }
+        )
         return func
+
     return decorator
 
 
@@ -160,10 +181,15 @@ class _StateBuilder:
 
     def _add(self, handler_cls, **kwargs):
         def decorator(func):
-            _registry["states"][self._state_name].append({
-                "cls": handler_cls, "func": func, "kwargs": kwargs,
-            })
+            _registry["states"][self._state_name].append(
+                {
+                    "cls": handler_cls,
+                    "func": func,
+                    "kwargs": kwargs,
+                }
+            )
             return func
+
         return decorator
 
     def callback(self, pattern):
@@ -215,6 +241,11 @@ def build_application(application, constants_module):
                          (typically bot.handlers or bot.handlers.constants).
     """
 
+    # 0. Standalone handlers (added FIRST so commands like /help, /metrics,
+    #    /logs are handled directly and are not swallowed by any
+    #    ConversationHandler's fallbacks at state=None).
+    for h in _registry["standalone"]:
+        application.add_handler(_build_handler(h))
 
     # 1. Build main ConversationHandler (legacy)
     states = {}
@@ -227,7 +258,7 @@ def build_application(application, constants_module):
         states=states,
         fallbacks=[_build_handler(h) for h in _registry["fallbacks"]],
         per_message=False,
-        conversation_timeout=3600,
+        conversation_timeout=300,  # 5 minutes timeout to prevent hanging sessions
     )
 
     # 2. Build grouped ConversationHandlers
@@ -246,19 +277,15 @@ def build_application(application, constants_module):
             fallbacks=[_build_handler(h) for h in group_data["fallbacks"]],
             per_message=False,
             name=group_name,
+            conversation_timeout=300,  # 5 minutes timeout
         )
-        # Add group CH before main CH so their fallbacks (cancel/start/go_back)
-        # take precedence while a conversation is active. If a standalone
-        # `cancel` CommandHandler were registered before these CHs, it would
-        # preempt them and the conversation state would stay STUCK.
+        # Add group CH after standalone handlers so their fallbacks
+        # (cancel/start/go_back) take precedence while a conversation is
+        # active, without swallowing non-conversation commands.
         application.add_handler(group_conv)
 
-    # 3. Main CH (added after group CHs, before standalone handlers)
+    # 3. Main CH (added last)
     application.add_handler(main_conv)
-
-    # 4. Standalone handlers (added after — catch-all for navigation)
-    for h in _registry["standalone"]:
-        application.add_handler(_build_handler(h))
 
     # 5. Error handler
     if _registry["error_handler"]:

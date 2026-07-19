@@ -1,4 +1,5 @@
 """Tests for database/repositories/stats_snapshots and core/stats trend methods."""
+
 import pytest
 import sqlite3
 from contextlib import contextmanager
@@ -48,7 +49,10 @@ PATCH_TARGET = "database.repositories.stats_snapshots.get_db"
 
 class TestSaveSnapshot:
     def test_saves_new_snapshot(self):
-        from database.repositories.stats_snapshots import save_snapshot, get_week_snapshots
+        from database.repositories.stats_snapshots import (
+            save_snapshot,
+            get_week_snapshots,
+        )
 
         get_db = _make_get_db()
         with patch(PATCH_TARGET, get_db):
@@ -59,7 +63,10 @@ class TestSaveSnapshot:
         assert snaps[0]["total_users"] == 50
 
     def test_upsert_same_day(self):
-        from database.repositories.stats_snapshots import save_snapshot, get_week_snapshots
+        from database.repositories.stats_snapshots import (
+            save_snapshot,
+            get_week_snapshots,
+        )
 
         get_db = _make_get_db()
         with patch(PATCH_TARGET, get_db):
@@ -70,7 +77,10 @@ class TestSaveSnapshot:
         assert snaps[0]["active_users"] == 20
 
     def test_multiple_routers(self):
-        from database.repositories.stats_snapshots import save_snapshot, get_week_snapshots
+        from database.repositories.stats_snapshots import (
+            save_snapshot,
+            get_week_snapshots,
+        )
 
         get_db = _make_get_db()
         with patch(PATCH_TARGET, get_db):
@@ -84,7 +94,10 @@ class TestSaveSnapshot:
         assert r2[0]["active_users"] == 15
 
     def test_defaults_for_missing_fields(self):
-        from database.repositories.stats_snapshots import save_snapshot, get_week_snapshots
+        from database.repositories.stats_snapshots import (
+            save_snapshot,
+            get_week_snapshots,
+        )
 
         get_db = _make_get_db()
         with patch(PATCH_TARGET, get_db):
@@ -126,7 +139,10 @@ class TestGetYesterdaySnapshot:
         assert result["snapshot_date"] == yesterday
 
     def test_returns_none_for_other_router(self):
-        from database.repositories.stats_snapshots import save_snapshot, get_yesterday_snapshot
+        from database.repositories.stats_snapshots import (
+            save_snapshot,
+            get_yesterday_snapshot,
+        )
 
         get_db = _make_get_db()
         with patch(PATCH_TARGET, get_db):
@@ -148,7 +164,10 @@ class TestGetWeekSnapshots:
         assert result == []
 
     def test_returns_snapshots_ordered_asc(self):
-        from database.repositories.stats_snapshots import save_snapshot, get_week_snapshots
+        from database.repositories.stats_snapshots import (
+            save_snapshot,
+            get_week_snapshots,
+        )
 
         get_db = _make_get_db()
         # أدرج بتواريخ متعددة

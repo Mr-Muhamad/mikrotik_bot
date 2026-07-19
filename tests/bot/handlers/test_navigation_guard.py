@@ -1,4 +1,5 @@
 """Tests for the centralized navigation guard (string-based classification)."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -93,6 +94,10 @@ async def test_navigation_guard_allows_with_router():
         mp.setattr(
             "bot.router_selector.get_selected_router",
             lambda uid: "discovered_1",
+        )
+        mp.setattr(
+            "bot.router_selector._fast_reachability_check",
+            AsyncMock(return_value=True),
         )
         await handler(update, ctx)
 

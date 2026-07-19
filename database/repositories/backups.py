@@ -3,6 +3,7 @@
 Manages ``backup_settings`` and ``backup_jobs`` rows. Isolated from the former
 god-object ``database.models``.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -88,7 +89,9 @@ def record_backup_result(
 
 
 def _prune_backup_jobs(cursor, router_key: str) -> None:
-    cursor.execute("SELECT COUNT(*) FROM backup_jobs WHERE router_key = ?", (router_key,))
+    cursor.execute(
+        "SELECT COUNT(*) FROM backup_jobs WHERE router_key = ?", (router_key,)
+    )
     count = cursor.fetchone()[0]
     if count > BACKUP_JOBS_RETENTION_PER_ROUTER:
         cursor.execute(

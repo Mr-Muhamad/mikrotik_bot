@@ -151,6 +151,7 @@ class TestCheckRateLimit:
     def test_stale_entries_cleaned_after_interval(self, monkeypatch):
         # Force cleanup trigger
         from utils import admin_decorator
+
         admin_decorator._last_cleanup = 0.0
         # Insert stale entry
         _rate_limit_data[99] = time.monotonic() - 7200  # 2 hours old
@@ -164,10 +165,17 @@ class TestCheckRateLimit:
 
 class TestRequireRouter:
     @pytest.mark.asyncio
-    async def test_with_router_proceeds(self):
+    async def test_with_router_proceeds(self, monkeypatch):
         from bot.router_selector import set_selected_router
+        from unittest.mock import AsyncMock
+
         admin_id = next(iter(ADMIN_IDS))
         set_selected_router(admin_id, "discovered_1")
+
+        monkeypatch.setattr(
+            "bot.router_selector._fast_reachability_check",
+            AsyncMock(return_value=True),
+        )
 
         @require_router
         async def handler(update, context):

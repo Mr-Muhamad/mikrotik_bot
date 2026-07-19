@@ -14,17 +14,21 @@ class BackupRestore:
             for item in files:
                 name = item.get("name", "")
                 if name.startswith("backup_") and name.endswith(".backup"):
-                    backups.append({
-                        "name": name,
-                        "type": "system",
-                        "size": item.get("size", "0"),
-                    })
+                    backups.append(
+                        {
+                            "name": name,
+                            "type": "system",
+                            "size": item.get("size", "0"),
+                        }
+                    )
                 elif name.startswith("export_") and name.endswith(".rsc"):
-                    backups.append({
-                        "name": name,
-                        "type": "export",
-                        "size": item.get("size", "0"),
-                    })
+                    backups.append(
+                        {
+                            "name": name,
+                            "type": "export",
+                            "size": item.get("size", "0"),
+                        }
+                    )
             backups.sort(key=lambda x: x["name"], reverse=True)
             return backups
         except Exception as e:
@@ -35,10 +39,15 @@ class BackupRestore:
         router_name = mikrotik_api.get_router_name(router_key)
         try:
             if not is_valid_router_backup_name(backup_name):
-                return {"success": False, "message": "اسم ملف النسخة الاحتياطية غير صالح"}
+                return {
+                    "success": False,
+                    "message": "اسم ملف النسخة الاحتياطية غير صالح",
+                }
 
             if backup_name.endswith(".backup"):
-                mikrotik_api.execute_long(router_key, "system/backup/load", **{"name": backup_name})
+                mikrotik_api.execute_long(
+                    router_key, "system/backup/load", **{"name": backup_name}
+                )
             elif backup_name.endswith(".rsc"):
                 mikrotik_api.execute_long(router_key, "import", **{"file": backup_name})
             else:

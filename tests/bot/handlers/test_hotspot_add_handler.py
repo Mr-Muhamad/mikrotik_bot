@@ -44,7 +44,7 @@ from bot.handlers.constants import (
 from telegram.ext import ConversationHandler
 
 from tests.fixtures.telegram_mocks import make_mock_context, make_mock_update
-
+from bot.handlers.session_models import get_hotspot_add_session
 
 ADMIN_ID = 724730774
 
@@ -57,19 +57,25 @@ def _patch_router(monkeypatch):
     local import) and the local import in bot.handlers.hotspot_add
     (which does `from bot.router_selector import get_selected_router`).
     """
-    router_lookup = lambda uid: "discovered_1" if uid == ADMIN_ID else None  # noqa: E731
+    router_lookup = lambda uid: (
+        "discovered_1" if uid == ADMIN_ID else None
+    )  # noqa: E731
 
     # Patch in bot.router_selector (used by require_router local import)
     monkeypatch.setattr("bot.router_selector.get_selected_router", router_lookup)
-    monkeypatch.setattr("bot.router_selector.set_selected_router", lambda uid, key: None)
-    monkeypatch.setattr("bot.router_selector.set_current_action",
-                        lambda uid, action, data=None: None)
+    monkeypatch.setattr(
+        "bot.router_selector.set_selected_router", lambda uid, key: None
+    )
+    monkeypatch.setattr(
+        "bot.router_selector.set_current_action", lambda uid, action, data=None: None
+    )
     monkeypatch.setattr("bot.router_selector.clear_action", lambda uid: None)
     monkeypatch.setattr("bot.router_selector.clear_router", lambda uid: None)
     # Patch the local import in bot.handlers.hotspot_add
     monkeypatch.setattr("bot.handlers.hotspot_add.get_selected_router", router_lookup)
     # Clear rate-limit cache so consecutive tests aren't blocked
     from utils.admin_decorator import _rate_limit_data
+
     _rate_limit_data.clear()
 
 
@@ -127,18 +133,22 @@ class TestHotspotAddUsername:
     async def test_valid_username_advances(self):
         u = make_mock_update(user_id=ADMIN_ID, text="user1")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.hotspot_manager.user_exists",
-                   new=Mock(return_value=False)):
+        with patch(
+            "bot.handlers.hotspot_add.hotspot_manager.user_exists",
+            new=Mock(return_value=False),
+        ):
             result = await hotspot_add_username(u, c)
         assert result == WAITING_PASSWORD
-        assert c.user_data["add_username"] == "user1"
+        assert get_hotspot_add_session(c.user_data).username == "user1"
 
     @pytest.mark.asyncio
     async def test_existing_username_reprompts(self):
         u = make_mock_update(user_id=ADMIN_ID, text="user1")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.hotspot_manager.user_exists",
-                   new=Mock(return_value=True)):
+        with patch(
+            "bot.handlers.hotspot_add.hotspot_manager.user_exists",
+            new=Mock(return_value=True),
+        ):
             result = await hotspot_add_username(u, c)
         assert result == WAITING_USERNAME
         assert "add_username" not in c.user_data
@@ -160,11 +170,13 @@ class TestHotspotAddPassword:
     async def test_valid_password_with_profiles(self):
         u = make_mock_update(user_id=ADMIN_ID, text="12345")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.fetch_and_cache_profiles",
-                   new=AsyncMock(return_value=[{"name": "default"}, {"name": "premium"}])):
+        with patch(
+            "bot.handlers.hotspot_add.fetch_and_cache_profiles",
+            new=AsyncMock(return_value=[{"name": "default"}, {"name": "premium"}]),
+        ):
             result = await hotspot_add_password(u, c)
         assert result == WAITING_PROFILE
-        assert c.user_data["add_password"] == "12345"
+        assert get_hotspot_add_session(c.user_data).password == "12345"
 
     @pytest.mark.asyncio
     async def test_invalid_password_reprompts(self):
@@ -178,10 +190,13 @@ class TestHotspotAddPassword:
     async def test_profiles_failure_ends_conversation(self):
         u = make_mock_update(user_id=ADMIN_ID, text="12345")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.fetch_and_cache_profiles",
-                   new=AsyncMock(side_effect=Exception("router offline"))):
-            with patch("bot.handlers.hotspot_add.send_error",
-                       new=AsyncMock()) as mock_send_error:
+        with patch(
+            "bot.handlers.hotspot_add.fetch_and_cache_profiles",
+            new=AsyncMock(side_effect=Exception("router offline")),
+        ):
+            with patch(
+                "bot.handlers.hotspot_add.send_error", new=AsyncMock()
+            ) as mock_send_error:
                 result = await hotspot_add_password(u, c)
         assert result == ConversationHandler.END
         mock_send_error.assert_called_once()
@@ -199,7 +214,7 @@ class TestHotspotAddProfile:
         c = make_mock_context()
         result = await hotspot_add_profile(u, c)
         assert result == WAITING_BYTES_TOTAL
-        assert c.user_data["add_profile"] == "default"
+        assert get_hotspot_add_session(c.user_data).profile == "default"
 
 
 # ─── hotspot_add_profile_selected tests ───────────────────────
@@ -210,17 +225,21 @@ class TestHotspotAddProfileSelected:
     async def test_valid_profile_callback_advances(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="add_profile_premium")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.resolve_profile_from_callback",
-                   return_value="premium"):
+        with patch(
+            "bot.handlers.hotspot_add.resolve_profile_from_callback",
+            return_value="premium",
+        ):
             result = await hotspot_add_profile_selected(u, c)
         assert result == WAITING_BYTES_TOTAL
-        assert c.user_data["add_profile"] == "premium"
+        assert get_hotspot_add_session(c.user_data).profile == "premium"
 
     @pytest.mark.asyncio
     async def test_invalid_profile_callback_ends(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="add_profile_X")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.resolve_profile_from_callback", return_value=None):
+        with patch(
+            "bot.handlers.hotspot_add.resolve_profile_from_callback", return_value=None
+        ):
             result = await hotspot_add_profile_selected(u, c)
         assert result == ConversationHandler.END
 
@@ -235,7 +254,7 @@ class TestHotspotAddBytes:
         c = make_mock_context()
         result = await hotspot_add_bytes(u, c)
         assert result == WAITING_UPTIME_TYPE
-        assert c.user_data["add_bytes"]
+        assert get_hotspot_add_session(c.user_data).bytes_total
 
     @pytest.mark.asyncio
     async def test_invalid_bytes_reprompts(self):
@@ -254,10 +273,13 @@ class TestHotspotAddComment:
     async def test_successful_add(self):
         u = make_mock_update(user_id=ADMIN_ID, text="my comment")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.execute_add_user",
-                   new=AsyncMock(return_value=(True, None))):
-            with patch("bot.handlers.hotspot_add.reply_final",
-                       new=AsyncMock()) as mock_reply:
+        with patch(
+            "bot.handlers.hotspot_add.execute_add_user",
+            new=AsyncMock(return_value=(True, None)),
+        ):
+            with patch(
+                "bot.handlers.hotspot_add.reply_final", new=AsyncMock()
+            ) as mock_reply:
                 result = await hotspot_add_comment(u, c)
         assert result == ConversationHandler.END
         mock_reply.assert_called_once()
@@ -266,8 +288,10 @@ class TestHotspotAddComment:
     async def test_duplicate_reprompts_username(self):
         u = make_mock_update(user_id=ADMIN_ID, text="my comment")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.execute_add_user",
-                   new=AsyncMock(return_value=(False, "duplicate"))):
+        with patch(
+            "bot.handlers.hotspot_add.execute_add_user",
+            new=AsyncMock(return_value=(False, "duplicate")),
+        ):
             with patch("bot.handlers.hotspot_add.send_step", new=AsyncMock()):
                 result = await hotspot_add_comment(u, c)
         assert result == WAITING_USERNAME
@@ -276,10 +300,13 @@ class TestHotspotAddComment:
     async def test_error_replies_with_error_msg(self):
         u = make_mock_update(user_id=ADMIN_ID, text="my comment")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.execute_add_user",
-                   new=AsyncMock(return_value=(False, "connection failed"))):
-            with patch("bot.handlers.hotspot_add.reply_final",
-                       new=AsyncMock()) as mock_reply:
+        with patch(
+            "bot.handlers.hotspot_add.execute_add_user",
+            new=AsyncMock(return_value=(False, "connection failed")),
+        ):
+            with patch(
+                "bot.handlers.hotspot_add.reply_final", new=AsyncMock()
+            ) as mock_reply:
                 result = await hotspot_add_comment(u, c)
         assert result == ConversationHandler.END
         mock_reply.assert_called_once()
@@ -320,8 +347,10 @@ class TestBackNavigation:
     async def test_back_to_profile_success(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="add_back_to_profile")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.fetch_and_cache_profiles",
-                   new=AsyncMock(return_value=[{"name": "default"}])):
+        with patch(
+            "bot.handlers.hotspot_add.fetch_and_cache_profiles",
+            new=AsyncMock(return_value=[{"name": "default"}]),
+        ):
             result = await add_back_to_profile(u, c)
         assert result == WAITING_PROFILE
 
@@ -329,8 +358,10 @@ class TestBackNavigation:
     async def test_back_to_profile_failure(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="add_back_to_profile")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.fetch_and_cache_profiles",
-                   new=AsyncMock(side_effect=Exception("net err"))):
+        with patch(
+            "bot.handlers.hotspot_add.fetch_and_cache_profiles",
+            new=AsyncMock(side_effect=Exception("net err")),
+        ):
             with patch("bot.handlers.hotspot_add.send_error", new=AsyncMock()):
                 result = await add_back_to_profile(u, c)
         assert result == ConversationHandler.END
@@ -365,18 +396,22 @@ class TestSkipHandlers:
     async def test_skip_password(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="skip_password")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.fetch_and_cache_profiles",
-                   new=AsyncMock(return_value=[{"name": "default"}])):
+        with patch(
+            "bot.handlers.hotspot_add.fetch_and_cache_profiles",
+            new=AsyncMock(return_value=[{"name": "default"}]),
+        ):
             result = await skip_password(u, c)
         assert result == WAITING_PROFILE
-        assert c.user_data["add_password"] == ""
+        assert get_hotspot_add_session(c.user_data).password == ""
 
     @pytest.mark.asyncio
     async def test_skip_password_profiles_failure(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="skip_password")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.fetch_and_cache_profiles",
-                   new=AsyncMock(side_effect=Exception("err"))):
+        with patch(
+            "bot.handlers.hotspot_add.fetch_and_cache_profiles",
+            new=AsyncMock(side_effect=Exception("err")),
+        ):
             with patch("bot.handlers.hotspot_add.send_error", new=AsyncMock()):
                 result = await skip_password(u, c)
         assert result == ConversationHandler.END
@@ -387,7 +422,7 @@ class TestSkipHandlers:
         c = make_mock_context()
         result = await skip_bytes(u, c)
         assert result == WAITING_UPTIME_TYPE
-        assert c.user_data["add_bytes"] == ""
+        assert get_hotspot_add_session(c.user_data).bytes_total == ""
 
     @pytest.mark.asyncio
     async def test_skip_uptime(self):
@@ -395,7 +430,7 @@ class TestSkipHandlers:
         c = make_mock_context()
         result = await skip_uptime(u, c)
         assert result == WAITING_COMMENT
-        assert c.user_data["add_uptime"] == ""
+        assert get_hotspot_add_session(c.user_data).uptime_value == ""
 
 
 # ─── Uptime type selection tests ──────────────────────────────
@@ -408,7 +443,7 @@ class TestUptimeType:
         c = make_mock_context()
         result = await hotspot_add_uptime_type(u, c)
         assert result == WAITING_UPTIME_VALUE
-        assert c.user_data["uptime_unit"] == "hours"
+        assert get_hotspot_add_session(c.user_data).uptime_type == "hours"
 
     @pytest.mark.asyncio
     async def test_select_days(self):
@@ -416,7 +451,7 @@ class TestUptimeType:
         c = make_mock_context()
         result = await hotspot_add_uptime_type(u, c)
         assert result == WAITING_UPTIME_VALUE
-        assert c.user_data["uptime_unit"] == "days"
+        assert get_hotspot_add_session(c.user_data).uptime_type == "days"
 
     @pytest.mark.asyncio
     async def test_select_skip(self):
@@ -424,7 +459,7 @@ class TestUptimeType:
         c = make_mock_context()
         result = await hotspot_add_uptime_type(u, c)
         assert result == WAITING_COMMENT
-        assert c.user_data["add_uptime"] == ""
+        assert get_hotspot_add_session(c.user_data).uptime_value == ""
 
     @pytest.mark.asyncio
     async def test_unknown_data_stays(self):
@@ -442,16 +477,16 @@ class TestUptimeValue:
     async def test_valid_value_advances(self):
         u = make_mock_update(user_id=ADMIN_ID, text="5")
         c = make_mock_context()
-        c.user_data["uptime_unit"] = "hours"
+        get_hotspot_add_session(c.user_data).uptime_type = "hours"
         result = await hotspot_add_uptime_value(u, c)
         assert result == WAITING_COMMENT
-        assert c.user_data["add_uptime"] == "05:00:00"
+        assert get_hotspot_add_session(c.user_data).uptime_value == "05:00:00"
 
     @pytest.mark.asyncio
     async def test_invalid_value_reprompts(self):
         u = make_mock_update(user_id=ADMIN_ID, text="xyz")
         c = make_mock_context()
-        c.user_data["uptime_unit"] = "hours"
+        get_hotspot_add_session(c.user_data).uptime_type = "hours"
         result = await hotspot_add_uptime_value(u, c)
         assert result == WAITING_UPTIME_VALUE
         assert "add_uptime" not in c.user_data
@@ -477,8 +512,10 @@ class TestSkipComment:
     async def test_skip_successful(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="skip_comment")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.execute_add_user",
-                   new=AsyncMock(return_value=(True, None))):
+        with patch(
+            "bot.handlers.hotspot_add.execute_add_user",
+            new=AsyncMock(return_value=(True, None)),
+        ):
             result = await skip_comment(u, c)
         assert result == ConversationHandler.END
 
@@ -486,8 +523,10 @@ class TestSkipComment:
     async def test_skip_duplicate(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="skip_comment")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.execute_add_user",
-                   new=AsyncMock(return_value=(False, "duplicate"))):
+        with patch(
+            "bot.handlers.hotspot_add.execute_add_user",
+            new=AsyncMock(return_value=(False, "duplicate")),
+        ):
             result = await skip_comment(u, c)
         assert result == WAITING_USERNAME
 
@@ -495,8 +534,10 @@ class TestSkipComment:
     async def test_skip_error(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="skip_comment")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_add.execute_add_user",
-                   new=AsyncMock(return_value=(False, "connection lost"))):
+        with patch(
+            "bot.handlers.hotspot_add.execute_add_user",
+            new=AsyncMock(return_value=(False, "connection lost")),
+        ):
             result = await skip_comment(u, c)
         assert result == ConversationHandler.END
 

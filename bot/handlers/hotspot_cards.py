@@ -22,10 +22,15 @@ from bot.messages import (
     ERROR_OCCURRED,
     SEND_UPTIME_TYPE,
 )
-from bot.router_selector import cleanup_state, get_selected_router, nav_set, set_current_action
+from bot.router_selector import (
+    cleanup_state,
+    get_selected_router,
+    nav_set,
+    set_current_action,
+)
 from bot.handlers.handler_utils import make_back_step
 from bot.helpers.profiles import fetch_and_cache_profiles, PROFILE_SOURCE_HOTSPOT
-from core.card_models import CardSystem,serialize_cards
+from core.card_models import CardSystem, serialize_cards
 from core.hotspot_manager import hotspot_manager
 from bot.profile_callbacks import resolve_profile_from_callback
 from utils.admin_decorator import admin_only, require_role
@@ -90,7 +95,8 @@ async def hotspot_cards_count(update: Update, context: ContextTypes.DEFAULT_TYPE
     count = int(count_text)
     if count > MAX_HOTSPOT_CARDS:
         await send_step(
-            update, context,
+            update,
+            context,
             f"❌ الحد الأقصى {MAX_HOTSPOT_CARDS} كارت في المرة الواحدة. أدخل عدداً أقل.",
         )
         return WAITING_HOTSPOT_CARD_COUNT
@@ -107,7 +113,9 @@ async def hotspot_cards_length(update: Update, context: ContextTypes.DEFAULT_TYP
         return WAITING_HOTSPOT_CARD_LENGTH
     context.user_data["hs_card_length"] = int(length_text)
     await send_step(
-        update, context, ENTER_CARD_PREFIX,
+        update,
+        context,
+        ENTER_CARD_PREFIX,
         get_skip_keyboard("hs_skip_prefix", "hs_back_to_length"),
     )
     return WAITING_HOTSPOT_CARD_PREFIX
@@ -125,12 +133,16 @@ async def hotspot_cards_skip_prefix(update: Update, context: ContextTypes.DEFAUL
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_prefix"] = ""
-    await query.edit_message_text(CHOOSE_CARD_SYSTEM, reply_markup=get_card_type_keyboard())
+    await query.edit_message_text(
+        CHOOSE_CARD_SYSTEM, reply_markup=get_card_type_keyboard()
+    )
     return WAITING_HOTSPOT_CARD_TYPE
 
 
 @admin_only
-async def hotspot_cards_type_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def hotspot_cards_type_selected(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     query = update.callback_query
     await safe_answer_callback(query)
     callback_data = query.data
@@ -147,7 +159,9 @@ async def hotspot_cards_type_selected(update: Update, context: ContextTypes.DEFA
     router_key = get_selected_router(query.from_user.id)
     try:
         profile_names = await fetch_and_cache_profiles(
-            context, router_key, source=PROFILE_SOURCE_HOTSPOT,
+            context,
+            router_key,
+            source=PROFILE_SOURCE_HOTSPOT,
         )
         await query.edit_message_text(
             CHOOSE_CARD_PROFILE,
@@ -157,7 +171,9 @@ async def hotspot_cards_type_selected(update: Update, context: ContextTypes.DEFA
         )
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=router_key,
             log_extra="hotspot_cards_type_selected",
             reply_markup=get_hotspot_keyboard(),
@@ -169,7 +185,9 @@ async def hotspot_cards_type_selected(update: Update, context: ContextTypes.DEFA
 
 
 @admin_only
-async def hotspot_cards_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def hotspot_cards_profile_selected(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     query = update.callback_query
     await safe_answer_callback(query)
     profile = resolve_profile_from_callback(context, query.data, "hs_card_profile_")
@@ -209,7 +227,9 @@ async def hotspot_cards_uptime_type(update: Update, context: ContextTypes.DEFAUL
 
 
 @admin_only
-async def hotspot_cards_skip_uptime_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def hotspot_cards_skip_uptime_type(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_uptime"] = ""
@@ -221,21 +241,27 @@ async def hotspot_cards_skip_uptime_type(update: Update, context: ContextTypes.D
 
 
 @admin_only
-async def hotspot_cards_uptime_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def hotspot_cards_uptime_value(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
     value = update.message.text.strip()
     unit = context.user_data.get("hs_uptime_unit", "hours")
     uptime = convert_uptime_value(value, unit)
 
     if not uptime:
         await send_step(
-            update, context, "❌ قيمة غير صالحة. الرجاء إدخال رقم صحيح.",
+            update,
+            context,
+            "❌ قيمة غير صالحة. الرجاء إدخال رقم صحيح.",
             get_skip_keyboard("hs_skip_uptime", "hs_back_to_profile"),
         )
         return WAITING_HOTSPOT_CARD_UPTIME
 
     context.user_data["hs_card_uptime"] = uptime
     await send_step(
-        update, context, CARD_BYTES_PROMPT,
+        update,
+        context,
+        CARD_BYTES_PROMPT,
         get_skip_keyboard("hs_skip_bytes", "hs_back_to_uptime"),
     )
     return WAITING_HOTSPOT_CARD_BYTES
@@ -258,10 +284,12 @@ async def hotspot_cards_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE
     bytes_input = update.message.text.strip()
     try:
         from utils.validators import validate_bytes_input
+
         context.user_data["hs_card_bytes"] = validate_bytes_input(bytes_input)
     except ValueError as e:
         await send_step(
-            update, context,
+            update,
+            context,
             str(e),
             get_skip_keyboard("hs_skip_bytes", "hs_back_to_uptime"),
         )
@@ -281,14 +309,18 @@ async def hotspot_cards_skip_bytes(update: Update, context: ContextTypes.DEFAULT
 async def _create_cards(update, context, query=None):
     router_key = get_selected_router(update.effective_user.id)
     if not router_key:
-        await reply_final(update, context, "❌ لم يتم اختيار روتر.", get_hotspot_keyboard())
+        await reply_final(
+            update, context, "❌ لم يتم اختيار روتر.", get_hotspot_keyboard()
+        )
         cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
 
     count = context.user_data.get("hs_card_count", 1)
     length = context.user_data.get("hs_card_length", 3)
     prefix = context.user_data.get("hs_card_prefix", "")
-    card_system = context.user_data.get("hs_card_system", CardSystem.DIFFERENT_CREDENTIALS)
+    card_system = context.user_data.get(
+        "hs_card_system", CardSystem.DIFFERENT_CREDENTIALS
+    )
     profile = context.user_data.get("hs_card_profile", "default")
     uptime = context.user_data.get("hs_card_uptime", "")
     bytes_limit = context.user_data.get("hs_card_bytes", "")
@@ -314,8 +346,11 @@ async def _create_cards(update, context, query=None):
             cleanup_state(update.effective_user.id, context.user_data)
             return ConversationHandler.END
 
-
-        batch_name = f"hotspot_{prefix}_{datetime.now():%Y%m%d_%H%M}" if prefix else f"hotspot_{datetime.now():%Y%m%d_%H%M}"
+        batch_name = (
+            f"hotspot_{prefix}_{datetime.now():%Y%m%d_%H%M}"
+            if prefix
+            else f"hotspot_{datetime.now():%Y%m%d_%H%M}"
+        )
         try:
             await run_blocking(
                 save_card_batch,
@@ -345,13 +380,19 @@ async def _create_cards(update, context, query=None):
             os.remove(pdf_path)
 
         if query:
-            await query.edit_message_text("🏠 القائمة الرئيسية", reply_markup=get_hotspot_keyboard())
+            await query.edit_message_text(
+                "🏠 القائمة الرئيسية", reply_markup=get_hotspot_keyboard()
+            )
         else:
-            await reply_final(update, context, "🏠 القائمة الرئيسية", get_hotspot_keyboard())
+            await reply_final(
+                update, context, "🏠 القائمة الرئيسية", get_hotspot_keyboard()
+            )
 
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=router_key,
             log_extra="_create_cards",
             reply_markup=get_hotspot_keyboard(),
@@ -361,8 +402,12 @@ async def _create_cards(update, context, query=None):
     return ConversationHandler.END
 
 
-hs_back_to_length = make_back_step(ENTER_CARD_LENGTH, get_cancel_keyboard, WAITING_HOTSPOT_CARD_LENGTH)
-hs_back_to_type = make_back_step(CHOOSE_CARD_SYSTEM, get_card_type_keyboard, WAITING_HOTSPOT_CARD_TYPE)
+hs_back_to_length = make_back_step(
+    ENTER_CARD_LENGTH, get_cancel_keyboard, WAITING_HOTSPOT_CARD_LENGTH
+)
+hs_back_to_type = make_back_step(
+    CHOOSE_CARD_SYSTEM, get_card_type_keyboard, WAITING_HOTSPOT_CARD_TYPE
+)
 
 
 @admin_only
@@ -372,7 +417,9 @@ async def hs_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE)
     router_key = get_selected_router(query.from_user.id)
     try:
         profile_names = await fetch_and_cache_profiles(
-            context, router_key, source=PROFILE_SOURCE_HOTSPOT,
+            context,
+            router_key,
+            source=PROFILE_SOURCE_HOTSPOT,
         )
         await query.edit_message_text(
             CHOOSE_CARD_PROFILE,
@@ -382,7 +429,9 @@ async def hs_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=router_key,
             log_extra="hs_back_to_profile",
             reply_markup=get_hotspot_keyboard(),

@@ -35,7 +35,9 @@ async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         router_id = int(query.data.replace("rename_router_", ""))
     except (ValueError, IndexError):
-        await query.edit_message_text(ERROR_OCCURRED.format(""), reply_markup=get_router_keyboard())
+        await query.edit_message_text(
+            ERROR_OCCURRED.format(""), reply_markup=get_router_keyboard()
+        )
         return ConversationHandler.END
     router = await run_blocking(get_router_by_id, router_id, decrypt=False)
     if not router:
@@ -44,7 +46,9 @@ async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE
         return ConversationHandler.END
     context.user_data["rename_router_id"] = router_id
     current_name = get_router_display_name(router)
-    await query.edit_message_text(f"✏️ أرسل الاسم الجديد للروتر:\n\nالاسم الحالي: {current_name}")
+    await query.edit_message_text(
+        f"✏️ أرسل الاسم الجديد للروتر:\n\nالاسم الحالي: {current_name}"
+    )
     return WAITING_RENAME
 
 
@@ -63,11 +67,20 @@ async def rename_router_value(update: Update, context: ContextTypes.DEFAULT_TYPE
     mikrotik_api.invalidate_router_name(f"{ROUTER_KEY_PREFIX}{router_id}")
     mikrotik_api.invalidate_version(f"{ROUTER_KEY_PREFIX}{router_id}")
     router = await run_blocking(get_router_by_id, router_id, decrypt=False)
-    await run_blocking(log_action, "rename_router", new_name, router.get("identity", "") if router else "", update.effective_user.id)
+    await run_blocking(
+        log_action,
+        "rename_router",
+        new_name,
+        router.get("identity", "") if router else "",
+        update.effective_user.id,
+    )
     await reply_final(
-        update, context,
+        update,
+        context,
         f"✅ تم تغيير الاسم إلى: {new_name}",
-        get_saved_routers_keyboard(await run_blocking(get_saved_routers, active_only=True)),
+        get_saved_routers_keyboard(
+            await run_blocking(get_saved_routers, active_only=True)
+        ),
     )
     cleanup_state(update.effective_user.id, context.user_data)
     return ConversationHandler.END

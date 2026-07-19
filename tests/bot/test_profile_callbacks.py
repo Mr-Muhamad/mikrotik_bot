@@ -1,4 +1,5 @@
 """Tests for bot.profile_callbacks."""
+
 from unittest.mock import MagicMock
 
 from bot.profile_callbacks import (
@@ -10,7 +11,9 @@ from bot.profile_callbacks import (
 
 def _ctx(profile_names=None):
     ctx = MagicMock()
-    ctx.user_data = {PROFILE_NAMES_KEY: profile_names} if profile_names is not None else {}
+    ctx.user_data = (
+        {PROFILE_NAMES_KEY: profile_names} if profile_names is not None else {}
+    )
     return ctx
 
 

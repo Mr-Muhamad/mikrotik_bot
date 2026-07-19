@@ -2,6 +2,7 @@
 
 يستبدل الـ string الخام "discovered_<id>" بنوع آمن.
 """
+
 from __future__ import annotations
 
 from config import ROUTER_KEY_PREFIX
@@ -27,7 +28,7 @@ class RouterKey:
         self._db_id: int | None = None
         if raw.startswith(ROUTER_KEY_PREFIX):
             try:
-                self._db_id = int(raw[len(ROUTER_KEY_PREFIX):])
+                self._db_id = int(raw[len(ROUTER_KEY_PREFIX) :])
             except ValueError:
                 pass
 

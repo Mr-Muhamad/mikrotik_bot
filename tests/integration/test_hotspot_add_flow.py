@@ -13,13 +13,17 @@ class TestHotspotAddFlow:
 
     def test_add_user_and_verify_in_mock(self, mock_mikrotik_api):
         result = hotspot_manager.add_user(
-            self.ROUTER_KEY, name="flow_user", password="flow_pass",
-            profile="default", comment="integration test",
+            self.ROUTER_KEY,
+            name="flow_user",
+            password="flow_pass",
+            profile="default",
+            comment="integration test",
         )
         assert isinstance(result, list)
         assert mock_mikrotik_api.last_router_key == self.ROUTER_KEY
         add_commands = [
-            c for c in mock_mikrotik_api.commands_executed
+            c
+            for c in mock_mikrotik_api.commands_executed
             if c[1] == "ip/hotspot/user/add"
         ]
         assert len(add_commands) >= 1
@@ -31,7 +35,9 @@ class TestHotspotAddFlow:
 
     def test_add_then_search(self, mock_mikrotik_api):
         hotspot_manager.add_user(
-            self.ROUTER_KEY, name="searchable", password="pass",
+            self.ROUTER_KEY,
+            name="searchable",
+            password="pass",
             profile="default",
         )
         results = hotspot_manager.search_users(self.ROUTER_KEY, "searchable")
@@ -40,7 +46,9 @@ class TestHotspotAddFlow:
 
     def test_add_then_delete(self, mock_mikrotik_api):
         hotspot_manager.add_user(
-            self.ROUTER_KEY, name="to_delete", password="pass",
+            self.ROUTER_KEY,
+            name="to_delete",
+            password="pass",
             profile="default",
         )
         results = hotspot_manager.search_users(self.ROUTER_KEY, "to_delete")
@@ -51,19 +59,25 @@ class TestHotspotAddFlow:
 
     def test_create_cards_then_list(self, mock_mikrotik_api):
         cards = hotspot_manager.create_cards(
-            self.ROUTER_KEY, count=3, length=5,
+            self.ROUTER_KEY,
+            count=3,
+            length=5,
             card_system=CardSystem.SAME_CREDENTIALS,
             profile="default",
         )
         assert len(cards) == 3
         users = hotspot_manager.list_users(self.ROUTER_KEY, limit=50)
         card_usernames = {c.username for c in cards}
-        found_usernames = {u.get("name") for u in users if u.get("name") in card_usernames}
+        found_usernames = {
+            u.get("name") for u in users if u.get("name") in card_usernames
+        }
         assert len(found_usernames) == 3
 
     def test_get_hotspot_stats_after_operations(self, mock_mikrotik_api):
         hotspot_manager.add_user(
-            self.ROUTER_KEY, name="stats_user", password="pass",
+            self.ROUTER_KEY,
+            name="stats_user",
+            password="pass",
             profile="default",
         )
         stats = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY)
@@ -73,12 +87,16 @@ class TestHotspotAddFlow:
 
     def test_duplicate_username_handling(self, mock_mikrotik_api):
         hotspot_manager.add_user(
-            self.ROUTER_KEY, name="duplicate", password="pass1",
+            self.ROUTER_KEY,
+            name="duplicate",
+            password="pass1",
             profile="default",
         )
         hotspot_manager.search_users(self.ROUTER_KEY, "duplicate")
         new_cards = hotspot_manager.create_cards(
-            self.ROUTER_KEY, count=3, length=4,
+            self.ROUTER_KEY,
+            count=3,
+            length=4,
             card_system=CardSystem.DIFFERENT_CREDENTIALS,
             profile="default",
         )
@@ -92,8 +110,11 @@ class TestHotspotAddFlow:
 
     def test_format_user_output(self, mock_mikrotik_api):
         hotspot_manager.add_user(
-            self.ROUTER_KEY, name="format_me", password="pass",
-            profile="premium", comment="test output",
+            self.ROUTER_KEY,
+            name="format_me",
+            password="pass",
+            profile="premium",
+            comment="test output",
         )
         user = hotspot_manager.get_user(self.ROUTER_KEY, "*1")
         if user:
@@ -103,7 +124,9 @@ class TestHotspotAddFlow:
 
     def test_reset_counters_command(self, mock_mikrotik_api):
         hotspot_manager.add_user(
-            self.ROUTER_KEY, name="reset_me", password="pass",
+            self.ROUTER_KEY,
+            name="reset_me",
+            password="pass",
             profile="default",
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "reset_me")

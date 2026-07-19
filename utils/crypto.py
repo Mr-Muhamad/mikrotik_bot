@@ -13,7 +13,9 @@ def _get_key():
         return _KEY
     raw = os.getenv("ENCRYPTION_KEY")
     if not raw:
-        raise RuntimeError("ENCRYPTION_KEY not set — config.py should have exited already")
+        raise RuntimeError(
+            "ENCRYPTION_KEY not set — config.py should have exited already"
+        )
     try:
         _KEY = Fernet(raw.encode())
         logger.info("Encryption key loaded successfully from environment")

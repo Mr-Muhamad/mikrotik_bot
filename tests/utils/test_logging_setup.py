@@ -34,6 +34,7 @@ class TestRequestIdContext:
     def test_bind_request_id_resets(self):
         set_request_id("-")
         from utils.request_id import request_id_scope
+
         with request_id_scope("scope-id"):
             assert get_request_id() == "scope-id"
         assert get_request_id() == "-"
@@ -43,8 +44,13 @@ class TestRequestIdFilter:
     def test_filter_injects_request_id(self):
         set_request_id("hello")
         record = logging.LogRecord(
-            name="x", level=logging.INFO, pathname="", lineno=0,
-            msg="msg", args=(), exc_info=None,
+            name="x",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="msg",
+            args=(),
+            exc_info=None,
         )
         f = RequestIdFilter()
         f.filter(record)
@@ -53,8 +59,13 @@ class TestRequestIdFilter:
     def test_filter_default_dash(self):
         set_request_id("-")
         record = logging.LogRecord(
-            name="x", level=logging.INFO, pathname="", lineno=0,
-            msg="msg", args=(), exc_info=None,
+            name="x",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg="msg",
+            args=(),
+            exc_info=None,
         )
         f = RequestIdFilter()
         f.filter(record)

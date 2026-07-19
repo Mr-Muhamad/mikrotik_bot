@@ -17,7 +17,7 @@ class Paginator:
     @property
     def current_items(self) -> list:
         start = self.page * self.page_size
-        return self.items[start:start + self.page_size]
+        return self.items[start : start + self.page_size]
 
     @property
     def slice_info(self) -> str:

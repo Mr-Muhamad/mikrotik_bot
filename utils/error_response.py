@@ -90,7 +90,10 @@ def classify_error(error: Exception) -> str:
             return CATEGORY_TIMEOUT
         if any(kw in msg for kw in ("refused", "closed", "reset", "unreachable")):
             return CATEGORY_CONNECTION
-        if any(kw in msg for kw in ("auth", "password", "login", "credentials", "unauthorized")):
+        if any(
+            kw in msg
+            for kw in ("auth", "password", "login", "credentials", "unauthorized")
+        ):
             return CATEGORY_AUTH
         if any(kw in msg for kw in ("not found", "no such", "invalid argument")):
             return CATEGORY_NOT_FOUND
@@ -135,9 +138,13 @@ async def _dispatch_message(
         if query is not None and query_msg is not None:
             msg = await query.edit_message_text(text=text, reply_markup=reply_markup)
         elif update and update.effective_message:
-            msg = await update.effective_message.reply_text(text=text, reply_markup=reply_markup)
+            msg = await update.effective_message.reply_text(
+                text=text, reply_markup=reply_markup
+            )
         else:
-            msg = await context.bot.send_message(chat_id=target_id, text=text, reply_markup=reply_markup)
+            msg = await context.bot.send_message(
+                chat_id=target_id, text=text, reply_markup=reply_markup
+            )
         if msg is not None and isinstance(msg, Message):
             _track_msg(context, target_id, msg.message_id)
     except Exception as send_err:
@@ -174,7 +181,9 @@ async def send_error(
     target_id = chat_id or _get_chat_id(update)
     if target_id is None:
         return
-    await _dispatch_message(update, context, text, reply_markup, target_id, "Failed to send error message")
+    await _dispatch_message(
+        update, context, text, reply_markup, target_id, "Failed to send error message"
+    )
 
 
 async def send_text(
@@ -187,7 +196,9 @@ async def send_text(
     target_id = chat_id or _get_chat_id(update)
     if target_id is None:
         return
-    await _dispatch_message(update, context, text, reply_markup, target_id, "Failed to send message")
+    await _dispatch_message(
+        update, context, text, reply_markup, target_id, "Failed to send message"
+    )
 
 
 def _get_chat_id(update: Update | None) -> int | None:

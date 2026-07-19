@@ -4,6 +4,7 @@ Manages the ``discovered_routers`` table: discovery persistence, credential
 encryption, and metadata helpers. Isolated from the former god-object
 ``database.models``.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -17,19 +18,32 @@ def _utc_now():
     return datetime.now(timezone.utc).strftime(UTC_TIMESTAMP_FORMAT)
 
 
-def save_discovered_router(ip, mac="", identity="Unknown", version="", board="",
-                           software_id="", platform="MikroTik", uptime="",
-                           port=DEFAULT_API_PORT, username="", password="", last_seen=""):
+def save_discovered_router(
+    ip,
+    mac="",
+    identity="Unknown",
+    version="",
+    board="",
+    software_id="",
+    platform="MikroTik",
+    uptime="",
+    port=DEFAULT_API_PORT,
+    username="",
+    password="",
+    last_seen="",
+    owner_id=0,
+):
     from database.models import get_db, encrypt_password
 
     with get_db() as conn:
         cursor = conn.cursor()
         encrypted_password = encrypt_password(password)
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO discovered_routers
                 (ip_address, mac_address, identity, version, board, software_id,
-                 platform, uptime, port, username, password, last_seen)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 platform, uptime, port, username, password, last_seen, owner_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(ip_address) DO UPDATE SET
                 mac_address=excluded.mac_address,
                 identity=excluded.identity,
@@ -43,14 +57,32 @@ def save_discovered_router(ip, mac="", identity="Unknown", version="", board="",
                 password=CASE WHEN excluded.password != '' THEN excluded.password ELSE password END,
                 last_seen=excluded.last_seen,
                 is_active=1
-        """, (ip, mac, identity, version, board, software_id, platform, uptime, port, username, encrypted_password, last_seen))
+        """,
+            (
+                ip,
+                mac,
+                identity,
+                version,
+                board,
+                software_id,
+                platform,
+                uptime,
+                port,
+                username,
+                encrypted_password,
+                last_seen,
+                owner_id,
+            ),
+        )
         cursor.execute("SELECT id FROM discovered_routers WHERE ip_address = ?", (ip,))
         result = cursor.fetchone()
         router_id = result["id"] if result else None
         return router_id
 
 
-def save_manual_router(ip, port=DEFAULT_API_PORT, username="", password="", alias=""):
+def save_manual_router(
+    ip, port=DEFAULT_API_PORT, username="", password="", alias="", owner_id=0
+):
     """Insert a manually-entered router.
 
     Encrypts the password before storage. Raises ``sqlite3.IntegrityError``
@@ -63,14 +95,16 @@ def save_manual_router(ip, port=DEFAULT_API_PORT, username="", password="", alia
         encrypted_password = encrypt_password(password)
         cursor.execute(
             """INSERT INTO discovered_routers
-                   (ip_address, identity, port, username, password, name_alias, is_active)
-               VALUES (?, 'Unknown', ?, ?, ?, ?, 1)""",
-            (ip, port, username, encrypted_password, alias),
+                   (ip_address, identity, port, username, password, name_alias, is_active, owner_id)
+               VALUES (?, 'Unknown', ?, ?, ?, ?, 1, ?)""",
+            (ip, port, username, encrypted_password, alias, owner_id),
         )
         return cursor.lastrowid
 
 
-def get_saved_routers(active_only=True, decrypt: bool = False):
+def get_saved_routers(
+    active_only=True, decrypt: bool = False, owner_id: int | None = None
+):
     """جلب الروترات المحفوظة من قاعدة البيانات.
 
     Args:
@@ -78,15 +112,30 @@ def get_saved_routers(active_only=True, decrypt: bool = False):
         decrypt: فك تشفير كلمات المرور. افتراضي False لتجنب CPU overhead
                  عندما لا يحتاج المستدعي كلمة المرور (مثل عرض القائمة).
                  استدعِ مع decrypt=True فقط عند الحاجة للاتصال بالراوتر.
+        owner_id: تصفية حسب المالك (العميل). إذا لم يمرر يتم جلب الجميع (Super Admin).
     """
     from database.models import get_db, decrypt_password
 
     with get_db() as conn:
         cursor = conn.cursor()
+
+        query = "SELECT * FROM discovered_routers"
+        params = []
+        conds = []
+
         if active_only:
-            cursor.execute("SELECT * FROM discovered_routers WHERE is_active = 1 ORDER BY added_at DESC")
-        else:
-            cursor.execute("SELECT * FROM discovered_routers ORDER BY added_at DESC")
+            conds.append("is_active = 1")
+
+        if owner_id is not None:
+            conds.append("owner_id = ?")
+            params.append(owner_id)
+
+        if conds:
+            query += " WHERE " + " AND ".join(conds)
+
+        query += " ORDER BY added_at DESC"
+
+        cursor.execute(query, tuple(params))
         rows = cursor.fetchall()
         result = []
         for r in rows:
@@ -117,7 +166,9 @@ def get_router_by_ip(ip_address):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM discovered_routers WHERE ip_address = ?", (ip_address,))
+        cursor.execute(
+            "SELECT * FROM discovered_routers WHERE ip_address = ?", (ip_address,)
+        )
         row = cursor.fetchone()
         if row:
             d = dict(row)
@@ -134,7 +185,7 @@ def update_router_credentials(router_id, username, password):
         encrypted_password = encrypt_password(password)
         cursor.execute(
             "UPDATE discovered_routers SET username = ?, password = ? WHERE id = ?",
-            (username, encrypted_password, router_id)
+            (username, encrypted_password, router_id),
         )
 
 
@@ -145,7 +196,7 @@ def update_router_last_seen(router_id):
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE discovered_routers SET last_seen = ? WHERE id = ?",
-            (_utc_now(), router_id)
+            (_utc_now(), router_id),
         )
 
 
@@ -157,7 +208,7 @@ def update_router_identity(router_id, identity):
         cursor = conn.cursor()
         cursor.execute(
             "UPDATE discovered_routers SET identity = ? WHERE id = ?",
-            (identity, router_id)
+            (identity, router_id),
         )
 
 
@@ -174,7 +225,10 @@ def update_router_alias(router_id, alias):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("UPDATE discovered_routers SET name_alias = ? WHERE id = ?", (alias, router_id))
+        cursor.execute(
+            "UPDATE discovered_routers SET name_alias = ? WHERE id = ?",
+            (alias, router_id),
+        )
 
 
 def get_router_display_name(router):

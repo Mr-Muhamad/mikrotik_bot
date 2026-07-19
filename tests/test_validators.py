@@ -1,6 +1,11 @@
 import unittest
 
-from utils.validators import validate_mac, validate_password, validate_positive_int, validate_username
+from utils.validators import (
+    validate_mac,
+    validate_password,
+    validate_positive_int,
+    validate_username,
+)
 
 
 class TestValidateUsername(unittest.TestCase):
@@ -117,5 +122,3 @@ class TestValidateMac(unittest.TestCase):
     def test_11_digits_rejected(self):
         valid, _ = validate_mac("AA:BB:CC:DD:EE:F")
         self.assertFalse(valid)
-
-

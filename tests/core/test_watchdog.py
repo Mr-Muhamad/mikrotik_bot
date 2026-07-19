@@ -90,6 +90,8 @@ class TestGetRouterStatusDetail:
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
     def test_offline_skips_live_queries(self, mock_api, mock_stats):
+        mock_api.has_active_connection.return_value = False
+        mock_api.get_cached_version.return_value = None
         _router_status["router1"] = {"last_fail": datetime.now()}
         detail = get_router_status_detail("router1")
         assert detail["online"] is False
@@ -101,8 +103,9 @@ class TestGetRouterStatusDetail:
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
     def test_version_unknown_normalized_to_none(self, mock_api, mock_stats):
+        mock_api.has_active_connection.return_value = False
         _router_status["router1"] = {"last_ok": datetime.now()}
-        mock_api.get_version.return_value = "unknown"
+        mock_api.get_cached_version.return_value = "unknown"
         mock_stats.get_hotspot_stats.return_value = None
         detail = get_router_status_detail("router1")
         assert detail["version"] is None

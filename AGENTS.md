@@ -161,7 +161,8 @@ mikrotik_bot/
 - `/addrouter` - إضافة روتر يدوياً (IP/منفذ/مستخدم/كلمة مرور/اسم).
 - `/settings` - إعدادات PDF.
 - `/reboot` - إعادة تشغيل الراوتر المختار.
-- `/metrics` - أداء الاتصالات.
+- `/timeout` - إعداد مدة الخمول وحماية الجلسة.
+- `/metrics` - أداء الاتصالات وحالة استهلاك السيرفر.
 - `/logs` - سجل التدقيق.
 - `/sync` - إعادة ضبط قائمة الأوامر السريعة.
 - `/clean` - تنظيف الشات.
@@ -206,7 +207,19 @@ mikrotik_bot/
 
 ## Quality Gates
 
-قبل تشغيل `python main.py` (أو `py -3.12 main.py`) بعد أي تعديل، نفذ:
+يجب استيفاء معايير الجودة الصارمة التالية باستمرار كجزء من الدستور البرمجي للمشروع:
+
+- **Pyright (strict):** صفر أخطاء.
+- **Ruff:** صفر أخطاء Style أو Bugs.
+- **Black:** الكود منسق بالكامل عبر `black`.
+- **Pytest:** كل الاختبارات ناجحة بنسبة 100%.
+- **Coverage:** لا تقل عن النسبة المطلوبة.
+- **Architecture:** لا توجد Circular Imports، ولا خرق لطبقات المشروع.
+- **Type Safety:** لا يوجد `Any` غير مبرر، ولا تجاهل للأخطاء بـ `# type: ignore` إلا مع تعليق يوضح السبب.
+- **Security:** لا توجد أسرار (Secrets) داخل الكود، ولا استدعاءات غير آمنة.
+- **Performance:** لا توجد عمليات مكلفة داخل حلقات متكررة دون داعٍ.
+
+قبل تشغيل `python main.py` (أو `py -3.12 main.py`) أو دمج أي تعديل، يُنصح بتنفيذ الأوامر التالية كحد أدنى:
 
 ```bash
 ruff check . --select F821 --exclude venv --exclude __pycache__ --exclude backups --exclude logs --exclude _releases --exclude "scripts/Activate.ps1"

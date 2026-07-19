@@ -46,7 +46,10 @@ class TestIsBenignTelegramError:
         assert is_benign_telegram_error(BadRequest("Message to edit not found")) is True
 
     def test_exactly_same(self):
-        assert is_benign_telegram_error(BadRequest("message is exactly the same content")) is True
+        assert (
+            is_benign_telegram_error(BadRequest("message is exactly the same content"))
+            is True
+        )
 
     def test_other_badrequest_not_benign(self):
         assert is_benign_telegram_error(BadRequest("can't parse entities")) is False
@@ -104,7 +107,9 @@ class TestSafeEditsBenign:
         query = MagicMock()
         query.message = MagicMock()
         query.message.chat_id = 1
-        query.edit_message_text = AsyncMock(side_effect=BadRequest("Message is not modified"))
+        query.edit_message_text = AsyncMock(
+            side_effect=BadRequest("Message is not modified")
+        )
         ctx = _ctx()
         msg = await safe_edit_plain(query, ctx, "hi", reply_markup=None)
         assert msg is None
@@ -114,7 +119,9 @@ class TestSafeEditsBenign:
         query = MagicMock()
         query.message = MagicMock()
         query.message.chat_id = 1
-        query.edit_message_text = AsyncMock(side_effect=BadRequest("can't parse entities"))
+        query.edit_message_text = AsyncMock(
+            side_effect=BadRequest("can't parse entities")
+        )
         ctx = _ctx()
         with pytest.raises(BadRequest):
             await safe_edit_plain(query, ctx, "hi <b>", reply_markup=None)
@@ -124,7 +131,9 @@ class TestSafeEditsBenign:
         query = MagicMock()
         query.message = MagicMock()
         query.message.chat_id = 1
-        query.edit_message_text = AsyncMock(side_effect=BadRequest("Message to edit not found"))
+        query.edit_message_text = AsyncMock(
+            side_effect=BadRequest("Message to edit not found")
+        )
         ctx = _ctx()
         msg = await edit_clean(query, ctx, "hi", keyboard=None)
         assert msg is None

@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 
 MAX_RETRIES = 2
 RETRY_DELAY = 1
-CONNECT_TIMEOUT = 10       # مهلة إنشاء الاتصال بالثواني
-API_TIMEOUT = 30            # مهلة عامة لأوامر API (قراءة وكتابة)
-LONG_TIMEOUT = 120          # مهلة للعمليات الطويلة (باكوب، جلب 1000+ مستخدم)
-MAX_CONNECTIONS_PER_ROUTER = 3 # عدد الاتصالات المسموح بها لكل راوتر معاً
+CONNECT_TIMEOUT = 10  # مهلة إنشاء الاتصال بالثواني
+API_TIMEOUT = 30  # مهلة عامة لأوامر API (قراءة وكتابة)
+LONG_TIMEOUT = 120  # مهلة للعمليات الطويلة (باكوب، جلب 1000+ مستخدم)
+MAX_CONNECTIONS_PER_ROUTER = 3  # عدد الاتصالات المسموح بها لكل راوتر معاً
 
 # إعدادات Cache
-_CACHE_TTL = 3600           # صلاحية الكاش لمدة ساعة
-_MAX_CACHE_SIZE = 100       # الحد الأقصى لعناصر الكاش
+_CACHE_TTL = 3600  # صلاحية الكاش لمدة ساعة
+_MAX_CACHE_SIZE = 100  # الحد الأقصى لعناصر الكاش
 
 
 class ConnectionPool:
@@ -33,16 +33,16 @@ class ConnectionPool:
 
     def __init__(self):
         self._lock = threading.RLock()
-        
+
         # Mapping router_key -> queue of IDLE Api objects
         self.pools: dict[str, queue.Queue[Api]] = {}
         # Mapping router_key -> total active + idle connections created
         self.active_counts: dict[str, int] = {}
-        
+
         # Meta caches
         self.router_versions = TTLCache(max_size=50, ttl=86400)  # 24 ساعة
-        self.router_names = TTLCache(max_size=50, ttl=86400)     # 24 ساعة
-        
+        self.router_names = TTLCache(max_size=50, ttl=86400)  # 24 ساعة
+
         self.total_connection_attempts = 0
         self.successful_connections = 0
         self.failed_connections = 0
@@ -53,7 +53,9 @@ class ConnectionPool:
             db_id = router_key.replace(ROUTER_KEY_PREFIX, "")
             router_cfg = get_router_by_id(int(db_id))
             if not router_cfg:
-                raise RouterNotFoundError(f"Discovered router #{db_id} not found in database")
+                raise RouterNotFoundError(
+                    f"Discovered router #{db_id} not found in database"
+                )
             return {
                 "host": router_cfg["ip_address"],
                 "port": router_cfg["port"],
@@ -86,7 +88,9 @@ class ConnectionPool:
                 api = self._connect(router_info, timeout=timeout)
                 with self._lock:
                     self.successful_connections += 1
-                logger.info(f"Connected to {router_info['name']} (attempt {attempt + 1})")
+                logger.info(
+                    f"Connected to {router_info['name']} (attempt {attempt + 1})"
+                )
                 return api
             except LibRouterosError as e:
                 with self._lock:
@@ -103,7 +107,9 @@ class ConnectionPool:
         )
         raise last_error  # type: ignore[misc]
 
-    def get_connection(self, router_key: str = "router1", timeout: int | None = None) -> Api:
+    def get_connection(
+        self, router_key: str = "router1", timeout: int | None = None
+    ) -> Api:
         """
         يحصل على اتصال جاهز من الطابور، أو ينشئ اتصالاً جديداً إذا لم يتجاوز الحد.
         إذا تجاوز الحد (MAX_CONNECTIONS_PER_ROUTER)، سينتظر حتى يفرغ اتصال من الطابور.
@@ -112,7 +118,7 @@ class ConnectionPool:
             if router_key not in self.pools:
                 self.pools[router_key] = queue.Queue(maxsize=MAX_CONNECTIONS_PER_ROUTER)
                 self.active_counts[router_key] = 0
-            
+
             q = self.pools[router_key]
             count = self.active_counts[router_key]
 
@@ -123,7 +129,7 @@ class ConnectionPool:
             else:
                 # إما أن الطابور به اتصالات فارغة، أو وصلنا للحد الأقصى ويجب أن ننتظر
                 create_new = False
-        
+
         if create_new:
             try:
                 router_info = self.get_router_info(router_key)
@@ -142,8 +148,12 @@ class ConnectionPool:
                     self.cache_hits += 1
                 return api
             except queue.Empty:
-                logger.error(f"Connection pool timeout for {router_key}. Too many concurrent requests.")
-                raise TimeoutError("Connection pool timeout: too many concurrent requests to the router")
+                logger.error(
+                    f"Connection pool timeout for {router_key}. Too many concurrent requests."
+                )
+                raise TimeoutError(
+                    "Connection pool timeout: too many concurrent requests to the router"
+                )
 
     def release_connection(self, router_key: str, api: Api, broken: bool = False):
         """
@@ -172,16 +182,16 @@ class ConnectionPool:
         """Close cache and establish a fresh connection."""
         self.router_versions.invalidate(router_key)
         self.router_names.invalidate(router_key)
-        
+
         with self._lock:
             if router_key not in self.pools:
                 self.pools[router_key] = queue.Queue(maxsize=MAX_CONNECTIONS_PER_ROUTER)
                 self.active_counts[router_key] = 0
-            
-            # We are assuming this is used when a connection is marked broken 
+
+            # We are assuming this is used when a connection is marked broken
             # and we need a replacement immediately.
             self.active_counts[router_key] += 1
-            
+
         try:
             router_info = self.get_router_info(router_key)
             return self._connect_with_retry(router_info, timeout)
@@ -198,7 +208,7 @@ class ConnectionPool:
             q = self.pools.get(router_key)
             if not q:
                 return
-            
+
             # Empty the queue and close each
             while not q.empty():
                 try:
@@ -256,3 +266,8 @@ class ConnectionPool:
             "cached_names": cached_names,
             "cached_versions": cached_versions,
         }
+
+    def has_active_connection(self, router_key: str) -> bool:
+        """Check if the router currently has any active or idle connections."""
+        with self._lock:
+            return self.active_counts.get(router_key, 0) > 0

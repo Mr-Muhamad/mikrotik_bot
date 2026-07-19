@@ -1,4 +1,5 @@
 """Tests for database/repositories/operator_permissions and bot/router_selector.get_user_routers."""
+
 import sqlite3
 from contextlib import contextmanager
 from unittest.mock import patch
@@ -51,7 +52,8 @@ class TestAssignRouter:
 
     def test_assign_idempotent(self):
         from database.repositories.operator_permissions import (
-            assign_router_to_operator, get_operator_routers,
+            assign_router_to_operator,
+            get_operator_routers,
         )
 
         get_db = _make_get_db()
@@ -63,7 +65,8 @@ class TestAssignRouter:
 
     def test_assign_multiple_routers(self):
         from database.repositories.operator_permissions import (
-            assign_router_to_operator, get_operator_routers,
+            assign_router_to_operator,
+            get_operator_routers,
         )
 
         get_db = _make_get_db()
@@ -81,7 +84,8 @@ class TestAssignRouter:
 class TestRevokeRouter:
     def test_revoke_existing_returns_true(self):
         from database.repositories.operator_permissions import (
-            assign_router_to_operator, revoke_router_from_operator,
+            assign_router_to_operator,
+            revoke_router_from_operator,
         )
 
         get_db = _make_get_db()
@@ -91,7 +95,9 @@ class TestRevokeRouter:
         assert result is True
 
     def test_revoke_nonexistent_returns_false(self):
-        from database.repositories.operator_permissions import revoke_router_from_operator
+        from database.repositories.operator_permissions import (
+            revoke_router_from_operator,
+        )
 
         get_db = _make_get_db()
         with patch(PATCH_TARGET, get_db):
@@ -100,7 +106,9 @@ class TestRevokeRouter:
 
     def test_revoke_removes_only_target(self):
         from database.repositories.operator_permissions import (
-            assign_router_to_operator, revoke_router_from_operator, get_operator_routers,
+            assign_router_to_operator,
+            revoke_router_from_operator,
+            get_operator_routers,
         )
 
         get_db = _make_get_db()
@@ -126,7 +134,8 @@ class TestGetOperatorRouters:
 
     def test_returns_list_of_ints(self):
         from database.repositories.operator_permissions import (
-            assign_router_to_operator, get_operator_routers,
+            assign_router_to_operator,
+            get_operator_routers,
         )
 
         get_db = _make_get_db()
@@ -143,7 +152,8 @@ class TestGetOperatorRouters:
 class TestIsOperatorAllowed:
     def test_allowed_after_assign(self):
         from database.repositories.operator_permissions import (
-            assign_router_to_operator, is_operator_allowed,
+            assign_router_to_operator,
+            is_operator_allowed,
         )
 
         get_db = _make_get_db()
@@ -162,7 +172,9 @@ class TestIsOperatorAllowed:
 
     def test_not_allowed_after_revoke(self):
         from database.repositories.operator_permissions import (
-            assign_router_to_operator, revoke_router_from_operator, is_operator_allowed,
+            assign_router_to_operator,
+            revoke_router_from_operator,
+            is_operator_allowed,
         )
 
         get_db = _make_get_db()
@@ -195,27 +207,29 @@ class TestGetUserRouters:
             result = get_user_routers(admin_id)
         assert len(result) == 3
 
-    def test_operator_sees_only_assigned(self):
+    def test_customer_sees_only_owned(self):
         from bot.router_selector import get_user_routers
 
-        operator_id = 99999
+        customer_id = 99999
+        owned_routers = [self.ALL_ROUTERS[0], self.ALL_ROUTERS[2]]
         with (
-            patch("database.models.get_saved_routers", return_value=self.ALL_ROUTERS),
+            patch(
+                "database.models.get_saved_routers", return_value=owned_routers
+            ) as mock_get,
             patch("config.ADMIN_IDS", [12345]),
-            patch("database.models.get_operator_routers", return_value=[1, 3]),
         ):
-            result = get_user_routers(operator_id)
+            result = get_user_routers(customer_id)
         assert len(result) == 2
-        assert {r["id"] for r in result} == {1, 3}
+        mock_get.assert_called_with(active_only=True, owner_id=customer_id)
 
-    def test_operator_with_no_permissions_sees_nothing(self):
+    def test_customer_with_no_routers_sees_nothing(self):
         from bot.router_selector import get_user_routers
 
-        operator_id = 99999
+        customer_id = 99999
         with (
-            patch("database.models.get_saved_routers", return_value=self.ALL_ROUTERS),
+            patch("database.models.get_saved_routers", return_value=[]) as mock_get,
             patch("config.ADMIN_IDS", [12345]),
-            patch("database.models.get_operator_routers", return_value=[]),
         ):
-            result = get_user_routers(operator_id)
+            result = get_user_routers(customer_id)
         assert result == []
+        mock_get.assert_called_with(active_only=True, owner_id=customer_id)

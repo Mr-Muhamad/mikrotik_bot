@@ -19,6 +19,13 @@ CALLBACKS: dict[str, str] = {
     "menu_backup": "menu_backup",
     "menu_pdf_settings": "menu_pdf_settings",
     "menu_schedule": "menu_schedule",
+    "menu_routers": "menu_routers",
+    "menu_reports": "menu_reports",
+    "sales_summary": "sales_summary",
+    "batches_menu": "batches_menu",
+    "logs_menu": "logs_menu",
+    "reports_menu": "reports_menu",
+    "usage_start": "usage_start",
     "cancel_edit": "cancel_edit",
     "clean_chat": "clean_chat",
     "hotspot_stats": "hotspot_stats",
@@ -40,6 +47,7 @@ CALLBACKS: dict[str, str] = {
     "watchdog_start": "watchdog_start",
     "watchdog_stop": "watchdog_stop",
     "watchdog_status": "watchdog_status",
+    "watchdog_refresh": "watchdog_refresh",
     "report_csv": "report_csv",
     "report_refresh": "report_refresh",
     "batches_refresh": "batches_refresh",
@@ -102,7 +110,6 @@ CALLBACKS: dict[str, str] = {
     "pdf_group_text": "pdf_group_text",
     "pdf_group_layout": "pdf_group_layout",
     "pdf_group_misc": "pdf_group_misc",
-
     "pdf_brand_name": "pdf_brand_name",
     "pdf_hotspot_dns": "pdf_hotspot_dns",
     "pdf_show_qr": "pdf_show_qr",
@@ -180,6 +187,15 @@ def batch_select(batch_id):
 def batch_regen(batch_id):
     return f"batch_regen:{batch_id}"
 
+
+def batch_page(page):
+    return f"batch_page:{page}"
+
+def userman_search_page(page):
+    return f"um_search_pg_{page}"
+
+def hotspot_search_page(page):
+    return f"hs_search_pg_{page}"
 
 def restore(index):
     return f"restore:{index}"
@@ -286,6 +302,13 @@ PATTERNS: dict[str, str] = {
     "menu_backup": r"^menu_backup$",
     "menu_pdf_settings": r"^menu_pdf_settings$",
     "menu_schedule": r"^menu_schedule$",
+    "menu_routers": r"^menu_routers$",
+    "menu_reports": r"^menu_reports$",
+    "reports_menu": r"^reports_menu$",
+    "sales_summary": r"^sales_summary$",
+    "batches_menu": r"^batches_menu$",
+    "logs_menu": r"^logs_menu$",
+    "usage_start": r"^usage_start$",
     "cancel_edit": r"^cancel_edit$",
     "clean_chat": r"^clean_chat$",
     "hotspot_stats": r"^hotspot_stats$",
@@ -307,6 +330,7 @@ PATTERNS: dict[str, str] = {
     "watchdog_start": r"^watchdog_start$",
     "watchdog_stop": r"^watchdog_stop$",
     "watchdog_status": r"^watchdog_status$",
+    "watchdog_refresh": r"^watchdog_refresh$",
     "report_csv": r"^report_csv$",
     "report_refresh": r"^report_refresh$",
     "batches_refresh": r"^batches_refresh$",
@@ -368,7 +392,6 @@ PATTERNS: dict[str, str] = {
     "pdf_group_text": r"^pdf_group_text$",
     "pdf_group_layout": r"^pdf_group_layout$",
     "pdf_group_misc": r"^pdf_group_misc$",
-
     "reboot_router": r"^reboot_router_\d+$",
     "rename_router": r"^rename_router_",
     "page_user": r"^page_(edit|delete)_user_\d+$",
@@ -378,8 +401,12 @@ PATTERNS: dict[str, str] = {
     "confirm_restore": r"^confirm_restore$",
     "userman_restore_tar": r"^userman_restore_tar:\d+$",
     "userman_restore_exec": r"^userman_restore_exec$",
+    "batches_refresh": r"^batches_refresh$",
     "batch_sel": r"^batch_sel:\d+$",
+    "batch_page": r"^batch_page:\d+$",
     "batch_regen": r"^batch_regen:\d+$",
+    "userman_search_page": r"^um_search_pg_\d+$",
+    "hotspot_search_page": r"^hs_search_pg_\d+$",
     "disc_router": r"^disc_router_\d+\.\d+\.\d+\.\d+$",
     "add_profile": r"^add_profile_\d+$",
     "delete_user_star": r"^delete_user_\*\S+$",
@@ -412,4 +439,6 @@ PATTERNS: dict[str, str] = {
     "op_assign_router": r"^op_assign:\d+:\d+$",
     "op_revoke_router": r"^op_revoke:\d+:\d+$",
     "op_list_routers": r"^op_list:\d+$",
+    "set_timeout": r"^set_timeout:\d+$",
+    "cancel_timeout": r"^cancel_timeout$",
 }

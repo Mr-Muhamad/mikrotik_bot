@@ -31,8 +31,10 @@ def _mock_canvas():
 
 def _sample_card() -> CardData:
     return CardData(
-        username="user001", password="pass123",
-        card_number=1, profile="default",
+        username="user001",
+        password="pass123",
+        card_number=1,
+        profile="default",
     )
 
 
@@ -73,7 +75,9 @@ class TestCardRendererInit:
         assert r.hotspot_dns == ""
 
     def test_custom_construction(self):
-        r = CardRenderer(font_name="Arial", brand_name="MyNet", hotspot_dns="login.mynet.com")
+        r = CardRenderer(
+            font_name="Arial", brand_name="MyNet", hotspot_dns="login.mynet.com"
+        )
         assert r.font_name == "Arial"
         assert r.brand_name == "MyNet"
         assert r.hotspot_dns == "login.mynet.com"
@@ -156,7 +160,9 @@ class TestCardRendererDraw:
         r = CardRenderer(font_name="Helvetica")
         # Empty password → show_password returns False (it's a property)
         card = CardData(
-            username="abc", password="", card_number=1,
+            username="abc",
+            password="",
+            card_number=1,
             profile="default",
         )
         r._draw_credentials(c, 10, 10, 50, 80, card)
@@ -168,7 +174,9 @@ class TestCardRendererDraw:
         r = CardRenderer(font_name="Helvetica")
         # Different password → show_password returns True
         card = CardData(
-            username="abc", password="xyz", card_number=1,
+            username="abc",
+            password="xyz",
+            card_number=1,
             profile="default",
         )
         r._draw_credentials(c, 10, 10, 50, 80, card)
@@ -190,9 +198,18 @@ class TestCardRendererDraw:
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
         # card can also be a dict
-        r._draw_credentials(c, 10, 10, 50, 80, {
-            "username": "u", "password": "p", "show_password": True,
-        })
+        r._draw_credentials(
+            c,
+            10,
+            10,
+            50,
+            80,
+            {
+                "username": "u",
+                "password": "p",
+                "show_password": True,
+            },
+        )
         assert c.drawString.call_count >= 4
 
     def test_draw_qr_with_dns_renders(self):
@@ -262,7 +279,6 @@ class TestCardGenerator:
         call_args = mock_renderer.generate_cards_pdf.call_args
         # First positional should be the cards list
         assert call_args.args[0] == cards or call_args.kwargs.get("cards") == cards
-
 
 
 class TestDrawFooterCallerId:

@@ -39,22 +39,27 @@ from core.card_models import CardData, CardSystem
 
 from tests.fixtures.telegram_mocks import make_mock_context, make_mock_update
 
-
 ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
 def _patch_router(monkeypatch):
     """Patch router_selector and clear rate-limit for all tests."""
-    router_lookup = lambda uid: "discovered_1" if uid == ADMIN_ID else None  # noqa: E731
+    router_lookup = lambda uid: (
+        "discovered_1" if uid == ADMIN_ID else None
+    )  # noqa: E731
     monkeypatch.setattr("bot.router_selector.get_selected_router", router_lookup)
     monkeypatch.setattr("bot.handlers.hotspot_cards.get_selected_router", router_lookup)
-    monkeypatch.setattr("bot.router_selector.set_selected_router", lambda uid, key: None)
-    monkeypatch.setattr("bot.router_selector.set_current_action",
-                        lambda uid, action, data=None: None)
+    monkeypatch.setattr(
+        "bot.router_selector.set_selected_router", lambda uid, key: None
+    )
+    monkeypatch.setattr(
+        "bot.router_selector.set_current_action", lambda uid, action, data=None: None
+    )
     monkeypatch.setattr("bot.router_selector.clear_action", lambda uid: None)
     monkeypatch.setattr("bot.router_selector.clear_router", lambda uid: None)
     from utils.admin_decorator import _rate_limit_data
+
     _rate_limit_data.clear()
 
 
@@ -179,8 +184,10 @@ class TestHotspotCardsTypeSelected:
     async def test_type1_different(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_card_type1")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(return_value=[{"name": "default"}])):
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(return_value=[{"name": "default"}]),
+        ):
             result = await hotspot_cards_type_selected(u, c)
         assert result == WAITING_HOTSPOT_CARD_PROFILE
         assert c.user_data["hs_card_system"] == CardSystem.DIFFERENT_CREDENTIALS
@@ -189,8 +196,10 @@ class TestHotspotCardsTypeSelected:
     async def test_type2_same(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_card_type2")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(return_value=[{"name": "default"}])):
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(return_value=[{"name": "default"}]),
+        ):
             await hotspot_cards_type_selected(u, c)
         assert c.user_data["hs_card_system"] == CardSystem.SAME_CREDENTIALS
 
@@ -198,8 +207,10 @@ class TestHotspotCardsTypeSelected:
     async def test_type3_empty(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_card_type3")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(return_value=[{"name": "default"}])):
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(return_value=[{"name": "default"}]),
+        ):
             await hotspot_cards_type_selected(u, c)
         assert c.user_data["hs_card_system"] == CardSystem.EMPTY_PASSWORD
 
@@ -214,8 +225,10 @@ class TestHotspotCardsTypeSelected:
     async def test_profiles_failure_ends(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_card_type1")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(side_effect=Exception("net err"))):
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(side_effect=Exception("net err")),
+        ):
             with patch("bot.handlers.hotspot_cards.send_error", new=AsyncMock()):
                 result = await hotspot_cards_type_selected(u, c)
         assert result == ConversationHandler.END
@@ -229,8 +242,10 @@ class TestHotspotCardsProfileSelected:
     async def test_valid_profile(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_card_profile_premium")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.resolve_profile_from_callback",
-                   return_value="premium"):
+        with patch(
+            "bot.handlers.hotspot_cards.resolve_profile_from_callback",
+            return_value="premium",
+        ):
             result = await hotspot_cards_profile_selected(u, c)
         assert result == WAITING_HOTSPOT_CARD_UPTIME
         assert c.user_data["hs_card_profile"] == "premium"
@@ -239,7 +254,10 @@ class TestHotspotCardsProfileSelected:
     async def test_invalid_profile_ends(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_card_profile_X")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.resolve_profile_from_callback", return_value=None):
+        with patch(
+            "bot.handlers.hotspot_cards.resolve_profile_from_callback",
+            return_value=None,
+        ):
             result = await hotspot_cards_profile_selected(u, c)
         assert result == ConversationHandler.END
 
@@ -323,20 +341,26 @@ class TestHotspotCardsBytes:
     async def test_valid_bytes_creates_cards(self, tmp_path):
         u = make_mock_update(user_id=ADMIN_ID, text="1G")
         c = make_mock_context()
-        c.user_data.update({
-            "hs_card_count": 2,
-            "hs_card_length": 5,
-            "hs_card_prefix": "",
-            "hs_card_system": CardSystem.DIFFERENT_CREDENTIALS,
-            "hs_card_profile": "default",
-            "hs_card_uptime": "",
-        })
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(side_effect=[_fake_cards(2), "fake/path.pdf"])):
+        c.user_data.update(
+            {
+                "hs_card_count": 2,
+                "hs_card_length": 5,
+                "hs_card_prefix": "",
+                "hs_card_system": CardSystem.DIFFERENT_CREDENTIALS,
+                "hs_card_profile": "default",
+                "hs_card_uptime": "",
+            }
+        )
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(side_effect=[_fake_cards(2), "fake/path.pdf"]),
+        ):
             with patch("os.path.exists", return_value=True):
                 with patch("os.remove"):
                     with patch("builtins.open", MagicMock()):
-                        with patch("bot.handlers.hotspot_cards.reply_final", new=AsyncMock()):
+                        with patch(
+                            "bot.handlers.hotspot_cards.reply_final", new=AsyncMock()
+                        ):
                             result = await hotspot_cards_bytes(u, c)
         # Conversation ends; user_data cleaned up
         assert result == ConversationHandler.END
@@ -359,20 +383,26 @@ class TestHotspotCardsSkipBytes:
     async def test_skip_creates_cards(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_skip_bytes")
         c = make_mock_context()
-        c.user_data.update({
-            "hs_card_count": 1,
-            "hs_card_length": 3,
-            "hs_card_prefix": "",
-            "hs_card_system": CardSystem.SAME_CREDENTIALS,
-            "hs_card_profile": "default",
-            "hs_card_uptime": "",
-        })
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(side_effect=[_fake_cards(1), "fake/path.pdf"])):
+        c.user_data.update(
+            {
+                "hs_card_count": 1,
+                "hs_card_length": 3,
+                "hs_card_prefix": "",
+                "hs_card_system": CardSystem.SAME_CREDENTIALS,
+                "hs_card_profile": "default",
+                "hs_card_uptime": "",
+            }
+        )
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(side_effect=[_fake_cards(1), "fake/path.pdf"]),
+        ):
             with patch("os.path.exists", return_value=True):
                 with patch("os.remove"):
                     with patch("builtins.open", MagicMock()):
-                        with patch("bot.handlers.hotspot_cards.reply_final", new=AsyncMock()):
+                        with patch(
+                            "bot.handlers.hotspot_cards.reply_final", new=AsyncMock()
+                        ):
                             result = await hotspot_cards_skip_bytes(u, c)
         # Conversation ends; user_data cleaned up
         assert result == ConversationHandler.END
@@ -386,7 +416,9 @@ class TestCreateCards:
     @pytest.mark.asyncio
     async def test_no_router_ends(self, monkeypatch):
         monkeypatch.setattr("bot.router_selector.get_selected_router", lambda uid: None)
-        monkeypatch.setattr("bot.handlers.hotspot_cards.get_selected_router", lambda uid: None)
+        monkeypatch.setattr(
+            "bot.handlers.hotspot_cards.get_selected_router", lambda uid: None
+        )
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_skip_bytes")
         c = make_mock_context()
         with patch("bot.handlers.hotspot_cards.reply_final", new=AsyncMock()):
@@ -397,8 +429,10 @@ class TestCreateCards:
     async def test_no_cards_ends(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_skip_bytes")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(return_value=[])):
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(return_value=[]),
+        ):
             result = await _create_cards(u, c, query=u.callback_query)
         assert result == ConversationHandler.END
 
@@ -407,9 +441,13 @@ class TestCreateCards:
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_skip_bytes")
         c = make_mock_context()
         c.user_data["hs_card_count"] = 1
-        with patch("bot.handlers.hotspot_cards.run_blocking",
-                   new=AsyncMock(side_effect=Exception("router crashed"))):
-            with patch("bot.handlers.hotspot_cards.send_error", new=AsyncMock()) as mock_err:
+        with patch(
+            "bot.handlers.hotspot_cards.run_blocking",
+            new=AsyncMock(side_effect=Exception("router crashed")),
+        ):
+            with patch(
+                "bot.handlers.hotspot_cards.send_error", new=AsyncMock()
+            ) as mock_err:
                 result = await _create_cards(u, c, query=u.callback_query)
         # Exception is caught and conversation still ends
         assert result == ConversationHandler.END
@@ -438,8 +476,10 @@ class TestBackNavigation:
     async def test_back_to_profile_success(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_back_to_profile")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(return_value=[{"name": "default"}])):
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(return_value=[{"name": "default"}]),
+        ):
             result = await hs_back_to_profile(u, c)
         assert result == WAITING_HOTSPOT_CARD_PROFILE
 
@@ -447,8 +487,10 @@ class TestBackNavigation:
     async def test_back_to_profile_failure(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_back_to_profile")
         c = make_mock_context()
-        with patch("bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-                   new=AsyncMock(side_effect=Exception("err"))):
+        with patch(
+            "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
+            new=AsyncMock(side_effect=Exception("err")),
+        ):
             with patch("bot.handlers.hotspot_cards.send_error", new=AsyncMock()):
                 result = await hs_back_to_profile(u, c)
         assert result == ConversationHandler.END

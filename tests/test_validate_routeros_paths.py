@@ -4,8 +4,9 @@ import ast
 import importlib.util
 from pathlib import Path
 
-
-_SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "validate_routeros_paths.py"
+_SCRIPT = (
+    Path(__file__).resolve().parent.parent / "scripts" / "validate_routeros_paths.py"
+)
 _spec = importlib.util.spec_from_file_location("validate_routeros_paths", _SCRIPT)
 assert _spec is not None, f"Could not load spec for {_SCRIPT}"
 guard = importlib.util.module_from_spec(_spec)
@@ -36,21 +37,26 @@ def test_command_literal_none_for_no_command_arg():
 
 def test_scan_file_flags_hardcoded_userman(tmp_path):
     bad = tmp_path / "bad.py"
-    bad.write_text('mikrotik_api.execute(rk, "user-manager/user/print")', encoding="utf-8")
+    bad.write_text(
+        'mikrotik_api.execute(rk, "user-manager/user/print")', encoding="utf-8"
+    )
     violations = guard._scan_file(bad)
     assert violations == [(1, "user-manager/user/print")]
 
 
 def test_scan_file_flags_hardcoded_v6_userman(tmp_path):
     bad = tmp_path / "bad.py"
-    bad.write_text('mikrotik_api.execute_long(rk, "tool/user-manager/profile/print")', encoding="utf-8")
+    bad.write_text(
+        'mikrotik_api.execute_long(rk, "tool/user-manager/profile/print")',
+        encoding="utf-8",
+    )
     assert guard._scan_file(bad) == [(1, "tool/user-manager/profile/print")]
 
 
 def test_scan_file_allows_central_helper_pattern(tmp_path):
     ok = tmp_path / "ok.py"
     ok.write_text(
-        'base = mikrotik_api.get_userman_base_path(rk)\n'
+        "base = mikrotik_api.get_userman_base_path(rk)\n"
         'mikrotik_api.execute(rk, f"{base}/user/print")\n',
         encoding="utf-8",
     )

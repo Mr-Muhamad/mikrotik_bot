@@ -187,6 +187,7 @@ from bot.handlers.watchdog import (
     watchdog_start as watchdog_start,
     watchdog_stop as watchdog_stop,
     watchdog_status as watchdog_status,
+    watchdog_refresh as watchdog_refresh,
 )
 from bot.handlers.usage import (
     usage_start as usage_start,

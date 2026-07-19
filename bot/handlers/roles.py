@@ -17,6 +17,11 @@ OP_ASSIGN_SUCCESS = "✅ تم إسناد الراوتر #{router_id} للمشغ�
 OP_REVOKE_SUCCESS = "✅ تم سحب الراوتر #{router_id} من المشغّل {operator_id}"
 OP_NO_ROUTERS_FOR_OP = "⚠️ لا توجد روترات مخصصة لك. تواصل مع المسؤول."
 
+CUSTOMER_ADD_USAGE = "الاستخدام: /add_customer <id>"
+CUSTOMER_REMOVE_USAGE = "الاستخدام: /remove_customer <id>"
+CUSTOMER_ADD_SUCCESS = "✅ تم إضافة العميل {customer_id} بنجاح."
+CUSTOMER_REMOVE_SUCCESS = "✅ تم إزالة العميل {customer_id} بنجاح."
+
 
 @admin_only
 @require_role("admin")
@@ -73,6 +78,50 @@ async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @admin_only
+@require_role("super_admin")
+async def add_customer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Super Admin adds a new customer: /add_customer <id>."""
+    parts = (update.message.text or "").split()
+    if len(parts) < 2:
+        await update.message.reply_text(CUSTOMER_ADD_USAGE)
+        return
+
+    try:
+        target = int(parts[1])
+    except ValueError:
+        await update.message.reply_text("معرّف غير صالح.")
+        return
+
+    actor = update.effective_user.id
+    set_admin_role(target, "customer", actor)
+    log_action("add_customer", update.effective_user.username or "", "", actor)
+    await update.message.reply_text(CUSTOMER_ADD_SUCCESS.format(customer_id=target))
+
+
+@admin_only
+@require_role("super_admin")
+async def remove_customer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Super Admin removes a customer: /remove_customer <id>."""
+    from database.repositories.admin_roles import delete_admin_role
+
+    parts = (update.message.text or "").split()
+    if len(parts) < 2:
+        await update.message.reply_text(CUSTOMER_REMOVE_USAGE)
+        return
+
+    try:
+        target = int(parts[1])
+    except ValueError:
+        await update.message.reply_text("معرّف غير صالح.")
+        return
+
+    actor = update.effective_user.id
+    delete_admin_role(target)
+    log_action("remove_customer", update.effective_user.username or "", "", actor)
+    await update.message.reply_text(CUSTOMER_REMOVE_SUCCESS.format(customer_id=target))
+
+
+@admin_only
 @require_role("admin")
 async def assign_router_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """عرض واجهة إسناد الروترات لمشغّل معين.
@@ -99,7 +148,9 @@ async def assign_router_command(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     assigned = get_operator_routers(operator_id)
-    keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)
+    keyboard = get_operator_router_assignment_keyboard(
+        operator_id, all_routers, assigned
+    )
     await update.message.reply_text(
         f"🛠️ إسناد الروترات للمشغّل <b>{operator_id}</b>\n"
         f"اضغط على راوتر لإسناده أو سحبه:\n"
@@ -113,7 +164,11 @@ async def assign_router_command(update: Update, context: ContextTypes.DEFAULT_TY
 @require_role("admin")
 async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """معالجة callback إسناد راوتر لمشغّل."""
-    from database.models import get_saved_routers, get_operator_routers, assign_router_to_operator
+    from database.models import (
+        get_saved_routers,
+        get_operator_routers,
+        assign_router_to_operator,
+    )
     from bot.keyboards import get_operator_router_assignment_keyboard
     from utils.callback_utils import safe_answer_callback
 
@@ -135,7 +190,9 @@ async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAUL
     # تحديث الـ keyboard
     all_routers = get_saved_routers(active_only=True)
     assigned = get_operator_routers(operator_id)
-    keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)
+    keyboard = get_operator_router_assignment_keyboard(
+        operator_id, all_routers, assigned
+    )
     await query.edit_message_reply_markup(reply_markup=keyboard)
 
 
@@ -143,7 +200,11 @@ async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAUL
 @require_role("admin")
 async def op_revoke_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """معالجة callback سحب راوتر من مشغّل."""
-    from database.models import get_saved_routers, get_operator_routers, revoke_router_from_operator
+    from database.models import (
+        get_saved_routers,
+        get_operator_routers,
+        revoke_router_from_operator,
+    )
     from bot.keyboards import get_operator_router_assignment_keyboard
     from utils.callback_utils import safe_answer_callback
 
@@ -164,5 +225,7 @@ async def op_revoke_router_callback(update: Update, context: ContextTypes.DEFAUL
     # تحديث الـ keyboard
     all_routers = get_saved_routers(active_only=True)
     assigned = get_operator_routers(operator_id)
-    keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)
+    keyboard = get_operator_router_assignment_keyboard(
+        operator_id, all_routers, assigned
+    )
     await query.edit_message_reply_markup(reply_markup=keyboard)

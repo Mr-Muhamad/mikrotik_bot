@@ -16,6 +16,7 @@ from utils.chat_cleaner import (
     send_loading,
     send_step,
 )
+from database.models import add_tracked_message, get_tracked_messages
 
 
 def _ctx(chat_id: int = 1, job_queue=None, user_data=None, bot_data=None):
@@ -64,25 +65,30 @@ class TestCleanChatMessages:
 
     @pytest.mark.asyncio
     async def test_uses_batch_delete(self):
-        ctx = _ctx(bot_data={"chat_msgs_1": {10: 0.0, 20: 0.0, 30: 0.0}})
+        ctx = _ctx()
+        for i in [10, 20, 30]:
+            add_tracked_message(1, i)
         await clean_chat_messages(ctx, 1)
         ctx.bot.delete_messages.assert_called_once()
         called = ctx.bot.delete_messages.call_args.kwargs
         assert set(called["message_ids"]) == {10, 20, 30}
-        assert "chat_msgs_1" not in ctx.bot_data
+        assert len(get_tracked_messages(1)) == 0
 
     @pytest.mark.asyncio
     async def test_splits_large_chat_into_chunks(self):
-        ids = {i: 0.0 for i in range(250)}
-        ctx = _ctx(bot_data={"chat_msgs_1": ids})
+        ctx = _ctx()
+        for i in range(250):
+            add_tracked_message(1, i)
         await clean_chat_messages(ctx, 1)
         # 250 tracked messages -> 3 batches (100 + 100 + 50)
         assert ctx.bot.delete_messages.call_count == 3
-        assert "chat_msgs_1" not in ctx.bot_data
+        assert len(get_tracked_messages(1)) == 0
 
     @pytest.mark.asyncio
     async def test_swallows_delete_errors(self):
-        ctx = _ctx(bot_data={"chat_msgs_1": {10: 0.0, 20: 0.0}})
+        ctx = _ctx()
+        for i in [10, 20]:
+            add_tracked_message(1, i)
         # الحذف الجماعي يفشل ثم يتراجع فردياً مع فشل كل رسالة — يجب ألا يرمي
         ctx.bot.delete_messages = AsyncMock(side_effect=Exception("rate limit"))
         ctx.bot.delete_message = AsyncMock(side_effect=Exception("gone"))
@@ -90,18 +96,22 @@ class TestCleanChatMessages:
 
     @pytest.mark.asyncio
     async def test_cleans_bot_messages_in_group(self):
-        ctx = _ctx(bot_data={"chat_msgs_1": {10: 0.0, 20: 0.0}})
+        ctx = _ctx()
+        for i in [10, 20]:
+            add_tracked_message(1, i)
         await clean_chat_messages(ctx, 1, chat_type="group")
         ctx.bot.delete_messages.assert_called_once()
-        assert "chat_msgs_1" not in ctx.bot_data
+        assert len(get_tracked_messages(1)) == 0
 
     @pytest.mark.asyncio
     async def test_skips_channel_cleanup(self):
-        ctx = _ctx(bot_data={"chat_msgs_1": {10: 0.0, 20: 0.0}})
+        ctx = _ctx()
+        for i in [10, 20]:
+            add_tracked_message(1, i)
         await clean_chat_messages(ctx, 1, chat_type="channel")
         ctx.bot.delete_message.assert_not_called()
         ctx.bot.delete_messages.assert_not_called()
-        assert "chat_msgs_1" in ctx.bot_data
+        assert len(get_tracked_messages(1)) == 2
 
 
 # ─── Schedule delete tests ─────────────────────────────────────
@@ -126,10 +136,12 @@ class TestScheduleDelete:
     @pytest.mark.asyncio
     async def test_cancels_existing_job_with_same_name(self):
         existing_job = MagicMock()
-        ctx = _ctx(job_queue=MagicMock(
-            get_jobs_by_name=MagicMock(return_value=[existing_job]),
-            run_once=MagicMock(),
-        ))
+        ctx = _ctx(
+            job_queue=MagicMock(
+                get_jobs_by_name=MagicMock(return_value=[existing_job]),
+                run_once=MagicMock(),
+            )
+        )
         await schedule_delete(ctx, 1, 100)
         existing_job.schedule_removal.assert_called_once()
 
@@ -181,9 +193,9 @@ class TestSendLoading:
         update = _update()
         await send_loading(update, ctx, "⏳ working...")
         ctx.bot.send_message.assert_called_once_with(
-        chat_id=1, text="⏳ working...", disable_notification=True
-    )
-        assert 100 in ctx.bot_data["chat_msgs_1"]
+            chat_id=1, text="⏳ working...", disable_notification=True
+        )
+        assert 100 in get_tracked_messages(1)
 
 
 # ─── edit_clean tests ──────────────────────────────────────────
@@ -205,7 +217,7 @@ class TestEditClean:
         ctx = _ctx()
         update = _update(callback_data="any")
         await edit_clean(update.callback_query, ctx, "hello")
-        assert 61 in ctx.bot_data["chat_msgs_1"]
+        assert 61 in get_tracked_messages(1)
         assert ctx.user_data["last_msg"] == 61
 
     @pytest.mark.asyncio
@@ -214,8 +226,7 @@ class TestEditClean:
         update = _update(callback_data="any")
         update.callback_query.edit_message_text = AsyncMock(return_value=None)
         await edit_clean(update.callback_query, ctx, "hello")
-        # bot_data should not have the chat_msgs_1 key (or be empty)
-        assert ctx.bot_data.get("chat_msgs_1", []) == []
+        assert len(get_tracked_messages(1)) == 0
 
 
 # ─── send_step tests ───────────────────────────────────────────
@@ -232,7 +243,7 @@ class TestSendStep:
         # Then send
         ctx.bot.send_message.assert_called_once()
         assert ctx.user_data["last_msg"] == 100
-        assert 100 in ctx.bot_data["chat_msgs_1"]
+        assert 100 in get_tracked_messages(1)
 
     @pytest.mark.asyncio
     async def test_deletes_previous_step(self):
@@ -251,7 +262,8 @@ class TestSendStep:
         await send_step(update, ctx, "step1", keyboard=None)
         # لا يحذف البوت رسالة المستخدم في المجموعة (صلاحية غير متاحة)
         user_msg_calls = [
-            c for c in ctx.bot.delete_message.call_args_list
+            c
+            for c in ctx.bot.delete_message.call_args_list
             if c.kwargs.get("message_id") == 50
         ]
         assert user_msg_calls == []
@@ -279,7 +291,7 @@ class TestReplyFinal:
         await reply_final(update, ctx, "final")
         # Note: reply_final does NOT save last_msg (only send_step does)
         assert ctx.user_data.get("last_msg") is None
-        assert 100 in ctx.bot_data["chat_msgs_1"]
+        assert 100 in get_tracked_messages(1)
 
     @pytest.mark.asyncio
     async def test_cleans_previous_step(self):
@@ -288,7 +300,7 @@ class TestReplyFinal:
         await reply_final(update, ctx, "final")
         ctx.bot.delete_message.assert_any_call(chat_id=1, message_id=99)
         # New message tracked
-        assert 100 in ctx.bot_data["chat_msgs_1"]
+        assert 100 in get_tracked_messages(1)
 
 
 # ─── Trim threshold tests ──────────────────────────────────────

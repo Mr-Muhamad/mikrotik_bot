@@ -50,10 +50,14 @@ async def _show_stats(update, context, stat_type):
             stats = await run_blocking(stats_manager.get_userman_stats, router_key)
             text = stats_manager.format_userman_stats(stats, router_name)
 
-        await query.edit_message_text(text, reply_markup=get_stats_keyboard(), parse_mode="HTML")
+        await query.edit_message_text(
+            text, reply_markup=get_stats_keyboard(), parse_mode="HTML"
+        )
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=router_key,
             log_extra=f"_show_stats({stat_type})",
             reply_markup=get_stats_keyboard(),

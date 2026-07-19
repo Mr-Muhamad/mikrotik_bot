@@ -87,6 +87,7 @@ class TestBindRequestIdDecorator:
 
         # Attach request_id filter to test logger
         from utils.logging_setup import RequestIdFilter
+
         log.addFilter(RequestIdFilter())
         log.setLevel(logging.INFO)
 

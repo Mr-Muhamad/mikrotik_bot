@@ -3,6 +3,7 @@
 يحلّ 7 نسخ مكررة من نفس المنطق في handlers مختلفة، ويستخدم TTL cache
 لتقليل طلبات API المتكررة.
 """
+
 import logging
 
 from bot.profile_callbacks import cache_profile_names

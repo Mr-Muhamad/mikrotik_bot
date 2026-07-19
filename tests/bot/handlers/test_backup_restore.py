@@ -30,7 +30,9 @@ def mock_context():
 class TestBackupRestoreStart:
     @patch("bot.handlers.backup_restore.get_selected_router", return_value=None)
     @patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock)
-    async def test_no_router_ends(self, mock_send, mock_get_router, mock_update, mock_context):
+    async def test_no_router_ends(
+        self, mock_send, mock_get_router, mock_update, mock_context
+    ):
         result = await backup_restore_start(mock_update, mock_context)
         assert result is None  # Handler doesn't return explicit value
 
@@ -38,7 +40,15 @@ class TestBackupRestoreStart:
     @patch("bot.handlers.backup_restore.get_selected_router", return_value="router1")
     @patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock)
     @patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock)
-    async def test_no_backups(self, mock_run, mock_send, mock_get_router, mock_backup_svc, mock_update, mock_context):
+    async def test_no_backups(
+        self,
+        mock_run,
+        mock_send,
+        mock_get_router,
+        mock_backup_svc,
+        mock_update,
+        mock_context,
+    ):
         mock_run.return_value = []
         result = await backup_restore_start(mock_update, mock_context)
         assert result is None  # Handler doesn't return explicit value
@@ -47,7 +57,15 @@ class TestBackupRestoreStart:
     @patch("bot.handlers.backup_restore.get_selected_router", return_value="router1")
     @patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock)
     @patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock)
-    async def test_with_backups(self, mock_run, mock_send, mock_get_router, mock_backup_svc, mock_update, mock_context):
+    async def test_with_backups(
+        self,
+        mock_run,
+        mock_send,
+        mock_get_router,
+        mock_backup_svc,
+        mock_update,
+        mock_context,
+    ):
         mock_run.return_value = ["backup1", "backup2"]
         result = await backup_restore_start(mock_update, mock_context)
         assert result is None  # Should not end conversation
@@ -75,7 +93,9 @@ class TestBackupRestoreConfirm:
     @patch("bot.handlers.backup_restore.log_action")
     @patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock)
     @patch("bot.handlers.backup_restore.get_selected_router", return_value="router1")
-    async def test_success(self, mock_get_router, mock_run, mock_log, mock_update, mock_context):
+    async def test_success(
+        self, mock_get_router, mock_run, mock_log, mock_update, mock_context
+    ):
         mock_context.user_data["restore_backup_name"] = "backup1"
         mock_update.callback_query.data = "confirm_restore"
         mock_run.return_value = {"success": True}
@@ -86,7 +106,9 @@ class TestBackupRestoreConfirm:
     @patch("bot.handlers.backup_restore.log_action")
     @patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock)
     @patch("bot.handlers.backup_restore.get_selected_router", return_value="router1")
-    async def test_failure(self, mock_get_router, mock_run, mock_log, mock_update, mock_context):
+    async def test_failure(
+        self, mock_get_router, mock_run, mock_log, mock_update, mock_context
+    ):
         mock_context.user_data["restore_backup_name"] = "backup1"
         mock_update.callback_query.data = "confirm_restore"
         mock_run.return_value = {"success": False, "message": "Connection lost"}

@@ -4,6 +4,7 @@ Isolated from the former god-object ``database.models``. Imports the shared
 ``get_db`` lazily from ``database.models`` to avoid an import cycle (models
 re-exports these repositories at import time).
 """
+
 from __future__ import annotations
 
 
@@ -130,7 +131,9 @@ def cleanup_old_logs(days: int) -> int:
     if days <= 0:
         raise ValueError("days must be a positive integer")
     cutoff = datetime.now(timezone.utc).timestamp() - (days * 24 * 60 * 60)
-    cutoff_text = datetime.fromtimestamp(cutoff, tz=timezone.utc).strftime(UTC_TIMESTAMP_FORMAT)
+    cutoff_text = datetime.fromtimestamp(cutoff, tz=timezone.utc).strftime(
+        UTC_TIMESTAMP_FORMAT
+    )
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM logs WHERE timestamp < ?", (cutoff_text,))

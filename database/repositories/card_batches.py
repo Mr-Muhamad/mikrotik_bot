@@ -3,6 +3,7 @@
 Stores generated hotspot/User Manager card batches with Fernet-encrypted
 payloads. Isolated from the former god-object ``database.models``.
 """
+
 from __future__ import annotations
 
 import json
@@ -18,7 +19,15 @@ def _now_utc():
     return datetime.now(timezone.utc).strftime(UTC_TIMESTAMP_FORMAT)
 
 
-def save_card_batch(router_key, name, batch_type, profile="", comment_prefix="", cards=None, created_by=None):
+def save_card_batch(
+    router_key,
+    name,
+    batch_type,
+    profile="",
+    comment_prefix="",
+    cards=None,
+    created_by=None,
+):
     """Persist a generated card batch.
 
     ``cards`` is a JSON-serializable list (list of dicts or CardData). The payload
@@ -48,15 +57,21 @@ def save_card_batch(router_key, name, batch_type, profile="", comment_prefix="",
                (router_key, name, batch_type, profile, comment_prefix, count, cards_json, created_by, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
-                router_key, name, batch_type, profile, comment_prefix, count,
-                encrypted, created_by,
+                router_key,
+                name,
+                batch_type,
+                profile,
+                comment_prefix,
+                count,
+                encrypted,
+                created_by,
                 _now_utc(),
             ),
         )
         return cursor.lastrowid
 
 
-def list_card_batches(router_key=None):
+def list_card_batches(router_key=None, limit=20, offset=0):
     """Return batch rows (without the encrypted payload) ordered by created_at desc."""
     from database.models import get_db
 
@@ -65,15 +80,33 @@ def list_card_batches(router_key=None):
         if router_key:
             cursor.execute(
                 "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, created_by, created_at "
-                "FROM card_batches WHERE router_key = ? ORDER BY created_at DESC",
-                (router_key,),
+                "FROM card_batches WHERE router_key = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (router_key, limit, offset),
             )
         else:
             cursor.execute(
                 "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, created_by, created_at "
-                "FROM card_batches ORDER BY created_at DESC"
+                "FROM card_batches ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (limit, offset),
             )
         return [dict(row) for row in cursor.fetchall()]
+
+
+def get_card_batches_count(router_key=None):
+    """Return the total number of card batches for the given router (or all)."""
+    from database.models import get_db
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        if router_key:
+            cursor.execute(
+                "SELECT COUNT(*) as c FROM card_batches WHERE router_key = ?",
+                (router_key,)
+            )
+        else:
+            cursor.execute("SELECT COUNT(*) as c FROM card_batches")
+        row = cursor.fetchone()
+        return row["c"] if row else 0
 
 
 def _decode_batch_cards(cards_json):
@@ -123,7 +156,9 @@ def delete_card_batch(batch_id):
         return cursor.rowcount
 
 
-def update_batch_payment(batch_id: int, status: str, customer_name: str = "", price: float = 0.0) -> bool:
+def update_batch_payment(
+    batch_id: int, status: str, customer_name: str = "", price: float = 0.0
+) -> bool:
     """تحديث حالة الدفع والبيانات التجارية لدفعة كروت.
 
     status: 'paid' | 'unpaid' | 'deferred'
@@ -168,18 +203,22 @@ def get_sales_summary(days: int = 7) -> dict:
                 (f"-{days} days",),
             )
         else:
-            cursor.execute(
-                """SELECT
+            cursor.execute("""SELECT
                        COUNT(*) AS total_batches,
                        SUM(CASE WHEN payment_status='paid' THEN 1 ELSE 0 END) AS paid_count,
                        SUM(CASE WHEN payment_status='unpaid' THEN 1 ELSE 0 END) AS unpaid_count,
                        SUM(CASE WHEN payment_status='deferred' THEN 1 ELSE 0 END) AS deferred_count,
                        SUM(CASE WHEN payment_status='paid' THEN sale_price ELSE 0 END) AS total_revenue
-                   FROM card_batches"""
-            )
+                   FROM card_batches""")
         row = cursor.fetchone()
         if not row:
-            return {"total_batches": 0, "paid_count": 0, "unpaid_count": 0, "deferred_count": 0, "total_revenue": 0.0}
+            return {
+                "total_batches": 0,
+                "paid_count": 0,
+                "unpaid_count": 0,
+                "deferred_count": 0,
+                "total_revenue": 0.0,
+            }
         return {
             "total_batches": row["total_batches"] or 0,
             "paid_count": row["paid_count"] or 0,

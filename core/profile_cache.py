@@ -2,6 +2,7 @@
 
 يقلل عدد طلبات API المتكررة لجلب البروفايلات.
 """
+
 import time
 import threading
 import logging
@@ -19,7 +20,9 @@ class ProfileCache:
     thread-safe للاستخدام من executors المتعددة.
     """
 
-    def __init__(self, ttl: int = PROFILE_CACHE_TTL_SECONDS, max_size: int = 200) -> None:
+    def __init__(
+        self, ttl: int = PROFILE_CACHE_TTL_SECONDS, max_size: int = 200
+    ) -> None:
         self._ttl = ttl
         self._max_size = max_size
         self._lock = threading.Lock()

@@ -23,8 +23,11 @@ from database.repositories.routers import get_router_display_name
 class TestRoutersRepository:
     def test_save_and_get_by_id_decrypts(self):
         router_id = routers.save_discovered_router(
-            ip="10.0.0.1", identity="R1", version="7.15",
-            username="admin", password="secret",
+            ip="10.0.0.1",
+            identity="R1",
+            version="7.15",
+            username="admin",
+            password="secret",
         )
         row = routers.get_router_by_id(router_id)
         assert row["ip_address"] == "10.0.0.1"
@@ -41,7 +44,11 @@ class TestRoutersRepository:
 
     def test_save_manual_router_encrypts_and_rejects_duplicate(self):
         router_id = routers.save_manual_router(
-            ip="10.0.0.5", port=8728, username="admin", password="topsecret", alias="Edge",
+            ip="10.0.0.5",
+            port=8728,
+            username="admin",
+            password="topsecret",
+            alias="Edge",
         )
         row = routers.get_router_by_id(router_id)
         assert row["ip_address"] == "10.0.0.5"
@@ -70,7 +77,9 @@ class TestRoutersRepository:
         assert plain["password"] == "p"
 
     def test_update_credentials_encrypts(self):
-        rid = routers.save_discovered_router(ip="10.0.0.30", username="old", password="oldp")
+        rid = routers.save_discovered_router(
+            ip="10.0.0.30", username="old", password="oldp"
+        )
         routers.update_router_credentials(rid, "new", "newp")
         row = routers.get_router_by_id(rid)
         assert row["username"] == "new"
@@ -92,9 +101,24 @@ class TestRoutersRepository:
         assert routers.get_router_by_id(rid) is None
 
     def test_display_name_priority(self):
-        assert get_router_display_name({"name_alias": "A", "identity": "I", "ip_address": "1.1.1.1"}) == "A"
-        assert get_router_display_name({"name_alias": "", "identity": "I", "ip_address": "1.1.1.1"}) == "I"
-        assert get_router_display_name({"name_alias": "", "identity": "Unknown", "ip_address": "1.1.1.1"}) == "1.1.1.1"
+        assert (
+            get_router_display_name(
+                {"name_alias": "A", "identity": "I", "ip_address": "1.1.1.1"}
+            )
+            == "A"
+        )
+        assert (
+            get_router_display_name(
+                {"name_alias": "", "identity": "I", "ip_address": "1.1.1.1"}
+            )
+            == "I"
+        )
+        assert (
+            get_router_display_name(
+                {"name_alias": "", "identity": "Unknown", "ip_address": "1.1.1.1"}
+            )
+            == "1.1.1.1"
+        )
 
 
 # ─── card_batches repository ───────────────────────────────────
@@ -102,10 +126,17 @@ class TestRoutersRepository:
 
 class TestCardBatchesRepository:
     def test_save_and_get_roundtrip_decrypts(self):
-        cards = [{"username": "u1", "password": "p1"}, {"username": "u2", "password": "p2"}]
+        cards = [
+            {"username": "u1", "password": "p1"},
+            {"username": "u2", "password": "p2"},
+        ]
         bid = card_batches.save_card_batch(
-            router_key="discovered_1", name="batch1", batch_type="hotspot",
-            profile="default", cards=cards, created_by=123,
+            router_key="discovered_1",
+            name="batch1",
+            batch_type="hotspot",
+            profile="default",
+            cards=cards,
+            created_by=123,
         )
         batch = card_batches.get_card_batch(bid)
         assert batch is not None
@@ -124,7 +155,9 @@ class TestCardBatchesRepository:
         assert all("cards_json" not in r for r in rows)
 
     def test_delete_card_batch(self):
-        bid = card_batches.save_card_batch("discovered_1", "b", "hotspot", cards=[{"x": 1}])
+        bid = card_batches.save_card_batch(
+            "discovered_1", "b", "hotspot", cards=[{"x": 1}]
+        )
         assert card_batches.delete_card_batch(bid) == 1
         assert card_batches.get_card_batch(bid) is None
 
@@ -145,9 +178,13 @@ class TestAuditLogsRepository:
         assert audit_logs.get_logs_count() == 1
 
     def test_where_clauses_bind_params_no_injection(self):
-        clauses, params = audit_logs._logs_where_clauses({"router": "r'; DROP TABLE logs;--"})
+        clauses, params = audit_logs._logs_where_clauses(
+            {"router": "r'; DROP TABLE logs;--"}
+        )
         assert clauses == ["router_name = ?"]
-        assert params == ["r'; DROP TABLE logs;--"]  # value is a bound param, not concatenated
+        assert params == [
+            "r'; DROP TABLE logs;--"
+        ]  # value is a bound param, not concatenated
 
     def test_distinct_and_filter(self):
         audit_logs.log_action("reboot", "alice", "r1", 10)
@@ -219,7 +256,9 @@ class TestBackupsRepository:
         assert s["schedule_hour"] == 5
 
     def test_record_and_recent(self):
-        backups.record_backup_result("discovered_1", "full", True, "ok", router_name="R1")
+        backups.record_backup_result(
+            "discovered_1", "full", True, "ok", router_name="R1"
+        )
         last = backups.get_last_backup("discovered_1")
         assert last["status"] == "success"
         assert backups.get_recent_backups(limit=5)

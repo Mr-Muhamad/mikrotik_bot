@@ -1,4 +1,5 @@
 """Tests for role-based access control via utils.admin_decorator.require_role."""
+
 import os
 import tempfile
 from unittest.mock import patch, MagicMock, AsyncMock
@@ -9,19 +10,30 @@ from database.models import init_db, set_admin_role
 from utils.admin_decorator import INSUFFICIENT_ROLE_MSG, require_role
 
 ADMIN_ID = 700000001
+OTHER_USER_ID = 800000002
 
 
 @pytest.fixture
 def role_db():
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         tmp = f.name
-    with patch("database.models.DB_PATH", tmp), \
-         patch("utils.crypto._get_key") as mk, \
-         patch("database.models.encrypt_password", side_effect=lambda p: f"enc_{p}" if p else ""), \
-         patch("database.models.decrypt_password", side_effect=lambda t: t.replace("enc_", "", 1) if t.startswith("enc_") else t), \
-         patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]):
-        mk.return_value.encrypt.side_effect = lambda p: f"enc_{p.decode()}" if isinstance(p, bytes) else f"enc_{p}"
-        mk.return_value.decrypt.side_effect = lambda t: t.decode().replace("enc_", "", 1).encode()
+    with patch("database.models.DB_PATH", tmp), patch(
+        "utils.crypto._get_key"
+    ) as mk, patch(
+        "database.models.encrypt_password",
+        side_effect=lambda p: f"enc_{p}" if p else "",
+    ), patch(
+        "database.models.decrypt_password",
+        side_effect=lambda t: t.replace("enc_", "", 1) if t.startswith("enc_") else t,
+    ), patch(
+        "utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]
+    ):
+        mk.return_value.encrypt.side_effect = lambda p: (
+            f"enc_{p.decode()}" if isinstance(p, bytes) else f"enc_{p}"
+        )
+        mk.return_value.decrypt.side_effect = (
+            lambda t: t.decode().replace("enc_", "", 1).encode()
+        )
         init_db()
         yield
     try:
@@ -45,13 +57,13 @@ def _callback_update(user_id):
 
 @pytest.mark.asyncio
 async def test_viewer_blocked_from_admin_command(role_db):
-    set_admin_role(ADMIN_ID, "viewer")
+    set_admin_role(OTHER_USER_ID, "viewer")
 
     @require_role("admin")
     async def guarded(update, context):
         return "allowed"
 
-    update = _callback_update(ADMIN_ID)
+    update = _callback_update(OTHER_USER_ID)
     result = await guarded(update, MagicMock())
     assert result is None
     edit_args = str(update.callback_query.edit_message_text.call_args)
@@ -72,16 +84,18 @@ async def test_admin_passes_admin_command(role_db):
 
 @pytest.mark.asyncio
 async def test_operator_blocked_from_admin_command(role_db):
-    set_admin_role(ADMIN_ID, "operator")
+    set_admin_role(OTHER_USER_ID, "operator")
 
     @require_role("admin")
     async def guarded(update, context):
         return "allowed"
 
-    update = _callback_update(ADMIN_ID)
+    update = _callback_update(OTHER_USER_ID)
     result = await guarded(update, MagicMock())
     assert result is None
-    assert INSUFFICIENT_ROLE_MSG in str(update.callback_query.edit_message_text.call_args)
+    assert INSUFFICIENT_ROLE_MSG in str(
+        update.callback_query.edit_message_text.call_args
+    )
 
 
 @pytest.mark.asyncio

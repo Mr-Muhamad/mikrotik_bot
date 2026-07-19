@@ -55,6 +55,10 @@ class MikrotikAPIMock:
     def invalidate_router_name(self, router_key: str) -> None:
         pass
 
+    def check_connection_health(self, router_key: str) -> tuple[bool, str]:
+        """Mock health check — always returns healthy."""
+        return True, ""
+
     # --- internal routing ---
 
     def _route_command(self, command: str, kwargs: dict) -> list[dict]:
@@ -93,7 +97,9 @@ class MikrotikAPIMock:
         if not kwargs:
             return list(self._users)
         limit = kwargs.get("limit")
-        filter_kwargs = {k: v for k, v in kwargs.items() if k != "limit"}
+        filter_kwargs = {
+            k: v for k, v in kwargs.items() if k not in ("limit", ".proplist")
+        }
         results = []
         for field, value in filter_kwargs.items():
             field_name = field.lstrip("?")
@@ -106,7 +112,7 @@ class MikrotikAPIMock:
             results = list(self._users)
         if limit is not None:
             try:
-                results = results[:int(limit)]
+                results = results[: int(limit)]
             except (ValueError, TypeError):
                 pass
         return results

@@ -15,7 +15,7 @@ class BackupScheduler:
     async def _do_backup(self, context):
         from core.backup_service import backup_service
         from core.mikrotik_api import mikrotik_api
-        from config import ROUTER_KEY_PREFIX, ADMIN_IDS, SCHEDULE_FULL_BACKUP
+        from config import ROUTER_KEY_PREFIX, ADMIN_IDS
         from database.models import get_saved_routers, record_backup_result
         from librouteros.exceptions import LibRouterosError
 
@@ -37,7 +37,9 @@ class BackupScheduler:
                 mikrotik_api.check_connection_health, router_key
             )
             if not is_healthy:
-                logger.warning(f"Router {router_key} is not healthy ({health_msg}), skipping backup")
+                logger.warning(
+                    f"Router {router_key} is not healthy ({health_msg}), skipping backup"
+                )
                 failed_routers.append(f"{r.get('identity', router_key)} (غير متصل)")
                 continue
 
@@ -48,8 +50,11 @@ class BackupScheduler:
 
                 await run_blocking(
                     record_backup_result,
-                    router_key, "userman", True,
-                    "scheduled backup ok", router_name=r.get("identity", router_key),
+                    router_key,
+                    "userman",
+                    True,
+                    "scheduled backup ok",
+                    router_name=r.get("identity", router_key),
                 )
                 logger.info(f"Scheduled backup done for {router_key}")
             except (LibRouterosError, ConnectionError, OSError) as e:
@@ -59,51 +64,72 @@ class BackupScheduler:
 
                 await run_blocking(
                     record_backup_result,
-                    router_key, "userman", False,
-                    str(e), router_name=r.get("identity", router_key),
+                    router_key,
+                    "userman",
+                    False,
+                    str(e),
+                    router_name=r.get("identity", router_key),
                 )
 
-            if SCHEDULE_FULL_BACKUP:
-                try:
-                    full_result = await run_blocking(backup_service.full_backup, router_key)
-                except (LibRouterosError, ConnectionError, OSError) as e:
-                    logger.error(f"Scheduled full backup failed for {router_key}: {e}")
-                    failed_routers.append(f"{r.get('identity', router_key)} (باكوب كامل)")
+            try:
+                full_result = await run_blocking(backup_service.full_backup, router_key)
+            except (LibRouterosError, ConnectionError, OSError) as e:
+                logger.error(f"Scheduled full backup failed for {router_key}: {e}")
+                failed_routers.append(f"{r.get('identity', router_key)} (باكوب كامل)")
+                await run_blocking(
+                    record_backup_result,
+                    router_key,
+                    "full",
+                    False,
+                    str(e),
+                    router_name=r.get("identity", router_key),
+                )
+            else:
+                if full_result.get("success"):
+                    logger.info(f"Scheduled full backup done for {router_key}")
                     await run_blocking(
-                        record_backup_result, router_key, "full", False,
-                        str(e), router_name=r.get("identity", router_key),
+                        record_backup_result,
+                        router_key,
+                        "full",
+                        True,
+                        "scheduled full backup ok",
+                        router_name=r.get("identity", router_key),
                     )
                 else:
-                    if full_result.get("success"):
-                        logger.info(f"Scheduled full backup done for {router_key}")
-                        await run_blocking(
-                            record_backup_result, router_key, "full", True,
-                            "scheduled full backup ok",
-                            router_name=r.get("identity", router_key),
-                        )
-                    else:
-                        msg = full_result.get("message", "scheduled full backup failed")
-                        logger.error(f"Scheduled full backup failed for {router_key}: {msg}")
-                        failed_routers.append(f"{r.get('identity', router_key)} (باكوب كامل)")
-                        await run_blocking(
-                            record_backup_result, router_key, "full", False,
-                            str(msg), router_name=r.get("identity", router_key),
-                        )
+                    msg = full_result.get("message", "scheduled full backup failed")
+                    logger.error(
+                        f"Scheduled full backup failed for {router_key}: {msg}"
+                    )
+                    failed_routers.append(
+                        f"{r.get('identity', router_key)} (باكوب كامل)"
+                    )
+                    await run_blocking(
+                        record_backup_result,
+                        router_key,
+                        "full",
+                        False,
+                        str(msg),
+                        router_name=r.get("identity", router_key),
+                    )
 
         # تقرير النتائج
         if successful_routers:
-            logger.info(f"Backup completed successfully for {len(successful_routers)} routers")
+            logger.info(
+                f"Backup completed successfully for {len(successful_routers)} routers"
+            )
 
         if failed_routers and context.bot:
             for admin_id in ADMIN_IDS:
                 try:
                     await context.bot.send_message(
                         admin_id,
-                        f"⚠️ فشل الباكوب الآلي لـ {len(failed_routers)} روتر:\n" +
-                        "\n".join(f"• {r}" for r in failed_routers)
+                        f"⚠️ فشل الباكوب الآلي لـ {len(failed_routers)} روتر:\n"
+                        + "\n".join(f"• {r}" for r in failed_routers),
                     )
                 except (OSError, ConnectionError) as e:
-                    logger.warning(f"Failed to notify admin {admin_id} about backup failures: {e}")
+                    logger.warning(
+                        f"Failed to notify admin {admin_id} about backup failures: {e}"
+                    )
 
     async def _do_expiry_check(self, context):
         """فحص يومي لاشتراكات Hotspot المشارفة على الانتهاء وإرسال تنبيه للمشرفين."""
@@ -145,7 +171,9 @@ class BackupScheduler:
                 try:
                     await context.bot.send_message(admin_id, message, parse_mode="HTML")
                 except Exception as e:
-                    logger.warning(f"Failed to notify admin {admin_id} about expiry: {e}")
+                    logger.warning(
+                        f"Failed to notify admin {admin_id} about expiry: {e}"
+                    )
 
     async def _do_stats_snapshot(self, context):
         """حفظ snapshot يومي لإحصائيات كل راوتر في قاعدة البيانات."""
@@ -188,7 +216,9 @@ class BackupScheduler:
             name=JOB_NAME,
         )
         # فحص انتهاء الاشتراكات بعد 5 دقائق من الـ backup
-        expiry_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0) + timedelta(minutes=5)
+        expiry_time = now.replace(
+            hour=hour, minute=minute, second=0, microsecond=0
+        ) + timedelta(minutes=5)
         if expiry_time <= now:
             expiry_time += timedelta(days=1)
         job_queue.run_daily(
@@ -197,7 +227,9 @@ class BackupScheduler:
             name=f"{JOB_NAME}_expiry",
         )
         # snapshot إحصائيات بعد 10 دقائق من الـ backup
-        snapshot_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0) + timedelta(minutes=10)
+        snapshot_time = now.replace(
+            hour=hour, minute=minute, second=0, microsecond=0
+        ) + timedelta(minutes=10)
         if snapshot_time <= now:
             snapshot_time += timedelta(days=1)
         job_queue.run_daily(
@@ -210,7 +242,9 @@ class BackupScheduler:
             from database.models import save_backup_schedule
 
             save_backup_schedule(True, hour, minute)
-        logger.info(f"Backup scheduler started, next run daily at {hour:02d}:{minute:02d}")
+        logger.info(
+            f"Backup scheduler started, next run daily at {hour:02d}:{minute:02d}"
+        )
 
     def stop(self, job_queue, persist: bool = True):
         self._running = False

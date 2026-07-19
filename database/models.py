@@ -11,6 +11,7 @@ working unchanged.
 Longer term, callers should import directly from ``database.repositories.*``
 and this re-export shim can be removed.
 """
+
 import sqlite3
 import os
 import logging
@@ -19,7 +20,8 @@ from contextlib import contextmanager
 from config import DEFAULT_API_PORT, ADMIN_IDS
 from utils.crypto import encrypt_password, decrypt_password, encrypt_data, decrypt_data
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "mikrotik_bot.db")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+DB_PATH = os.path.join(PROJECT_ROOT, "mikrotik_bot.db")
 logger = logging.getLogger(__name__)
 UTC_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -91,7 +93,9 @@ def _create_indexes():
 def migrate_passwords():
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, password FROM discovered_routers WHERE password != ''")
+        cursor.execute(
+            "SELECT id, password FROM discovered_routers WHERE password != ''"
+        )
         rows = cursor.fetchall()
         updated = 0
         for row in rows:
@@ -101,7 +105,10 @@ def migrate_passwords():
             # توكنات Fernet تبدأ دائماً بـ "gAAAAA" — إذا بدأت بها فهي مشفّرة بالفعل
             if not plain.startswith("gAAAAA"):
                 encrypted = encrypt_password(plain)
-                cursor.execute("UPDATE discovered_routers SET password = ? WHERE id = ?", (encrypted, row["id"]))
+                cursor.execute(
+                    "UPDATE discovered_routers SET password = ? WHERE id = ?",
+                    (encrypted, row["id"]),
+                )
                 updated += 1
         if updated:
             logger.info(f"Migrated {updated} plaintext passwords to encrypted")
@@ -110,7 +117,18 @@ def migrate_passwords():
 def migrate_add_name_alias():
     with get_db() as conn:
         cursor = conn.cursor()
-        _add_column_if_missing(cursor, "discovered_routers", "name_alias TEXT DEFAULT ''")
+        _add_column_if_missing(
+            cursor, "discovered_routers", "name_alias TEXT DEFAULT ''"
+        )
+        _add_column_if_missing(
+            cursor, "discovered_routers", "owner_id INTEGER DEFAULT 0"
+        )
+        _add_column_if_missing(
+            cursor, "user_sessions", "last_activity DATETIME DEFAULT CURRENT_TIMESTAMP"
+        )
+        _add_column_if_missing(
+            cursor, "user_sessions", "session_timeout INTEGER DEFAULT 600"
+        )
 
 
 def migrate_backup_schedule_columns():
@@ -147,177 +165,36 @@ def migrate_card_batches_columns():
         _add_column_if_missing(cursor, "card_batches", "created_by INTEGER")
         # نظام الفواتير: بيانات البيع والدفع
         _add_column_if_missing(cursor, "card_batches", "customer_name TEXT DEFAULT ''")
-        _add_column_if_missing(cursor, "card_batches", "payment_status TEXT DEFAULT 'unpaid'")
+        _add_column_if_missing(
+            cursor, "card_batches", "payment_status TEXT DEFAULT 'unpaid'"
+        )
         _add_column_if_missing(cursor, "card_batches", "sale_price REAL DEFAULT 0")
         _add_column_if_missing(cursor, "card_batches", "sold_at DATETIME")
 
 
 def init_db():
-    with get_db() as conn:
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                action TEXT NOT NULL,
-                username TEXT,
-                router_name TEXT,
-                admin_id INTEGER,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS admin_roles (
-                admin_id INTEGER PRIMARY KEY,
-                role TEXT NOT NULL,
-                changed_by INTEGER,
-                changed_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS card_batches (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                router_key TEXT NOT NULL,
-                name TEXT NOT NULL,
-                batch_type TEXT NOT NULL,
-                profile TEXT DEFAULT '',
-                comment_prefix TEXT DEFAULT '',
-                count INTEGER DEFAULT 0,
-                cards_json TEXT NOT NULL,
-                created_by INTEGER,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS pdf_settings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                margin_top REAL DEFAULT 10,
-                margin_bottom REAL DEFAULT 10,
-                margin_left REAL DEFAULT 10,
-                margin_right REAL DEFAULT 10,
-                border_width REAL DEFAULT 1,
-                card_width REAL DEFAULT 85,
-                card_height REAL DEFAULT 55,
-                spacing_x REAL DEFAULT 5,
-                spacing_y REAL DEFAULT 5,
-                cards_per_row INTEGER DEFAULT 4,
-                header_text TEXT DEFAULT '',
-                footer_text TEXT DEFAULT '',
-                brand_name TEXT DEFAULT '',
-                hotspot_dns TEXT DEFAULT '',
-                show_qr INTEGER DEFAULT 1,
-                cards_per_page INTEGER DEFAULT 40,
-                label_spacing_single REAL DEFAULT 1.0,
-                label_spacing_dual REAL DEFAULT 1.0,
-                value_max_font_single INTEGER DEFAULT 12,
-                value_max_font_dual INTEGER DEFAULT 11
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS backup_settings (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                backup_dir TEXT DEFAULT './backups',
-                send_telegram INTEGER DEFAULT 1,
-                save_local INTEGER DEFAULT 1
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS backup_jobs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                router_key TEXT,
-                router_name TEXT DEFAULT '',
-                backup_type TEXT DEFAULT 'full',
-                status TEXT DEFAULT 'success',
-                details TEXT DEFAULT '',
-                file_name TEXT DEFAULT '',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS router_health_log (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                router_key TEXT NOT NULL,
-                status TEXT NOT NULL,
-                checked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                error_msg TEXT DEFAULT ''
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS tracked_messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                chat_id INTEGER NOT NULL,
-                message_id INTEGER NOT NULL,
-                tracked_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS stats_snapshots (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                router_key TEXT NOT NULL,
-                snapshot_date DATE NOT NULL,
-                active_users INTEGER DEFAULT 0,
-                total_users INTEGER DEFAULT 0,
-                bytes_in INTEGER DEFAULT 0,
-                bytes_out INTEGER DEFAULT 0,
-                UNIQUE(router_key, snapshot_date)
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS operator_router_permissions (
-                operator_id INTEGER NOT NULL,
-                router_id INTEGER NOT NULL,
-                assigned_by INTEGER,
-                assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (operator_id, router_id)
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS user_sessions (
-                user_id INTEGER PRIMARY KEY,
-                selected_router TEXT DEFAULT 'router1',
-                current_action TEXT,
-                action_data TEXT
-            )
-        """)
-
-        cursor.execute(f"""
-            CREATE TABLE IF NOT EXISTS discovered_routers (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ip_address TEXT NOT NULL UNIQUE,
-                mac_address TEXT,
-                identity TEXT DEFAULT 'Unknown',
-                version TEXT,
-                board TEXT,
-                software_id TEXT,
-                platform TEXT DEFAULT 'MikroTik',
-                uptime TEXT,
-                port INTEGER DEFAULT {DEFAULT_API_PORT},
-                username TEXT,
-                password TEXT,
-                last_seen DATETIME,
-                added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                is_active INTEGER DEFAULT 1,
-                name_alias TEXT DEFAULT ''
-            )
-        """)
-
-        cursor.execute("SELECT COUNT(*) FROM pdf_settings")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("INSERT INTO pdf_settings DEFAULT VALUES")
-
-        cursor.execute("SELECT COUNT(*) FROM backup_settings")
-        if cursor.fetchone()[0] == 0:
-            cursor.execute("INSERT INTO backup_settings DEFAULT VALUES")
+    from alembic.config import Config
+    from alembic import command
+    import os
+    
+    # Run alembic migrations
+    alembic_cfg_path = os.path.join(PROJECT_ROOT, "alembic.ini")
+    alembic_cfg = Config(alembic_cfg_path)
+    # Set the script_location and sqlalchemy.url dynamically
+    alembic_dir = os.path.join(PROJECT_ROOT, "alembic")
+    alembic_cfg.set_main_option("script_location", alembic_dir)
+    
+    # In Windows, sqlite:///C:/path/to/db.sqlite requires formatting
+    db_uri = f"sqlite:///{DB_PATH.replace(os.sep, '/')}"
+    alembic_cfg.set_main_option("sqlalchemy.url", db_uri)
+    
+    # Temporarily set cwd to project root so alembic finds env.py
+    old_cwd = os.getcwd()
+    os.chdir(PROJECT_ROOT)
+    try:
+        command.upgrade(alembic_cfg, "head")
+    finally:
+        os.chdir(old_cwd)
 
     seed_admin_roles(ADMIN_IDS)
     migrate_passwords()
@@ -325,8 +202,6 @@ def init_db():
     migrate_backup_schedule_columns()
     migrate_pdf_settings_columns()
     migrate_card_batches_columns()
-
-    _create_indexes()
 
 
 # ─── Re-export stats_snapshots functions ──────────────────────────────
@@ -343,7 +218,6 @@ from database.repositories.operator_permissions import (
     get_operator_routers,
     is_operator_allowed,
 )
-
 
 # ─── Re-exports from cohesive repository modules ──────────────────
 from database.repositories.audit_logs import (
@@ -364,9 +238,10 @@ from database.repositories.admin_roles import (
 )
 from database.repositories.card_batches import (
     save_card_batch,
-    list_card_batches,
-    get_card_batch,
     delete_card_batch,
+    get_card_batch,
+    list_card_batches,
+    get_card_batches_count,
     update_batch_payment,
     get_sales_summary,
 )
@@ -405,6 +280,13 @@ from database.repositories.chat_messages import (
     remove_tracked_messages,
     delete_stale_records,
 )
+from database.repositories.router_health import (
+    record_health,
+    get_latest_health,
+    get_all_latest_health,
+    get_health_history,
+    cleanup_health_history,
+)
 
 __all__ = [
     "DB_PATH",
@@ -430,6 +312,7 @@ __all__ = [
     "list_admin_roles",
     "save_card_batch",
     "list_card_batches",
+    "get_card_batches_count",
     "get_card_batch",
     "delete_card_batch",
     "get_user_session",
@@ -457,4 +340,9 @@ __all__ = [
     "get_tracked_messages",
     "remove_tracked_messages",
     "delete_stale_records",
+    "record_health",
+    "get_latest_health",
+    "get_all_latest_health",
+    "get_health_history",
+    "cleanup_health_history",
 ]

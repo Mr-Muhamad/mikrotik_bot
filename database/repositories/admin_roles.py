@@ -4,6 +4,7 @@ Isolated from the former god-object ``database.models``. Imports ``get_db``,
 ``VALID_ROLES`` and the ``_now_utc`` helper lazily from ``database.models`` to
 avoid an import cycle (models re-exports these repositories at import time).
 """
+
 from __future__ import annotations
 
 
@@ -64,4 +65,13 @@ def list_admin_roles():
         cursor.execute(
             "SELECT admin_id, role, changed_by, changed_at FROM admin_roles ORDER BY admin_id"
         )
-        return [dict(row) for row in cursor.fetchall()]
+        return cursor.fetchall()
+
+
+def delete_admin_role(admin_id):
+    """Delete a role for an admin."""
+    from database.models import get_db
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM admin_roles WHERE admin_id = ?", (admin_id,))

@@ -38,11 +38,14 @@ from database.models import (
     BACKUP_JOBS_RETENTION_PER_ROUTER,
 )
 
+
 class TestInitDB:
     def test_tables_exist_after_init(self):
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+            cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+            )
             tables = [row["name"] for row in cursor.fetchall()]
             assert "logs" in tables
             assert "pdf_settings" in tables
@@ -132,7 +135,9 @@ class TestLogsFiltering:
         self._seed()
         rows = get_logs(filters={"router": "router1", "action": "reboot"})
         assert len(rows) == 2
-        assert all(r["router_name"] == "router1" and r["action"] == "reboot" for r in rows)
+        assert all(
+            r["router_name"] == "router1" and r["action"] == "reboot" for r in rows
+        )
         assert get_logs_count(filters={"router": "router1", "action": "reboot"}) == 2
 
     def test_filter_no_match(self):
@@ -247,10 +252,14 @@ class TestPDFSettings:
 class TestDiscoveredRouters:
     def test_save_and_retrieve(self):
         router_id = save_discovered_router(
-            ip="10.0.0.1", mac="AA:BB:CC:DD:EE:FF",
-            identity="TestRouter", version="7.15",
-            board="RB750", port=8729,
-            username="admin", password="secret",
+            ip="10.0.0.1",
+            mac="AA:BB:CC:DD:EE:FF",
+            identity="TestRouter",
+            version="7.15",
+            board="RB750",
+            port=8729,
+            username="admin",
+            password="secret",
         )
         assert router_id is not None
 
@@ -293,7 +302,9 @@ class TestDiscoveredRouters:
         assert get_router_by_id(router_id) is None
 
     def test_update_credentials(self):
-        router_id = save_discovered_router(ip="10.0.0.30", username="old", password="oldpass")
+        router_id = save_discovered_router(
+            ip="10.0.0.30", username="old", password="oldpass"
+        )
         update_router_credentials(router_id, "newuser", "newpass")
         router = get_router_by_id(router_id)
         assert router["username"] == "newuser"
@@ -314,7 +325,11 @@ class TestDiscoveredRouters:
 
 class TestRouterDisplayName:
     def test_alias_used_first(self):
-        router = {"name_alias": "MyAlias", "identity": "SomeRouter", "ip_address": "1.2.3.4"}
+        router = {
+            "name_alias": "MyAlias",
+            "identity": "SomeRouter",
+            "ip_address": "1.2.3.4",
+        }
         assert get_router_display_name(router) == "MyAlias"
 
     def test_identity_when_no_alias(self):
@@ -361,7 +376,9 @@ class TestBackupSchedule:
 
 class TestBackupJobs:
     def test_record_and_get_last(self):
-        job_id = record_backup_result("discovered_1", "full", True, "ok", router_name="R1")
+        job_id = record_backup_result(
+            "discovered_1", "full", True, "ok", router_name="R1"
+        )
         assert isinstance(job_id, int)
         last = get_last_backup("discovered_1")
         assert last is not None
@@ -372,7 +389,9 @@ class TestBackupJobs:
         assert last["router_name"] == "R1"
 
     def test_get_last_failed_status(self):
-        record_backup_result("discovered_2", "userman", False, "conn refused", router_name="R2")
+        record_backup_result(
+            "discovered_2", "userman", False, "conn refused", router_name="R2"
+        )
         last = get_last_backup("discovered_2")
         assert last["status"] == "failed"
         assert last["backup_type"] == "userman"
@@ -404,6 +423,9 @@ class TestBackupJobs:
             record_backup_result("discovered_7", "full", True, f"run{i}")
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM backup_jobs WHERE router_key = ?", ("discovered_7",))
+            cursor.execute(
+                "SELECT COUNT(*) FROM backup_jobs WHERE router_key = ?",
+                ("discovered_7",),
+            )
             count = cursor.fetchone()[0]
         assert count == BACKUP_JOBS_RETENTION_PER_ROUTER

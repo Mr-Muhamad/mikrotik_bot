@@ -46,9 +46,15 @@ def _summary_text(stats: dict) -> str:
 
 
 def _reset_block_text(stats: dict) -> str:
-    reset_list = "\n".join(
-        [f"  • {html.escape(comment)} - {html.escape(limit)}" for comment, limit in stats["reset_list"]]
-    ) or "  لا يوجد"
+    reset_list = (
+        "\n".join(
+            [
+                f"  • {html.escape(comment)} - {html.escape(limit)}"
+                for comment, limit in stats["reset_list"]
+            ]
+        )
+        or "  لا يوجد"
+    )
     return HOTSPOT_STATS_RESET_BLOCK.format(
         selected_day=stats["selected_day"],
         reset_count=len(stats["reset_list"]),
@@ -93,7 +99,9 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ConversationHandler.END
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=router_key,
             log_extra="hotspot_stats",
             reply_markup=get_hotspot_keyboard(),
@@ -150,7 +158,9 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
         return WAITING_STATS_DAY
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=router_key,
             log_extra="hotspot_stats_day_input",
             reply_markup=get_back_keyboard("menu_hotspot"),

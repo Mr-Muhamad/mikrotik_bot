@@ -7,6 +7,7 @@
 
 الهدف تقليل التكرار والحفاظ على سلوك Telegram الحالي بدقة.
 """
+
 from __future__ import annotations
 from typing import Callable, cast
 
@@ -105,7 +106,9 @@ async def parse_router_id(
     try:
         return int(get_query_data(query).replace(prefix, ""))
     except (ValueError, IndexError):
-        await query.edit_message_text(ERROR_OCCURRED.format(""), reply_markup=error_markup)
+        await query.edit_message_text(
+            ERROR_OCCURRED.format(""), reply_markup=error_markup
+        )
         return None
 
 

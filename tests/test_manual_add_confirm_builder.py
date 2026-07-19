@@ -9,7 +9,9 @@ Guards against the name-collision bug where the handler function
 import inspect
 
 from bot.handlers.router_flows import manual_add
-from bot.handlers.callback_constants import manual_add_confirm as build_manual_add_confirm
+from bot.handlers.callback_constants import (
+    manual_add_confirm as build_manual_add_confirm,
+)
 
 
 def test_confirm_keyboard_uses_builder_not_handler():
@@ -40,4 +42,3 @@ def test_manual_add_confirm_handler_matches_pattern():
     assert pattern.match(build_manual_add_confirm(True))
     assert pattern.match(build_manual_add_confirm(False))
     assert not pattern.match("confirm_manual_add_maybe")
-

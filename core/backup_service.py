@@ -11,6 +11,8 @@ from core.backup.files import (
 from core.backup.restore import BackupRestore
 from core.backup.system import SystemBackupService
 from core.backup.userman import UserManagerBackupService
+
+
 class BackupService:
     def __init__(
         self,
@@ -27,11 +29,15 @@ class BackupService:
         return self._userman_service.userman_backup(router_key, backup_root=BACKUP_DIR)
 
     def userman_restore(self, router_key: str, tar_path: str) -> dict:
-        return self._userman_service.userman_restore(router_key, tar_path, backup_root=BACKUP_DIR)
+        return self._userman_service.userman_restore(
+            router_key, tar_path, backup_root=BACKUP_DIR
+        )
 
     @staticmethod
     def list_local_userman_backups() -> list[dict]:
-        return UserManagerBackupService.list_local_userman_backups(backup_root=BACKUP_DIR)
+        return UserManagerBackupService.list_local_userman_backups(
+            backup_root=BACKUP_DIR
+        )
 
 
 def resolve_userman_backup_file(filename: str) -> str:

@@ -1,4 +1,5 @@
 """Tests for core.stats.StatsManager."""
+
 from unittest.mock import MagicMock
 
 from core.stats import StatsManager
@@ -57,9 +58,9 @@ class TestStatsManagerUserman:
         from core.mikrotik_api import mikrotik_api
 
         users = [
-            {"name": "u1", "enabled": "true"},
-            {"name": "u2", "enabled": "true"},
-            {"name": "u3", "enabled": "false"},
+            {"name": "u1", "disabled": "false"},
+            {"name": "u2", "disabled": "false"},
+            {"name": "u3", "disabled": "true"},
         ]
         mikrotik_api.execute = MagicMock(return_value=users)
         mikrotik_api.get_userman_base_path = MagicMock(return_value="user-manager")

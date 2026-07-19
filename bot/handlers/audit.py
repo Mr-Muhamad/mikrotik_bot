@@ -8,7 +8,19 @@ from bot.keyboards import (
     get_logs_filter_keyboard,
     get_logs_submenu_keyboard,
 )
-from bot.messages import NO_RESULTS
+from bot.messages import (
+    NO_RESULTS,
+    AUDIT_SUBMENU_ROUTER,
+    AUDIT_SUBMENU_ADMIN,
+    AUDIT_SUBMENU_ACTION,
+    AUDIT_SUBMENU_TIME,
+    AUDIT_NO_FILTERS,
+    AUDIT_SUBMENU_CHOOSE,
+    AUDIT_SUBMENU_COUNT,
+    AUDIT_LIST_EMPTY,
+    AUDIT_PAGE_EMPTY,
+    AUDIT_LIST_HEADER,
+)
 from bot.router_selector import nav_set
 from database.models import (
     UTC_TIMESTAMP_FORMAT,
@@ -27,10 +39,10 @@ PAGE_SIZE = 10
 SUBMENU_PAGE_SIZE = 20
 
 SUBMENU_TITLES = {
-    "router": "🔍 اختر الراوتر",
-    "admin": "👤 اختر المشرف",
-    "action": "⚙️ اختر العملية",
-    "time": "🕓 اختر المدة",
+    "router": AUDIT_SUBMENU_ROUTER,
+    "admin": AUDIT_SUBMENU_ADMIN,
+    "action": AUDIT_SUBMENU_ACTION,
+    "time": AUDIT_SUBMENU_TIME,
 }
 
 _FILTER_KEYS = ("router", "admin_id", "admin_label", "action", "since_days")
@@ -76,9 +88,11 @@ def _format_filters_short(filters: dict) -> str:
     if filters.get("action"):
         parts.append(f"⚙️ {filters['action']}")
     if filters.get("since_days"):
-        label = next((name for name, days in TIME_OPTIONS if days == filters["since_days"]), "")
+        label = next(
+            (name for name, days in TIME_OPTIONS if days == filters["since_days"]), ""
+        )
         parts.append(f"🕓 {label}")
-    return " | ".join(parts) if parts else "بدون فلاتر"
+    return " | ".join(parts) if parts else AUDIT_NO_FILTERS
 
 
 @admin_only
@@ -143,7 +157,9 @@ async def logs_set_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         filters["action"] = options[idx] if 0 <= idx < len(options) else None
     elif data.startswith("logs_set_time_"):
         idx = int(data.replace("logs_set_time_", ""))
-        filters["since_days"] = TIME_OPTIONS[idx][1] if 0 <= idx < len(TIME_OPTIONS) else None
+        filters["since_days"] = (
+            TIME_OPTIONS[idx][1] if 0 <= idx < len(TIME_OPTIONS) else None
+        )
     context.user_data["logs_menu"] = None
     context.user_data["logs_sub_page"] = 0
     await _show_logs_page(update, context, page=0, from_callback=True)
@@ -176,7 +192,9 @@ async def logs_subnav_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     await safe_answer_callback(query)
     current = context.user_data.get("logs_sub_page", 0)
     data = query.data
-    context.user_data["logs_sub_page"] = current + (1 if data is not None and "next" in data else -1)
+    context.user_data["logs_sub_page"] = current + (
+        1 if data is not None and "next" in data else -1
+    )
     await _show_submenu(update, context)
 
 
@@ -196,7 +214,7 @@ async def logs_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def _show_submenu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     menu = context.user_data.get("logs_menu")
     page = context.user_data.get("logs_sub_page", 0)
-    title = SUBMENU_TITLES.get(menu or "", "اختر")
+    title = SUBMENU_TITLES.get(menu or "", AUDIT_SUBMENU_CHOOSE)
     if menu == "time":
         options = [name for name, _ in TIME_OPTIONS]
         suffix = "time"
@@ -205,14 +223,16 @@ async def _show_submenu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         suffix = "router"
     elif menu == "admin":
         admins = context.user_data.get("logs_admin_options", [])
-        options = [f"{a['username'] or a['admin_id']} (ID {a['admin_id']})" for a in admins]
+        options = [
+            f"{a['username'] or a['admin_id']} (ID {a['admin_id']})" for a in admins
+        ]
         suffix = "admin"
     elif menu == "action":
         options = context.user_data.get("logs_action_options", [])
         suffix = "action"
     else:
         options, suffix = [], "router"
-    text = f"{title}\n\n🔢 العدد: {len(options)}"
+    text = AUDIT_SUBMENU_COUNT.format(title=title, count=len(options))
     keyboard = get_logs_submenu_keyboard(suffix, options, page, SUBMENU_PAGE_SIZE)
     if update.callback_query:
         await safe_edit_or_send(update.callback_query, context, text, keyboard)
@@ -233,7 +253,7 @@ async def _show_logs_page(
     header = f"🔎 {_format_filters_short(filters)}"
 
     if total == 0:
-        text = f"📋 سجل التدقيق\n\n{header}\n\n{NO_RESULTS}"
+        text = AUDIT_LIST_EMPTY.format(header=header, no_results=NO_RESULTS)
         keyboard = get_logs_filter_keyboard(filters, page, 0)
         nav_set(context, "main_menu")
         if from_callback and update.callback_query:
@@ -245,7 +265,7 @@ async def _show_logs_page(
     offset = page * PAGE_SIZE
     logs = await run_blocking(get_logs, PAGE_SIZE, offset, db_filters)
     if not logs:
-        text = f"📋 سجل التدقيق\n\n{header}\n\n📭 لا توجد سجلات في هذه الصفحة"
+        text = AUDIT_PAGE_EMPTY.format(header=header)
         keyboard = get_logs_filter_keyboard(filters, page, total)
         nav_set(context, "main_menu")
         if from_callback and update.callback_query:
@@ -257,7 +277,7 @@ async def _show_logs_page(
     start = offset + 1
     end = min(offset + PAGE_SIZE, total)
 
-    lines = [f"📋 <b>سجل التدقيق</b> ({start}-{end} من {total})", header, ""]
+    lines = [AUDIT_LIST_HEADER.format(start=start, end=end, total=total), header, ""]
     for log in logs:
         action = log.get("action", "")
         username = log.get("username", "")

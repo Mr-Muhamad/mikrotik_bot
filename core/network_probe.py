@@ -210,10 +210,14 @@ class ARPTableProbe:
         """Return ``[{ip, mac, source}]`` for each dynamic ARP entry."""
         try:
             if self._system == "Windows":
-                result = self._run(["arp", "-a"], capture_output=True, text=True, timeout=10)
+                result = self._run(
+                    ["arp", "-a"], capture_output=True, text=True, timeout=10
+                )
                 entries = parse_arp_table_windows(result.stdout)
             elif self._system == "Linux":
-                result = self._run(["ip", "neigh"], capture_output=True, text=True, timeout=10)
+                result = self._run(
+                    ["ip", "neigh"], capture_output=True, text=True, timeout=10
+                )
                 entries = parse_arp_table_linux(result.stdout)
             else:
                 logger.info(f"ARP table probe not supported on {self._system}")
@@ -221,10 +225,7 @@ class ARPTableProbe:
         except (OSError, subprocess.TimeoutExpired) as e:
             logger.error(f"Failed to parse ARP table: {e}")
             return []
-        return [
-            {"ip": ip, "mac": mac, "source": "arp"}
-            for ip, mac in entries.items()
-        ]
+        return [{"ip": ip, "mac": mac, "source": "arp"} for ip, mac in entries.items()]
 
 
 class PortScanProbe:
@@ -336,14 +337,18 @@ class MNDPListenerProbe:
 
         try:
             sock = self._socket_factory(
-                socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP,
+                socket.AF_INET,
+                socket.SOCK_DGRAM,
+                socket.IPPROTO_UDP,
             )
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             # SO_REUSEADDR is required on Windows; SO_REUSEPORT on POSIX
             # so we can coexist with WinBox or another MNDP listener.
             if hasattr(socket, "SO_REUSEPORT"):
                 try:
-                    sock.setsockopt(socket.SOL_SOCKET, getattr(socket, "SO_REUSEPORT"), 1)
+                    sock.setsockopt(
+                        socket.SOL_SOCKET, getattr(socket, "SO_REUSEPORT"), 1
+                    )
                 except OSError:
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             else:
@@ -353,7 +358,9 @@ class MNDPListenerProbe:
 
             start_time = time.time()
             last_send = 0.0
-            logger.info(f"MNDP single-socket discovery started (timeout: {self._timeout}s)")
+            logger.info(
+                f"MNDP single-socket discovery started (timeout: {self._timeout}s)"
+            )
 
             while time.time() - start_time <= self._timeout:
                 now = time.time()
@@ -362,7 +369,9 @@ class MNDPListenerProbe:
                 # The first one goes out immediately.
                 if now - last_send >= self.SEND_INTERVAL:
                     try:
-                        sock.sendto(MNDP_DISCOVERY_PAYLOAD, ("255.255.255.255", MNDP_PORT))
+                        sock.sendto(
+                            MNDP_DISCOVERY_PAYLOAD, ("255.255.255.255", MNDP_PORT)
+                        )
                         last_send = now
                         logger.debug("MNDP refresh packet sent")
                     except OSError as send_err:
@@ -390,8 +399,14 @@ class MNDPListenerProbe:
                     router = discovered[ip]
                     router["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     for key in (
-                        "mac", "identity", "version", "platform", "board",
-                        "software_id", "uptime", "interface_name",
+                        "mac",
+                        "identity",
+                        "version",
+                        "platform",
+                        "board",
+                        "software_id",
+                        "uptime",
+                        "interface_name",
                     ):
                         if key in parts and parts[key]:
                             router[key] = parts[key]
@@ -404,7 +419,9 @@ class MNDPListenerProbe:
                     continue
 
         except PermissionError as e:
-            logger.warning(f"MNDP requires admin privileges (run as Administrator): {e}")
+            logger.warning(
+                f"MNDP requires admin privileges (run as Administrator): {e}"
+            )
             raise
         except OSError as e:
             logger.error(f"Failed to start MNDP listener: {e}")
@@ -463,14 +480,23 @@ def merge_probe_results(
         ip = entry["ip"]
         if ip in by_ip:
             existing = by_ip[ip]
-            existing.source = f"mndp+{existing.source}" if "port" in existing.source else "mndp"
+            existing.source = (
+                f"mndp+{existing.source}" if "port" in existing.source else "mndp"
+            )
             existing.last_seen = entry.get("last_seen", existing.last_seen)
             for attr in (
-                "identity", "version", "board", "software_id",
-                "platform", "uptime", "interface_name",
+                "identity",
+                "version",
+                "board",
+                "software_id",
+                "platform",
+                "uptime",
+                "interface_name",
             ):
                 val = entry.get(attr, "")
-                if val and (not getattr(existing, attr) or getattr(existing, attr) == "Unknown"):
+                if val and (
+                    not getattr(existing, attr) or getattr(existing, attr) == "Unknown"
+                ):
                     setattr(existing, attr, val)
         else:
             router = DiscoveredRouter(
@@ -479,8 +505,14 @@ def merge_probe_results(
                 last_seen=entry.get("last_seen", now),
             )
             for attr in (
-                "mac_address", "identity", "version", "board",
-                "software_id", "platform", "uptime", "interface_name",
+                "mac_address",
+                "identity",
+                "version",
+                "board",
+                "software_id",
+                "platform",
+                "uptime",
+                "interface_name",
             ):
                 key = attr if attr != "mac_address" else "mac"
                 if entry.get(key):

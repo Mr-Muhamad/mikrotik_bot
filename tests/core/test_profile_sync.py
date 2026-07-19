@@ -1,4 +1,5 @@
 """Tests for core.profile_sync."""
+
 from unittest.mock import MagicMock
 
 from core.profile_sync import ProfileSync, profile_sync
@@ -13,9 +14,9 @@ class TestProfileSync:
         from core.profile_sync import mikrotik_api
 
         mikrotik_api.get_userman_base_path = MagicMock(return_value="user-manager")
-        mikrotik_api.execute = MagicMock(return_value=[
-            {"name": "1M"}, {"name": "2M"}, {"name": ""}, {}
-        ])
+        mikrotik_api.execute = MagicMock(
+            return_value=[{"name": "1M"}, {"name": "2M"}, {"name": ""}, {}]
+        )
 
         result = self.sync.get_userman_profiles(self.router_key)
 
@@ -46,7 +47,9 @@ class TestProfileSync:
     def test_get_profiles_exception_returns_empty(self):
         from core.profile_sync import mikrotik_api
 
-        mikrotik_api.get_userman_base_path = MagicMock(side_effect=Exception("net down"))
+        mikrotik_api.get_userman_base_path = MagicMock(
+            side_effect=Exception("net down")
+        )
 
         result = self.sync.get_userman_profiles(self.router_key)
 

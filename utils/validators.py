@@ -1,9 +1,10 @@
 import ipaddress
 from utils.formatters import parse_bytes
 
+
 def validate_bytes_input(raw: str) -> str:
     """Validate and convert MikroTik byte input to raw byte value.
-    
+
     Converts human-readable formats (1G, 500M, 1.5G, 1G-500M) to raw bytes
     so the MikroTik API receives an integer (e.g. '1073741824'), not '1G'.
     Raises ValueError with Arabic message on invalid input.
@@ -43,7 +44,13 @@ def validate_username(username: str) -> tuple[bool, str]:
         return False, "اسم المستخدم يجب أن يكون 3 أحرف على الأقل"
     if len(username) > 64:
         return False, "اسم المستخدم طويل جداً"
-    if not username.replace("_", "").replace("-", "").replace(":", "").replace(".", "").isalnum():
+    if (
+        not username.replace("_", "")
+        .replace("-", "")
+        .replace(":", "")
+        .replace(".", "")
+        .isalnum()
+    ):
         return False, "اسم المستخدم يجب أن يحتوي على أحرف وأرقام فقط"
     return True, ""
 
@@ -85,5 +92,5 @@ def validate_mac(mac: str) -> tuple[bool, str]:
     cleaned = re.sub(r"[-:.]", "", raw)
     if len(cleaned) != 12 or not re.fullmatch(r"[0-9A-F]{12}", cleaned):
         return False, "MAC must be 12 hex digits (e.g. AA:BB:CC:DD:EE:FF)"
-    groups = [cleaned[i:i + 2] for i in range(0, 12, 2)]
+    groups = [cleaned[i : i + 2] for i in range(0, 12, 2)]
     return True, ":".join(groups)

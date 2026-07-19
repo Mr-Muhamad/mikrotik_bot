@@ -4,7 +4,9 @@ import sqlite3
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from bot.handlers.callback_constants import manual_add_confirm as build_manual_add_confirm
+from bot.handlers.callback_constants import (
+    manual_add_confirm as build_manual_add_confirm,
+)
 from bot.handlers.constants import (
     WAITING_MANUAL_ALIAS,
     WAITING_MANUAL_CONFIRM,
@@ -41,18 +43,29 @@ from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import send_step
 from utils.error_response import send_error
-from utils.validators import validate_ip, validate_password, validate_port, validate_username
+from utils.validators import (
+    validate_ip,
+    validate_password,
+    validate_port,
+    validate_username,
+)
 
 logger = logging.getLogger(__name__)
 
 
 def _confirm_keyboard():
-    return InlineKeyboardMarkup([
+    return InlineKeyboardMarkup(
         [
-            InlineKeyboardButton("✅ تأكيد", callback_data=build_manual_add_confirm(True)),
-            InlineKeyboardButton("❌ إلغاء", callback_data=build_manual_add_confirm(False)),
-        ],
-    ])
+            [
+                InlineKeyboardButton(
+                    "✅ تأكيد", callback_data=build_manual_add_confirm(True)
+                ),
+                InlineKeyboardButton(
+                    "❌ إلغاء", callback_data=build_manual_add_confirm(False)
+                ),
+            ],
+        ]
+    )
 
 
 @require_role("admin")
@@ -81,7 +94,8 @@ async def manual_add_ip(update: Update, context: ContextTypes.DEFAULT_TYPE):
     existing = await run_blocking(get_router_by_ip, raw)
     if existing:
         await send_step(
-            update, context,
+            update,
+            context,
             MANUAL_ADD_DUPLICATE.format(raw, existing.get("identity", raw)),
         )
         return WAITING_MANUAL_IP
@@ -139,7 +153,8 @@ async def manual_add_alias(update: Update, context: ContextTypes.DEFAULT_TYPE):
     port = context.user_data["manual_port"]
     user = context.user_data["manual_user"]
     await send_step(
-        update, context,
+        update,
+        context,
         MANUAL_ADD_CONFIRM.format(ip, port, user, alias or "-"),
         keyboard=_confirm_keyboard(),
     )
@@ -161,9 +176,12 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
     user = context.user_data.get("manual_user")
     pw = context.user_data.get("manual_pass")
     alias = context.user_data.get("manual_alias", "")
+    user_id = query.from_user.id
 
     try:
-        router_id = await run_blocking(save_manual_router, ip, port, user, pw, alias)
+        router_id = await run_blocking(
+            save_manual_router, ip, port, user, pw, alias, user_id
+        )
     except sqlite3.IntegrityError:
         await query.edit_message_text(
             MANUAL_ADD_DUPLICATE.format(ip, ip), reply_markup=get_router_keyboard()
@@ -184,18 +202,25 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
             if identity and identity != "Unknown":
                 await run_blocking(update_router_identity, router_id, identity)
             display = identity or ip
-            await run_blocking(log_action, "add_router_manual", ip, display, query.from_user.id)
+            await run_blocking(
+                log_action, "add_router_manual", ip, display, query.from_user.id
+            )
             await query.edit_message_text(
                 MANUAL_ADD_SAVED.format(display, ip), reply_markup=get_router_keyboard()
             )
         else:
-            await run_blocking(log_action, "add_router_manual", ip, "offline", query.from_user.id)
+            await run_blocking(
+                log_action, "add_router_manual", ip, "offline", query.from_user.id
+            )
             await query.edit_message_text(
-                MANUAL_ADD_CONN_FAILED.format(version), reply_markup=get_router_keyboard()
+                MANUAL_ADD_CONN_FAILED.format(version),
+                reply_markup=get_router_keyboard(),
             )
     except Exception as e:
         logger.warning(f"manual_add confirm test connection failed for {ip}: {e}")
-        await run_blocking(log_action, "add_router_manual", ip, "offline", query.from_user.id)
+        await run_blocking(
+            log_action, "add_router_manual", ip, "offline", query.from_user.id
+        )
         await query.edit_message_text(
             MANUAL_ADD_CONN_FAILED.format(str(e)), reply_markup=get_router_keyboard()
         )

@@ -5,14 +5,16 @@ import json
 
 class CardSystem(Enum):
     """أنظمة إنشاء الكروت الثلاثة."""
-    DIFFERENT_CREDENTIALS = 1    # اسم + سر مختلفين
-    SAME_CREDENTIALS = 2         # اسم + سر متشابهين
-    EMPTY_PASSWORD = 3           # اسم + سر فارغة
+
+    DIFFERENT_CREDENTIALS = 1  # اسم + سر مختلفين
+    SAME_CREDENTIALS = 2  # اسم + سر متشابهين
+    EMPTY_PASSWORD = 3  # اسم + سر فارغة
 
 
 @dataclass
 class CardData:
     """هيكل بيانات الكارت المشترك بين User Manager و Hotspot."""
+
     username: str
     password: str
     card_number: int
@@ -49,16 +51,18 @@ def deserialize_cards(data: str) -> list["CardData"]:
     for item in raw:
         if not isinstance(item, dict):
             continue
-        cards.append(CardData(
-            username=item.get("username", ""),
-            password=item.get("password", ""),
-            card_number=item.get("card_number", 0),
-            profile=item.get("profile", ""),
-            caller_id=item.get("caller_id", ""),
-            limit_uptime=item.get("limit_uptime", ""),
-            limit_bytes=item.get("limit_bytes", ""),
-            comment=item.get("comment", ""),
-            created_at=item.get("created_at", ""),
-            payment=item.get("payment", ""),
-        ))
+        cards.append(
+            CardData(
+                username=item.get("username", ""),
+                password=item.get("password", ""),
+                card_number=item.get("card_number", 0),
+                profile=item.get("profile", ""),
+                caller_id=item.get("caller_id", ""),
+                limit_uptime=item.get("limit_uptime", ""),
+                limit_bytes=item.get("limit_bytes", ""),
+                comment=item.get("comment", ""),
+                created_at=item.get("created_at", ""),
+                payment=item.get("payment", ""),
+            )
+        )
     return cards

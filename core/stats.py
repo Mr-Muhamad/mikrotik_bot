@@ -2,7 +2,6 @@ import logging
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient
 from utils.formatters import format_bytes
-from utils.async_blocking import run_blocking
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +20,14 @@ class StatsManager:
     def get_hotspot_stats(self, router_key: str) -> dict | None:
         """Return aggregated hotspot user counts and total byte usage."""
         try:
-            all_users = self._api.execute(router_key, "ip/hotspot/user/print")
-            active_users = self._api.execute(router_key, "ip/hotspot/active/print")
+            all_users = self._api.execute(
+                router_key,
+                "ip/hotspot/user/print",
+                **{".proplist": ".id,bytes-in,bytes-out"},
+            )
+            active_users = self._api.execute(
+                router_key, "ip/hotspot/active/print", **{".proplist": ".id"}
+            )
 
             total = len(all_users)
             active = len(active_users)
@@ -48,10 +53,14 @@ class StatsManager:
         """Return User Manager card counts by enabled/disabled status."""
         try:
             base_path = self._api.get_userman_base_path(router_key)
-            users = self._api.execute(router_key, f"{base_path}/user/print")
+            users = self._api.execute(
+                router_key, f"{base_path}/user/print", **{".proplist": ".id,disabled"}
+            )
 
             total = len(users)
-            enabled = sum(1 for u in users if u.get("enabled") == "true")
+            enabled = sum(
+                1 for u in users if str(u.get("disabled", "false")).lower() != "true"
+            )
             disabled = total - enabled
 
             return {
@@ -113,7 +122,6 @@ class StatsManager:
         for r in report.get("top_consumers", [])[:5]:
             lines.append(f"• {r['name']}: {r['total_str']} ({r['percent']:.0f}%)")
         return "\n".join(lines)
-
 
     def get_week_trend(self, router_key: str) -> list[dict]:
         """قراءة snapshots آخر 7 أيام من DB لعرض الـ trend.

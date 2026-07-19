@@ -15,7 +15,6 @@ from bot.handlers.hotspot_search import (
 from tests.fixtures.telegram_mocks import make_mock_update
 from utils import admin_decorator
 
-
 ADMIN_ID = 724730774
 ROUTER_KEY = "discovered_1"
 
@@ -73,8 +72,10 @@ class TestHotspotSearchQuery:
         mock_loading = MagicMock()
         mock_loading.message_id = 999
 
-        with patch("bot.handlers.hotspot_search.send_loading", new=AsyncMock(return_value=mock_loading)), \
-             patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()):
+        with patch(
+            "bot.handlers.hotspot_search.send_loading",
+            new=AsyncMock(return_value=mock_loading),
+        ), patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()):
             result = await hotspot_search_query(update, context)
 
         assert result == WAITING_HOTSPOT_SEARCH
@@ -91,10 +92,15 @@ class TestHotspotSearchQuery:
         mock_loading = MagicMock()
         mock_loading.message_id = 999
 
-        with patch("bot.handlers.hotspot_search.send_loading", new=AsyncMock(return_value=mock_loading)), \
-             patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()), \
-             patch("bot.handlers.hotspot_search.send_step", new=AsyncMock()), \
-             patch("bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("timeout"))):
+        with patch(
+            "bot.handlers.hotspot_search.send_loading",
+            new=AsyncMock(return_value=mock_loading),
+        ), patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()), patch(
+            "bot.handlers.hotspot_search.send_step", new=AsyncMock()
+        ), patch(
+            "bot.handlers.hotspot_search.run_blocking",
+            new=AsyncMock(side_effect=Exception("timeout")),
+        ):
             result = await hotspot_search_query(update, context)
 
         assert result == WAITING_HOTSPOT_SEARCH

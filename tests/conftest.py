@@ -18,12 +18,15 @@ def temp_db():
     """
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         tmp_path = f.name
-    with patch("database.models.DB_PATH", tmp_path), \
-         patch("database.models.os.path.dirname", return_value=os.path.dirname(tmp_path)):
+    with patch("database.models.DB_PATH", tmp_path), patch(
+        "database.models.os.path.dirname", return_value=os.path.dirname(tmp_path)
+    ):
         from database.models import init_db
+
         init_db()
         yield
     import gc
+
     gc.collect()
     try:
         os.unlink(tmp_path)
@@ -52,21 +55,33 @@ def mock_mikrotik_api():
     """
     mock = MikrotikAPIMock()
     from core.hotspot_manager import hotspot_manager
+
     hotspot_manager._users_cache.clear()
-    with patch("core.mikrotik_api.mikrotik_api", mock), \
-         patch("core.hotspot_manager.mikrotik_api", mock), \
-         patch("core.backup.system.mikrotik_api", mock), \
-         patch("core.backup.userman.mikrotik_api", mock), \
-         patch("core.backup.restore.mikrotik_api", mock), \
-         patch("bot.handlers.router_flows.discovery.mikrotik_api", mock), \
-         patch("bot.handlers.router_flows.saved.mikrotik_api", mock), \
-         patch("bot.handlers.router_flows.rename.mikrotik_api", mock), \
-         patch("bot.handlers.router_flows.reboot.mikrotik_api", mock), \
-         patch("bot.handlers.common.mikrotik_api", mock), \
-         patch("bot.handlers.stats.mikrotik_api", mock), \
-         patch("core.stats.mikrotik_api", mock), \
-         patch("core.userman_manager.mikrotik_api", mock), \
-         patch("core.profile_sync.mikrotik_api", mock):
+    with patch("core.mikrotik_api.mikrotik_api", mock), patch(
+        "core.hotspot_manager.mikrotik_api", mock
+    ), patch("core.backup.system.mikrotik_api", mock), patch(
+        "core.backup.userman.mikrotik_api", mock
+    ), patch(
+        "core.backup.restore.mikrotik_api", mock
+    ), patch(
+        "bot.handlers.router_flows.discovery.mikrotik_api", mock
+    ), patch(
+        "bot.handlers.router_flows.saved.mikrotik_api", mock
+    ), patch(
+        "bot.handlers.router_flows.rename.mikrotik_api", mock
+    ), patch(
+        "bot.handlers.router_flows.reboot.mikrotik_api", mock
+    ), patch(
+        "bot.handlers.common.mikrotik_api", mock
+    ), patch(
+        "bot.handlers.stats.mikrotik_api", mock
+    ), patch(
+        "core.stats.mikrotik_api", mock
+    ), patch(
+        "core.userman_manager.mikrotik_api", mock
+    ), patch(
+        "core.profile_sync.mikrotik_api", mock
+    ):
         yield mock
 
 

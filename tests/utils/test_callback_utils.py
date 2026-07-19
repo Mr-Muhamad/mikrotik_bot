@@ -15,6 +15,7 @@ def reset_dedup():
     """Reset _CALLBACK_DEDUP before each test."""
     _CALLBACK_DEDUP.clear()
     import utils.callback_utils as mod
+
     mod._last_cleanup = 0.0
     yield
     _CALLBACK_DEDUP.clear()
@@ -42,11 +43,12 @@ class TestIsDuplicateCallback:
         # Add old entry manually
         _CALLBACK_DEDUP["old_key"] = time.monotonic() - 120
         _CALLBACK_DEDUP["new_key"] = time.monotonic()
-        
+
         # Force cleanup by resetting _last_cleanup
         import utils.callback_utils as mod
+
         mod._last_cleanup = 0.0
-        
+
         is_duplicate_callback("trigger_cleanup")
         assert "old_key" not in _CALLBACK_DEDUP
         assert "new_key" in _CALLBACK_DEDUP

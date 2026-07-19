@@ -47,10 +47,17 @@ class UserManager:
 
     def _get_all_users_cached(self, router_key: str, base_path: str) -> list[dict]:
         from typing import cast
+
         cached = self._users_cache.get(router_key)
         if cached is not None:
             return cast(list[dict], cached)
-        users = self._api.execute(router_key, f"{base_path}/user/print")
+        users = self._api.execute(
+            router_key,
+            f"{base_path}/user/print",
+            **{
+                ".proplist": ".id,name,username,password,profile,disabled,shared-users,caller-id,comment"
+            },
+        )
         self._users_cache.set(router_key, users)
         return cast(list[dict], users)
 
@@ -69,10 +76,18 @@ class UserManager:
         """Generate a random numeric password of the given length."""
         return self._generate_digits(length)
 
-    def create_cards(self, router_key: str, count: int, card_system: CardSystem | str | None,
-                     profile: str, username_length: int = 8, prefix: str = "", caller_id: str = "") -> list[dict]:
+    def create_cards(
+        self,
+        router_key: str,
+        count: int,
+        card_system: CardSystem | str | None,
+        profile: str,
+        username_length: int = 8,
+        prefix: str = "",
+        caller_id: str = "",
+    ) -> list[dict]:
         """Create multiple User Manager cards with the specified type and profile.
-        
+
         Binds to caller-id directly during creation if provided.
         """
         if isinstance(card_system, str):
@@ -86,7 +101,9 @@ class UserManager:
             existing = {
                 (u.get("name") or u.get("username") or "")
                 for u in self._api.execute(
-                    router_key, f"{base_path}/user/print"
+                    router_key,
+                    f"{base_path}/user/print",
+                    **{".proplist": "name,username"},
                 )
             }
         except Exception:
@@ -100,32 +117,46 @@ class UserManager:
                 for _attempt in range(10):
                     random_num = self._generate_digits(username_length)
                     username = f"{prefix}{random_num}" if prefix else random_num
-                    
+
                     if card_system == CardSystem.DIFFERENT_CREDENTIALS:
                         password = self._generate_digits(username_length)
                     elif card_system == CardSystem.SAME_CREDENTIALS:
                         password = username
                     else:
                         password = ""
-                        
+
                     if username not in existing:
                         break
                 else:
-                    logger.warning(f"Could not generate unique username after 10 attempts")
+                    logger.warning(
+                        "Could not generate unique username after 10 attempts"
+                    )
                     continue
 
                 result = self._create_user(
-                    router_key, username, password, profile, comment=batch_comment, caller_id=caller_id
+                    router_key,
+                    username,
+                    password,
+                    profile,
+                    comment=batch_comment,
+                    caller_id=caller_id,
                 )
                 cards.append(result)
                 existing.add(username)
+                import time
+
+                time.sleep(0.05)
             except Exception as e:
                 logger.error(f"Card {i+1}/{count} failed on {router_key}: {e}")
 
-        logger.info(f"Created {len(cards)}/{count} cards on {router_key} (type: {card_system.name}, profile: {profile})")
+        logger.info(
+            f"Created {len(cards)}/{count} cards on {router_key} (type: {card_system.name}, profile: {profile})"
+        )
         return cards
 
-    def _create_user(self, router_key, username, password, profile, comment="", caller_id=""):
+    def _create_user(
+        self, router_key, username, password, profile, comment="", caller_id=""
+    ):
         """Create a User Manager user and attach the selected profile.
 
         The user is created WITHOUT the profile first so a rejected ``profile``
@@ -154,16 +185,28 @@ class UserManager:
         self._api.execute(router_key, f"{base_path}/user/add", **add_params)
 
         if not profile:
-            return {"username": username, "password": password,
-                    "profile_linked": False, "link_error": None}
+            return {
+                "username": username,
+                "password": password,
+                "profile_linked": False,
+                "link_error": None,
+            }
 
         if is_v7:
-            linked, err = self._attach_v7_profile(router_key, base_path, username, profile)
+            linked, err = self._attach_v7_profile(
+                router_key, base_path, username, profile
+            )
         else:
-            linked, err = self._attach_v6_profile(router_key, base_path, username, profile)
+            linked, err = self._attach_v6_profile(
+                router_key, base_path, username, profile
+            )
 
-        return {"username": username, "password": password,
-                "profile_linked": linked, "link_error": err}
+        return {
+            "username": username,
+            "password": password,
+            "profile_linked": linked,
+            "link_error": err,
+        }
 
     def _attach_v7_profile(self, router_key, base_path, username, profile):
         """Link a profile to a v7 User Manager user via the ``user-profile`` table.
@@ -238,22 +281,25 @@ class UserManager:
             )
             return False, f"verify failed: {e}"
 
-
     def _get_user_id(self, router_key: str, username: str) -> str | None:
         """Resolve a username to its .id, handling numeric names safely."""
         base_path = self._api.get_userman_base_path(router_key)
         is_v7 = not base_path.startswith("tool/")
         field = "name" if is_v7 else "username"
-        
+
         try:
             # Try API filtering first
-            results = self._api.execute(router_key, f"{base_path}/user/print", **{f"?{field}": username})
+            results = self._api.execute(
+                router_key,
+                f"{base_path}/user/print",
+                **{f"?{field}": username, ".proplist": ".id," + field},
+            )
             for user in results or []:
                 if str(user.get(field)) == str(username):
                     return user.get(".id")
         except Exception as e:
             logger.debug(f"API filter failed in _get_user_id for {username}: {e}")
-            
+
         # Fallback to full list if filter not supported
         try:
             results = self._get_all_users_cached(router_key, base_path)
@@ -264,19 +310,27 @@ class UserManager:
             logger.warning(f"Error checking user by field '{field}': {e}")
         return None
 
-    def set_user_caller_id(self, router_key: str, username: str, caller_id: str) -> None:
+    def set_user_caller_id(
+        self, router_key: str, username: str, caller_id: str
+    ) -> None:
         """Set caller-id on an existing User Manager user after creation."""
         if not caller_id:
             return
-            
+
         base_path = self._api.get_userman_base_path(router_key)
         uid = self._get_user_id(router_key, username)
         if not uid:
-            logger.error(f"Cannot find .id for User Manager user '{username}' to set caller-id")
+            logger.error(
+                f"Cannot find .id for User Manager user '{username}' to set caller-id"
+            )
             return
-            
-        self._api.execute(router_key, f"{base_path}/user/set", **{".id": uid, "caller-id": caller_id})
-        logger.info(f"Set caller-id '{caller_id}' for user '{username}' on {router_key}")
+
+        self._api.execute(
+            router_key, f"{base_path}/user/set", **{".id": uid, "caller-id": caller_id}
+        )
+        logger.info(
+            f"Set caller-id '{caller_id}' for user '{username}' on {router_key}"
+        )
 
     def list_users(self, router_key: str, limit: int = 50) -> list[dict]:
         """Return up to limit User Manager users from the router.
@@ -299,7 +353,7 @@ class UserManager:
         base_path = self._api.get_userman_base_path(router_key)
         is_v7 = not base_path.startswith("tool/")
         field = "name" if is_v7 else "username"
-        
+
         results = self._get_all_users_cached(router_key, base_path)
         search = search_term.lower()
         matches = []
@@ -318,7 +372,9 @@ class UserManager:
         if not uid:
             return None
         base_path = self._api.get_userman_base_path(router_key)
-        results = self._api.execute(router_key, f"{base_path}/user/print", **{".id": uid})
+        results = self._api.execute(
+            router_key, f"{base_path}/user/print", **{".id": uid}
+        )
         for user in results or []:
             if user.get(".id") == uid:
                 entry = dict(user)
@@ -327,7 +383,9 @@ class UserManager:
                 return entry
         return None
 
-    def add_profile_to_user(self, router_key: str, username: str, profile: str) -> tuple[bool, str | None]:
+    def add_profile_to_user(
+        self, router_key: str, username: str, profile: str
+    ) -> tuple[bool, str | None]:
         """Link an additional User Manager profile to an existing user.
 
         A User Manager user may hold multiple profiles. The link is added via
@@ -350,7 +408,9 @@ class UserManager:
         uid = self._get_user_id(router_key, username)
         if not uid:
             raise ValueError(f"User '{username}' not found")
-        result = self._api.execute(router_key, f"{base_path}/user/remove", **{".id": uid})
+        result = self._api.execute(
+            router_key, f"{base_path}/user/remove", **{".id": uid}
+        )
         logger.info(f"Deleted User Manager user '{username}' on {router_key}")
         return result
 
@@ -360,7 +420,9 @@ class UserManager:
         uid = self._get_user_id(router_key, username)
         if not uid:
             raise ValueError(f"User '{username}' not found")
-        result = self._api.execute(router_key, f"{base_path}/user/enable", **{".id": uid})
+        result = self._api.execute(
+            router_key, f"{base_path}/user/enable", **{".id": uid}
+        )
         logger.info(f"Enabled User Manager user '{username}' on {router_key}")
         return result
 
@@ -370,7 +432,9 @@ class UserManager:
         uid = self._get_user_id(router_key, username)
         if not uid:
             raise ValueError(f"User '{username}' not found")
-        result = self._api.execute(router_key, f"{base_path}/user/disable", **{".id": uid})
+        result = self._api.execute(
+            router_key, f"{base_path}/user/disable", **{".id": uid}
+        )
         logger.info(f"Disabled User Manager user '{username}' on {router_key}")
         return result
 
@@ -380,23 +444,38 @@ class UserManager:
         uid = self._get_user_id(router_key, username)
         if not uid:
             raise ValueError(f"User '{username}' not found")
-            
+
         if base_path.startswith("tool/"):
-            result = self._api.execute(router_key, f"{base_path}/user/clear-profiles", **{".id": uid}) 
+            result = self._api.execute(
+                router_key, f"{base_path}/user/clear-profiles", **{".id": uid}
+            )
         else:
-            result = self._api.execute(router_key, f"{base_path}/user/reset-counters", **{".id": uid})
-        logger.info(f"Reset counters for User Manager user '{username}' on {router_key}")
+            result = self._api.execute(
+                router_key, f"{base_path}/user/reset-counters", **{".id": uid}
+            )
+        logger.info(
+            f"Reset counters for User Manager user '{username}' on {router_key}"
+        )
         return result
 
     def get_active_sessions(self, router_key: str) -> list[dict]:
         """Return a list of active User Manager sessions."""
         base_path = self._api.get_userman_base_path(router_key)
-        results = self._api.execute(router_key, f"{base_path}/session/print", **{"?active": "true"})
+        proplist = ".id,user,username,active,host-ip,uptime,download,upload"
+        results = self._api.execute(
+            router_key,
+            f"{base_path}/session/print",
+            **{"?active": "true", ".proplist": proplist},
+        )
         # Sometimes ?active filter fails or isn't supported in some versions, fallback:
         if not results:
-            results = self._api.execute(router_key, f"{base_path}/session/print")
-            results = [s for s in results if str(s.get("active", "false")).lower() == "true"]
-        
+            results = self._api.execute(
+                router_key, f"{base_path}/session/print", **{".proplist": proplist}
+            )
+            results = [
+                s for s in results if str(s.get("active", "false")).lower() == "true"
+            ]
+
         normalized = []
         for session in results:
             entry = dict(session)
@@ -408,13 +487,17 @@ class UserManager:
     def terminate_session(self, router_key: str, session_id: str) -> list[dict]:
         """Terminate a specific User Manager session by its .id or numbers."""
         base_path = self._api.get_userman_base_path(router_key)
-        
+
         # v6 vs v7 remove session command
         if base_path.startswith("tool/"):
-            result = self._api.execute(router_key, f"{base_path}/session/remove", numbers=session_id)
+            result = self._api.execute(
+                router_key, f"{base_path}/session/remove", numbers=session_id
+            )
         else:
-            result = self._api.execute(router_key, f"{base_path}/session/remove", numbers=session_id)
-            
+            result = self._api.execute(
+                router_key, f"{base_path}/session/remove", numbers=session_id
+            )
+
         logger.info(f"Terminated User Manager session '{session_id}' on {router_key}")
         return result
 
@@ -426,5 +509,6 @@ class UserManager:
             f"🔑 كلمة السر: {card['password'] if card['password'] else '(فارغة)'}",
         ]
         return "\n".join(lines)
+
 
 userman_manager = UserManager()

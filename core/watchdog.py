@@ -104,7 +104,7 @@ def get_router_status_detail(router_key: str) -> dict:
         # لتجنب تجميد البوت لمدة 90 ثانية إذا كان الراوتر غير متصل فعلياً.
         version = mikrotik_api.get_cached_version(router_key)
         status["version"] = version if version and version != "unknown" else None
-    
+
     return status
 
 
@@ -149,6 +149,7 @@ def load_status_from_db() -> None:
                 # تحويل النص إلى datetime للتوافق مع get_router_status_detail
                 try:
                     from datetime import datetime as _dt
+
                     checked_at = _dt.strptime(checked_at_str, "%Y-%m-%d %H:%M:%S")
                 except (ValueError, TypeError):
                     checked_at = None

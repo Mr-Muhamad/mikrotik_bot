@@ -19,18 +19,22 @@ def bind_request_id_from_update(func):
     """Decorator that sets the request_id ContextVar to update.update_id
     for the duration of the wrapped coroutine.
     """
+
     @wraps(func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
+    async def wrapper(
+        update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs
+    ):
         rid = str(getattr(update, "update_id", None) or "-")
         with bind_request_id(rid):
             return await func(update, context, *args, **kwargs)
+
     return wrapper
 
 
 @contextmanager
 def request_id_scope(request_id: str):
     """Context manager that sets the request_id ContextVar for the duration of the block.
-    
+
     Usage:
         with request_id_scope("my-request-id"):
             logger.info("This log will carry the request_id")

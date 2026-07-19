@@ -32,14 +32,18 @@ class HotspotManager:
 
     def _generate_random_number(self, length: int) -> str:
         """Generate a cryptographically secure random number of specified length."""
-        return ''.join(secrets.choice(string.digits) for _ in range(length))
+        return "".join(secrets.choice(string.digits) for _ in range(length))
 
     def _get_all_users_cached(self, router_key: str) -> list[dict]:
         from typing import cast
+
         cached = self._users_cache.get(router_key)
         if cached is not None:
             return cast(list[dict], cached)
-        users = self._api.execute(router_key, "ip/hotspot/user/print")
+        # نجلب الأسماء فقط لتسريع التحقق من التكرار عند إنشاء الكروت
+        users = self._api.execute(
+            router_key, "ip/hotspot/user/print", **{".proplist": "name"}
+        )
         self._users_cache.set(router_key, users)
         return cast(list[dict], users)
 
@@ -50,7 +54,6 @@ class HotspotManager:
         """Fetch all existing hotspot usernames from the router."""
         users = self._get_all_users_cached(router_key)
         return {u.get("name", "") for u in users if isinstance(u, dict)}
-
 
     def user_exists(self, router_key: str, name: str) -> bool:
         """Return True if a hotspot user with the given name already exists on the router.
@@ -63,13 +66,19 @@ class HotspotManager:
         if not name:
             return False
         try:
-            users = self._api.execute(router_key, "ip/hotspot/user/print", **{"?name": name})
-            return any(u.get("name") == name for u in users if isinstance(u, dict))
+            users = self._api.execute(
+                router_key,
+                "ip/hotspot/user/print",
+                **{"?name": name, ".proplist": ".id"},
+            )
+            return len(users) > 0
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.error(f"Failed to check user existence for '{name}': {e}")
             return False
 
-    def _generate_unique_username(self, prefix: str, length: int, existing_names: set) -> str:
+    def _generate_unique_username(
+        self, prefix: str, length: int, existing_names: set
+    ) -> str:
         """Generate a unique username that doesn't exist on the router."""
         max_attempts = 100
         for _ in range(max_attempts):
@@ -77,10 +86,20 @@ class HotspotManager:
             username = f"{prefix}{random_num}" if prefix else random_num
             if username not in existing_names:
                 return username
-        raise ValueError(f"Failed to generate unique username after {max_attempts} attempts")
+        raise ValueError(
+            f"Failed to generate unique username after {max_attempts} attempts"
+        )
 
-    def add_user(self, router_key: str, name: str, password: str, profile: str,
-                 bytes_total: str = "", uptime: str = "", comment: str = "") -> list[dict]:
+    def add_user(
+        self,
+        router_key: str,
+        name: str,
+        password: str,
+        profile: str,
+        bytes_total: str = "",
+        uptime: str = "",
+        comment: str = "",
+    ) -> list[dict]:
         """Add a new hotspot user with optional bandwidth limit, uptime limit, and comment."""
         params = {
             "name": name,
@@ -103,7 +122,15 @@ class HotspotManager:
     def edit_user(self, router_key: str, user_id: str, **kwargs: object) -> list[dict]:
         """Update allowed fields of an existing hotspot user by its .id."""
         params = {".id": user_id}
-        allowed_fields = ["name", "password", "profile", "limit-bytes-total", "limit-uptime", "comment", "disabled"]
+        allowed_fields = [
+            "name",
+            "password",
+            "profile",
+            "limit-bytes-total",
+            "limit-uptime",
+            "comment",
+            "disabled",
+        ]
         for key, value in kwargs.items():
             normalized = key.replace("_", "-")
             if normalized in allowed_fields and value is not None:
@@ -162,16 +189,26 @@ class HotspotManager:
 
         for field in ("name", "comment"):
             try:
-                batch = self._api.execute(router_key, "ip/hotspot/user/print", **{
-                    f"?{field}": f"*{search}*"
-                })
+                batch = self._api.execute(
+                    router_key,
+                    "ip/hotspot/user/print",
+                    **{
+                        f"?{field}": f"*{search}*",
+                        ".proplist": ".id,name,profile,limit-uptime,limit-bytes-total,comment,bytes-in,bytes-out,uptime,password",
+                    },
+                )
                 for user in batch:
                     uid = user.get(".id")
                     if uid and uid not in seen:
                         seen.add(uid)
                         results.append(user)
             except (LibRouterosError, ConnectionError, OSError) as e:
-                logger.debug("API-side filtered search for '%s' on %s failed: %s", search, field, e)
+                logger.debug(
+                    "API-side filtered search for '%s' on %s failed: %s",
+                    search,
+                    field,
+                    e,
+                )
 
         if not results:
             all_users = self._get_all_users_cached(router_key)
@@ -187,16 +224,27 @@ class HotspotManager:
         """Search hotspot hosts by IP or MAC address with enriched host names from DHCP leases."""
         search_lower = search_term.lower().strip()
         hosts = []
-        
+
+        proplist = ".id,mac-address,address,host-name,user,bypass-bypassed,uptime,bytes-in,bytes-out,server"
         try:
-            hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": search_lower})
+            hosts = self._api.execute(
+                router_key,
+                "ip/hotspot/host/print",
+                **{"?mac-address": search_lower, ".proplist": proplist},
+            )
             if not hosts:
-                hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?address": search_lower})
+                hosts = self._api.execute(
+                    router_key,
+                    "ip/hotspot/host/print",
+                    **{"?address": search_lower, ".proplist": proplist},
+                )
         except Exception as e:
             logger.warning(f"Error searching hotspot hosts: {e}")
 
         if not hosts:
-            all_hosts = self._api.execute(router_key, "ip/hotspot/host/print")
+            all_hosts = self._api.execute(
+                router_key, "ip/hotspot/host/print", **{".proplist": proplist}
+            )
             for h in all_hosts:
                 mac = str(h.get("mac-address", "")).lower()
                 ip = str(h.get("address", "")).lower()
@@ -206,7 +254,9 @@ class HotspotManager:
         if not hosts:
             return []
 
-        matched_macs = {str(h.get("mac-address", "")).lower() for h in hosts if h.get("mac-address")}
+        matched_macs = {
+            str(h.get("mac-address", "")).lower() for h in hosts if h.get("mac-address")
+        }
         lease_by_mac = self._get_leases_by_mac(router_key, matched_macs)
         for h in hosts:
             mac = str(h.get("mac-address", "")).lower()
@@ -218,91 +268,142 @@ class HotspotManager:
         """Remove a hotspot host by MAC or IP address."""
         target = mac_or_ip.lower().strip()
         hosts = []
-        
+
+        proplist = ".id,mac-address,address,user"
         try:
-            hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": target})
+            hosts = self._api.execute(
+                router_key,
+                "ip/hotspot/host/print",
+                **{"?mac-address": target, ".proplist": proplist},
+            )
             if not hosts:
-                hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?address": target})
+                hosts = self._api.execute(
+                    router_key,
+                    "ip/hotspot/host/print",
+                    **{"?address": target, ".proplist": proplist},
+                )
         except Exception as e:
             logger.warning(f"Error fetching host details for '{target}': {e}")
-            
+
         if not hosts:
-            all_hosts = self._api.execute(router_key, "ip/hotspot/host/print")
+            all_hosts = self._api.execute(
+                router_key, "ip/hotspot/host/print", **{".proplist": proplist}
+            )
             for h in all_hosts:
-                if str(h.get("mac-address", "")).lower() == target or str(h.get("address", "")).lower() == target:
+                if (
+                    str(h.get("mac-address", "")).lower() == target
+                    or str(h.get("address", "")).lower() == target
+                ):
                     hosts.append(h)
                     break
 
         if not hosts:
             return False, None
-            
+
         h = hosts[0]
         mac = str(h.get("mac-address", "")).lower()
         ip = str(h.get("address", "")).lower()
         host_id = h.get(".id")
-        
+
         lease_by_mac = self._get_leases_by_mac(router_key, {mac}) if mac else {}
         lease = lease_by_mac.get(mac, {})
         host_name = lease.get("host-name") or h.get("user") or mac or ip
-        
+
         self._api.execute(router_key, "ip/hotspot/host/remove", **{".id": host_id})
         return True, host_name
 
     def kick_user(self, router_key: str, username: str) -> list[str]:
         """Kick an active hotspot user and remove all matching host entries."""
         target = str(username).lower().strip()
-        is_mac_target = bool(re.match(r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$', target))
+        is_mac_target = bool(re.match(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$", target))
 
         kicked = []
         macs_to_kick = set()
-        
+
         active_sessions = []
+        active_proplist = ".id,user,mac-address"
         try:
-            active_sessions = self._api.execute(router_key, "ip/hotspot/active/print", **{"?user": target})
+            active_sessions = self._api.execute(
+                router_key,
+                "ip/hotspot/active/print",
+                **{"?user": target, ".proplist": active_proplist},
+            )
         except Exception:
-            active = self._api.execute(router_key, "ip/hotspot/active/print")
-            active_sessions = [s for s in active if str(s.get("user", "")).lower() == target]
-            
+            active = self._api.execute(
+                router_key, "ip/hotspot/active/print", **{".proplist": active_proplist}
+            )
+            active_sessions = [
+                s for s in active if str(s.get("user", "")).lower() == target
+            ]
+
         for s in active_sessions:
             mac = s.get("mac-address", "")
             if mac:
                 macs_to_kick.add(mac.lower())
-            self._api.execute(router_key, "ip/hotspot/active/remove", **{".id": s.get(".id")})
+            self._api.execute(
+                router_key, "ip/hotspot/active/remove", **{".id": s.get(".id")}
+            )
 
         matched_hosts = []
+        host_proplist = ".id,mac-address,address,user"
         try:
             if is_mac_target:
-                matched_hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": target})
+                matched_hosts = self._api.execute(
+                    router_key,
+                    "ip/hotspot/host/print",
+                    **{"?mac-address": target, ".proplist": host_proplist},
+                )
             else:
-                matched_hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?user": target})
+                matched_hosts = self._api.execute(
+                    router_key,
+                    "ip/hotspot/host/print",
+                    **{"?user": target, ".proplist": host_proplist},
+                )
                 for mac in macs_to_kick:
-                    mac_hosts = self._api.execute(router_key, "ip/hotspot/host/print", **{"?mac-address": mac})
+                    mac_hosts = self._api.execute(
+                        router_key,
+                        "ip/hotspot/host/print",
+                        **{"?mac-address": mac, ".proplist": host_proplist},
+                    )
                     matched_hosts.extend(mac_hosts)
         except Exception:
-            all_hosts = self._api.execute(router_key, "ip/hotspot/host/print")
+            all_hosts = self._api.execute(
+                router_key, "ip/hotspot/host/print", **{".proplist": host_proplist}
+            )
             for h in all_hosts:
                 mac = str(h.get("mac-address", "")).lower()
                 ip = str(h.get("address", "")).lower()
-                if str(h.get("user", "")).lower() == target or mac in macs_to_kick or (is_mac_target and mac == target) or ip == target:
+                if (
+                    str(h.get("user", "")).lower() == target
+                    or mac in macs_to_kick
+                    or (is_mac_target and mac == target)
+                    or ip == target
+                ):
                     matched_hosts.append(h)
 
         unique_hosts = {h.get(".id"): h for h in matched_hosts if h.get(".id")}.values()
-        
+
         if not unique_hosts:
             return []
 
-        matched_macs = {str(h.get("mac-address", "")).lower() for h in unique_hosts if h.get("mac-address")}
+        matched_macs = {
+            str(h.get("mac-address", "")).lower()
+            for h in unique_hosts
+            if h.get("mac-address")
+        }
         lease_by_mac = self._get_leases_by_mac(router_key, matched_macs)
-        
+
         for h in unique_hosts:
             mac = str(h.get("mac-address", "")).lower()
             host_id = h.get(".id")
             lease = lease_by_mac.get(mac, {})
-            host_name = lease.get("host-name") or h.get("user") or mac or h.get("address", "")
-            
+            host_name = (
+                lease.get("host-name") or h.get("user") or mac or h.get("address", "")
+            )
+
             self._api.execute(router_key, "ip/hotspot/host/remove", **{".id": host_id})
             kicked.append(host_name)
-            
+
         return list(set(kicked))
 
     def list_users(self, router_key: str, limit: int = 50) -> list[dict]:
@@ -330,6 +431,7 @@ class HotspotManager:
     def get_profiles(self, router_key: str) -> list[dict]:
         """Return list of hotspot user profiles from the router."""
         from typing import cast
+
         cached = self._profiles_cache.get(router_key)
         if cached is not None:
             return cast(list[dict], cached)
@@ -341,10 +443,17 @@ class HotspotManager:
             logger.error("Failed to fetch hotspot profiles: %s", e)
             return []
 
-    def create_cards(self, router_key: str, count: int, length: int,
-                     card_system: CardSystem, profile: str,
-                     prefix: str = "", limit_uptime: str = "",
-                     limit_bytes: str = "") -> list[CardData]:
+    def create_cards(
+        self,
+        router_key: str,
+        count: int,
+        length: int,
+        card_system: CardSystem,
+        profile: str,
+        prefix: str = "",
+        limit_uptime: str = "",
+        limit_bytes: str = "",
+    ) -> list[CardData]:
         """Create multiple hotspot users with random numbers and duplicate checking."""
         cards = []
         base_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
@@ -354,7 +463,9 @@ class HotspotManager:
 
         for i in range(1, count + 1):
             try:
-                username = self._generate_unique_username(prefix, length, existing_names)
+                username = self._generate_unique_username(
+                    prefix, length, existing_names
+                )
                 existing_names.add(username)
 
                 if card_system == CardSystem.DIFFERENT_CREDENTIALS:
@@ -373,15 +484,20 @@ class HotspotManager:
                     uptime=limit_uptime,
                     comment=batch_comment,
                 )
-                cards.append(CardData(
-                    username=username,
-                    password=password,
-                    card_number=i,
-                    profile=profile,
-                    limit_uptime=limit_uptime,
-                    limit_bytes=limit_bytes,
-                    comment=batch_comment
-                ))
+                import time
+
+                time.sleep(0.05)
+                cards.append(
+                    CardData(
+                        username=username,
+                        password=password,
+                        card_number=i,
+                        profile=profile,
+                        limit_uptime=limit_uptime,
+                        limit_bytes=limit_bytes,
+                        comment=batch_comment,
+                    )
+                )
             except (LibRouterosError, ConnectionError, OSError) as e:
                 logger.error(f"Failed to create card user at index {i}: {e}")
 
@@ -390,17 +506,17 @@ class HotspotManager:
 
     def format_user(self, user: dict) -> str:
         """Format a hotspot user dict into a human-readable Arabic string."""
-        bytes_in = user.get('bytes-in', '0')
-        bytes_out = user.get('bytes-out', '0')
+        bytes_in = user.get("bytes-in", "0")
+        bytes_out = user.get("bytes-out", "0")
         try:
             total_consumed = int(bytes_in) + int(bytes_out)
             total_text = format_bytes(str(total_consumed))
         except (ValueError, TypeError):
-            total_text = 'غير معروف'
-        
-        uptime_raw = user.get('limit-uptime', '')
-        uptime_text = uptime_raw if uptime_raw else 'غير محدود'
-        
+            total_text = "غير معروف"
+
+        uptime_raw = user.get("limit-uptime", "")
+        uptime_text = uptime_raw if uptime_raw else "غير محدود"
+
         lines = [
             f"\U0001f464 الاسم: {user.get('name', 'لا يوجد')}",
             f"\U0001f511 الباسورد: {'*' * 8 if user.get('password') else 'لا يوجد'}",
@@ -411,7 +527,7 @@ class HotspotManager:
             f"\U0001f4ac التعليق: {user.get('comment', 'لا يوجد')}",
             f"\U0001f194 الرقم: {user.get('.id', 'لا يوجد')}",
         ]
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def _parse_reset_day(self, comment: str) -> int | None:
         """Extract the reset day (1-31) from a hotspot user comment.
@@ -441,11 +557,23 @@ class HotspotManager:
         When ``day`` is provided, ``reset_list`` contains only that day's resets.
         """
         try:
-            users = self.list_users(router_key, limit=1000)
+            # Optimize memory footprint by fetching only needed properties
+            users = self._api.execute_long(
+                router_key,
+                "ip/hotspot/user/print",
+                **{".proplist": ".id,name,limit-bytes-total,comment,disabled"},
+            )
 
             active_count = 0
             inactive_count = 0
-            categories = {"10 GB": 0, "20 GB": 0, "30 GB": 0, "40 GB": 0, "50 GB": 0, "أخرى": 0}
+            categories = {
+                "10 GB": 0,
+                "20 GB": 0,
+                "30 GB": 0,
+                "40 GB": 0,
+                "50 GB": 0,
+                "أخرى": 0,
+            }
             resets_by_day: dict[int, list[tuple[str, str]]] = {}
 
             for user in users:
@@ -460,7 +588,11 @@ class HotspotManager:
                     if limit_raw and str(limit_raw) != "0":
                         try:
                             limit_str = str(limit_raw)
-                            limit_bytes = int(parse_bytes(limit_str)) if not limit_str.isdigit() else int(limit_str)
+                            limit_bytes = (
+                                int(parse_bytes(limit_str))
+                                if not limit_str.isdigit()
+                                else int(limit_str)
+                            )
                             limit_gb = limit_bytes / _GB
                             if 10 <= limit_gb < 20:
                                 categories["10 GB"] += 1
@@ -516,7 +648,13 @@ class HotspotManager:
         summary statistics, top consumers, expired, near-limit and inactive groups.
         Returns a plain dict with a flat ``rows`` list suitable for CSV export.
         """
-        users = self._api.execute_long(router_key, "ip/hotspot/user/print")
+        users = self._api.execute_long(
+            router_key,
+            "ip/hotspot/user/print",
+            **{
+                ".proplist": ".id,name,profile,disabled,bytes-in,bytes-out,limit-bytes-total,comment"
+            },
+        )
 
         rows: list[dict] = []
         total_bytes_all = 0
@@ -560,21 +698,25 @@ class HotspotManager:
             percent = (total_bytes / limit * 100) if limit > 0 else 0.0
             comment = u.get("comment", "")
 
-            rows.append({
-                "name": name,
-                "profile": profile,
-                "status": "disabled" if is_disabled else "active",
-                "bytes_in": bytes_in,
-                "bytes_out": bytes_out,
-                "total_bytes": total_bytes,
-                "total_str": format_bytes(str(total_bytes)),
-                "limit": limit,
-                "limit_str": format_bytes(str(limit)) if limit else "—",
-                "percent": percent,
-                "comment": comment,
-            })
+            rows.append(
+                {
+                    "name": name,
+                    "profile": profile,
+                    "status": "disabled" if is_disabled else "active",
+                    "bytes_in": bytes_in,
+                    "bytes_out": bytes_out,
+                    "total_bytes": total_bytes,
+                    "total_str": format_bytes(str(total_bytes)),
+                    "limit": limit,
+                    "limit_str": format_bytes(str(limit)) if limit else "—",
+                    "percent": percent,
+                    "comment": comment,
+                }
+            )
 
-        top_consumers = sorted(rows, key=lambda r: r["total_bytes"], reverse=True)[:top_n]
+        top_consumers = sorted(rows, key=lambda r: r["total_bytes"], reverse=True)[
+            :top_n
+        ]
         expired = [r for r in rows if r["limit"] > 0 and r["total_bytes"] >= r["limit"]]
         near_limit = [r for r in rows if r["limit"] > 0 and 90 <= r["percent"] < 100]
         inactive = [r for r in rows if r["status"] == "disabled"]
@@ -594,8 +736,9 @@ class HotspotManager:
             "rows": rows,
         }
 
-
-    def block_mac(self, router_key: str, mac: str, comment: str = "blocked by bot") -> bool:
+    def block_mac(
+        self, router_key: str, mac: str, comment: str = "blocked by bot"
+    ) -> bool:
         """يضيف MAC إلى address-list باسم hotspot_blocked في /ip/firewall/address-list.
 
         يُعيد True عند النجاح وFalse عند الفشل.
@@ -660,7 +803,8 @@ class HotspotManager:
                     "comment": e.get("comment", ""),
                     "creation-time": e.get("creation-time", ""),
                 }
-                for e in entries if isinstance(e, dict)
+                for e in entries
+                if isinstance(e, dict)
             ]
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.warning(f"Failed to get blocked MACs on {router_key}: {e}")
@@ -679,12 +823,14 @@ class HotspotManager:
 
         يُعيد قائمة دوال بـ: name, profile, uptime_limit, remaining_days, uptime_used
         """
+
         def _parse_uptime_to_seconds(raw: str) -> int:
             """تحويل `1d02:30:00` أو `00:30:00` إلى ثوانٍ. يُعيد 0 عند الفشل."""
             if not raw or raw in ("0", "0s", ""):
                 return 0
             try:
                 import re as _re
+
                 # صيغة: [Nd]HH:MM:SS
                 m = _re.match(r"(?:(\d+)d)?(?:(\d+):)?(\d+):(\d+)", str(raw))
                 if not m:
@@ -699,10 +845,18 @@ class HotspotManager:
 
         result: list[dict] = []
         try:
-            users = self._api.execute(router_key, "ip/hotspot/user/print")
+            users = self._api.execute(
+                router_key,
+                "ip/hotspot/user/print",
+                **{".proplist": "name,profile,limit-uptime,disabled"},
+            )
             # جلب الجلسات النشطة لمعرفة وقت الاستخدام الفعلي
             try:
-                active_sessions = self._api.execute(router_key, "ip/hotspot/active/print")
+                active_sessions = self._api.execute(
+                    router_key,
+                    "ip/hotspot/active/print",
+                    **{".proplist": "user,uptime"},
+                )
                 active_map: dict[str, int] = {}
                 for sess in active_sessions:
                     if isinstance(sess, dict):
@@ -728,13 +882,15 @@ class HotspotManager:
                 remaining_secs = max(0, limit_secs - used_secs)
                 remaining_days = remaining_secs / 86400
                 if remaining_days <= days:
-                    result.append({
-                        "name": name,
-                        "profile": user.get("profile", "—"),
-                        "uptime_limit": limit_raw,
-                        "remaining_days": round(remaining_days, 1),
-                        "uptime_used_secs": used_secs,
-                    })
+                    result.append(
+                        {
+                            "name": name,
+                            "profile": user.get("profile", "—"),
+                            "uptime_limit": limit_raw,
+                            "remaining_days": round(remaining_days, 1),
+                            "uptime_used_secs": used_secs,
+                        }
+                    )
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.warning(f"get_expiring_users failed for {router_key}: {e}")
         return sorted(result, key=lambda x: x["remaining_days"])

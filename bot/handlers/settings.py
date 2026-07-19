@@ -4,10 +4,18 @@ from telegram.ext import ContextTypes, ConversationHandler
 from bot.keyboards import get_pdf_settings_keyboard, get_nav_back_keyboard
 from bot.messages import (
     PDF_MARGINS_PROMPT,
-    PDF_SPACING_PROMPT, PDF_CARDS_PER_ROW_PROMPT, PDF_CARDS_PER_PAGE_PROMPT,
-    PDF_BRAND_NAME_PROMPT, PDF_HOTSPOT_DNS_PROMPT,
-    PDF_SHOW_QR_PROMPT, PDF_FOOTER_PROMPT, PDF_UNKNOWN_OPTION, PDF_SEND_4_VALUES,
-    PDF_SEND_2_VALUES, PDF_SETTINGS_UPDATED, PDF_LABEL_SPACING_PROMPT,
+    PDF_SPACING_PROMPT,
+    PDF_CARDS_PER_ROW_PROMPT,
+    PDF_CARDS_PER_PAGE_PROMPT,
+    PDF_BRAND_NAME_PROMPT,
+    PDF_HOTSPOT_DNS_PROMPT,
+    PDF_SHOW_QR_PROMPT,
+    PDF_FOOTER_PROMPT,
+    PDF_UNKNOWN_OPTION,
+    PDF_SEND_4_VALUES,
+    PDF_SEND_2_VALUES,
+    PDF_SETTINGS_UPDATED,
+    PDF_LABEL_SPACING_PROMPT,
     PDF_VALUE_FONT_SIZE_PROMPT,
 )
 from bot.router_selector import set_current_action, nav_set, cleanup_state
@@ -24,6 +32,7 @@ logger = logging.getLogger(__name__)
 @admin_only
 async def pdf_group_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from bot.keyboards import get_pdf_text_keyboard
+
     query = update.callback_query
     await safe_answer_callback(query)
     await query.edit_message_text(
@@ -31,9 +40,11 @@ async def pdf_group_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_pdf_text_keyboard(),
     )
 
+
 @admin_only
 async def pdf_group_layout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from bot.keyboards import get_pdf_layout_keyboard
+
     query = update.callback_query
     await safe_answer_callback(query)
     await query.edit_message_text(
@@ -41,15 +52,18 @@ async def pdf_group_layout(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=get_pdf_layout_keyboard(),
     )
 
+
 @admin_only
 async def pdf_group_misc(update: Update, context: ContextTypes.DEFAULT_TYPE):
     from bot.keyboards import get_pdf_misc_keyboard
+
     query = update.callback_query
     await safe_answer_callback(query)
     await query.edit_message_text(
         "📱 إعدادات الباركود (QR Code)",
         reply_markup=get_pdf_misc_keyboard(),
     )
+
 
 @admin_only
 async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -62,40 +76,39 @@ async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     prompts = {
         "margins": PDF_MARGINS_PROMPT.format(
-            top=settings.get('margin_top', 10),
-            bottom=settings.get('margin_bottom', 10),
-            left=settings.get('margin_left', 10),
-            right=settings.get('margin_right', 10)
+            top=settings.get("margin_top", 10),
+            bottom=settings.get("margin_bottom", 10),
+            left=settings.get("margin_left", 10),
+            right=settings.get("margin_right", 10),
         ),
         "spacing": PDF_SPACING_PROMPT.format(
-            x=settings.get('spacing_x', 5),
-            y=settings.get('spacing_y', 5)
+            x=settings.get("spacing_x", 5), y=settings.get("spacing_y", 5)
         ),
         "cards_per_row": PDF_CARDS_PER_ROW_PROMPT.format(
-            value=settings.get('cards_per_row', 4)
+            value=settings.get("cards_per_row", 4)
         ),
         "cards_per_page": PDF_CARDS_PER_PAGE_PROMPT.format(
-            value=settings.get('cards_per_page', 40)
+            value=settings.get("cards_per_page", 40)
         ),
         "brand_name": PDF_BRAND_NAME_PROMPT.format(
-            value=settings.get('brand_name', '') or '(فارغ)'
+            value=settings.get("brand_name", "") or "(فارغ)"
         ),
         "hotspot_dns": PDF_HOTSPOT_DNS_PROMPT.format(
-            value=settings.get('hotspot_dns', '') or '(فارغ)'
+            value=settings.get("hotspot_dns", "") or "(فارغ)"
         ),
         "show_qr": PDF_SHOW_QR_PROMPT.format(
-            value='✅ مفعّل' if settings.get('show_qr', 1) else '❌ معطّل'
+            value="✅ مفعّل" if settings.get("show_qr", 1) else "❌ معطّل"
         ),
         "footer": PDF_FOOTER_PROMPT.format(
-            value=settings.get('footer_text', '') or '(فارغ)'
+            value=settings.get("footer_text", "") or "(فارغ)"
         ),
         "label_spacing": PDF_LABEL_SPACING_PROMPT.format(
-            single=settings.get('label_spacing_single', 1.0),
-            dual=settings.get('label_spacing_dual', 1.0)
+            single=settings.get("label_spacing_single", 1.0),
+            dual=settings.get("label_spacing_dual", 1.0),
         ),
         "value_font_size": PDF_VALUE_FONT_SIZE_PROMPT.format(
-            single=settings.get('value_max_font_single', 12),
-            dual=settings.get('value_max_font_dual', 11)
+            single=settings.get("value_max_font_single", 12),
+            dual=settings.get("value_max_font_dual", 11),
         ),
     }
 
@@ -120,8 +133,10 @@ async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             parts = list(map(float, value.split()))
             if len(parts) == 4:
                 pdf_settings.update(
-                    margin_top=parts[0], margin_bottom=parts[1],
-                    margin_left=parts[2], margin_right=parts[3],
+                    margin_top=parts[0],
+                    margin_bottom=parts[1],
+                    margin_left=parts[2],
+                    margin_right=parts[3],
                 )
             else:
                 await send_step(update, context, PDF_SEND_4_VALUES)
@@ -149,7 +164,9 @@ async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         elif option == "label_spacing":
             parts = list(map(float, value.split()))
             if len(parts) == 2:
-                pdf_settings.update(label_spacing_single=parts[0], label_spacing_dual=parts[1])
+                pdf_settings.update(
+                    label_spacing_single=parts[0], label_spacing_dual=parts[1]
+                )
             else:
                 await send_step(update, context, PDF_SEND_2_VALUES)
                 return WAITING_PDF_VALUE
@@ -160,7 +177,9 @@ async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 await send_step(update, context, PDF_SEND_2_VALUES)
                 return WAITING_PDF_VALUE
             if len(parts) == 2 and all(8 <= p <= 16 for p in parts):
-                pdf_settings.update(value_max_font_single=parts[0], value_max_font_dual=parts[1])
+                pdf_settings.update(
+                    value_max_font_single=parts[0], value_max_font_dual=parts[1]
+                )
             else:
                 await send_step(update, context, PDF_SEND_2_VALUES)
                 return WAITING_PDF_VALUE
@@ -173,7 +192,9 @@ async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             log_extra="pdf_settings_value",
         )
         # ابق في حالة الانتظار للسماح بإعادة المحاولة

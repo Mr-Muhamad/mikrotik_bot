@@ -45,12 +45,14 @@ class TestAcquireLock:
         # Second instance cannot acquire (handle still held)
         # We need to simulate a separate process: try from a different file descriptor
         import msvcrt
+
         second_handle = open(test_path, "r+")
         if sys.platform == "win32":
             with pytest.raises(OSError):
                 msvcrt.locking(second_handle.fileno(), msvcrt.LK_NBLCK, 1)
         else:
             import fcntl
+
             with pytest.raises(OSError):
                 fcntl.flock(second_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         second_handle.close()

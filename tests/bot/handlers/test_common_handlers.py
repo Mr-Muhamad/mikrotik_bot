@@ -16,7 +16,6 @@ from bot.handlers.common import (
 from tests.fixtures.telegram_mocks import make_mock_update
 from utils import admin_decorator
 
-
 ADMIN_ID = 724730774
 
 
@@ -61,7 +60,8 @@ class TestStart:
         context = _make_context()
 
         await start(update, context)
-        context.bot.send_message.assert_called_once()
+        # start sends a temp status message then the main menu (at least one call)
+        assert context.bot.send_message.call_count >= 1
 
 
 class TestHelpCommand:
@@ -90,6 +90,7 @@ class TestMainMenu:
     @pytest.mark.asyncio
     async def test_main_menu_without_router(self, mock_mikrotik_api):
         from bot.router_selector import clear_router
+
         clear_router(ADMIN_ID)
         update = make_mock_update(callback_data="main_menu")
         context = _make_context()
@@ -121,6 +122,7 @@ class TestCancel:
     @pytest.mark.asyncio
     async def test_cancel_with_message(self, mock_mikrotik_api):
         from database.models import save_user_session
+
         save_user_session(ADMIN_ID, "discovered_1")
         update = make_mock_update(text="/cancel")
         context = _make_context()
@@ -140,7 +142,8 @@ class TestCleanChat:
         sent_msg.message_id = 555
         context.bot.send_message = AsyncMock(return_value=sent_msg)
 
-        with patch("bot.handlers.common.clean_chat_messages", new=AsyncMock()), \
-             patch("bot.handlers.common.schedule_delete", new=AsyncMock()) as mock_sched:
+        with patch("bot.handlers.common.clean_chat_messages", new=AsyncMock()), patch(
+            "bot.handlers.common.schedule_delete", new=AsyncMock()
+        ) as mock_sched:
             await clean_chat(update, context)
         mock_sched.assert_called_once()

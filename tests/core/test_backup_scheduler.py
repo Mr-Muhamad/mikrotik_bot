@@ -52,9 +52,14 @@ class TestBackupScheduler:
         assert scheduler._running is False
 
     async def test_stop_persists_disabled(self, mock_job_queue):
-        with patch("database.models.get_backup_schedule") as mock_get, \
-             patch("database.models.save_backup_schedule") as mock_save:
-            mock_get.return_value = {"schedule_enabled": True, "schedule_hour": 3, "schedule_minute": 0}
+        with patch("database.models.get_backup_schedule") as mock_get, patch(
+            "database.models.save_backup_schedule"
+        ) as mock_save:
+            mock_get.return_value = {
+                "schedule_enabled": True,
+                "schedule_hour": 3,
+                "schedule_minute": 0,
+            }
             scheduler = BackupScheduler()
             scheduler.stop(mock_job_queue, persist=True)
             mock_save.assert_called_once_with(False, 3, 0)
@@ -73,20 +78,32 @@ class TestBackupScheduler:
     async def test_is_running_false_when_no_job(self, mock_job_queue):
         mock_job_queue.get_jobs_by_name.return_value = []
         with patch("database.models.get_backup_schedule") as mock_get:
-            mock_get.return_value = {"schedule_enabled": False, "schedule_hour": 3, "schedule_minute": 0}
+            mock_get.return_value = {
+                "schedule_enabled": False,
+                "schedule_hour": 3,
+                "schedule_minute": 0,
+            }
             scheduler = BackupScheduler()
             assert scheduler.is_running(mock_job_queue) is False
 
     async def test_is_running_fallback_to_db(self, mock_job_queue):
         mock_job_queue.get_jobs_by_name.return_value = []
         with patch("database.models.get_backup_schedule") as mock_get:
-            mock_get.return_value = {"schedule_enabled": True, "schedule_hour": 3, "schedule_minute": 0}
+            mock_get.return_value = {
+                "schedule_enabled": True,
+                "schedule_hour": 3,
+                "schedule_minute": 0,
+            }
             scheduler = BackupScheduler()
             assert scheduler.is_running(None) is True
 
     async def test_restore_starts_when_enabled(self, mock_job_queue):
         with patch("database.models.get_backup_schedule") as mock_get:
-            mock_get.return_value = {"schedule_enabled": True, "schedule_hour": 5, "schedule_minute": 30}
+            mock_get.return_value = {
+                "schedule_enabled": True,
+                "schedule_hour": 5,
+                "schedule_minute": 30,
+            }
             scheduler = BackupScheduler()
             scheduler.restore(mock_job_queue)
             # run_daily يُستدعى 3 مرات: backup + expiry check + stats snapshot
@@ -95,7 +112,11 @@ class TestBackupScheduler:
 
     async def test_restore_skips_when_disabled(self, mock_job_queue):
         with patch("database.models.get_backup_schedule") as mock_get:
-            mock_get.return_value = {"schedule_enabled": False, "schedule_hour": 3, "schedule_minute": 0}
+            mock_get.return_value = {
+                "schedule_enabled": False,
+                "schedule_hour": 3,
+                "schedule_minute": 0,
+            }
             scheduler = BackupScheduler()
             scheduler.restore(mock_job_queue)
             mock_job_queue.run_daily.assert_not_called()
@@ -103,68 +124,90 @@ class TestBackupScheduler:
     async def test_do_backup_calls_service_for_each_router(self, mock_job_queue):
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
-        with patch("database.models.get_saved_routers"), \
-             patch("core.backup_service.backup_service"), \
-             patch("core.mikrotik_api.mikrotik_api"), \
-             patch("core.backup_scheduler.run_blocking", new=AsyncMock()) as mock_run:
+        with patch("database.models.get_saved_routers"), patch(
+            "core.backup_service.backup_service"
+        ), patch("core.mikrotik_api.mikrotik_api"), patch(
+            "core.backup_scheduler.run_blocking", new=AsyncMock()
+        ) as mock_run:
             routers_list = [
                 {"id": 1, "username": "admin", "identity": "Router1"},
                 {"id": 2, "username": "admin", "identity": "Router2"},
             ]
             mock_run.side_effect = [
                 routers_list,
-                (True, "healthy"), None, 1,
-                (True, "healthy"), None, 2,
+                (True, "healthy"),
+                None,
+                1,  # router1: health, userman_backup, record
+                {"success": True},
+                2,  # router1: full_backup, record
+                (True, "healthy"),
+                None,
+                3,  # router2: health, userman_backup, record
+                {"success": True},
+                4,  # router2: full_backup, record
             ]
             scheduler = BackupScheduler()
             await scheduler._do_backup(mock_context)
-            assert mock_run.call_count == 7
+            assert mock_run.call_count == 11
 
     async def test_do_backup_skips_routers_without_username(self, mock_job_queue):
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
-        with patch("database.models.get_saved_routers"), \
-             patch("core.backup_service.backup_service"), \
-             patch("core.mikrotik_api.mikrotik_api"), \
-             patch("core.backup_scheduler.run_blocking", new=AsyncMock()) as mock_run:
+        with patch("database.models.get_saved_routers"), patch(
+            "core.backup_service.backup_service"
+        ), patch("core.mikrotik_api.mikrotik_api"), patch(
+            "core.backup_scheduler.run_blocking", new=AsyncMock()
+        ) as mock_run:
             mock_run.side_effect = [
-                [{"id": 1, "username": "", "identity": "R1"},
-                 {"id": 2, "username": "admin", "identity": "R2"}],
+                [
+                    {"id": 1, "username": "", "identity": "R1"},
+                    {"id": 2, "username": "admin", "identity": "R2"},
+                ],
                 (True, "healthy"),
                 None,
                 1,
+                {"success": True},
+                2,
             ]
             scheduler = BackupScheduler()
             await scheduler._do_backup(mock_context)
-            assert mock_run.call_count == 4
+            assert mock_run.call_count == 6
 
     async def test_do_backup_handles_exception_gracefully(self, mock_job_queue):
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
-        with patch("database.models.get_saved_routers"), \
-             patch("core.backup_service.backup_service"), \
-             patch("core.mikrotik_api.mikrotik_api"), \
-             patch("core.backup_scheduler.run_blocking", new=AsyncMock()) as mock_run:
+        mock_context.bot.send_message = AsyncMock()
+        with patch("database.models.get_saved_routers"), patch(
+            "core.backup_service.backup_service"
+        ), patch("core.mikrotik_api.mikrotik_api"), patch(
+            "core.backup_scheduler.run_blocking", new=AsyncMock()
+        ) as mock_run:
+            from librouteros.exceptions import LibRouterosError
+
             routers_list = [{"id": 1, "username": "admin", "identity": "R1"}]
+            # health check ok, userman_backup raises, record failure, full_backup raises, record failure
             mock_run.side_effect = [
                 routers_list,
                 (True, "healthy"),
-                None,
+                LibRouterosError("error"),
                 1,
+                LibRouterosError("full error"),
+                2,
             ]
             scheduler = BackupScheduler()
             await scheduler._do_backup(mock_context)
-            assert mock_run.call_count == 4
-
+            assert mock_run.call_count == 6
 
     async def test_do_backup_runs_full_backup_when_flag_enabled(self, mock_job_queue):
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
-        with patch("database.models.get_saved_routers"), \
-             patch("core.backup_service.backup_service") as mock_svc, \
-             patch("core.mikrotik_api.mikrotik_api"), \
-             patch("core.backup_scheduler.run_blocking", new=AsyncMock()) as mock_run, \
-             patch("config.SCHEDULE_FULL_BACKUP", True):
+        with patch("database.models.get_saved_routers"), patch(
+            "core.backup_service.backup_service"
+        ) as mock_svc, patch("core.mikrotik_api.mikrotik_api"), patch(
+            "core.backup_scheduler.run_blocking", new=AsyncMock()
+        ) as mock_run, patch(
+            "config.SCHEDULE_FULL_BACKUP", True
+        ):
             mock_run.side_effect = [
                 [{"id": 1, "username": "admin", "identity": "R1"}],
                 (True, "healthy"),

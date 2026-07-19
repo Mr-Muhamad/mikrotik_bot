@@ -1,4 +1,5 @@
 """Handler tests for Hotspot usage report export."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -18,9 +19,18 @@ def _report():
     return {
         "router_key": "discovered_1",
         "rows": [
-            {"name": "userA", "profile": "10GB", "status": "active",
-             "bytes_in": 100, "bytes_out": 200, "total_bytes": 300, "total_str": "300 B",
-             "limit_str": "—", "percent": 0.0, "comment": "x"},
+            {
+                "name": "userA",
+                "profile": "10GB",
+                "status": "active",
+                "bytes_in": 100,
+                "bytes_out": 200,
+                "total_bytes": 300,
+                "total_str": "300 B",
+                "limit_str": "—",
+                "percent": 0.0,
+                "comment": "x",
+            },
         ],
     }
 
@@ -34,14 +44,17 @@ async def test_report_export_csv_sends_document():
     ctx.bot = MagicMock()
     ctx.bot.send_document = AsyncMock()
 
-    with patch("bot.handlers.hotspot_report.tempfile.mkstemp", return_value=(3, "x.csv")), \
-         patch("os.fdopen"), patch("builtins.open", MagicMock()), patch("os.remove"):
+    with patch(
+        "bot.handlers.hotspot_report.tempfile.mkstemp", return_value=(3, "x.csv")
+    ), patch("os.fdopen"), patch("builtins.open", MagicMock()), patch("os.remove"):
         await report_module.report_export_csv(update, ctx)
 
     ctx.bot.send_document.assert_called_once()
     filename = ctx.bot.send_document.call_args.kwargs.get("filename")
     assert filename == "hotspot_report_discovered_1.csv"
-    update.callback_query.answer.assert_any_call("✅ تم إرسال ملف CSV", show_alert=False)
+    update.callback_query.answer.assert_any_call(
+        "✅ تم إرسال ملف CSV", show_alert=False
+    )
 
 
 @pytest.mark.asyncio

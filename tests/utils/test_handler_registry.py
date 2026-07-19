@@ -14,10 +14,7 @@ from utils import handler_registry as reg
 
 @pytest.fixture(autouse=True)
 def _reset_registry():
-    saved = {
-        k: list(v) if isinstance(v, list) else v
-        for k, v in reg._registry.items()
-    }
+    saved = {k: list(v) if isinstance(v, list) else v for k, v in reg._registry.items()}
     saved["states"] = {k: list(v) for k, v in reg._registry["states"].items()}
     reg._registry["entry_points"] = []
     reg._registry["states"] = defaultdict(list)
