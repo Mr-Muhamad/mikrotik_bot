@@ -1,7 +1,7 @@
 """Tests for utils.error_response benign-error handling and chat_cleaner safe edits."""
 
 import logging
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from telegram.error import BadRequest
@@ -63,19 +63,19 @@ class TestIsBenignTelegramError:
 
 class TestSendErrorBenign:
     @pytest.mark.asyncio
-    async def test_benign_logged_debug_and_no_user_message(self, caplog):
-        caplog.set_level(logging.DEBUG, logger="utils.error_response")
+    @patch("utils.error_response.logger.debug")
+    async def test_benign_logged_debug_and_no_user_message(self, mock_debug):
         update = _callback_update()
         ctx = _ctx()
         error = BadRequest("Message is not modified")
-        with caplog.at_level(logging.DEBUG, logger="utils.error_response"):
-            await send_error(update, ctx, error)
+        await send_error(update, ctx, error)
         # No user-facing message should be dispatched
         update.callback_query.edit_message_text.assert_not_called()
         ctx.bot.send_message.assert_not_called()
-        assert any(
-            r.levelno == logging.DEBUG and "Benign" in r.message for r in caplog.records
-        )
+        # Verify it was logged as debug
+        assert mock_debug.call_count == 1
+        log_msg = mock_debug.call_args[0][0]
+        assert "Benign" in log_msg
 
     @pytest.mark.asyncio
     async def test_real_error_still_dispatches(self):

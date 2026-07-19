@@ -8,7 +8,7 @@ from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from utils.chat_cleaner import _track_msg
-from bot.handlers.handler_utils import get_query_message, get_query_chat_id
+from utils.tg_helpers import get_query_message, get_query_chat_id
 
 logger = logging.getLogger(__name__)
 

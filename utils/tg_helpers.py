@@ -95,3 +95,22 @@ def get_from_user_id(query: CallbackQuery) -> int:
         query.from_user is not None
     ), "query.from_user is always set on incoming CallbackQuery objects"
     return query.from_user.id
+
+
+def get_query_message(query: CallbackQuery | None) -> Message | None:
+    """استرجع رسالة callback كـ Message أو None عند غيابها.
+
+    query.message من النوع Message | MaybeInaccessibleMessage وفق stubs المكتبة،
+    لذا نستخدم cast بدلاً من isinstance كي تعمل mocks الاختبارات بشكل صحيح.
+    """
+    from typing import cast
+
+    if query is None or query.message is None:
+        return None
+    return cast("Message", query.message)
+
+
+def get_query_chat_id(query: CallbackQuery | None) -> int | None:
+    """استرجع chat_id من callback query أو None عند غيابه."""
+    msg = get_query_message(query)
+    return msg.chat_id if msg is not None else None
