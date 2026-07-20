@@ -183,6 +183,16 @@ async def main() -> int:
     init_db()
     save_user_session(USER_ID, selected_router=ROUTER_KEY)
 
+    # Mock the reachability check so the e2e suite works without a live router.
+    # The suite verifies handler *wiring* (decorators, conversation states,
+    # callback routing), not real MikroTik connectivity.
+    import bot.router_selector as rs
+
+    async def _fake_reachability(router_key: str) -> bool:
+        return True
+
+    rs._fast_reachability_check = _fake_reachability
+
     application = (
         Application.builder()
         .bot(FakeBot(config.BOT_TOKEN))
