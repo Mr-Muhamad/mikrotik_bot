@@ -5,14 +5,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from telegram.ext import ConversationHandler
 
-from bot.handlers.common import (
+from bot.handlers.commands_basic import (
     cancel,
     clean_chat,
     help_command,
-    main_menu,
     select_router_callback,
     start,
 )
+from bot.handlers.menus import main_menu
 from tests.fixtures.telegram_mocks import make_mock_update
 from utils import admin_decorator
 
@@ -47,7 +47,7 @@ class TestStart:
         context = _make_context()
         context.user_data["add_username"] = "data"
 
-        with patch("bot.handlers.common.mikrotik_api") as mock_api:
+        with patch("bot.handlers.commands_basic.mikrotik_api") as mock_api:
             mock_api.check_connection_health.return_value = (True, "OK")
             result = await start(update, context)
 
@@ -83,8 +83,7 @@ class TestMainMenu:
         update = make_mock_update(callback_data="main_menu")
         context = _make_context()
 
-        with patch("bot.handlers.common.mikrotik_api"):
-            result = await main_menu(update, context)
+        result = await main_menu(update, context)
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
@@ -128,7 +127,7 @@ class TestCancel:
         context = _make_context()
         context.user_data["last_msg"] = 12345
 
-        with patch("bot.handlers.common.mikrotik_api"):
+        with patch("bot.handlers.commands_basic.mikrotik_api"):
             await cancel(update, context)
         assert context.bot.send_message.called or update.message.delete.called
 
@@ -142,8 +141,8 @@ class TestCleanChat:
         sent_msg.message_id = 555
         context.bot.send_message = AsyncMock(return_value=sent_msg)
 
-        with patch("bot.handlers.common.clean_chat_messages", new=AsyncMock()), patch(
-            "bot.handlers.common.schedule_delete", new=AsyncMock()
+        with patch("bot.handlers.commands_basic.clean_chat_messages", new=AsyncMock()), patch(
+            "bot.handlers.commands_basic.schedule_delete", new=AsyncMock()
         ) as mock_sched:
             await clean_chat(update, context)
         mock_sched.assert_called_once()
