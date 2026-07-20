@@ -1,13 +1,15 @@
-from bot.handlers.common import (
+from bot.handlers.commands_basic import (
     cancel as cancel,
     error_handler as error_handler,
-    go_back as go_back,
     clean_chat as clean_chat,
     metrics_command as metrics_command,
     sync_commands as sync_commands,
     reprompt_select_user as reprompt_select_user,
     reprompt_card_type_text as reprompt_card_type_text,
     reprompt_card_profile_text as reprompt_card_profile_text,
+)
+from bot.handlers.menus import (
+    go_back as go_back,
 )
 from bot.handlers.hotspot import (
     hotspot_stats as hotspot_stats,

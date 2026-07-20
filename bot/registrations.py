@@ -23,10 +23,20 @@ from bot.handlers.callback_constants import PATTERNS
 
 # ─── IMPORT ALL HANDLERS ──────────────────────────────────────
 
-from bot.handlers.common import (
+from bot.handlers.commands_basic import (
     start,
     help_command,
     select_router_callback,
+    cancel,
+    error_handler,
+    clean_chat,
+    metrics_command,
+    sync_commands,
+    reprompt_select_user,
+    reprompt_card_type_text,
+    reprompt_card_profile_text,
+)
+from bot.handlers.menus import (
     main_menu,
     end_conversation_to_main,
     end_conversation_to_hotspot,
@@ -43,15 +53,7 @@ from bot.handlers.common import (
     pdf_settings_menu,
     routers_menu,
     reports_menu,
-    cancel,
-    error_handler,
     go_back,
-    clean_chat,
-    metrics_command,
-    sync_commands,
-    reprompt_select_user,
-    reprompt_card_type_text,
-    reprompt_card_profile_text,
 )
 from bot.handlers.hotspot import hotspot_stats, hotspot_stats_day_input
 from bot.handlers.hotspot_add import (

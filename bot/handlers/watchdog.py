@@ -175,14 +175,16 @@ async def _reply(update, context, query, text: str):
 
 
 async def _check_all_routers(context: ContextTypes.DEFAULT_TYPE):
-    """Periodic job: check all saved routers and send alerts."""
-    routers = get_saved_routers(active_only=True)
+    """Periodic job: check all saved routers concurrently and send alerts."""
+    import asyncio
+
+    routers = await run_blocking(get_saved_routers, active_only=True)
     if not routers:
         return
 
-    for r in routers:
+    async def _check_single(r: dict):
         if not r.get("username"):
-            continue
+            return
 
         router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
         identity = r.get("identity", router_key)
@@ -201,6 +203,8 @@ async def _check_all_routers(context: ContextTypes.DEFAULT_TYPE):
         elif action == ALERT_RECOVERED:
             await _notify_admins(context, WATCHDOG_ONLINE_ALERT.format(identity=identity))
             logger.info(f"Router {identity} recovered")
+
+    await asyncio.gather(*[_check_single(r) for r in routers])
 
 
 async def _notify_admins(context: ContextTypes.DEFAULT_TYPE, text: str):

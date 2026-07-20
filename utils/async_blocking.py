@@ -8,8 +8,13 @@ import asyncio
 import contextvars
 from functools import partial
 from typing import Any, Callable, TypeVar
+from concurrent.futures import ThreadPoolExecutor
 
 T = TypeVar("T")
+
+# إنشاء مجمع خيوط مخصص (Custom ThreadPool) بحجم كبير لتجنب تجميد البوت (Starvation)
+# عند وجود عدة روترات غير متصلة (Offline) تستنفد الخيوط الافتراضية
+_executor = ThreadPoolExecutor(max_workers=50, thread_name_prefix="mikrotik_worker")
 
 
 async def run_blocking(func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
@@ -21,4 +26,4 @@ async def run_blocking(func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
     loop = asyncio.get_running_loop()
     ctx = contextvars.copy_context()
     bound = partial(func, *args, **kwargs) if kwargs else partial(func, *args)
-    return await loop.run_in_executor(None, ctx.run, bound)
+    return await loop.run_in_executor(_executor, ctx.run, bound)
