@@ -16,3 +16,4 @@ venv/
 .venv/
 fonts/*.ttf
 logs/
+scratch/
