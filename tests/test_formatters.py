@@ -1,5 +1,5 @@
 import unittest
-from utils.formatters import parse_bytes, format_bytes, format_user_list
+from utils.formatters import parse_bytes, format_bytes, format_user_list, format_hotspot_user
 
 
 class TestParseBytes(unittest.TestCase):
@@ -92,3 +92,37 @@ class TestFormatUserList(unittest.TestCase):
         users = [{"name": str(i)} for i in range(5)]
         result = format_user_list(users)
         self.assertNotIn("مستخدمين آخرين", result)
+
+
+class TestFormatHotspotUser(unittest.TestCase):
+    def test_full_user_fields(self):
+        user = {
+            "name": "testuser1",
+            "password": "secret",
+            "profile": "premium",
+            "limit-bytes-total": "1000000000",
+            "limit-uptime": "1d",
+            "bytes-in": "200000000",
+            "bytes-out": "100000000",
+            "comment": "vip customer",
+            ".id": "*1",
+        }
+        result = format_hotspot_user(user)
+        self.assertIn("testuser1", result)
+        self.assertIn("premium", result)
+        self.assertIn("vip customer", result)
+        self.assertIn("*1", result)
+        # Password masked, not leaked
+        self.assertNotIn("secret", result)
+        self.assertIn("*" * 8, result)
+
+    def test_empty_user_defaults(self):
+        user = {}
+        result = format_hotspot_user(user)
+        self.assertIn("لا يوجد", result)
+        self.assertIn("غير محدود", result)
+
+    def test_invalid_bytes_shows_unknown(self):
+        user = {"bytes-in": "abc", "bytes-out": "xyz"}
+        result = format_hotspot_user(user)
+        self.assertIn("غير معروف", result)

@@ -122,6 +122,32 @@ def format_user_list(users: list[dict], max_items: int = 20) -> str:
     return "\n".join(lines)
 
 
+def format_hotspot_user(user: dict) -> str:
+    """Format a hotspot user dict into a human-readable Arabic string."""
+    bytes_in = user.get("bytes-in", "0")
+    bytes_out = user.get("bytes-out", "0")
+    try:
+        total_consumed = int(bytes_in) + int(bytes_out)
+        total_text = format_bytes(str(total_consumed))
+    except (ValueError, TypeError):
+        total_text = "غير معروف"
+
+    uptime_raw = user.get("limit-uptime", "")
+    uptime_text = uptime_raw if uptime_raw else "غير محدود"
+
+    lines = [
+        f"\U0001f464 الاسم: {user.get('name', 'لا يوجد')}",
+        f"\U0001f511 الباسورد: {'*' * 8 if user.get('password') else 'لا يوجد'}",
+        f"\U0001f4cb البروفايل: {user.get('profile', 'لا يوجد')}",
+        f"\U0001f4ca الحد: {format_bytes(user.get('limit-bytes-total', ''))}",
+        f"\u23f0 المدة: {uptime_text}",
+        f"\U0001f4ca المستهلك: {total_text}",
+        f"\U0001f4ac التعليق: {user.get('comment', 'لا يوجد')}",
+        f"\U0001f194 الرقم: {user.get('.id', 'لا يوجد')}",
+    ]
+    return "\n".join(lines)
+
+
 def format_hotspot_stats(stats: dict | None, router_name: str) -> str:
     """Format hotspot stats dict into an Arabic display string."""
     if not stats:

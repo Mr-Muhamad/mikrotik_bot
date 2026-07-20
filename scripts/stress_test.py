@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from core.hotspot_manager import HotspotManager
 from tests.mocks.mikrotik_api_mock import MikrotikAPIMock
+from utils.formatters import format_hotspot_user
 
 async def monitor_resources(duration: int, process: psutil.Process):
     """Monitors CPU and RAM usage in the background."""
@@ -47,7 +48,7 @@ async def simulate_load(hotspot_manager, router_key: str, num_requests: int):
             elif op_type == "format":
                 user = hotspot_manager.get_user(router_key, "*1")
                 if user:
-                    hotspot_manager.format_user(user)
+                    format_hotspot_user(user)
             elif op_type == "stats":
                 hotspot_manager.get_hotspot_stats(router_key)
         except Exception:

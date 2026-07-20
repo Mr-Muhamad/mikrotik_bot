@@ -210,8 +210,3 @@ class TestHotspotManager:
         assert day5["selected_day"] == 5
         assert len(day5["reset_list"]) == 2
 
-    def test_format_user(self, mock_mikrotik_api):
-        user = hotspot_manager.get_user(self.ROUTER_KEY, "*1")
-        assert user is not None
-        formatted = hotspot_manager.format_user(user)
-        assert "testuser1" in formatted

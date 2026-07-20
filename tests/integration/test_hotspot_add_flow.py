@@ -6,6 +6,7 @@ MikrotikAPIMock, simulating real MikroTik API interactions.
 
 from core.hotspot_manager import hotspot_manager
 from core.card_models import CardSystem
+from utils.formatters import format_hotspot_user
 
 
 class TestHotspotAddFlow:
@@ -118,7 +119,7 @@ class TestHotspotAddFlow:
         )
         user = hotspot_manager.get_user(self.ROUTER_KEY, "*1")
         if user:
-            formatted = hotspot_manager.format_user(user)
+            formatted = format_hotspot_user(user)
             assert isinstance(formatted, str)
             assert len(formatted) > 10
 

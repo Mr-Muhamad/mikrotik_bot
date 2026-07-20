@@ -47,7 +47,7 @@ from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import edit_clean, reply_final, send_step
 from utils.error_response import send_error
-from utils.formatters import format_bytes
+from utils.formatters import format_bytes, format_hotspot_user
 from utils.validators import validate_username, validate_bytes_input
 from .constants import WAITING_EDIT_FIELD, WAITING_EDIT_VALUE
 from .hotspot_common import search_users_for_action
@@ -113,7 +113,7 @@ async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     is_disabled = str(user.get("disabled", "no")).lower() in ("yes", "true", "1")
     await query.edit_message_text(
-        EDIT_SELECT_FIELD.format(hotspot_manager.format_user(user)),
+        EDIT_SELECT_FIELD.format(format_hotspot_user(user)),
         reply_markup=get_edit_field_keyboard(is_disabled=is_disabled),
     )
     return WAITING_EDIT_VALUE
@@ -168,7 +168,7 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
             HOTSPOT_EDIT_RESET_SUCCESS
             + extra
             + "\n\n"
-            + EDIT_SELECT_FIELD.format(hotspot_manager.format_user(user_data))
+            + EDIT_SELECT_FIELD.format(format_hotspot_user(user_data))
         )
         await query.edit_message_text(
             text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
@@ -276,7 +276,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             toggle_msg = TOGGLE_DISABLED_OFF if new_disabled else TOGGLE_DISABLED_ON
 
             text = f"{toggle_msg}\n\n" + EDIT_SELECT_FIELD.format(
-                hotspot_manager.format_user(user_data)
+                format_hotspot_user(user_data)
             )
             await query.edit_message_text(
                 text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
@@ -362,7 +362,7 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
             "1",
         )
         await query.edit_message_text(
-            EDIT_SELECT_FIELD.format(hotspot_manager.format_user(user_data or {})),
+            EDIT_SELECT_FIELD.format(format_hotspot_user(user_data or {})),
             reply_markup=get_edit_field_keyboard(is_disabled=is_disabled),
         )
     except Exception as e:
@@ -389,7 +389,7 @@ async def edit_back_to_fields(update: Update, context: ContextTypes.DEFAULT_TYPE
             "1",
         )
         await query.edit_message_text(
-            EDIT_SELECT_FIELD.format(hotspot_manager.format_user(user_data)),
+            EDIT_SELECT_FIELD.format(format_hotspot_user(user_data)),
             reply_markup=get_edit_field_keyboard(is_disabled=is_disabled),
         )
     else:
@@ -477,7 +477,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "1",
         )
         text = HOTSPOT_EDIT_SUCCESS.format(kick_msg=kick_msg) + EDIT_SELECT_FIELD.format(
-            hotspot_manager.format_user(user_data)
+            format_hotspot_user(user_data)
         )
         await send_step(
             update, context, text, get_edit_field_keyboard(is_disabled=is_disabled)

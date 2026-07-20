@@ -27,6 +27,7 @@ from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback, is_duplicate_callback
 from utils.chat_cleaner import delete_now, edit_clean, send_step
 from utils.error_response import send_error
+from utils.formatters import format_hotspot_user
 from .constants import WAITING_DELETE_ID, WAITING_INPUT
 from .hotspot_common import search_users_for_action
 
@@ -62,7 +63,7 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
 
         context.user_data["delete_user_id"] = user_id
         await query.edit_message_text(
-            CONFIRM_DELETE.format(hotspot_manager.format_user(user)),
+            CONFIRM_DELETE.format(format_hotspot_user(user)),
             reply_markup=get_confirm_keyboard(),
         )
         return WAITING_INPUT

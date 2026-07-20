@@ -7,7 +7,6 @@ from librouteros.exceptions import LibRouterosError
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient
 from core.card_models import CardData, CardSystem
-from utils.formatters import format_bytes, parse_bytes
 from core.cache import TTLCache
 
 logger = logging.getLogger(__name__)
@@ -344,31 +343,6 @@ class HotspotManager:
 
         self.invalidate_users_cache(router_key)
         return cards
-
-    def format_user(self, user: dict) -> str:
-        """Format a hotspot user dict into a human-readable Arabic string."""
-        bytes_in = user.get("bytes-in", "0")
-        bytes_out = user.get("bytes-out", "0")
-        try:
-            total_consumed = int(bytes_in) + int(bytes_out)
-            total_text = format_bytes(str(total_consumed))
-        except (ValueError, TypeError):
-            total_text = "غير معروف"
-
-        uptime_raw = user.get("limit-uptime", "")
-        uptime_text = uptime_raw if uptime_raw else "غير محدود"
-
-        lines = [
-            f"\U0001f464 الاسم: {user.get('name', 'لا يوجد')}",
-            f"\U0001f511 الباسورد: {'*' * 8 if user.get('password') else 'لا يوجد'}",
-            f"\U0001f4cb البروفايل: {user.get('profile', 'لا يوجد')}",
-            f"\U0001f4ca الحد: {format_bytes(user.get('limit-bytes-total', ''))}",
-            f"\u23f0 المدة: {uptime_text}",
-            f"\U0001f4ca المستهلك: {total_text}",
-            f"\U0001f4ac التعليق: {user.get('comment', 'لا يوجد')}",
-            f"\U0001f194 الرقم: {user.get('.id', 'لا يوجد')}",
-        ]
-        return "\n".join(lines)
 
     def _parse_reset_day(self, comment: str) -> int | None:
         """Extract the reset day (1-31) from a hotspot user comment.

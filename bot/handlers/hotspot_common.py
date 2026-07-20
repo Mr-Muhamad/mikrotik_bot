@@ -23,6 +23,7 @@ from database.models import log_action
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import reply_final, send_step
 from utils.error_response import send_error
+from utils.formatters import format_hotspot_user
 from utils.pagination import Paginator
 from .session_models import get_hotspot_add_session, get_hotspot_edit_session
 from .constants import (
@@ -72,7 +73,7 @@ async def search_users_for_action(update, context, action):
             await send_step(
                 update,
                 context,
-                CONFIRM_DELETE.format(hotspot_manager.format_user(user)),
+                CONFIRM_DELETE.format(format_hotspot_user(user)),
                 get_confirm_keyboard(),
             )
             return WAITING_INPUT
@@ -82,7 +83,7 @@ async def search_users_for_action(update, context, action):
         await send_step(
             update,
             context,
-            EDIT_SELECT_FIELD.format(hotspot_manager.format_user(user)),
+            EDIT_SELECT_FIELD.format(format_hotspot_user(user)),
             get_edit_field_keyboard(),
         )
         return WAITING_EDIT_VALUE
