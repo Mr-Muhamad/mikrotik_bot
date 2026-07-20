@@ -163,11 +163,8 @@ async def assign_router_command(update: Update, context: ContextTypes.DEFAULT_TY
 async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """معالجة callback إسناد راوتر لمشغّل."""
     from bot.keyboards import get_operator_router_assignment_keyboard
-    from database.models import (
-        assign_router_to_operator,
-        get_operator_routers,
-        get_saved_routers,
-    )
+    from database.models import get_operator_routers, get_saved_routers
+    from database.repositories.operator_permissions import assign_router_to_operator
     from utils.callback_utils import safe_answer_callback
 
     query = update.callback_query
@@ -197,11 +194,8 @@ async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAUL
 async def op_revoke_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """معالجة callback سحب راوتر من مشغّل."""
     from bot.keyboards import get_operator_router_assignment_keyboard
-    from database.models import (
-        get_operator_routers,
-        get_saved_routers,
-        revoke_router_from_operator,
-    )
+    from database.models import get_operator_routers, get_saved_routers
+    from database.repositories.operator_permissions import revoke_router_from_operator
     from utils.callback_utils import safe_answer_callback
 
     query = update.callback_query

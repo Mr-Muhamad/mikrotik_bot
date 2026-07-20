@@ -80,7 +80,6 @@ def get_metrics_text(pool_metrics: dict | None = None) -> str:
         p50 = sorted_latencies[int(n * 0.50)]
         p90 = sorted_latencies[int(n * 0.90)]
         p99 = sorted_latencies[min(int(n * 0.99), n - 1)]
-        sum(sorted_latencies) / n
 
         lines.extend(
             [

@@ -75,10 +75,13 @@ def _set_backup_running(router_key: str, state: bool):
 
 async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
     job = context.job
-    router_key = job.data["router_key"]
-    chat_id = job.data["chat_id"]
-    user_id = job.data["user_id"]
-    b_type = job.data["type"]
+    from typing import cast
+
+    job_data = cast("dict[str, object]", job.data)
+    router_key = str(job_data["router_key"])
+    chat_id = int(job_data["chat_id"])  # type: ignore[arg-type]
+    user_id = int(job_data["user_id"])  # type: ignore[arg-type]
+    b_type = str(job_data["type"])
 
     try:
         if b_type == "full":
