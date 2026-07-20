@@ -15,5 +15,14 @@
   "reportOptionalCall": "none",
   "reportOptionalIterable": "none",
   "reportOptionalContextManager": "none",
-  "reportMissingModuleSource": false
+  "reportMissingModuleSource": false,
+  "reportUnusedExpression": "error",
+  "reportAttributeAccessIssue": "error",
+  "reportArgumentType": "error",
+  "reportIndexIssue": "error",
+  "reportUnknownMemberType": "warning",
+  "reportUnknownVariableType": "warning",
+  "reportUnknownArgumentType": "warning",
+  "reportUnknownParameterType": "warning",
+  "reportUnknownLambdaType": "warning"
 }
