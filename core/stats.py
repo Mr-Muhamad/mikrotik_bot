@@ -1,7 +1,7 @@
 import logging
+
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient
-from utils.formatters import format_bytes
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +58,7 @@ class StatsManager:
             )
 
             total = len(users)
-            enabled = sum(
-                1 for u in users if str(u.get("disabled", "false")).lower() != "true"
-            )
+            enabled = sum(1 for u in users if str(u.get("disabled", "false")).lower() != "true")
             disabled = total - enabled
 
             return {

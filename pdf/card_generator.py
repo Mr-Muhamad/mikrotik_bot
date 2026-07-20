@@ -1,7 +1,8 @@
 import os
 import tempfile
-from pdf.pdf_renderer import pdf_renderer
 import time
+
+from pdf.pdf_renderer import pdf_renderer
 
 
 class CardGenerator:

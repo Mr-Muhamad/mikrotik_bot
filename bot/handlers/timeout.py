@@ -1,24 +1,25 @@
 import logging
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from utils.admin_decorator import admin_only
-from database.repositories.user_sessions import set_session_timeout
-from utils.callback_utils import safe_answer_callback
 from bot.messages import (
     CANCELLED,
+    TIMEOUT_CANCEL_BTN,
+    TIMEOUT_HEADER,
     TIMEOUT_MINS_5,
     TIMEOUT_MINS_15,
     TIMEOUT_MINS_30,
     TIMEOUT_MINS_60,
     TIMEOUT_NO_LIMIT,
-    TIMEOUT_CANCEL_BTN,
-    TIMEOUT_HEADER,
-    TIMEOUT_SAVED,
-    TIMEOUT_SAVED_NO_LIMIT,
-    TIMEOUT_SAVED_MINS,
     TIMEOUT_SAVE_ERROR,
+    TIMEOUT_SAVED,
+    TIMEOUT_SAVED_MINS,
+    TIMEOUT_SAVED_NO_LIMIT,
 )
+from database.repositories.user_sessions import set_session_timeout
+from utils.admin_decorator import admin_only
+from utils.callback_utils import safe_answer_callback
 
 logger = logging.getLogger(__name__)
 
@@ -36,9 +37,7 @@ async def cmd_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Entry point for /timeout command to configure session timeout."""
     keyboard = []
     for label, value in TIMEOUT_OPTIONS:
-        keyboard.append(
-            [InlineKeyboardButton(label, callback_data=f"set_timeout:{value}")]
-        )
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"set_timeout:{value}")])
 
     keyboard.append([InlineKeyboardButton(TIMEOUT_CANCEL_BTN, callback_data="cancel_timeout")])
     reply_markup = InlineKeyboardMarkup(keyboard)

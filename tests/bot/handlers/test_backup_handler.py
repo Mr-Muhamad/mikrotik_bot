@@ -1,12 +1,10 @@
 """Tests for bot.handlers.backup."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from telegram.ext import ConversationHandler
+import pytest
 
 from bot.handlers import backup as backup_module
-from bot.handlers.constants import WAITING_SCHEDULE_TIME
 from utils import admin_decorator
 
 ADMIN_ID = 724730774
@@ -21,7 +19,7 @@ def _reset_rate_limit():
 
 @pytest.fixture(autouse=True)
 def _bypass_decorators():
-    """Bypass @admin_only/@require_router by replacing decorated functions with their unwrapped versions."""
+    """Bypass @admin_only/@require_router by replacing decorated functions with their unwrapped versions."""  # noqa: E501
     for attr in [
         "backup_full",
         "backup_userman",
@@ -71,9 +69,10 @@ class TestBackupFull:
             "local_path": "/tmp/backup.backup",
         }
 
-        with patch(
-            "bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)
-        ), patch("bot.handlers.backup.log_action"):
+        with (
+            patch("bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)),
+            patch("bot.handlers.backup.log_action"),
+        ):
             await backup_module.backup_full(update, ctx)
 
         ctx.job_queue.run_once.assert_called_once()
@@ -85,9 +84,7 @@ class TestBackupFull:
         job_ctx.job = job_mock
         job_ctx.bot.send_message = AsyncMock()
 
-        with patch(
-            "bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)
-        ):
+        with patch("bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)):
             await job_func(job_ctx)
 
         job_ctx.bot.send_message.assert_called_once()
@@ -99,9 +96,10 @@ class TestBackupFull:
         update = _query_update()
         result = {"success": False, "message": "Disk full", "local_path": ""}
 
-        with patch(
-            "bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)
-        ), patch("bot.handlers.backup.log_action"):
+        with (
+            patch("bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)),
+            patch("bot.handlers.backup.log_action"),
+        ):
             await backup_module.backup_full(update, ctx)
 
         job_func = ctx.job_queue.run_once.call_args[0][0]
@@ -111,9 +109,7 @@ class TestBackupFull:
         job_ctx.job = job_mock
         job_ctx.bot.send_message = AsyncMock()
 
-        with patch(
-            "bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)
-        ):
+        with patch("bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)):
             await job_func(job_ctx)
 
         text = job_ctx.bot.send_message.call_args.kwargs.get("text", "")
@@ -159,9 +155,10 @@ class TestBackupUserman:
             "profiles_count": 5,
         }
 
-        with patch(
-            "bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)
-        ), patch("bot.handlers.backup.log_action"):
+        with (
+            patch("bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)),
+            patch("bot.handlers.backup.log_action"),
+        ):
             await backup_module.backup_userman(update, ctx)
 
         job_func = ctx.job_queue.run_once.call_args[0][0]
@@ -171,9 +168,7 @@ class TestBackupUserman:
         job_ctx.job = job_mock
         job_ctx.bot.send_message = AsyncMock()
 
-        with patch(
-            "bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)
-        ):
+        with patch("bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)):
             await job_func(job_ctx)
 
         text = job_ctx.bot.send_message.call_args.kwargs.get("text", "")
@@ -187,9 +182,10 @@ class TestBackupUserman:
         update = _query_update()
         result = {"success": False, "message": "Auth failed", "local_path": ""}
 
-        with patch(
-            "bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)
-        ), patch("bot.handlers.backup.log_action"):
+        with (
+            patch("bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)),
+            patch("bot.handlers.backup.log_action"),
+        ):
             await backup_module.backup_userman(update, ctx)
 
         job_func = ctx.job_queue.run_once.call_args[0][0]
@@ -199,9 +195,7 @@ class TestBackupUserman:
         job_ctx.job = job_mock
         job_ctx.bot.send_message = AsyncMock()
 
-        with patch(
-            "bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)
-        ):
+        with patch("bot.handlers.backup.run_blocking", new=AsyncMock(return_value=result)):
             await job_func(job_ctx)
 
         text = job_ctx.bot.send_message.call_args.kwargs.get("text", "")

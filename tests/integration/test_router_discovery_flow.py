@@ -163,8 +163,8 @@ class TestSavedRoutersList:
 class TestConnectRouter:
     @pytest.mark.asyncio
     async def test_connect_success_sets_router(self, mock_mikrotik_api):
-        from database.models import save_discovered_router
         from bot.router_selector import get_selected_router
+        from database.models import save_discovered_router
 
         router_id = save_discovered_router(
             ip="10.0.0.20",
@@ -226,9 +226,7 @@ class TestDeleteRouterExecute:
             identity="ToDelete",
             last_seen=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
-        update = make_mock_update(
-            callback_data=f"confirm_delete_router_yes_{router_id}"
-        )
+        update = make_mock_update(callback_data=f"confirm_delete_router_yes_{router_id}")
         context = _make_context()
 
         await delete_router_execute(update, context)

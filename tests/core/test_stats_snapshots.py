@@ -1,10 +1,9 @@
 """Tests for database/repositories/stats_snapshots and core/stats trend methods."""
 
-import pytest
 import sqlite3
 from contextlib import contextmanager
 from datetime import date, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from core.stats import StatsManager
 
@@ -50,8 +49,8 @@ PATCH_TARGET = "database.repositories.stats_snapshots.get_db"
 class TestSaveSnapshot:
     def test_saves_new_snapshot(self):
         from database.repositories.stats_snapshots import (
-            save_snapshot,
             get_week_snapshots,
+            save_snapshot,
         )
 
         get_db = _make_get_db()
@@ -64,8 +63,8 @@ class TestSaveSnapshot:
 
     def test_upsert_same_day(self):
         from database.repositories.stats_snapshots import (
-            save_snapshot,
             get_week_snapshots,
+            save_snapshot,
         )
 
         get_db = _make_get_db()
@@ -78,8 +77,8 @@ class TestSaveSnapshot:
 
     def test_multiple_routers(self):
         from database.repositories.stats_snapshots import (
-            save_snapshot,
             get_week_snapshots,
+            save_snapshot,
         )
 
         get_db = _make_get_db()
@@ -95,8 +94,8 @@ class TestSaveSnapshot:
 
     def test_defaults_for_missing_fields(self):
         from database.repositories.stats_snapshots import (
-            save_snapshot,
             get_week_snapshots,
+            save_snapshot,
         )
 
         get_db = _make_get_db()
@@ -129,7 +128,7 @@ class TestGetYesterdaySnapshot:
         with patch(PATCH_TARGET, get_db):
             with get_db() as conn:
                 conn.execute(
-                    "INSERT INTO stats_snapshots (router_key, snapshot_date, active_users, total_users) VALUES (?,?,?,?)",
+                    "INSERT INTO stats_snapshots (router_key, snapshot_date, active_users, total_users) VALUES (?,?,?,?)",  # noqa: E501
                     ("r1", yesterday, 25, 100),
                 )
             result = get_yesterday_snapshot("r1")
@@ -140,8 +139,8 @@ class TestGetYesterdaySnapshot:
 
     def test_returns_none_for_other_router(self):
         from database.repositories.stats_snapshots import (
-            save_snapshot,
             get_yesterday_snapshot,
+            save_snapshot,
         )
 
         get_db = _make_get_db()
@@ -165,7 +164,6 @@ class TestGetWeekSnapshots:
 
     def test_returns_snapshots_ordered_asc(self):
         from database.repositories.stats_snapshots import (
-            save_snapshot,
             get_week_snapshots,
         )
 
@@ -176,7 +174,7 @@ class TestGetWeekSnapshots:
                 for i in range(3, 0, -1):  # 3، 2، 1 أيام مضت (نزولاً)
                     d = (date.today() - timedelta(days=i)).isoformat()
                     conn.execute(
-                        "INSERT INTO stats_snapshots (router_key, snapshot_date, active_users) VALUES (?,?,?)",
+                        "INSERT INTO stats_snapshots (router_key, snapshot_date, active_users) VALUES (?,?,?)",  # noqa: E501
                         ("r1", d, i * 10),
                     )
             snaps = get_week_snapshots("r1")

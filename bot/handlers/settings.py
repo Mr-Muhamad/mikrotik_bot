@@ -1,30 +1,33 @@
 import logging
+
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
-from bot.keyboards import get_pdf_settings_keyboard, get_nav_back_keyboard
+
+from bot.keyboards import get_nav_back_keyboard, get_pdf_settings_keyboard
 from bot.messages import (
-    PDF_MARGINS_PROMPT,
-    PDF_SPACING_PROMPT,
-    PDF_CARDS_PER_ROW_PROMPT,
-    PDF_CARDS_PER_PAGE_PROMPT,
     PDF_BRAND_NAME_PROMPT,
-    PDF_HOTSPOT_DNS_PROMPT,
-    PDF_SHOW_QR_PROMPT,
+    PDF_CARDS_PER_PAGE_PROMPT,
+    PDF_CARDS_PER_ROW_PROMPT,
     PDF_FOOTER_PROMPT,
-    PDF_UNKNOWN_OPTION,
-    PDF_SEND_4_VALUES,
-    PDF_SEND_2_VALUES,
-    PDF_SETTINGS_UPDATED,
+    PDF_HOTSPOT_DNS_PROMPT,
     PDF_LABEL_SPACING_PROMPT,
+    PDF_MARGINS_PROMPT,
+    PDF_SEND_2_VALUES,
+    PDF_SEND_4_VALUES,
+    PDF_SETTINGS_UPDATED,
+    PDF_SHOW_QR_PROMPT,
+    PDF_SPACING_PROMPT,
+    PDF_UNKNOWN_OPTION,
     PDF_VALUE_FONT_SIZE_PROMPT,
 )
-from bot.router_selector import set_current_action, nav_set, cleanup_state
+from bot.router_selector import cleanup_state, nav_set, set_current_action
 from pdf.pdf_settings import pdf_settings
-from utils.callback_utils import safe_answer_callback
-from utils.chat_cleaner import send_step, reply_final
-from .constants import WAITING_PDF_VALUE
 from utils.admin_decorator import admin_only
+from utils.callback_utils import safe_answer_callback
+from utils.chat_cleaner import reply_final, send_step
 from utils.error_response import send_error
+
+from .constants import WAITING_PDF_VALUE
 
 logger = logging.getLogger(__name__)
 
@@ -84,9 +87,7 @@ async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE
         "spacing": PDF_SPACING_PROMPT.format(
             x=settings.get("spacing_x", 5), y=settings.get("spacing_y", 5)
         ),
-        "cards_per_row": PDF_CARDS_PER_ROW_PROMPT.format(
-            value=settings.get("cards_per_row", 4)
-        ),
+        "cards_per_row": PDF_CARDS_PER_ROW_PROMPT.format(value=settings.get("cards_per_row", 4)),
         "cards_per_page": PDF_CARDS_PER_PAGE_PROMPT.format(
             value=settings.get("cards_per_page", 40)
         ),
@@ -99,9 +100,7 @@ async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE
         "show_qr": PDF_SHOW_QR_PROMPT.format(
             value="✅ مفعّل" if settings.get("show_qr", 1) else "❌ معطّل"
         ),
-        "footer": PDF_FOOTER_PROMPT.format(
-            value=settings.get("footer_text", "") or "(فارغ)"
-        ),
+        "footer": PDF_FOOTER_PROMPT.format(value=settings.get("footer_text", "") or "(فارغ)"),
         "label_spacing": PDF_LABEL_SPACING_PROMPT.format(
             single=settings.get("label_spacing_single", 1.0),
             dual=settings.get("label_spacing_dual", 1.0),
@@ -164,9 +163,7 @@ async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         elif option == "label_spacing":
             parts = list(map(float, value.split()))
             if len(parts) == 2:
-                pdf_settings.update(
-                    label_spacing_single=parts[0], label_spacing_dual=parts[1]
-                )
+                pdf_settings.update(label_spacing_single=parts[0], label_spacing_dual=parts[1])
             else:
                 await send_step(update, context, PDF_SEND_2_VALUES)
                 return WAITING_PDF_VALUE
@@ -177,9 +174,7 @@ async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 await send_step(update, context, PDF_SEND_2_VALUES)
                 return WAITING_PDF_VALUE
             if len(parts) == 2 and all(8 <= p <= 16 for p in parts):
-                pdf_settings.update(
-                    value_max_font_single=parts[0], value_max_font_dual=parts[1]
-                )
+                pdf_settings.update(value_max_font_single=parts[0], value_max_font_dual=parts[1])
             else:
                 await send_step(update, context, PDF_SEND_2_VALUES)
                 return WAITING_PDF_VALUE

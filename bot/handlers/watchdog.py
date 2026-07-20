@@ -1,36 +1,37 @@
-from bot.messages import (
-    WATCHDOG_QUEUE_UNAVAILABLE,
-    WATCHDOG_ALREADY_RUNNING,
-    WATCHDOG_STARTED,
-    WATCHDOG_STOPPED,
-    WATCHDOG_NO_ROUTERS,
-    WATCHDOG_STATUS_HEADER,
-    WATCHDOG_LAST_OK,
-    WATCHDOG_ONLINE,
-    WATCHDOG_LAST_FAIL,
-    WATCHDOG_NOT_CHECKED,
-    WATCHDOG_VERSION,
-    WATCHDOG_ACTIVE_HOTSPOT,
-    WATCHDOG_LAST_BACKUP,
-    WATCHDOG_REFRESH_BTN,
-    WATCHDOG_BACK_BTN,
-    WATCHDOG_REFRESHING,
-    WATCHDOG_OFFLINE_ALERT,
-    WATCHDOG_ONLINE_ALERT,
-)
 import logging
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from config import ROUTER_KEY_PREFIX, ADMIN_IDS, WATCHDOG_INTERVAL
+from bot.messages import (
+    WATCHDOG_ACTIVE_HOTSPOT,
+    WATCHDOG_ALREADY_RUNNING,
+    WATCHDOG_BACK_BTN,
+    WATCHDOG_LAST_BACKUP,
+    WATCHDOG_LAST_FAIL,
+    WATCHDOG_LAST_OK,
+    WATCHDOG_NO_ROUTERS,
+    WATCHDOG_NOT_CHECKED,
+    WATCHDOG_OFFLINE_ALERT,
+    WATCHDOG_ONLINE,
+    WATCHDOG_ONLINE_ALERT,
+    WATCHDOG_QUEUE_UNAVAILABLE,
+    WATCHDOG_REFRESH_BTN,
+    WATCHDOG_REFRESHING,
+    WATCHDOG_STARTED,
+    WATCHDOG_STATUS_HEADER,
+    WATCHDOG_STOPPED,
+    WATCHDOG_VERSION,
+)
+from config import ADMIN_IDS, ROUTER_KEY_PREFIX, WATCHDOG_INTERVAL
 from core.watchdog import (
+    ALERT_RECOVERED,
+    ALERT_WENT_OFFLINE,
     check_router_health,
     get_router_status_detail,
     record_check_result,
-    ALERT_WENT_OFFLINE,
-    ALERT_RECOVERED,
 )
-from database.models import get_saved_routers, get_last_backup
+from database.models import get_last_backup, get_saved_routers
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
@@ -133,20 +134,19 @@ async def watchdog_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         last_backup = await run_blocking(get_last_backup, router_key)
         if last_backup:
             backup_icon = "✅" if last_backup.get("status") == "success" else "❌"
-            backup_text = f"{backup_icon} {last_backup.get('backup_type')} ({last_backup.get('created_at')})"
+            backup_text = (
+                f"{backup_icon} {last_backup.get('backup_type')} ({last_backup.get('created_at')})"
+            )
         else:
             backup_text = "—"
         lines.append(WATCHDOG_LAST_BACKUP.format(backup=backup_text))
 
-    from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
     from bot.handlers.callback_constants import CALLBACKS
 
     keyboard = [
-        [
-            InlineKeyboardButton(
-                WATCHDOG_REFRESH_BTN, callback_data=CALLBACKS["watchdog_refresh"]
-            )
-        ],
+        [InlineKeyboardButton(WATCHDOG_REFRESH_BTN, callback_data=CALLBACKS["watchdog_refresh"])],
         [InlineKeyboardButton(WATCHDOG_BACK_BTN, callback_data=CALLBACKS["main_menu"])],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)

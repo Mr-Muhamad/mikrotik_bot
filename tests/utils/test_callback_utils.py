@@ -1,12 +1,14 @@
 """Tests for utils.callback_utils module."""
 
-import pytest
 import time
 from unittest.mock import AsyncMock
+
+import pytest
+
 from utils.callback_utils import (
+    _CALLBACK_DEDUP,
     is_duplicate_callback,
     safe_answer_callback,
-    _CALLBACK_DEDUP,
 )
 
 

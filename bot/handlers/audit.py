@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -9,17 +9,17 @@ from bot.keyboards import (
     get_logs_submenu_keyboard,
 )
 from bot.messages import (
-    NO_RESULTS,
-    AUDIT_SUBMENU_ROUTER,
-    AUDIT_SUBMENU_ADMIN,
-    AUDIT_SUBMENU_ACTION,
-    AUDIT_SUBMENU_TIME,
+    AUDIT_LIST_EMPTY,
+    AUDIT_LIST_HEADER,
     AUDIT_NO_FILTERS,
+    AUDIT_PAGE_EMPTY,
+    AUDIT_SUBMENU_ACTION,
+    AUDIT_SUBMENU_ADMIN,
     AUDIT_SUBMENU_CHOOSE,
     AUDIT_SUBMENU_COUNT,
-    AUDIT_LIST_EMPTY,
-    AUDIT_PAGE_EMPTY,
-    AUDIT_LIST_HEADER,
+    AUDIT_SUBMENU_ROUTER,
+    AUDIT_SUBMENU_TIME,
+    NO_RESULTS,
 )
 from bot.router_selector import nav_set
 from database.models import (
@@ -33,7 +33,7 @@ from database.models import (
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
-from utils.chat_cleaner import send_step, safe_edit_or_send
+from utils.chat_cleaner import safe_edit_or_send, send_step
 
 PAGE_SIZE = 10
 SUBMENU_PAGE_SIZE = 20
@@ -74,7 +74,7 @@ def _build_db_filters(filters: dict) -> dict:
     }
     since_days = filters.get("since_days")
     if since_days:
-        cutoff = datetime.now(timezone.utc) - timedelta(days=since_days)
+        cutoff = datetime.now(UTC) - timedelta(days=since_days)
         db_filters["since"] = cutoff.strftime(UTC_TIMESTAMP_FORMAT)
     return db_filters
 
@@ -88,9 +88,7 @@ def _format_filters_short(filters: dict) -> str:
     if filters.get("action"):
         parts.append(f"⚙️ {filters['action']}")
     if filters.get("since_days"):
-        label = next(
-            (name for name, days in TIME_OPTIONS if days == filters["since_days"]), ""
-        )
+        label = next((name for name, days in TIME_OPTIONS if days == filters["since_days"]), "")
         parts.append(f"🕓 {label}")
     return " | ".join(parts) if parts else AUDIT_NO_FILTERS
 
@@ -157,9 +155,7 @@ async def logs_set_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         filters["action"] = options[idx] if 0 <= idx < len(options) else None
     elif data.startswith("logs_set_time_"):
         idx = int(data.replace("logs_set_time_", ""))
-        filters["since_days"] = (
-            TIME_OPTIONS[idx][1] if 0 <= idx < len(TIME_OPTIONS) else None
-        )
+        filters["since_days"] = TIME_OPTIONS[idx][1] if 0 <= idx < len(TIME_OPTIONS) else None
     context.user_data["logs_menu"] = None
     context.user_data["logs_sub_page"] = 0
     await _show_logs_page(update, context, page=0, from_callback=True)
@@ -223,9 +219,7 @@ async def _show_submenu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         suffix = "router"
     elif menu == "admin":
         admins = context.user_data.get("logs_admin_options", [])
-        options = [
-            f"{a['username'] or a['admin_id']} (ID {a['admin_id']})" for a in admins
-        ]
+        options = [f"{a['username'] or a['admin_id']} (ID {a['admin_id']})" for a in admins]
         suffix = "admin"
     elif menu == "action":
         options = context.user_data.get("logs_action_options", [])

@@ -3,6 +3,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from bot.handlers.handler_utils import ack_callback, parse_router_id
 from bot.keyboards import (
     get_delete_router_confirm_keyboard,
     get_main_keyboard,
@@ -24,7 +25,6 @@ from bot.messages import (
     UNKNOWN_NAME,
 )
 from bot.router_selector import set_selected_router
-from bot.handlers.handler_utils import ack_callback, parse_router_id
 from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
 from core.watchdog import check_router_health
@@ -86,9 +86,7 @@ async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if query:
         await edit_clean(query, context, text, get_saved_routers_keyboard(routers))
     else:
-        await update.message.reply_text(
-            text, reply_markup=get_saved_routers_keyboard(routers)
-        )
+        await update.message.reply_text(text, reply_markup=get_saved_routers_keyboard(routers))
     reset_rate_limit(update.effective_user.id)
 
 
@@ -204,9 +202,7 @@ async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TY
             return
         router = await run_blocking(get_router_by_id, router_id, decrypt=False)
         router_identity = (
-            router.get("identity", router.get("ip_address", ""))
-            if router
-            else "unknown"
+            router.get("identity", router.get("ip_address", "")) if router else "unknown"
         )
         await run_blocking(delete_router, router_id)
         await run_blocking(
@@ -216,9 +212,7 @@ async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TY
             f"id:{router_id}",
             query.from_user.id,
         )
-        await query.edit_message_text(
-            ROUTER_DELETED, reply_markup=get_router_keyboard()
-        )
+        await query.edit_message_text(ROUTER_DELETED, reply_markup=get_router_keyboard())
     elif query.data.startswith("confirm_delete_router_no_"):
         await query.edit_message_text(CANCELLED, reply_markup=get_router_keyboard())
 
@@ -244,7 +238,7 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     updated += 1
             except Exception as e:
                 logger.warning(
-                    f"refresh_routers: connection failed for {r.get('identity', r['ip_address'])}: {e}"
+                    f"refresh_routers: connection failed for {r.get('identity', r['ip_address'])}: {e}"  # noqa: E501
                 )
 
         routers = await run_blocking(get_saved_routers, active_only=True)

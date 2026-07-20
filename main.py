@@ -1,19 +1,21 @@
+import asyncio
 import atexit
 import logging
 import signal
 import sys
-import asyncio
+
 from telegram.ext import (
     Application,
     JobQueue,
 )
-from config import BOT_TOKEN, WATCHDOG_INTERVAL, WATCHDOG_FIRST_DELAY
-from database.models import init_db
+
+from bot.registrations import build_all
+from config import BOT_TOKEN, WATCHDOG_FIRST_DELAY, WATCHDOG_INTERVAL
 from core.backup_scheduler import backup_scheduler
 from core.mikrotik_api import mikrotik_api
-from utils.logging_setup import configure_logging
-from bot.registrations import build_all
+from database.models import init_db
 from utils.bot_commands import set_bot_commands
+from utils.logging_setup import configure_logging
 from utils.singleton_lock import single_instance
 
 logging.getLogger("httpx").setLevel(logging.WARNING)

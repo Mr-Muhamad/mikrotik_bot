@@ -38,8 +38,8 @@ def _make_context():
 class TestHotspotSearchStart:
     @pytest.mark.asyncio
     async def test_start_prompts_for_term(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(text="/search")
@@ -63,8 +63,8 @@ class TestHotspotSearchQuery:
 
     @pytest.mark.asyncio
     async def test_search_returns_results(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(text="AA:BB:CC")
@@ -72,10 +72,13 @@ class TestHotspotSearchQuery:
         mock_loading = MagicMock()
         mock_loading.message_id = 999
 
-        with patch(
-            "bot.handlers.hotspot_search.send_loading",
-            new=AsyncMock(return_value=mock_loading),
-        ), patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()):
+        with (
+            patch(
+                "bot.handlers.hotspot_search.send_loading",
+                new=AsyncMock(return_value=mock_loading),
+            ),
+            patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()),
+        ):
             result = await hotspot_search_query(update, context)
 
         assert result == WAITING_HOTSPOT_SEARCH
@@ -83,8 +86,8 @@ class TestHotspotSearchQuery:
 
     @pytest.mark.asyncio
     async def test_search_error_ends_conversation(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(text="any")
@@ -92,14 +95,17 @@ class TestHotspotSearchQuery:
         mock_loading = MagicMock()
         mock_loading.message_id = 999
 
-        with patch(
-            "bot.handlers.hotspot_search.send_loading",
-            new=AsyncMock(return_value=mock_loading),
-        ), patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()), patch(
-            "bot.handlers.hotspot_search.send_step", new=AsyncMock()
-        ), patch(
-            "bot.handlers.hotspot_search.run_blocking",
-            new=AsyncMock(side_effect=Exception("timeout")),
+        with (
+            patch(
+                "bot.handlers.hotspot_search.send_loading",
+                new=AsyncMock(return_value=mock_loading),
+            ),
+            patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()),
+            patch("bot.handlers.hotspot_search.send_step", new=AsyncMock()),
+            patch(
+                "bot.handlers.hotspot_search.run_blocking",
+                new=AsyncMock(side_effect=Exception("timeout")),
+            ),
         ):
             result = await hotspot_search_query(update, context)
 

@@ -3,6 +3,13 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
+from bot.handlers.handler_utils import get_query_message, make_back_step
+from bot.handlers.hotspot_flow_utils import (
+    convert_uptime_value,
+    get_uptime_type_keyboard,
+    set_uptime_unit,
+)
+from bot.helpers.profiles import PROFILE_SOURCE_HOTSPOT, fetch_and_cache_profiles
 from bot.keyboards import (
     get_cancel_keyboard,
     get_hotspot_keyboard,
@@ -10,16 +17,15 @@ from bot.keyboards import (
     get_router_keyboard,
     get_skip_keyboard,
 )
-from bot.helpers.profiles import fetch_and_cache_profiles, PROFILE_SOURCE_HOTSPOT
 from bot.messages import (
-    HOTSPOT_ADD_BYTES_HINT,
-    HOTSPOT_ADD_INVALID_UPTIME,
-    HOTSPOT_ADD_USE_BUTTONS,
     ADD_USER_PROMPT,
     CHOOSE_PROFILE,
     CHOOSE_PROFILE_OR_TYPE,
     DUPLICATE_USER,
     ERROR_OCCURRED,
+    HOTSPOT_ADD_BYTES_HINT,
+    HOTSPOT_ADD_INVALID_UPTIME,
+    HOTSPOT_ADD_USE_BUTTONS,
     INVALID_PROFILE,
     NO_ROUTER_SELECTED,
     SEND_BYTES_LIMIT,
@@ -30,37 +36,32 @@ from bot.messages import (
     SEND_UPTIME_TYPE,
     SUCCESS_ADD,
 )
+from bot.profile_callbacks import resolve_profile_from_callback
 from bot.router_selector import (
     cleanup_state,
     get_selected_router,
     nav_set,
     set_current_action,
 )
-from bot.handlers.hotspot_flow_utils import (
-    convert_uptime_value,
-    get_uptime_type_keyboard,
-    set_uptime_unit,
-)
-from bot.handlers.handler_utils import make_back_step, get_query_message
-from bot.profile_callbacks import resolve_profile_from_callback
+from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only, require_role
+from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import edit_clean, reply_final, schedule_delete, send_step
 from utils.error_response import send_error
-from utils.validators import validate_password, validate_username, validate_bytes_input
+from utils.validators import validate_bytes_input, validate_password, validate_username
+
 from .constants import (
     WAITING_BYTES_TOTAL,
     WAITING_COMMENT,
     WAITING_PASSWORD,
     WAITING_PROFILE,
-    WAITING_USERNAME,
     WAITING_UPTIME_TYPE,
     WAITING_UPTIME_VALUE,
+    WAITING_USERNAME,
 )
 from .hotspot_common import execute_add_user
 from .session_models import get_hotspot_add_session
-from core.hotspot_manager import hotspot_manager
-from utils.async_blocking import run_blocking
 
 logger = logging.getLogger(__name__)
 
@@ -91,9 +92,7 @@ async def hotspot_add_username(update: Update, context: ContextTypes.DEFAULT_TYP
     router_key = get_selected_router(update.effective_user.id)
     if router_key:
         try:
-            exists = await run_blocking(
-                hotspot_manager.user_exists, router_key, username
-            )
+            exists = await run_blocking(hotspot_manager.user_exists, router_key, username)
             if exists:
                 await send_step(
                     update,
@@ -176,9 +175,7 @@ async def hotspot_add_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 @admin_only
-async def hotspot_add_profile_selected(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def hotspot_add_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
     profile = resolve_profile_from_callback(context, query.data, "add_profile_")
@@ -226,9 +223,7 @@ async def hotspot_add_comment(update: Update, context: ContextTypes.DEFAULT_TYPE
         cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
 
-    success, error = await execute_add_user(
-        context, update.effective_user.id, router_key, comment
-    )
+    success, error = await execute_add_user(context, update.effective_user.id, router_key, comment)
     if success:
         await reply_final(update, context, SUCCESS_ADD, get_hotspot_keyboard())
     elif error == "duplicate":
@@ -246,9 +241,7 @@ async def hotspot_add_comment(update: Update, context: ContextTypes.DEFAULT_TYPE
     return ConversationHandler.END
 
 
-add_back_to_username = make_back_step(
-    ADD_USER_PROMPT, get_cancel_keyboard, WAITING_USERNAME
-)
+add_back_to_username = make_back_step(ADD_USER_PROMPT, get_cancel_keyboard, WAITING_USERNAME)
 add_back_to_password = make_back_step(
     SEND_PASSWORD,
     lambda: get_skip_keyboard("skip_password", "add_back_to_username"),
@@ -269,9 +262,7 @@ async def add_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         await query.edit_message_text(
             CHOOSE_PROFILE_OR_TYPE,
-            reply_markup=get_profile_keyboard(
-                profile_names, "add_profile", "add_back_to_password"
-            ),
+            reply_markup=get_profile_keyboard(profile_names, "add_profile", "add_back_to_password"),
         )
     except Exception as e:
         await send_error(
@@ -310,9 +301,7 @@ async def skip_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await query.edit_message_text(
             CHOOSE_PROFILE,
-            reply_markup=get_profile_keyboard(
-                profile_names, "add_profile", "add_back_to_password"
-            ),
+            reply_markup=get_profile_keyboard(profile_names, "add_profile", "add_back_to_password"),
         )
     except Exception as e:
         await send_error(
@@ -415,9 +404,7 @@ async def skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await safe_answer_callback(query)
     router_key = get_selected_router(query.from_user.id)
     if not router_key:
-        await query.edit_message_text(
-            NO_ROUTER_SELECTED, reply_markup=get_router_keyboard()
-        )
+        await query.edit_message_text(NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
         cleanup_state(query.from_user.id, context.user_data)
         return ConversationHandler.END
 
@@ -441,9 +428,7 @@ async def skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @admin_only
-async def hotspot_add_uptime_type_invalid_text(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def hotspot_add_uptime_type_invalid_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle text input in WAITING_UPTIME_TYPE — tell user to use buttons."""
     await send_step(
         update,

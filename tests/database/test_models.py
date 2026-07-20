@@ -3,39 +3,39 @@
 import pytest
 
 from database.models import (
+    BACKUP_JOBS_RETENTION_PER_ROUTER,
     cleanup_old_logs,
-    get_db,
-    init_db,
-    log_action,
-    get_user_session,
-    save_user_session,
-    get_pdf_settings,
-    update_pdf_settings,
-    save_discovered_router,
-    get_saved_routers,
-    get_router_by_id,
-    get_router_by_ip,
     delete_router,
-    update_router_credentials,
-    update_router_alias,
-    get_router_display_name,
-    update_router_identity,
+    ensure_admin_role,
+    get_admin_role,
     get_backup_schedule,
-    get_logs,
-    get_logs_count,
+    get_db,
     get_distinct_log_actions,
     get_distinct_log_admins,
     get_distinct_log_routers,
-    ensure_admin_role,
-    get_admin_role,
-    set_admin_role,
-    list_admin_roles,
-    seed_admin_roles,
-    save_backup_schedule,
-    record_backup_result,
     get_last_backup,
+    get_logs,
+    get_logs_count,
+    get_pdf_settings,
     get_recent_backups,
-    BACKUP_JOBS_RETENTION_PER_ROUTER,
+    get_router_by_id,
+    get_router_by_ip,
+    get_router_display_name,
+    get_saved_routers,
+    get_user_session,
+    init_db,
+    list_admin_roles,
+    log_action,
+    record_backup_result,
+    save_backup_schedule,
+    save_discovered_router,
+    save_user_session,
+    seed_admin_roles,
+    set_admin_role,
+    update_pdf_settings,
+    update_router_alias,
+    update_router_credentials,
+    update_router_identity,
 )
 
 
@@ -43,9 +43,7 @@ class TestInitDB:
     def test_tables_exist_after_init(self):
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-            )
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
             tables = [row["name"] for row in cursor.fetchall()]
             assert "logs" in tables
             assert "pdf_settings" in tables
@@ -87,7 +85,7 @@ class TestLogs:
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO logs (action, username, router_name, admin_id, timestamp) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO logs (action, username, router_name, admin_id, timestamp) VALUES (?, ?, ?, ?, ?)",  # noqa: E501
                 ("old_action", "olduser", "router1", 123, "2000-01-01 00:00:00"),
             )
             conn.commit()
@@ -135,9 +133,7 @@ class TestLogsFiltering:
         self._seed()
         rows = get_logs(filters={"router": "router1", "action": "reboot"})
         assert len(rows) == 2
-        assert all(
-            r["router_name"] == "router1" and r["action"] == "reboot" for r in rows
-        )
+        assert all(r["router_name"] == "router1" and r["action"] == "reboot" for r in rows)
         assert get_logs_count(filters={"router": "router1", "action": "reboot"}) == 2
 
     def test_filter_no_match(self):
@@ -151,7 +147,7 @@ class TestLogsFiltering:
         with get_db() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT INTO logs (action, username, router_name, admin_id, timestamp) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO logs (action, username, router_name, admin_id, timestamp) VALUES (?, ?, ?, ?, ?)",  # noqa: E501
                 ("old_action", "alice", "router1", 10, "2000-01-01 00:00:00"),
             )
             conn.commit()
@@ -302,9 +298,7 @@ class TestDiscoveredRouters:
         assert get_router_by_id(router_id) is None
 
     def test_update_credentials(self):
-        router_id = save_discovered_router(
-            ip="10.0.0.30", username="old", password="oldpass"
-        )
+        router_id = save_discovered_router(ip="10.0.0.30", username="old", password="oldpass")
         update_router_credentials(router_id, "newuser", "newpass")
         router = get_router_by_id(router_id)
         assert router["username"] == "newuser"
@@ -376,9 +370,7 @@ class TestBackupSchedule:
 
 class TestBackupJobs:
     def test_record_and_get_last(self):
-        job_id = record_backup_result(
-            "discovered_1", "full", True, "ok", router_name="R1"
-        )
+        job_id = record_backup_result("discovered_1", "full", True, "ok", router_name="R1")
         assert isinstance(job_id, int)
         last = get_last_backup("discovered_1")
         assert last is not None
@@ -389,9 +381,7 @@ class TestBackupJobs:
         assert last["router_name"] == "R1"
 
     def test_get_last_failed_status(self):
-        record_backup_result(
-            "discovered_2", "userman", False, "conn refused", router_name="R2"
-        )
+        record_backup_result("discovered_2", "userman", False, "conn refused", router_name="R2")
         last = get_last_backup("discovered_2")
         assert last["status"] == "failed"
         assert last["backup_type"] == "userman"

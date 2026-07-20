@@ -98,9 +98,7 @@ class TestUserManagerCreateCards:
         mikrotik_api.get_userman_base_path = MagicMock(return_value="user-manager")
         # v7 create_cards now issues add + set per user; let the first card fail
         # and the remaining two fully succeed (4 successful calls).
-        mikrotik_api.execute = MagicMock(
-            side_effect=[Exception("boom"), None, None, None, None]
-        )
+        mikrotik_api.execute = MagicMock(side_effect=[Exception("boom"), None, None, None, None])
 
         cards = self.manager.create_cards(self.router_key, 3, "type1", "1M")
 
@@ -124,10 +122,7 @@ class TestUserManagerCreateCards:
         assert "profile" not in add_call.kwargs
         # profile is attached via the dedicated v6 activation command
         activate_call = calls[1]
-        assert (
-            activate_call.args[1]
-            == "tool/user-manager/user/create-and-activate-profile"
-        )
+        assert activate_call.args[1] == "tool/user-manager/user/create-and-activate-profile"
         assert activate_call.kwargs["profile"] == "1M"
         assert activate_call.kwargs["numbers"] == "u1"
         assert activate_call.kwargs["customer"] == "admin"
@@ -167,9 +162,7 @@ class TestUserManagerCreateCards:
 
         mikrotik_api.get_userman_base_path = MagicMock(return_value="tool/user-manager")
         # user/add succeeds, profile activation fails
-        mikrotik_api.execute = MagicMock(
-            side_effect=[None, Exception("no such profile")]
-        )
+        mikrotik_api.execute = MagicMock(side_effect=[None, Exception("no such profile")])
 
         # must not raise; the user row already exists
         self.manager._create_user(self.router_key, "u1", "p1", "1M")
@@ -210,9 +203,7 @@ class TestUserManagerCreateCards:
 
         mikrotik_api.get_userman_base_path = MagicMock(return_value="user-manager")
         # add succeeds, but the profile link (user-profile/add) fails
-        mikrotik_api.execute = MagicMock(
-            side_effect=[None, Exception("no such profile")]
-        )
+        mikrotik_api.execute = MagicMock(side_effect=[None, Exception("no such profile")])
 
         # must not raise; the user row already exists, and the failure is reported
         result = self.manager._create_user(self.router_key, "u1", "p1", "1M")
@@ -335,9 +326,7 @@ class TestUserManagerCreateCardsCallerId:
         for card in cards:
             assert "caller_id" not in card
         add_calls = [
-            c
-            for c in mikrotik_api.execute.call_args_list
-            if c.args[1] == "user-manager/user/add"
+            c for c in mikrotik_api.execute.call_args_list if c.args[1] == "user-manager/user/add"
         ]
         assert len(add_calls) == 2
         assert "caller-id" not in add_calls[0].kwargs
@@ -349,14 +338,10 @@ class TestUserManagerCreateCardsCallerId:
         mikrotik_api.execute = MagicMock()
         self.manager._get_user_id = MagicMock(return_value="*123")
 
-        self.manager.set_user_caller_id(
-            self.router_key, "testuser", "AA:BB:CC:DD:EE:FF"
-        )
+        self.manager.set_user_caller_id(self.router_key, "testuser", "AA:BB:CC:DD:EE:FF")
 
         set_calls = [
-            c
-            for c in mikrotik_api.execute.call_args_list
-            if c.args[1] == "user-manager/user/set"
+            c for c in mikrotik_api.execute.call_args_list if c.args[1] == "user-manager/user/set"
         ]
         assert len(set_calls) == 1
         assert set_calls[0].kwargs["caller-id"] == "AA:BB:CC:DD:EE:FF"

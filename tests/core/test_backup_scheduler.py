@@ -52,9 +52,10 @@ class TestBackupScheduler:
         assert scheduler._running is False
 
     async def test_stop_persists_disabled(self, mock_job_queue):
-        with patch("database.models.get_backup_schedule") as mock_get, patch(
-            "database.models.save_backup_schedule"
-        ) as mock_save:
+        with (
+            patch("database.models.get_backup_schedule") as mock_get,
+            patch("database.models.save_backup_schedule") as mock_save,
+        ):
             mock_get.return_value = {
                 "schedule_enabled": True,
                 "schedule_hour": 3,
@@ -124,11 +125,12 @@ class TestBackupScheduler:
     async def test_do_backup_calls_service_for_each_router(self, mock_job_queue):
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
-        with patch("database.models.get_saved_routers"), patch(
-            "core.backup_service.backup_service"
-        ), patch("core.mikrotik_api.mikrotik_api"), patch(
-            "core.backup_scheduler.run_blocking", new=AsyncMock()
-        ) as mock_run:
+        with (
+            patch("database.models.get_saved_routers"),
+            patch("core.backup_service.backup_service"),
+            patch("core.mikrotik_api.mikrotik_api"),
+            patch("core.backup_scheduler.run_blocking", new=AsyncMock()) as mock_run,
+        ):
             routers_list = [
                 {"id": 1, "username": "admin", "identity": "Router1"},
                 {"id": 2, "username": "admin", "identity": "Router2"},
@@ -153,11 +155,12 @@ class TestBackupScheduler:
     async def test_do_backup_skips_routers_without_username(self, mock_job_queue):
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
-        with patch("database.models.get_saved_routers"), patch(
-            "core.backup_service.backup_service"
-        ), patch("core.mikrotik_api.mikrotik_api"), patch(
-            "core.backup_scheduler.run_blocking", new=AsyncMock()
-        ) as mock_run:
+        with (
+            patch("database.models.get_saved_routers"),
+            patch("core.backup_service.backup_service"),
+            patch("core.mikrotik_api.mikrotik_api"),
+            patch("core.backup_scheduler.run_blocking", new=AsyncMock()) as mock_run,
+        ):
             mock_run.side_effect = [
                 [
                     {"id": 1, "username": "", "identity": "R1"},
@@ -177,15 +180,16 @@ class TestBackupScheduler:
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
         mock_context.bot.send_message = AsyncMock()
-        with patch("database.models.get_saved_routers"), patch(
-            "core.backup_service.backup_service"
-        ), patch("core.mikrotik_api.mikrotik_api"), patch(
-            "core.backup_scheduler.run_blocking", new=AsyncMock()
-        ) as mock_run:
+        with (
+            patch("database.models.get_saved_routers"),
+            patch("core.backup_service.backup_service"),
+            patch("core.mikrotik_api.mikrotik_api"),
+            patch("core.backup_scheduler.run_blocking", new=AsyncMock()) as mock_run,
+        ):
             from librouteros.exceptions import LibRouterosError
 
             routers_list = [{"id": 1, "username": "admin", "identity": "R1"}]
-            # health check ok, userman_backup raises, record failure, full_backup raises, record failure
+            # health check ok, userman_backup raises, record failure, full_backup raises, record failure  # noqa: E501
             mock_run.side_effect = [
                 routers_list,
                 (True, "healthy"),
@@ -201,12 +205,12 @@ class TestBackupScheduler:
     async def test_do_backup_runs_full_backup_when_flag_enabled(self, mock_job_queue):
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
-        with patch("database.models.get_saved_routers"), patch(
-            "core.backup_service.backup_service"
-        ) as mock_svc, patch("core.mikrotik_api.mikrotik_api"), patch(
-            "core.backup_scheduler.run_blocking", new=AsyncMock()
-        ) as mock_run, patch(
-            "config.SCHEDULE_FULL_BACKUP", True
+        with (
+            patch("database.models.get_saved_routers"),
+            patch("core.backup_service.backup_service") as mock_svc,
+            patch("core.mikrotik_api.mikrotik_api"),
+            patch("core.backup_scheduler.run_blocking", new=AsyncMock()) as mock_run,
+            patch("config.SCHEDULE_FULL_BACKUP", True),
         ):
             mock_run.side_effect = [
                 [{"id": 1, "username": "admin", "identity": "R1"}],

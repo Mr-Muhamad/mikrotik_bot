@@ -31,8 +31,11 @@ class TestBackupService:
         assert len(backup_commands) >= 2
 
     def test_full_backup_failure_returns_dict(self, mock_mikrotik_api, temp_backup_dir):
-        with patch("core.backup_service.BACKUP_DIR", temp_backup_dir), patch.object(
-            mock_mikrotik_api, "execute_long", side_effect=Exception("router offline")
+        with (
+            patch("core.backup_service.BACKUP_DIR", temp_backup_dir),
+            patch.object(
+                mock_mikrotik_api, "execute_long", side_effect=Exception("router offline")
+            ),
         ):
             result = backup_service.full_backup(ROUTER_KEY)
 
@@ -47,11 +50,10 @@ class TestBackupService:
         assert result["success"] is True
         assert "تم" in result["message"]
 
-    def test_userman_backup_failure_returns_dict(
-        self, mock_mikrotik_api, temp_backup_dir
-    ):
-        with patch("core.backup_service.BACKUP_DIR", temp_backup_dir), patch.object(
-            mock_mikrotik_api, "execute", side_effect=Exception("timeout")
+    def test_userman_backup_failure_returns_dict(self, mock_mikrotik_api, temp_backup_dir):
+        with (
+            patch("core.backup_service.BACKUP_DIR", temp_backup_dir),
+            patch.object(mock_mikrotik_api, "execute", side_effect=Exception("timeout")),
         ):
             result = backup_service.userman_backup(ROUTER_KEY)
 
@@ -71,9 +73,7 @@ class TestBackupHandlers:
         return context
 
     @pytest.mark.asyncio
-    async def test_backup_full_handler_success(
-        self, mock_mikrotik_api, temp_backup_dir
-    ):
+    async def test_backup_full_handler_success(self, mock_mikrotik_api, temp_backup_dir):
         from bot.handlers.backup import backup_full
         from database.models import save_user_session
         from tests.fixtures.telegram_mocks import make_mock_update
@@ -87,8 +87,9 @@ class TestBackupHandlers:
             context.user_data["router_key"] = ROUTER_KEY
             mock_mikrotik_api.commands_executed.clear()
 
-            with patch("core.backup_service.BACKUP_DIR", temp_backup_dir), patch(
-                "bot.handlers.backup.log_action"
+            with (
+                patch("core.backup_service.BACKUP_DIR", temp_backup_dir),
+                patch("bot.handlers.backup.log_action"),
             ):
                 await backup_full(update, context)
 
@@ -109,9 +110,7 @@ class TestBackupHandlers:
             admin_decorator._rate_limit_data.clear()
 
     @pytest.mark.asyncio
-    async def test_backup_userman_handler_success(
-        self, mock_mikrotik_api, temp_backup_dir
-    ):
+    async def test_backup_userman_handler_success(self, mock_mikrotik_api, temp_backup_dir):
         from bot.handlers.backup import backup_userman
         from database.models import save_user_session
         from tests.fixtures.telegram_mocks import make_mock_update
@@ -124,8 +123,9 @@ class TestBackupHandlers:
             context = self._make_context()
             context.user_data["router_key"] = ROUTER_KEY
 
-            with patch("core.backup_service.BACKUP_DIR", temp_backup_dir), patch(
-                "bot.handlers.backup.log_action"
+            with (
+                patch("core.backup_service.BACKUP_DIR", temp_backup_dir),
+                patch("bot.handlers.backup.log_action"),
             ):
                 await backup_userman(update, context)
 
@@ -143,9 +143,10 @@ def temp_backup_dir():
 def test_full_backup_cleanup_uses_file_prefix(mock_mikrotik_api, temp_backup_dir):
     from unittest.mock import patch as _patch
 
-    with _patch("core.backup_service.BACKUP_DIR", temp_backup_dir), _patch(
-        "core.backup.system.cleanup_old_backups"
-    ) as mock_cleanup:
+    with (
+        _patch("core.backup_service.BACKUP_DIR", temp_backup_dir),
+        _patch("core.backup.system.cleanup_old_backups") as mock_cleanup,
+    ):
         result = backup_service.full_backup(ROUTER_KEY)
 
     assert result["success"] is True

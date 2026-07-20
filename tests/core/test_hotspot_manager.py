@@ -1,10 +1,11 @@
 """Unit tests for HotspotManager using the in-memory MikrotikAPIMock."""
 
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
+from core.card_models import CardData, CardSystem
 from core.hotspot_manager import hotspot_manager
-from core.card_models import CardSystem, CardData
 
 
 @pytest.mark.usefixtures("mock_mikrotik_api")
@@ -80,9 +81,7 @@ class TestHotspotManager:
 
     def test_search_hosts_by_mac(self, mock_mikrotik_api):
         hosts = hotspot_manager.search_hosts(self.ROUTER_KEY, "AA:BB:CC:DD:EE:01")
-        found = [
-            h for h in hosts if h.get("mac-address", "").lower() == "aa:bb:cc:dd:ee:01"
-        ]
+        found = [h for h in hosts if h.get("mac-address", "").lower() == "aa:bb:cc:dd:ee:01"]
         assert len(found) >= 1
 
     def test_search_hosts_skips_leases_when_no_match(self):
@@ -209,4 +208,3 @@ class TestHotspotManager:
         day5 = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY, day=5)
         assert day5["selected_day"] == 5
         assert len(day5["reset_list"]) == 2
-

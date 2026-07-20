@@ -1,9 +1,11 @@
-from functools import wraps
 import logging
 import threading
 import time
+from functools import wraps
+
 from telegram import Update
 from telegram.ext import ContextTypes
+
 from config import ADMIN_IDS
 
 logger = logging.getLogger(__name__)
@@ -47,9 +49,7 @@ def _check_rate_limit(user_id: int) -> bool:
     with _rate_limit_lock:
         if now - _last_cleanup > _RATE_LIMIT_CLEANUP_INTERVAL:
             stale = [
-                uid
-                for uid, ts in list(_rate_limit_data.items())
-                if now - ts > _RATE_LIMIT_MAX_AGE
+                uid for uid, ts in list(_rate_limit_data.items()) if now - ts > _RATE_LIMIT_MAX_AGE
             ]
             for uid in stale:
                 del _rate_limit_data[uid]
@@ -95,9 +95,7 @@ def admin_only(func):
 
             role = get_admin_role(user_id)
             if not role:
-                chat_id = (
-                    update.effective_chat.id if update.effective_chat else "unknown"
-                )
+                chat_id = update.effective_chat.id if update.effective_chat else "unknown"
                 logger.warning(
                     f"UNAUTHORIZED ACCESS: user_id={user_id}, "
                     f"function={func.__name__}, "
@@ -145,16 +143,9 @@ def require_role(min_role: str):
 
             from database.models import get_admin_role
 
-            role = (
-                "super_admin"
-                if user_id in ADMIN_IDS
-                else (get_admin_role(user_id) or "")
-            )
+            role = "super_admin" if user_id in ADMIN_IDS else (get_admin_role(user_id) or "")
             if user_id not in ADMIN_IDS and not role:
-                logger.warning(
-                    f"UNAUTHORIZED ACCESS: user_id={user_id}, "
-                    f"function={func.__name__}"
-                )
+                logger.warning(f"UNAUTHORIZED ACCESS: user_id={user_id}, function={func.__name__}")
                 await _send_reply(update, ADMIN_ONLY_MSG)
                 return
 

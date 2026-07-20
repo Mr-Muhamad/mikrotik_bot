@@ -3,10 +3,9 @@
 يقلل عدد طلبات API المتكررة لجلب البروفايلات.
 """
 
-import time
-import threading
 import logging
-from typing import Optional
+import threading
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +19,13 @@ class ProfileCache:
     thread-safe للاستخدام من executors المتعددة.
     """
 
-    def __init__(
-        self, ttl: int = PROFILE_CACHE_TTL_SECONDS, max_size: int = 200
-    ) -> None:
+    def __init__(self, ttl: int = PROFILE_CACHE_TTL_SECONDS, max_size: int = 200) -> None:
         self._ttl = ttl
         self._max_size = max_size
         self._lock = threading.Lock()
         self._store: dict[str, tuple[float, list[str]]] = {}
 
-    def get(self, router_key: str) -> Optional[list[str]]:
+    def get(self, router_key: str) -> list[str] | None:
         """جلب البروفايلات من الكاش. يُرجع None عند انتهاء الصلاحية أو عدم وجود."""
         with self._lock:
             entry = self._store.get(router_key)

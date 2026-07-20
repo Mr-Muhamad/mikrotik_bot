@@ -18,9 +18,9 @@ def test_class_instance_satisfies_protocol():
 
 def test_managers_default_to_protocol_client():
     from core.hotspot_manager import HotspotManager
-    from core.userman_manager import UserManager
     from core.profile_sync import ProfileSync
     from core.stats import StatsManager
+    from core.userman_manager import UserManager
 
     for manager in (HotspotManager(), UserManager(), ProfileSync(), StatsManager()):
         assert isinstance(manager._api, MikrotikClient)

@@ -22,19 +22,19 @@ from typing import Any
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from telegram import (
-    Update,
-    User,
+    CallbackQuery,
     Chat,
     Message,
-    CallbackQuery,
     MessageEntity,
+    Update,
+    User,
 )
-from telegram.ext import Application, ContextTypes
 from telegram._bot import Bot as _BotBase
+from telegram.ext import Application
 
 import config
-from database.models import save_user_session, init_db
 from bot.registrations import build_all
+from database.models import init_db, save_user_session
 from utils.admin_decorator import reset_rate_limit
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -78,7 +78,9 @@ class FakeBot(_BotBase):
             if len(args) > 1:
                 text = args[1]
         logger.debug("FakeBot.send_message called chat=%s text=%r", chat_id, (text or "")[:60])
-        sent_messages.append({"type": "message", "chat_id": chat_id, "text": text, "kwargs": kwargs})
+        sent_messages.append(
+            {"type": "message", "chat_id": chat_id, "text": text, "kwargs": kwargs}
+        )
         return _new_message(text)
 
     async def edit_message_text(self, text=None, **kwargs):  # type: ignore[reportIncompatibleMethodOverride]
@@ -202,8 +204,11 @@ async def main() -> int:
         if sent_messages:
             snippet = (sent_messages[-1].get("text") or "")[:120]
         if not ok:
-            logger.info("  >> sent count=%d texts=%s", len(sent_messages),
-                        [ (m.get('text') or '')[:40] for m in sent_messages])
+            logger.info(
+                "  >> sent count=%d texts=%s",
+                len(sent_messages),
+                [(m.get("text") or "")[:40] for m in sent_messages],
+            )
         results.append((name, ok, snippet))
         status = "PASS" if ok else "FAIL"
         logger.info("[%s] %s :: %s", status, name, snippet.replace("\n", " ")[:120])
@@ -218,7 +223,13 @@ async def main() -> int:
     # 2. /help
     sent_messages.clear()
     await run_flow(application, Update(2, message=_msg("/help", bot=bot)))
-    check("help", any("مساعدة" in (m.get("text") or "") or "أمر" in (m.get("text") or "") for m in sent_messages))
+    check(
+        "help",
+        any(
+            "مساعدة" in (m.get("text") or "") or "أمر" in (m.get("text") or "")
+            for m in sent_messages
+        ),
+    )
 
     # 3. /metrics (router metadata, no router API needed)
     sent_messages.clear()
@@ -243,7 +254,13 @@ async def main() -> int:
     # 7. hotspot add start
     sent_messages.clear()
     await run_flow(application, Update(7, callback_query=_cb("hotspot_add", bot=bot)))
-    check("hotspot_add_start", any("اسم" in (m.get("text") or "") or "المستخدم" in (m.get("text") or "") for m in sent_messages))
+    check(
+        "hotspot_add_start",
+        any(
+            "اسم" in (m.get("text") or "") or "المستخدم" in (m.get("text") or "")
+            for m in sent_messages
+        ),
+    )
 
     # 8. user manager menu
     sent_messages.clear()
@@ -290,8 +307,10 @@ async def main() -> int:
     passed = sum(1 for _, ok, _ in results if ok)
     failed = len(results) - passed
     print("\n" + "=" * 60)
-    print(f"E2E RESULTS: {passed}/{len(results)} passed, {failed} failed, {len(captured_errors)} handler errors")
-    for name, ok, snippet in results:
+    print(
+        f"E2E RESULTS: {passed}/{len(results)} passed, {failed} failed, {len(captured_errors)} handler errors"  # noqa: E501
+    )
+    for name, ok, _snippet in results:
         mark = "OK " if ok else "ERR"
         print(f"  [{mark}] {name}")
     if captured_errors:

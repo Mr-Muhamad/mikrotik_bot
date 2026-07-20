@@ -3,7 +3,6 @@
 import logging
 from io import StringIO
 
-
 from utils.logging_setup import (
     RequestIdFilter,
     configure_logging,

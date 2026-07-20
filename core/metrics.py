@@ -10,10 +10,9 @@ Metrics include:
 - bot_connection_pool_stale: Stale connections in pool
 """
 
-import time
 import logging
+import time
 from collections import defaultdict
-from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +20,11 @@ logger = logging.getLogger(__name__)
 _bot_start_time: float = time.time()
 
 # Counters
-_messages_total: Dict[str, int] = defaultdict(int)
-_mikrotik_requests_total: Dict[str, int] = defaultdict(int)
+_messages_total: dict[str, int] = defaultdict(int)
+_mikrotik_requests_total: dict[str, int] = defaultdict(int)
 
 # Latency tracking (simple list for now, can be improved with histogram buckets)
-_request_latencies: List[float] = []
+_request_latencies: list[float] = []
 
 
 def record_message_type(message_type: str) -> None:
@@ -47,7 +46,7 @@ def get_uptime() -> float:
     return time.time() - _bot_start_time
 
 
-def get_metrics_text(pool_metrics: Dict | None = None) -> str:
+def get_metrics_text(pool_metrics: dict | None = None) -> str:
     """Generate Prometheus metrics in text format."""
     if pool_metrics is None:
         pool_metrics = {}
@@ -81,7 +80,7 @@ def get_metrics_text(pool_metrics: Dict | None = None) -> str:
         p50 = sorted_latencies[int(n * 0.50)]
         p90 = sorted_latencies[int(n * 0.90)]
         p99 = sorted_latencies[min(int(n * 0.99), n - 1)]
-        avg = sum(sorted_latencies) / n
+        sum(sorted_latencies) / n
 
         lines.extend(
             [

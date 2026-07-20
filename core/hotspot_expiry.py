@@ -5,8 +5,8 @@ calculation stays separate from user CRUD. The function takes an API
 handle and returns a plain list of dicts.
 """
 
-import re
 import logging
+import re
 
 from librouteros.exceptions import LibRouterosError
 

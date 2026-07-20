@@ -17,8 +17,7 @@ def parse_bytes(raw: str) -> str:
     # رفض الترميز العلمي فقط (ليس مجرد حرف "e" في كلمة مثل "guest")
     if _SCIENTIFIC_NOTATION_RE.search(raw):
         raise ValueError(
-            f"❌ الصيغة العلمية غير مدعومة.\n"
-            f"أمثلة صحيحة: 1G بدلاً من {raw}, 500M بدلاً من 5e8"
+            f"❌ الصيغة العلمية غير مدعومة.\nأمثلة صحيحة: 1G بدلاً من {raw}, 500M بدلاً من 5e8"
         )
     try:
         float(raw)
@@ -36,19 +35,17 @@ def parse_bytes(raw: str) -> str:
             pass
         if len(part) < 2:
             raise ValueError(
-                f"❌ الرمز «{part}» يحتاج رقماً قبله.\n"
-                f"أمثلة صحيحة: 1G, 500M, 2.5G, 10G-500M"
+                f"❌ الرمز «{part}» يحتاج رقماً قبله.\nأمثلة صحيحة: 1G, 500M, 2.5G, 10G-500M"
             )
         suffix = part[-1]
         num = part[:-1]
         if suffix in SUFFIX_MULTIPLIER:
             try:
                 converted.append(str(int(float(num) * SUFFIX_MULTIPLIER[suffix])))
-            except ValueError:
+            except ValueError as _ve:
                 raise ValueError(
-                    f"❌ القيمة «{num}» ليست رقماً صالحاً.\n"
-                    f"أمثلة صحيحة: 1G, 500M, 1.5G, 10G-500M"
-                )
+                    f"❌ القيمة «{num}» ليست رقماً صالحاً.\nأمثلة صحيحة: 1G, 500M, 1.5G, 10G-500M"
+                ) from _ve
         else:
             raise ValueError(
                 f"❌ الرمز «{suffix}» غير صالح.\n"

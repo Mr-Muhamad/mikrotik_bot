@@ -1,5 +1,6 @@
 import unittest
-from utils.formatters import parse_bytes, format_bytes, format_user_list, format_hotspot_user
+
+from utils.formatters import format_bytes, format_hotspot_user, format_user_list, parse_bytes
 
 
 class TestParseBytes(unittest.TestCase):

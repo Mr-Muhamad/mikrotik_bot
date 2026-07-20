@@ -45,9 +45,7 @@ class BackupRestore:
                 }
 
             if backup_name.endswith(".backup"):
-                mikrotik_api.execute_long(
-                    router_key, "system/backup/load", **{"name": backup_name}
-                )
+                mikrotik_api.execute_long(router_key, "system/backup/load", **{"name": backup_name})
             elif backup_name.endswith(".rsc"):
                 mikrotik_api.execute_long(router_key, "import", **{"file": backup_name})
             else:

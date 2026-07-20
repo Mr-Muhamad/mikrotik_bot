@@ -36,7 +36,6 @@ from bot.handlers.hotspot_cards import (
     hs_back_to_uptime,
 )
 from core.card_models import CardData, CardSystem
-
 from tests.fixtures.telegram_mocks import make_mock_context, make_mock_update
 
 ADMIN_ID = 724730774
@@ -45,14 +44,10 @@ ADMIN_ID = 724730774
 @pytest.fixture(autouse=True)
 def _patch_router(monkeypatch):
     """Patch router_selector and clear rate-limit for all tests."""
-    router_lookup = lambda uid: (
-        "discovered_1" if uid == ADMIN_ID else None
-    )  # noqa: E731
+    router_lookup = lambda uid: "discovered_1" if uid == ADMIN_ID else None  # noqa: E731
     monkeypatch.setattr("bot.router_selector.get_selected_router", router_lookup)
     monkeypatch.setattr("bot.handlers.hotspot_cards.get_selected_router", router_lookup)
-    monkeypatch.setattr(
-        "bot.router_selector.set_selected_router", lambda uid, key: None
-    )
+    monkeypatch.setattr("bot.router_selector.set_selected_router", lambda uid, key: None)
     monkeypatch.setattr(
         "bot.router_selector.set_current_action", lambda uid, action, data=None: None
     )
@@ -358,9 +353,7 @@ class TestHotspotCardsBytes:
             with patch("os.path.exists", return_value=True):
                 with patch("os.remove"):
                     with patch("builtins.open", MagicMock()):
-                        with patch(
-                            "bot.handlers.hotspot_cards.reply_final", new=AsyncMock()
-                        ):
+                        with patch("bot.handlers.hotspot_cards.reply_final", new=AsyncMock()):
                             result = await hotspot_cards_bytes(u, c)
         # Conversation ends; user_data cleaned up
         assert result == ConversationHandler.END
@@ -400,9 +393,7 @@ class TestHotspotCardsSkipBytes:
             with patch("os.path.exists", return_value=True):
                 with patch("os.remove"):
                     with patch("builtins.open", MagicMock()):
-                        with patch(
-                            "bot.handlers.hotspot_cards.reply_final", new=AsyncMock()
-                        ):
+                        with patch("bot.handlers.hotspot_cards.reply_final", new=AsyncMock()):
                             result = await hotspot_cards_skip_bytes(u, c)
         # Conversation ends; user_data cleaned up
         assert result == ConversationHandler.END
@@ -416,9 +407,7 @@ class TestCreateCards:
     @pytest.mark.asyncio
     async def test_no_router_ends(self, monkeypatch):
         monkeypatch.setattr("bot.router_selector.get_selected_router", lambda uid: None)
-        monkeypatch.setattr(
-            "bot.handlers.hotspot_cards.get_selected_router", lambda uid: None
-        )
+        monkeypatch.setattr("bot.handlers.hotspot_cards.get_selected_router", lambda uid: None)
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_skip_bytes")
         c = make_mock_context()
         with patch("bot.handlers.hotspot_cards.reply_final", new=AsyncMock()):
@@ -445,9 +434,7 @@ class TestCreateCards:
             "bot.handlers.hotspot_cards.run_blocking",
             new=AsyncMock(side_effect=Exception("router crashed")),
         ):
-            with patch(
-                "bot.handlers.hotspot_cards.send_error", new=AsyncMock()
-            ) as mock_err:
+            with patch("bot.handlers.hotspot_cards.send_error", new=AsyncMock()) as mock_err:
                 result = await _create_cards(u, c, query=u.callback_query)
         # Exception is caught and conversation still ends
         assert result == ConversationHandler.END

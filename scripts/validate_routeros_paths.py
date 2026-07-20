@@ -40,7 +40,8 @@ def _command_literal(node: ast.Call) -> str | None:
         return arg.value
     if isinstance(arg, ast.JoinedStr):
         return "".join(
-            part.value for part in arg.values
+            part.value
+            for part in arg.values
             if isinstance(part, ast.Constant) and isinstance(part.value, str)
         )
     return None

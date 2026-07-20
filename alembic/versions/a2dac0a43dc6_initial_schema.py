@@ -1,10 +1,11 @@
 """initial schema
 
 Revision ID: a2dac0a43dc6
-Revises: 
+Revises:
 Create Date: 2026-07-19 12:53:17.000000
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -13,7 +14,7 @@ from config import DEFAULT_API_PORT
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'a2dac0a43dc6'
+revision: str = "a2dac0a43dc6"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -189,15 +190,23 @@ def upgrade() -> None:
     # ─── INDEXES ─────────────────────────────────────────────────
     op.execute("CREATE INDEX IF NOT EXISTS idx_logs_admin ON logs(admin_id)")
     op.execute("CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_routers_active ON discovered_routers(is_active, added_at DESC)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS idx_routers_active ON discovered_routers(is_active, added_at DESC)"
+    )
     op.execute("CREATE INDEX IF NOT EXISTS idx_routers_ip ON discovered_routers(ip_address)")
     op.execute("CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id)")
     op.execute("CREATE INDEX IF NOT EXISTS idx_backup_jobs_router ON backup_jobs(router_key)")
     op.execute("CREATE INDEX IF NOT EXISTS idx_backup_jobs_created ON backup_jobs(created_at DESC)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_health_router_time ON router_health_log(router_key, checked_at DESC)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_router_date ON stats_snapshots(router_key, snapshot_date DESC)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS idx_health_router_time ON router_health_log(router_key, checked_at DESC)"
+    )
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS idx_snapshots_router_date ON stats_snapshots(router_key, snapshot_date DESC)"
+    )
     op.execute("CREATE INDEX IF NOT EXISTS idx_tracked_messages_chat ON tracked_messages(chat_id)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_tracked_messages_date ON tracked_messages(tracked_at)")
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS idx_tracked_messages_date ON tracked_messages(tracked_at)"
+    )
 
     # ─── DEFAULT VALUES ──────────────────────────────────────────
     op.execute("""

@@ -1,7 +1,6 @@
 import ftplib
 import logging
 import os
-import socket
 
 from core.backup.files import get_ftp_port
 from core.mikrotik_api import mikrotik_api
@@ -36,9 +35,7 @@ def get_router_ftp_info(router_key: str, ftp_port: int) -> dict | None:
         return None
 
 
-def download_files_via_ftp(
-    router_key: str, backup_dir: str, files_to_get: list[str]
-) -> list[str]:
+def download_files_via_ftp(router_key: str, backup_dir: str, files_to_get: list[str]) -> list[str]:
     ftp_port = get_ftp_port(router_key)
     ftp_info = get_router_ftp_info(router_key, ftp_port)
     if not ftp_info:
@@ -52,9 +49,7 @@ def download_files_via_ftp(
         ftp.connect(ftp_info["host"], ftp_info["port"], timeout=10)
         ftp.set_pasv(True)
         ftp.login(ftp_info["user"], ftp_info["password"])
-        logger.info(
-            f"FTP connected to {ftp_info['host']}:{ftp_info['port']} (passive mode)"
-        )
+        logger.info(f"FTP connected to {ftp_info['host']}:{ftp_info['port']} (passive mode)")
 
         for fname in files_to_get:
             local_path = os.path.join(backup_dir, fname)
@@ -63,14 +58,12 @@ def download_files_via_ftp(
                     ftp.retrbinary(f"RETR {fname}", file_handle.write)
                 downloaded.append(fname)
                 logger.info(f"FTP downloaded: {fname}")
-            except (OSError, ftplib.Error, EOFError, socket.timeout) as e:
+            except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
                 logger.warning(f"FTP download failed for {fname}: {e}")
 
         ftp.quit()
-    except (OSError, ftplib.Error, EOFError, socket.timeout) as e:
-        logger.error(
-            f"FTP connection failed for {ftp_info['host']}:{ftp_info['port']}: {e}"
-        )
+    except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
+        logger.error(f"FTP connection failed for {ftp_info['host']}:{ftp_info['port']}: {e}")
 
     return downloaded
 
@@ -88,9 +81,7 @@ def upload_file_via_ftp(router_key: str, local_path: str, remote_name: str) -> b
         ftp.connect(ftp_info["host"], ftp_info["port"], timeout=10)
         ftp.set_pasv(True)
         ftp.login(ftp_info["user"], ftp_info["password"])
-        logger.info(
-            f"FTP connected to {ftp_info['host']}:{ftp_info['port']} (passive mode)"
-        )
+        logger.info(f"FTP connected to {ftp_info['host']}:{ftp_info['port']} (passive mode)")
 
         with open(local_path, "rb") as file_handle:
             ftp.storbinary(f"STOR {remote_name}", file_handle)
@@ -98,8 +89,6 @@ def upload_file_via_ftp(router_key: str, local_path: str, remote_name: str) -> b
 
         ftp.quit()
         return True
-    except (OSError, ftplib.Error, EOFError, socket.timeout) as e:
-        logger.error(
-            f"FTP upload failed for {ftp_info['host']}:{ftp_info['port']}: {e}"
-        )
+    except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
+        logger.error(f"FTP upload failed for {ftp_info['host']}:{ftp_info['port']}: {e}")
         return False

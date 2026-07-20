@@ -1,14 +1,16 @@
 import logging
 import threading
 from datetime import datetime
+
 from librouteros.exceptions import LibRouterosError
+
 from core.mikrotik_api import mikrotik_api
 from core.stats import stats_manager
-from database.repositories.router_health import record_health, get_all_latest_health
+from database.repositories.router_health import get_all_latest_health, record_health
 
 logger = logging.getLogger(__name__)
 
-# الحالة المخزنة لكل راوتر: {router_key: {"last_ok": datetime, "last_fail": datetime, "alert_sent": bool}}
+# الحالة المخزنة لكل راوتر: {router_key: {"last_ok": datetime, "last_fail": datetime, "alert_sent": bool}}  # noqa: E501
 _router_status: dict[str, dict] = {}
 # آخر حالة معروفة (online/offline) لتحديد تغيّر الحالة وإرسال التنبيه مرة واحدة
 _last_known_status: dict[str, bool] = {}
@@ -94,9 +96,7 @@ def get_router_status_detail(router_key: str) -> dict:
             status["version"] = None
         try:
             hotspot_stats = stats_manager.get_hotspot_stats(router_key)
-            status["active_users"] = (
-                hotspot_stats.get("active_users") if hotspot_stats else None
-            )
+            status["active_users"] = hotspot_stats.get("active_users") if hotspot_stats else None
         except Exception:
             status["active_users"] = None
     else:

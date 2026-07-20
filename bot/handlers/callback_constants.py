@@ -191,11 +191,14 @@ def batch_regen(batch_id):
 def batch_page(page):
     return f"batch_page:{page}"
 
+
 def userman_search_page(page):
     return f"um_search_pg_{page}"
 
+
 def hotspot_search_page(page):
     return f"hs_search_pg_{page}"
+
 
 def restore(index):
     return f"restore:{index}"
@@ -377,7 +380,10 @@ PATTERNS: dict[str, str] = {
     "hs_card_type": r"^hs_card_type[123]$",
     "card_type": r"^card_type[123]$",
     "edit_field": r"^edit_field_(name|password|profile|bytes|uptime|comment|toggle_disabled)$",
-    "pdf_options": r"^pdf_(brand_name|hotspot_dns|show_qr|margins|spacing|cards_per_row|cards_per_page|footer|label_spacing|value_font_size)$",
+    "pdf_options": (
+        r"^pdf_(brand_name|hotspot_dns|show_qr|margins|spacing|"
+        r"cards_per_row|cards_per_page|footer|label_spacing|value_font_size)$"
+    ),
     "logs_filter": r"^logs_filter_(router|admin|action|time)$",
     "logs_sub": r"^logs_sub_(prev|next)$",
     "manual_add_router": r"^manual_add_router$",
@@ -401,7 +407,6 @@ PATTERNS: dict[str, str] = {
     "confirm_restore": r"^confirm_restore$",
     "userman_restore_tar": r"^userman_restore_tar:\d+$",
     "userman_restore_exec": r"^userman_restore_exec$",
-    "batches_refresh": r"^batches_refresh$",
     "batch_sel": r"^batch_sel:\d+$",
     "batch_page": r"^batch_page:\d+$",
     "batch_regen": r"^batch_regen:\d+$",

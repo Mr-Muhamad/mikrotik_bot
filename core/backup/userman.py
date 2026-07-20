@@ -1,6 +1,6 @@
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from core.backup import files as backup_files
 from core.backup.files import (
@@ -9,8 +9,8 @@ from core.backup.files import (
     cleanup_router_files,
     sanitize_router_name,
 )
-from core.mikrotik_api import mikrotik_api
 from core.backup.ftp import download_files_via_ftp, upload_file_via_ftp
+from core.mikrotik_api import mikrotik_api
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class UserManagerBackupService:
         backup_root = backup_root or backup_files.BACKUP_DIR
         router_name = mikrotik_api.get_router_name(router_key)
         file_prefix = f"{USERMAN_BACKUP_PREFIX}{sanitize_router_name(router_name)}"
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         umb_filename = f"{file_prefix}_{timestamp}.umb"
         userman_dir = os.path.join(backup_root, "userman")
         os.makedirs(userman_dir, exist_ok=True)
@@ -49,11 +49,9 @@ class UserManagerBackupService:
             if not downloaded:
                 result["warning"] = "تم إنشاء الملف على الراوتر لكن فشل التحميل المحلي"
                 logger.warning(
-                    f"User Manager backup created on router but FTP download failed for {router_key}"
+                    f"User Manager backup created on router but FTP download failed for {router_key}"  # noqa: E501
                 )
-            logger.info(
-                f"User Manager backup completed for {router_name}: {umb_filename}"
-            )
+            logger.info(f"User Manager backup completed for {router_name}: {umb_filename}")
             return result
         except Exception as e:
             logger.error(f"User Manager backup failed for {router_name}: {e}")
@@ -61,9 +59,7 @@ class UserManagerBackupService:
                 try:
                     os.remove(umb_path)
                 except OSError as cleanup_err:
-                    logger.warning(
-                        f"Failed to cleanup partial file {umb_path}: {cleanup_err}"
-                    )
+                    logger.warning(f"Failed to cleanup partial file {umb_path}: {cleanup_err}")
             return {"success": False, "message": f"فشل الباكوب: {str(e)}"}
 
     def userman_restore(

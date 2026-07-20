@@ -1,7 +1,9 @@
 """Repository for router health log — persistent watchdog state across restarts."""
 
 import logging
-from database.models import get_db, _now_utc
+from datetime import UTC
+
+from database.models import _now_utc, get_db
 
 logger = logging.getLogger(__name__)
 
@@ -81,17 +83,16 @@ def cleanup_health_history(days: int = 7) -> int:
     """مسح سجلات فحص الصحة الأقدم من العدد المحدد من الأيام.
     يُعيد عدد السجلات التي تم مسحها.
     """
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
+
     from database.models import UTC_TIMESTAMP_FORMAT
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = datetime.now(UTC) - timedelta(days=days)
     cutoff_text = cutoff.strftime(UTC_TIMESTAMP_FORMAT)
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "DELETE FROM router_health_log WHERE checked_at < ?", (cutoff_text,)
-            )
+            cursor.execute("DELETE FROM router_health_log WHERE checked_at < ?", (cutoff_text,))
             return cursor.rowcount
     except Exception as e:
         logger.warning(f"Failed to cleanup health history: {e}")

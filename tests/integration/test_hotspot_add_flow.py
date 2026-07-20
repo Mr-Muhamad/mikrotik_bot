@@ -4,8 +4,8 @@ Tests the end-to-end flow through hotspot_manager using the in-memory
 MikrotikAPIMock, simulating real MikroTik API interactions.
 """
 
-from core.hotspot_manager import hotspot_manager
 from core.card_models import CardSystem
+from core.hotspot_manager import hotspot_manager
 from utils.formatters import format_hotspot_user
 
 
@@ -23,9 +23,7 @@ class TestHotspotAddFlow:
         assert isinstance(result, list)
         assert mock_mikrotik_api.last_router_key == self.ROUTER_KEY
         add_commands = [
-            c
-            for c in mock_mikrotik_api.commands_executed
-            if c[1] == "ip/hotspot/user/add"
+            c for c in mock_mikrotik_api.commands_executed if c[1] == "ip/hotspot/user/add"
         ]
         assert len(add_commands) >= 1
         _, _, kwargs = add_commands[-1]
@@ -69,9 +67,7 @@ class TestHotspotAddFlow:
         assert len(cards) == 3
         users = hotspot_manager.list_users(self.ROUTER_KEY, limit=50)
         card_usernames = {c.username for c in cards}
-        found_usernames = {
-            u.get("name") for u in users if u.get("name") in card_usernames
-        }
+        found_usernames = {u.get("name") for u in users if u.get("name") in card_usernames}
         assert len(found_usernames) == 3
 
     def test_get_hotspot_stats_after_operations(self, mock_mikrotik_api):

@@ -1,7 +1,8 @@
 """Tests for bot.handlers.hotspot."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from bot.handlers import hotspot as hotspot_module
 from utils import admin_decorator
@@ -13,8 +14,8 @@ def _direct_hotspot_stats(update, context):
     """Direct invocation bypassing @admin_only decorator."""
     original = getattr(hotspot_module, "_original_hotspot_stats", None)
     if original is None:
-        original = getattr(hotspot_module.hotspot_stats, "__wrapped__")
-        setattr(hotspot_module, "_original_hotspot_stats", original)
+        original = hotspot_module.hotspot_stats.__wrapped__
+        hotspot_module._original_hotspot_stats = original
     return original(update, context)
 
 
@@ -33,21 +34,11 @@ def _bypass_decorators():
     @admin_only points to the actual original function.
     """
     if not hasattr(hotspot_module, "_original_hotspot_stats"):
-        setattr(
-            hotspot_module,
-            "_original_hotspot_stats",
-            getattr(hotspot_module.hotspot_stats, "__wrapped__"),
-        )
-    hotspot_module.hotspot_stats = getattr(hotspot_module, "_original_hotspot_stats")
+        hotspot_module._original_hotspot_stats = hotspot_module.hotspot_stats.__wrapped__
+    hotspot_module.hotspot_stats = hotspot_module._original_hotspot_stats
     if not hasattr(hotspot_module, "_original_hotspot_stats_day_input"):
-        setattr(
-            hotspot_module,
-            "_original_hotspot_stats_day_input",
-            getattr(hotspot_module.hotspot_stats_day_input, "__wrapped__"),
-        )
-    hotspot_module.hotspot_stats_day_input = getattr(
-        hotspot_module, "_original_hotspot_stats_day_input"
-    )
+        hotspot_module._original_hotspot_stats_day_input = hotspot_module.hotspot_stats_day_input.__wrapped__  # noqa: E501
+    hotspot_module.hotspot_stats_day_input = hotspot_module._original_hotspot_stats_day_input
     yield
 
 
@@ -113,9 +104,7 @@ class TestHotspotStats:
             },
         )
 
-        with patch(
-            "bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)
-        ):
+        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)):
             result = await hotspot_module.hotspot_stats(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.callback_query.edit_message_text.call_args.args[0]
@@ -177,9 +166,7 @@ class TestHotspotStatsDayInput:
             reset_list=[("PREFIX_2026-07-05", "10 GB")],
         )
 
-        with patch(
-            "bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)
-        ):
+        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)):
             result = await hotspot_module.hotspot_stats_day_input(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.message.reply_text.call_args.args[0]
@@ -230,9 +217,7 @@ class TestHotspotStatsDayInput:
             reset_list=[],
             selected_day=None,
         )
-        with patch(
-            "bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)
-        ):
+        with patch("bot.handlers.hotspot.run_blocking", new=AsyncMock(return_value=stats)):
             result = await hotspot_module.hotspot_stats_day_input(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.message.reply_text.call_args.args[0]

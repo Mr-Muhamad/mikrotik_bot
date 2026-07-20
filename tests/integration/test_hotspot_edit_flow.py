@@ -15,9 +15,9 @@ from bot.handlers.hotspot_edit import (
     hotspot_edit_start,
     hotspot_edit_value,
 )
+from bot.handlers.session_models import get_hotspot_edit_session
 from core.hotspot_manager import hotspot_manager
 from tests.fixtures.telegram_mocks import make_mock_update
-from bot.handlers.session_models import get_hotspot_edit_session
 from utils import admin_decorator
 
 ADMIN_ID = 724730774
@@ -51,8 +51,8 @@ def _seed_user(name="edit_user", uid_hint="*99"):
 class TestHotspotEditStart:
     @pytest.mark.asyncio
     async def test_start_prompts_for_search(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_FIELD
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(callback_data="hotspot_edit")
@@ -66,8 +66,8 @@ class TestHotspotEditStart:
 class TestHotspotEditSelect:
     @pytest.mark.asyncio
     async def test_select_user_populates_edit_state(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_VALUE
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("editme")
@@ -114,8 +114,8 @@ class TestHotspotEditSelect:
 class TestHotspotEditField:
     @pytest.mark.asyncio
     async def test_select_password_field_prompts_for_value(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_VALUE
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("pwme")
@@ -129,8 +129,8 @@ class TestHotspotEditField:
 
     @pytest.mark.asyncio
     async def test_select_profile_field_loads_profiles(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_VALUE
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("profme")
@@ -145,8 +145,8 @@ class TestHotspotEditField:
 
     @pytest.mark.asyncio
     async def test_profile_fetch_error_calls_send_error(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_VALUE
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("prof_err")
@@ -168,8 +168,8 @@ class TestHotspotEditField:
 class TestHotspotEditValue:
     @pytest.mark.asyncio
     async def test_update_password_persists(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_VALUE
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("updme")
@@ -189,8 +189,8 @@ class TestHotspotEditValue:
 
     @pytest.mark.asyncio
     async def test_update_profile_persists(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_VALUE
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("profupd")
@@ -210,8 +210,8 @@ class TestHotspotEditValue:
 
     @pytest.mark.asyncio
     async def test_update_bytes_persists(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_VALUE
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("bytesupd")
@@ -243,8 +243,8 @@ class TestHotspotEditValue:
 
     @pytest.mark.asyncio
     async def test_update_error_calls_send_error(self, mock_mikrotik_api):
-        from database.models import save_user_session
         from bot.handlers.constants import WAITING_EDIT_VALUE
+        from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("errupd")

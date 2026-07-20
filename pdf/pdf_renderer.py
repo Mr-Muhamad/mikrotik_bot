@@ -1,7 +1,9 @@
 import logging
+
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
+
 from database.models import get_pdf_settings
 from pdf.card_renderer import CardRenderer, _setup_arabic_support
 
@@ -39,7 +41,7 @@ class PDFRenderer:
 
         if card_width <= 0 or card_height <= 0:
             raise ValueError(
-                f"أبعاد الكارت غير صالحة: {card_width/mm:.1f}x{card_height/mm:.1f} مم. "
+                f"أبعاد الكارت غير صالحة: {card_width / mm:.1f}x{card_height / mm:.1f} مم. "
                 f"قلّل الهوامش أو الفواصل."
             )
 

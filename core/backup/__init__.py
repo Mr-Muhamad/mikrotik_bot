@@ -1,6 +1,6 @@
 from core.backup.files import (
-    BACKUP_FILE_EXTENSIONS,
     BACKUP_DIR,
+    BACKUP_FILE_EXTENSIONS,
     FTP_PORT,
     MAX_LOCAL_BACKUPS,
     MAX_ROUTER_BACKUPS,

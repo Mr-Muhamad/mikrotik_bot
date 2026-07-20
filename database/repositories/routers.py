@@ -7,7 +7,7 @@ encryption, and metadata helpers. Isolated from the former god-object
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from config import DEFAULT_API_PORT
 
@@ -15,7 +15,7 @@ from config import DEFAULT_API_PORT
 def _utc_now():
     from database.models import UTC_TIMESTAMP_FORMAT
 
-    return datetime.now(timezone.utc).strftime(UTC_TIMESTAMP_FORMAT)
+    return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)
 
 
 def save_discovered_router(
@@ -33,7 +33,7 @@ def save_discovered_router(
     last_seen="",
     owner_id=0,
 ):
-    from database.models import get_db, encrypt_password
+    from database.models import encrypt_password, get_db
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -80,15 +80,13 @@ def save_discovered_router(
         return router_id
 
 
-def save_manual_router(
-    ip, port=DEFAULT_API_PORT, username="", password="", alias="", owner_id=0
-):
+def save_manual_router(ip, port=DEFAULT_API_PORT, username="", password="", alias="", owner_id=0):
     """Insert a manually-entered router.
 
     Encrypts the password before storage. Raises ``sqlite3.IntegrityError``
     if ``ip_address`` already exists (the column is UNIQUE).
     """
-    from database.models import get_db, encrypt_password
+    from database.models import encrypt_password, get_db
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -102,9 +100,7 @@ def save_manual_router(
         return cursor.lastrowid
 
 
-def get_saved_routers(
-    active_only=True, decrypt: bool = False, owner_id: int | None = None
-):
+def get_saved_routers(active_only=True, decrypt: bool = False, owner_id: int | None = None):
     """جلب الروترات المحفوظة من قاعدة البيانات.
 
     Args:
@@ -114,7 +110,7 @@ def get_saved_routers(
                  استدعِ مع decrypt=True فقط عند الحاجة للاتصال بالراوتر.
         owner_id: تصفية حسب المالك (العميل). إذا لم يمرر يتم جلب الجميع (Super Admin).
     """
-    from database.models import get_db, decrypt_password
+    from database.models import decrypt_password, get_db
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -147,7 +143,7 @@ def get_saved_routers(
 
 
 def get_router_by_id(router_id, decrypt=True):
-    from database.models import get_db, decrypt_password
+    from database.models import decrypt_password, get_db
 
     with get_db() as conn:
         cursor = conn.cursor()
@@ -162,13 +158,11 @@ def get_router_by_id(router_id, decrypt=True):
 
 
 def get_router_by_ip(ip_address):
-    from database.models import get_db, decrypt_password
+    from database.models import decrypt_password, get_db
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM discovered_routers WHERE ip_address = ?", (ip_address,)
-        )
+        cursor.execute("SELECT * FROM discovered_routers WHERE ip_address = ?", (ip_address,))
         row = cursor.fetchone()
         if row:
             d = dict(row)
@@ -178,7 +172,7 @@ def get_router_by_ip(ip_address):
 
 
 def update_router_credentials(router_id, username, password):
-    from database.models import get_db, encrypt_password
+    from database.models import encrypt_password, get_db
 
     with get_db() as conn:
         cursor = conn.cursor()

@@ -19,12 +19,12 @@ import re
 import socket
 import struct
 import subprocess
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol, runtime_checkable
 
 from config import DEFAULT_API_PORT
-import time
 
 logger = logging.getLogger(__name__)
 
@@ -210,14 +210,10 @@ class ARPTableProbe:
         """Return ``[{ip, mac, source}]`` for each dynamic ARP entry."""
         try:
             if self._system == "Windows":
-                result = self._run(
-                    ["arp", "-a"], capture_output=True, text=True, timeout=10
-                )
+                result = self._run(["arp", "-a"], capture_output=True, text=True, timeout=10)
                 entries = parse_arp_table_windows(result.stdout)
             elif self._system == "Linux":
-                result = self._run(
-                    ["ip", "neigh"], capture_output=True, text=True, timeout=10
-                )
+                result = self._run(["ip", "neigh"], capture_output=True, text=True, timeout=10)
                 entries = parse_arp_table_linux(result.stdout)
             else:
                 logger.info(f"ARP table probe not supported on {self._system}")
@@ -256,7 +252,7 @@ class PortScanProbe:
         )
         return [
             {"ip": ip, "port": self._port, "source": "port_check"}
-            for ip, is_open in zip(self._ips, results)
+            for ip, is_open in zip(self._ips, results, strict=False)
             if is_open
         ]
 
@@ -274,7 +270,7 @@ class PortScanProbe:
                 # or other StreamWriter edge cases. This is just cleanup.
                 pass
             return True
-        except (ConnectionRefusedError, asyncio.TimeoutError, OSError):
+        except (TimeoutError, ConnectionRefusedError, OSError):
             return False
 
 
@@ -346,9 +342,7 @@ class MNDPListenerProbe:
             # so we can coexist with WinBox or another MNDP listener.
             if hasattr(socket, "SO_REUSEPORT"):
                 try:
-                    sock.setsockopt(
-                        socket.SOL_SOCKET, getattr(socket, "SO_REUSEPORT"), 1
-                    )
+                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
                 except OSError:
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             else:
@@ -358,9 +352,7 @@ class MNDPListenerProbe:
 
             start_time = time.time()
             last_send = 0.0
-            logger.info(
-                f"MNDP single-socket discovery started (timeout: {self._timeout}s)"
-            )
+            logger.info(f"MNDP single-socket discovery started (timeout: {self._timeout}s)")
 
             while time.time() - start_time <= self._timeout:
                 now = time.time()
@@ -369,9 +361,7 @@ class MNDPListenerProbe:
                 # The first one goes out immediately.
                 if now - last_send >= self.SEND_INTERVAL:
                     try:
-                        sock.sendto(
-                            MNDP_DISCOVERY_PAYLOAD, ("255.255.255.255", MNDP_PORT)
-                        )
+                        sock.sendto(MNDP_DISCOVERY_PAYLOAD, ("255.255.255.255", MNDP_PORT))
                         last_send = now
                         logger.debug("MNDP refresh packet sent")
                     except OSError as send_err:
@@ -412,16 +402,14 @@ class MNDPListenerProbe:
                             router[key] = parts[key]
                     if "ipv4" in parts and parts["ipv4"]:
                         router["ip"] = parts["ipv4"]
-                except socket.timeout:
+                except TimeoutError:
                     continue
                 except OSError as e:
                     logger.error(f"MNDP recv error: {e}")
                     continue
 
         except PermissionError as e:
-            logger.warning(
-                f"MNDP requires admin privileges (run as Administrator): {e}"
-            )
+            logger.warning(f"MNDP requires admin privileges (run as Administrator): {e}")
             raise
         except OSError as e:
             logger.error(f"Failed to start MNDP listener: {e}")
@@ -480,9 +468,7 @@ def merge_probe_results(
         ip = entry["ip"]
         if ip in by_ip:
             existing = by_ip[ip]
-            existing.source = (
-                f"mndp+{existing.source}" if "port" in existing.source else "mndp"
-            )
+            existing.source = f"mndp+{existing.source}" if "port" in existing.source else "mndp"
             existing.last_seen = entry.get("last_seen", existing.last_seen)
             for attr in (
                 "identity",
@@ -494,9 +480,7 @@ def merge_probe_results(
                 "interface_name",
             ):
                 val = entry.get(attr, "")
-                if val and (
-                    not getattr(existing, attr) or getattr(existing, attr) == "Unknown"
-                ):
+                if val and (not getattr(existing, attr) or getattr(existing, attr) == "Unknown"):
                     setattr(existing, attr, val)
         else:
             router = DiscoveredRouter(

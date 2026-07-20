@@ -4,6 +4,8 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
+from bot.handlers.constants import WAITING_DISC_PASSWORD, WAITING_DISC_USERNAME
+from bot.handlers.handler_utils import ack_callback
 from bot.keyboards import (
     get_discovered_routers_keyboard,
     get_main_keyboard,
@@ -20,8 +22,8 @@ from bot.messages import (
     DISCOVERY_RESULTS,
     DISCOVERY_START,
     DISCOVERY_SUCCESS,
-    ROUTER_UPDATED,
     ROUTER_ALREADY_EXISTS,
+    ROUTER_UPDATED,
 )
 from bot.router_selector import cleanup_state, nav_set, set_selected_router
 from config import ROUTER_KEY_PREFIX
@@ -34,13 +36,10 @@ from database.models import (
     save_discovered_router,
     update_router_credentials,
 )
-
-from bot.handlers.handler_utils import ack_callback
 from utils.admin_decorator import admin_only, reset_rate_limit
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import edit_clean, schedule_delete, send_step
 from utils.error_response import send_error
-from bot.handlers.constants import WAITING_DISC_PASSWORD, WAITING_DISC_USERNAME
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +51,7 @@ async def discover_routers_callback(update: Update, context: ContextTypes.DEFAUL
     try:
         routers = await discover_routers(mndp_timeout=10)
         if not routers:
-            await query.edit_message_text(
-                DISCOVERY_NO_RESULTS, reply_markup=get_router_keyboard()
-            )
+            await query.edit_message_text(DISCOVERY_NO_RESULTS, reply_markup=get_router_keyboard())
             return
         results_text = "\n\n".join([r.display_line() for r in routers])
         await edit_clean(
@@ -78,9 +75,7 @@ async def discover_routers_callback(update: Update, context: ContextTypes.DEFAUL
 
 
 @admin_only
-async def discovered_router_selected(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def discovered_router_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
     cleanup_state(query.from_user.id, context.user_data)
     ip = query.data.replace("disc_router_", "")
@@ -113,9 +108,7 @@ async def discovered_router_selected(
 async def disc_enter_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["disc_username"] = update.message.text
     ip = context.user_data.get("disc_ip", "")
-    await send_step(
-        update, context, DISCOVERY_PASSWORD.format(ip), get_nav_back_keyboard()
-    )
+    await send_step(update, context, DISCOVERY_PASSWORD.format(ip), get_nav_back_keyboard())
     return WAITING_DISC_PASSWORD
 
 
@@ -139,9 +132,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
             is_update = router_db is not None
             if is_update:
                 router_id = router_db["id"]
-                await run_blocking(
-                    update_router_credentials, router_id, username, password
-                )
+                await run_blocking(update_router_credentials, router_id, username, password)
             else:
                 router_id = await run_blocking(
                     save_discovered_router,
@@ -168,16 +159,12 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
                 reply_markup=get_main_keyboard(),
             )
             reset_rate_limit(update.effective_user.id)
-            await schedule_delete(
-                context, update.effective_chat.id, status_msg.message_id
-            )
+            await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
         else:
             await status_msg.edit_text(
                 f"{DISCOVERY_FAILED}\n\n{version}", reply_markup=get_router_keyboard()
             )
-            await schedule_delete(
-                context, update.effective_chat.id, status_msg.message_id
-            )
+            await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
     except Exception as e:
         await send_error(
             update,

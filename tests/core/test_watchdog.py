@@ -1,16 +1,18 @@
 """Tests for core.watchdog module."""
 
-import pytest
-from unittest.mock import patch
 from datetime import datetime
+from unittest.mock import patch
+
+import pytest
+
 from core.watchdog import (
+    _router_status,
     check_router_health,
+    clear_status,
     get_router_status,
     get_router_status_detail,
-    was_alert_sent,
     mark_alert_sent,
-    clear_status,
-    _router_status,
+    was_alert_sent,
 )
 
 

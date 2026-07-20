@@ -2,7 +2,7 @@ import logging
 import os
 import shutil
 import tarfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from config import BACKUP_DIR
 from core.mikrotik_api import mikrotik_api
@@ -18,13 +18,13 @@ USERMAN_BACKUP_PREFIX = "User_Manager_"
 
 def parse_router_creation_time(raw: str | None) -> datetime:
     if not raw:
-        return datetime.min.replace(tzinfo=timezone.utc)
+        return datetime.min.replace(tzinfo=UTC)
     for fmt in ("%b/%d/%Y %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
         try:
-            return datetime.strptime(raw, fmt).replace(tzinfo=timezone.utc)
+            return datetime.strptime(raw, fmt).replace(tzinfo=UTC)
         except ValueError:
             continue
-    return datetime.min.replace(tzinfo=timezone.utc)
+    return datetime.min.replace(tzinfo=UTC)
 
 
 def get_ftp_port(router_key: str) -> int:
@@ -53,9 +53,7 @@ def is_safe_filename(filename: str) -> bool:
     return os.path.basename(filename) == filename
 
 
-def safe_join_file(
-    parent_dir: str, filename: str, allowed_extensions: tuple[str, ...]
-) -> str:
+def safe_join_file(parent_dir: str, filename: str, allowed_extensions: tuple[str, ...]) -> str:
     if not is_safe_filename(filename):
         raise ValueError("اسم الملف غير صالح")
     if not filename.endswith(allowed_extensions):
@@ -101,9 +99,7 @@ def validate_tar_members(tar: tarfile.TarFile, extract_dir: str) -> None:
             raise ValueError("أرشيف الاستعادة يحاول الكتابة خارج مجلد الاستعادة")
 
 
-def cleanup_old_backups(
-    parent_dir: str, router_key: str, keep: int = MAX_LOCAL_BACKUPS
-) -> int:
+def cleanup_old_backups(parent_dir: str, router_key: str, keep: int = MAX_LOCAL_BACKUPS) -> int:
     if not os.path.isdir(parent_dir):
         return 0
     dirs = []
@@ -122,15 +118,11 @@ def cleanup_old_backups(
         except OSError as e:
             logger.warning(f"Failed to delete old backup {path}: {e}")
     if deleted:
-        logger.info(
-            f"Cleaned up {deleted} old backup(s) for {router_key} in {parent_dir}"
-        )
+        logger.info(f"Cleaned up {deleted} old backup(s) for {router_key} in {parent_dir}")
     return deleted
 
 
-def cleanup_old_files(
-    parent_dir: str, prefix: str, keep: int = MAX_LOCAL_BACKUPS
-) -> int:
+def cleanup_old_files(parent_dir: str, prefix: str, keep: int = MAX_LOCAL_BACKUPS) -> int:
     if not os.path.isdir(parent_dir):
         return 0
     files = []
@@ -153,9 +145,7 @@ def cleanup_old_files(
         except OSError as e:
             logger.warning(f"Failed to delete old tar {path}: {e}")
     if deleted:
-        logger.info(
-            f"Cleaned up {deleted} old tar(s) with prefix {prefix} in {parent_dir}"
-        )
+        logger.info(f"Cleaned up {deleted} old tar(s) with prefix {prefix} in {parent_dir}")
     return deleted
 
 
@@ -179,9 +169,7 @@ def cleanup_router_files(
         for item in matching[keep:]:
             name = item.get("name", "")
             try:
-                mikrotik_api.execute(
-                    router_key, "file/remove", **{".id": item.get(".id")}
-                )
+                mikrotik_api.execute(router_key, "file/remove", **{".id": item.get(".id")})
                 deleted += 1
                 logger.debug(f"Removed old router file: {name}")
             except Exception as e:

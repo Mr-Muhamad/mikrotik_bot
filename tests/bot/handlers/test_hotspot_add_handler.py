@@ -7,7 +7,17 @@ in isolation, without depending on the SQLite session database state.
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from telegram.ext import ConversationHandler
 
+from bot.handlers.constants import (
+    WAITING_BYTES_TOTAL,
+    WAITING_COMMENT,
+    WAITING_PASSWORD,
+    WAITING_PROFILE,
+    WAITING_UPTIME_TYPE,
+    WAITING_UPTIME_VALUE,
+    WAITING_USERNAME,
+)
 from bot.handlers.hotspot_add import (
     add_back_to_bytes,
     add_back_to_password,
@@ -32,19 +42,8 @@ from bot.handlers.hotspot_add import (
     skip_password,
     skip_uptime,
 )
-from bot.handlers.constants import (
-    WAITING_BYTES_TOTAL,
-    WAITING_COMMENT,
-    WAITING_PASSWORD,
-    WAITING_PROFILE,
-    WAITING_UPTIME_TYPE,
-    WAITING_UPTIME_VALUE,
-    WAITING_USERNAME,
-)
-from telegram.ext import ConversationHandler
-
-from tests.fixtures.telegram_mocks import make_mock_context, make_mock_update
 from bot.handlers.session_models import get_hotspot_add_session
+from tests.fixtures.telegram_mocks import make_mock_context, make_mock_update
 
 ADMIN_ID = 724730774
 
@@ -57,15 +56,11 @@ def _patch_router(monkeypatch):
     local import) and the local import in bot.handlers.hotspot_add
     (which does `from bot.router_selector import get_selected_router`).
     """
-    router_lookup = lambda uid: (
-        "discovered_1" if uid == ADMIN_ID else None
-    )  # noqa: E731
+    router_lookup = lambda uid: "discovered_1" if uid == ADMIN_ID else None  # noqa: E731
 
     # Patch in bot.router_selector (used by require_router local import)
     monkeypatch.setattr("bot.router_selector.get_selected_router", router_lookup)
-    monkeypatch.setattr(
-        "bot.router_selector.set_selected_router", lambda uid, key: None
-    )
+    monkeypatch.setattr("bot.router_selector.set_selected_router", lambda uid, key: None)
     monkeypatch.setattr(
         "bot.router_selector.set_current_action", lambda uid, action, data=None: None
     )
@@ -194,9 +189,7 @@ class TestHotspotAddPassword:
             "bot.handlers.hotspot_add.fetch_and_cache_profiles",
             new=AsyncMock(side_effect=Exception("router offline")),
         ):
-            with patch(
-                "bot.handlers.hotspot_add.send_error", new=AsyncMock()
-            ) as mock_send_error:
+            with patch("bot.handlers.hotspot_add.send_error", new=AsyncMock()) as mock_send_error:
                 result = await hotspot_add_password(u, c)
         assert result == ConversationHandler.END
         mock_send_error.assert_called_once()
@@ -237,9 +230,7 @@ class TestHotspotAddProfileSelected:
     async def test_invalid_profile_callback_ends(self):
         u = make_mock_update(user_id=ADMIN_ID, callback_data="add_profile_X")
         c = make_mock_context()
-        with patch(
-            "bot.handlers.hotspot_add.resolve_profile_from_callback", return_value=None
-        ):
+        with patch("bot.handlers.hotspot_add.resolve_profile_from_callback", return_value=None):
             result = await hotspot_add_profile_selected(u, c)
         assert result == ConversationHandler.END
 
@@ -277,9 +268,7 @@ class TestHotspotAddComment:
             "bot.handlers.hotspot_add.execute_add_user",
             new=AsyncMock(return_value=(True, None)),
         ):
-            with patch(
-                "bot.handlers.hotspot_add.reply_final", new=AsyncMock()
-            ) as mock_reply:
+            with patch("bot.handlers.hotspot_add.reply_final", new=AsyncMock()) as mock_reply:
                 result = await hotspot_add_comment(u, c)
         assert result == ConversationHandler.END
         mock_reply.assert_called_once()
@@ -304,9 +293,7 @@ class TestHotspotAddComment:
             "bot.handlers.hotspot_add.execute_add_user",
             new=AsyncMock(return_value=(False, "connection failed")),
         ):
-            with patch(
-                "bot.handlers.hotspot_add.reply_final", new=AsyncMock()
-            ) as mock_reply:
+            with patch("bot.handlers.hotspot_add.reply_final", new=AsyncMock()) as mock_reply:
                 result = await hotspot_add_comment(u, c)
         assert result == ConversationHandler.END
         mock_reply.assert_called_once()

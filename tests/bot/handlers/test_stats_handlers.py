@@ -1,7 +1,8 @@
 """Tests for bot.handlers.stats."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from bot.handlers import stats as stats_module
 from utils import admin_decorator
@@ -39,8 +40,9 @@ def _mock_deps():
     stats_module.stats_hotspot = stats_hotspot_direct
     stats_module.stats_userman = stats_userman_direct
 
-    with patch("bot.router_selector.get_user_session", return_value={}), patch(
-        "bot.router_selector.save_user_session"
+    with (
+        patch("bot.router_selector.get_user_session", return_value={}),
+        patch("bot.router_selector.save_user_session"),
     ):
         try:
             yield
@@ -74,11 +76,14 @@ class TestStatsHotspot:
             "total_bytes": 1000,
         }
 
-        # run_blocking يُستدعى 4 مرات: router_name, get_hotspot_stats, get_yesterday_snapshot, get_week_snapshots
-        with patch(
-            "bot.handlers.stats.run_blocking",
-            new=AsyncMock(side_effect=["Router1", stats, None, []]),
-        ), patch("bot.handlers.stats.stats_manager") as mock_sm:
+        # run_blocking يُستدعى 4 مرات: router_name, get_hotspot_stats, get_yesterday_snapshot, get_week_snapshots  # noqa: E501
+        with (
+            patch(
+                "bot.handlers.stats.run_blocking",
+                new=AsyncMock(side_effect=["Router1", stats, None, []]),
+            ),
+            patch("bot.handlers.stats.stats_manager") as mock_sm,
+        ):
             mock_sm.format_hotspot_stats.return_value = "📊 Stats: 5 users"
             mock_sm.format_vs_yesterday.return_value = ""
             mock_sm.format_trend_chart.return_value = ""
@@ -92,10 +97,13 @@ class TestStatsHotspot:
         ctx.user_data = {"router_key": "discovered_1"}
         update = _query_update()
 
-        with patch(
-            "bot.handlers.stats.run_blocking",
-            new=AsyncMock(side_effect=["Router1", ConnectionError("net down")]),
-        ), patch("bot.handlers.stats.stats_manager") as mock_sm:
+        with (
+            patch(
+                "bot.handlers.stats.run_blocking",
+                new=AsyncMock(side_effect=["Router1", ConnectionError("net down")]),
+            ),
+            patch("bot.handlers.stats.stats_manager") as mock_sm,
+        ):
             mock_sm.format_hotspot_stats.return_value = ""
             await stats_module.stats_hotspot(update, ctx)
         update.callback_query.edit_message_text.assert_called_once()
@@ -113,10 +121,13 @@ class TestStatsUserman:
         update = _query_update()
         stats = {"total_users": 10, "enabled_users": 7, "disabled_users": 3}
 
-        with patch(
-            "bot.handlers.stats.run_blocking",
-            new=AsyncMock(side_effect=["Router1", stats]),
-        ), patch("bot.handlers.stats.stats_manager") as mock_sm:
+        with (
+            patch(
+                "bot.handlers.stats.run_blocking",
+                new=AsyncMock(side_effect=["Router1", stats]),
+            ),
+            patch("bot.handlers.stats.stats_manager") as mock_sm,
+        ):
             mock_sm.format_userman_stats.return_value = "📊 UserMan: 10 cards"
             await stats_module.stats_userman(update, ctx)
         text = update.callback_query.edit_message_text.call_args.args[0]
@@ -128,10 +139,13 @@ class TestStatsUserman:
         ctx.user_data = {"router_key": "discovered_1"}
         update = _query_update()
 
-        with patch(
-            "bot.handlers.stats.run_blocking",
-            new=AsyncMock(side_effect=["Router1", ConnectionError("timeout")]),
-        ), patch("bot.handlers.stats.stats_manager") as mock_sm:
+        with (
+            patch(
+                "bot.handlers.stats.run_blocking",
+                new=AsyncMock(side_effect=["Router1", ConnectionError("timeout")]),
+            ),
+            patch("bot.handlers.stats.stats_manager") as mock_sm,
+        ):
             mock_sm.format_userman_stats.return_value = ""
             await stats_module.stats_userman(update, ctx)
         update.callback_query.edit_message_text.assert_called_once()

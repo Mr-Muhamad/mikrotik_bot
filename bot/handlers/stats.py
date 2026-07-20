@@ -1,19 +1,21 @@
 import logging
+
 from telegram import Update
-from utils.async_blocking import run_blocking
 from telegram.ext import ContextTypes
+
 from bot.keyboards import get_stats_keyboard
-from core.stats import stats_manager
-from core.mikrotik_api import mikrotik_api
-from utils.admin_decorator import admin_only
-from utils.error_response import send_error
-from utils.callback_utils import safe_answer_callback
 from bot.messages import (
-    STATS_TREND_HEADER,
-    STATS_TREND_FOOTER,
-    STATS_VS_YESTERDAY,
     STATS_NO_HISTORY,
+    STATS_TREND_FOOTER,
+    STATS_TREND_HEADER,
+    STATS_VS_YESTERDAY,
 )
+from core.mikrotik_api import mikrotik_api
+from core.stats import stats_manager
+from utils.admin_decorator import admin_only
+from utils.async_blocking import run_blocking
+from utils.callback_utils import safe_answer_callback
+from utils.error_response import send_error
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +33,8 @@ async def _show_stats(update, context, stat_type):
             # إضافة المقارنة مع الأمس والـ trend الأسبوعي
             if stats:
                 from database.repositories.stats_snapshots import (
-                    get_yesterday_snapshot,
                     get_week_snapshots,
+                    get_yesterday_snapshot,
                 )
 
                 yesterday = await run_blocking(get_yesterday_snapshot, router_key)
@@ -50,9 +52,7 @@ async def _show_stats(update, context, stat_type):
             stats = await run_blocking(stats_manager.get_userman_stats, router_key)
             text = stats_manager.format_userman_stats(stats, router_name)
 
-        await query.edit_message_text(
-            text, reply_markup=get_stats_keyboard(), parse_mode="HTML"
-        )
+        await query.edit_message_text(text, reply_markup=get_stats_keyboard(), parse_mode="HTML")
     except Exception as e:
         await send_error(
             update,

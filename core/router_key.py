@@ -33,12 +33,12 @@ class RouterKey:
                 pass
 
     @classmethod
-    def discovered(cls, db_id: int) -> "RouterKey":
+    def discovered(cls, db_id: int) -> RouterKey:
         """إنشاء مفتاح لراوتم مكتشف في DB."""
         return cls(f"{ROUTER_KEY_PREFIX}{db_id}")
 
     @classmethod
-    def parse(cls, raw: str) -> "RouterKey":
+    def parse(cls, raw: str) -> RouterKey:
         """تحليل string إلى RouterKey (يقبل أي قيمة)."""
         return cls(raw)
 

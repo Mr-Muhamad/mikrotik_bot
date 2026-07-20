@@ -47,18 +47,12 @@ def test_main_conversation_handler_after_standalone_handlers():
 
     # The main CH is the LAST registered ConversationHandler (the separate
     # rename/manual_add CHs are added first inside build_all).
-    ch_indices = [
-        i for i, h in enumerate(handlers) if isinstance(h, ConversationHandler)
-    ]
+    ch_indices = [i for i, h in enumerate(handlers) if isinstance(h, ConversationHandler)]
     assert ch_indices, "expected at least the main ConversationHandler to be registered"
     main_conv_idx = ch_indices[-1]
 
-    standalone_cmd_indices = [
-        i for i, h in enumerate(handlers) if isinstance(h, CommandHandler)
-    ]
-    assert (
-        standalone_cmd_indices
-    ), "expected standalone CommandHandlers to be registered"
+    standalone_cmd_indices = [i for i, h in enumerate(handlers) if isinstance(h, CommandHandler)]
+    assert standalone_cmd_indices, "expected standalone CommandHandlers to be registered"
 
     for idx in standalone_cmd_indices:
         assert idx < main_conv_idx, (
@@ -74,23 +68,17 @@ def test_separate_conversation_handlers_precede_standalone_cancel():
     conversation would be preempted and never ended (STUCK conversation)."""
     handlers = _top_level_handlers()
 
-    ch_indices = [
-        i for i, h in enumerate(handlers) if isinstance(h, ConversationHandler)
-    ]
+    ch_indices = [i for i, h in enumerate(handlers) if isinstance(h, ConversationHandler)]
     # The main CH is the last one; the earlier ones are the separate CHs.
     separate_ch_indices = ch_indices[:-1]
-    assert (
-        separate_ch_indices
-    ), "expected rename/manual_add ConversationHandlers to be registered"
+    assert separate_ch_indices, "expected rename/manual_add ConversationHandlers to be registered"
 
     cancel_idx = None
     for i, h in enumerate(handlers):
         if isinstance(h, CommandHandler) and "cancel" in h.commands:
             cancel_idx = i
             break
-    assert (
-        cancel_idx is not None
-    ), "standalone `cancel` CommandHandler must be registered"
+    assert cancel_idx is not None, "standalone `cancel` CommandHandler must be registered"
 
     for idx in separate_ch_indices:
         assert idx < cancel_idx, (

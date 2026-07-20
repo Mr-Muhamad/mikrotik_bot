@@ -82,21 +82,21 @@ CONFIRM_DELETE = "⚠️ هل أنت متأكد من حذف المستخدم؟\n
 WELCOME = """👤 {admin_name}
 👋 أهلاً بك. اختر الراوتر للبدء:"""
 
-NO_ROUTER_SELECTED = "⚠️ يجب عليك الاتصال براوتر أولاً قبل استخدام هذه القائمة أو الأوامر السريعة.\n\nيرجى اختيار راوتر لإدارته:"
+NO_ROUTER_SELECTED = "⚠️ يجب عليك الاتصال براوتر أولاً قبل استخدام هذه القائمة أو الأوامر السريعة.\n\nيرجى اختيار راوتر لإدارته:"  # noqa: E501
 
 DISCOVERY_START = "⏳ جاري البحث عن روترات ميكروتيك على الشبكة..."
 DISCOVERY_RESULTS = "📡 تم العثور على {} روتر:\n\n{}"
-DISCOVERY_NO_RESULTS = "📭 لم يتم العثور على أي روترات ميكروتيك على الشبكة المحلية\n\nتأكد من:\n1. البوت يعمل بصلاحيات Administrator\n2. الروتر متصل بنفس الشبكة\n3. الفايرول يسمح بالبورت 8728"
-DISCOVERY_PERMISSION_ERROR = "⚠️ خطأ صلاحيات!\n\nاكتشاف الم.ndp يتطلب صلاحيات Administrator على Windows.\n\n🔧 الحل:\n- أغلق البوت وأعد تشغيله كـ Administrator\n- أو نفّذ الأمر: python main.py من موجه أوامر مُشغَّل بصلاحيات مسؤول"
-ROUTER_ALREADY_EXISTS = (
-    "⚠️ هذا الروتر مسجل مسبقاً بعنوان {ip}.\nالاسم الحالي: {name}\n\n"
-)
+DISCOVERY_NO_RESULTS = "📭 لم يتم العثور على أي روترات ميكروتيك على الشبكة المحلية\n\nتأكد من:\n1. البوت يعمل بصلاحيات Administrator\n2. الروتر متصل بنفس الشبكة\n3. الفايرول يسمح بالبورت 8728"  # noqa: E501
+DISCOVERY_PERMISSION_ERROR = "⚠️ خطأ صلاحيات!\n\nاكتشاف الم.ndp يتطلب صلاحيات Administrator على Windows.\n\n🔧 الحل:\n- أغلق البوت وأعد تشغيله كـ Administrator\n- أو نفّذ الأمر: python main.py من موجه أوامر مُشغَّل بصلاحيات مسؤول"  # noqa: E501
+ROUTER_ALREADY_EXISTS = "⚠️ هذا الروتر مسجل مسبقاً بعنوان {ip}.\nالاسم الحالي: {name}\n\n"
 DISCOVERY_CREDENTIALS = "👤 أدخل يوزر الروتر {}:"
 DISCOVERY_PASSWORD = "🔑 أدخل باسورد الروتر {}:"
 DISCOVERY_CONNECTING = "⏳ جاري الاتصال بـ {}..."
-DISCOVERY_SUCCESS = "✅ تم الاتصال والحفظ بنجاح!\n\n🌐 {}\n📋 الإصدار: {}\n🔧 {}\n\nيمكنك الآن إدارة هذا الروتر."
+DISCOVERY_SUCCESS = (
+    "✅ تم الاتصال والحفظ بنجاح!\n\n🌐 {}\n📋 الإصدار: {}\n🔧 {}\n\nيمكنك الآن إدارة هذا الروتر."
+)
 ROUTER_UPDATED = "✅ تم تحديث بيانات الروتر بنجاح!\n\n🌐 {}\n📋 الإصدار: {}\n📍 {}"
-DISCOVERY_FAILED = "❌ فشل الاتصال. تأكد من:\n1. تفعيل API Service في WinBox (IP > Services > api)\n2. صحة اليوزر والباسورد\n3. البورت 8728 مفتوح في الفايرول"
+DISCOVERY_FAILED = "❌ فشل الاتصال. تأكد من:\n1. تفعيل API Service في WinBox (IP > Services > api)\n2. صحة اليوزر والباسورد\n3. البورت 8728 مفتوح في الفايرول"  # noqa: E501
 SAVED_ROUTERS = "📋 الروترات المحفوظة:\n\n{}"
 SAVED_ROUTERS_EMPTY = "📭 لا توجد روترات محفوظة\n\nاستخدم 🔍 اكتشاف روترات جديدة للبحث"
 SAVED_ROUTER_OFFLINE = "🔴 {} - {} (غير متصل)"
@@ -105,9 +105,7 @@ DELETE_ROUTER_CONFIRM = "⚠️ هل أنت متأكد من حذف الروتر 
 ROUTER_DELETED = "✅ تم حذف الروتر"
 REFRESHING_ROUTERS = "🔄 جاري تحديث حالة الروترات المحفوظة..."
 
-REBOOT_CONFIRM = (
-    "⚠️ هل أنت متأكد من إعادة تشغيل الراوتر {}؟\n⛔ سيتم فصل جميع المستخدمين!"
-)
+REBOOT_CONFIRM = "⚠️ هل أنت متأكد من إعادة تشغيل الراوتر {}؟\n⛔ سيتم فصل جميع المستخدمين!"
 REBOOT_IN_PROGRESS = "⏳ جاري إعادة التشغيل..."
 REBOOT_SUCCESS = "✅ تمت إعادة التشغيل بنجاح"
 REBOOT_FAILED = "❌ فشل: {}"
@@ -258,9 +256,7 @@ MANUAL_ADD_ALIAS_PROMPT = "🏷️ الاسم المستعار (أو /skip):"
 MANUAL_ADD_CONFIRM = "تأكيد الإضافة:\n📍 IP: {}\n🔌 Port: {}\n👤 User: {}\n🏷️ Name: {}"
 MANUAL_ADD_DUPLICATE = "⚠️ الراوتر {} مسجل مسبقاً ({})"
 MANUAL_ADD_SAVED = "✅ تم حفظ الراوتر {}\n📍 {}"
-MANUAL_ADD_CONN_FAILED = (
-    "✅ تم الحفظ، لكن تعذّر الاتصال للتحقق:\n{}\n📍 الروتر محفوظ بياناته."
-)
+MANUAL_ADD_CONN_FAILED = "✅ تم الحفظ، لكن تعذّر الاتصال للتحقق:\n{}\n📍 الروتر محفوظ بياناته."
 MANUAL_ADD_INVALID = "❌ {}"
 
 # ─── USERMAN ───────────────────────────────────────────────────────────
@@ -269,9 +265,7 @@ NO_PROFILES_AVAILABLE = "❌ لا توجد بروفايلات. تأكد من ا�
 
 USERMAN_ADD_PROFILE_PROMPT = "📦 اختر الباقة (البروفايل) لإضافتها للمستخدم:"
 USERMAN_ADD_PROFILE_SUCCESS = "✅ تمت إضافة الباقة «{profile}» للمستخدم {username}."
-USERMAN_ADD_PROFILE_FAILED = (
-    "❌ فشل إضافة الباقة «{profile}» للمستخدم {username}: {error}"
-)
+USERMAN_ADD_PROFILE_FAILED = "❌ فشل إضافة الباقة «{profile}» للمستخدم {username}: {error}"
 USERMAN_NO_PROFILES_TO_ADD = "📭 لا توجد بروفايلات متاحة لإضافتها على هذا الروتر."
 SEND_CARD_COUNT = "🔢 أرسل عدد الكروت:"
 MAX_CARDS_EXCEEDED = "❌ الحد الأقصى 100 كارت"
@@ -290,18 +284,14 @@ CHOOSE_MAC_BIND = """🔗 ربط الكروت بعنوان MAC (caller-id)؟
 • «بدون ربط»: اترك الحساب دون تقييد بأي جهاز."""
 MAC_PROMPT = "📡 أرسل عنوان MAC للربط (مثل AA:BB:CC:DD:EE:FF):"
 INVALID_MAC = "❌ عنوان MAC غير صالح. أرسل صيغة صحيحة مثل AA:BB:CC:DD:EE:FF"
-CARDS_CREATED_DETAIL = (
-    "✅ تم إنشاء {count} كارت بنجاح!\n📅 {created_at}\n💰 الدفع: {payment}"
-)
+CARDS_CREATED_DETAIL = "✅ تم إنشاء {count} كارت بنجاح!\n📅 {created_at}\n💰 الدفع: {payment}"
 
 # ─── BACKUP ────────────────────────────────────────────────────────────
 
 BACKUP_FULL_IN_PROGRESS = "⏳ جاري عمل Full System Backup..."
 BACKUP_USERMAN_IN_PROGRESS = "⏳ جاري عمل User Manager Backup..."
-BACKUP_RESTORE_AVAILABLE = (
-    "📦 النسخ الاحتياطية المتاحة ({count}):\n\nاختر النسخة للاستعادة:"
-)
-BACKUP_RESTORE_CONFIRM = "⚠️ هل أنت متأكد من استعادة النسخة الاحتياطية؟\n\n📦 {name}\n\n⛔ سيؤدي هذا إلى إعادة تشغيل الروتر!"
+BACKUP_RESTORE_AVAILABLE = "📦 النسخ الاحتياطية المتاحة ({count}):\n\nاختر النسخة للاستعادة:"
+BACKUP_RESTORE_CONFIRM = "⚠️ هل أنت متأكد من استعادة النسخة الاحتياطية؟\n\n📦 {name}\n\n⛔ سيؤدي هذا إلى إعادة تشغيل الروتر!"  # noqa: E501
 BACKUP_RESTORE_IN_PROGRESS = "⏳ جاري استعادة النسخة الاحتياطية {name}..."
 BACKUP_RESTORE_SUCCESS = "✅ تمت استعادة النسخة الاحتياطية {name} بنجاح"
 BACKUP_RESTORE_FAILED = "❌ فشل الاستعادة: {error}"
@@ -310,21 +300,19 @@ INVALID_TIME_FORMAT = "صيغة غير صحيحة. استخدم HH:MM (مثال:
 
 # ─── PDF SETTINGS ──────────────────────────────────────────────────────
 
-PDF_MARGINS_PROMPT = "📏 الهوامش الحالية:\nأعلى={top} | أسفل={bottom} | يسار={left} | يمين={right}\n\nأرسل القيمة الجديدة بالترتيب: أعلى أسفل يسار يمين"
-PDF_CARD_SIZE_PROMPT = (
-    "📐 حجم الكارت الحالي: {width} × {height} مم\n\nأرسل العرض والارتفاع بالمم"
-)
+PDF_MARGINS_PROMPT = "📏 الهوامش الحالية:\nأعلى={top} | أسفل={bottom} | يسار={left} | يمين={right}\n\nأرسل القيمة الجديدة بالترتيب: أعلى أسفل يسار يمين"  # noqa: E501
+PDF_CARD_SIZE_PROMPT = "📐 حجم الكارت الحالي: {width} × {height} مم\n\nأرسل العرض والارتفاع بالمم"
 PDF_SPACING_PROMPT = (
     "↔️ الفواصل الحالية: أفقي={x} | عمودي={y} مم\n\nأرسل الفواصل الجديدة: أفقي عمودي"
 )
 PDF_CARDS_PER_ROW_PROMPT = "📄 الكروت في الصف الحالي: {value}\n\nأرسل العدد الجديد"
 PDF_CARDS_PER_PAGE_PROMPT = "📄 الكروت في الصفحة الحالية: {value}\n\nأرسل العدد الجديد"
 PDF_BRAND_NAME_PROMPT = "🏷️ اسم الشبكة الحالي: {value}\n\nأرسل الاسم الجديد:"
-PDF_HOTSPOT_DNS_PROMPT = "🌐 IP أو DNS للـ Hotspot الحالي: {value}\n\n📌 أدخل فقط IP أو العنوان\nالرابط الكامل: http://{{IP}}/login?username=...&password=...\n\nمثال: 192.0.0.1 أو hotspot.mynetwork.com"
+PDF_HOTSPOT_DNS_PROMPT = "🌐 IP أو DNS للـ Hotspot الحالي: {value}\n\n📌 أدخل فقط IP أو العنوان\nالرابط الكامل: http://{{IP}}/login?username=...&password=...\n\nمثال: 192.0.0.1 أو hotspot.mynetwork.com"  # noqa: E501
 PDF_SHOW_QR_PROMPT = "📱 QR Code الحالي: {value}\n\n1️⃣ تفعيل\n2️⃣ تعطيل"
 PDF_FOOTER_PROMPT = "📝 التذييل الحالي: {value}\n\nأرسل نص التذييل الجديد:"
-PDF_LABEL_SPACING_PROMPT = "📐 تباعد النصوص الحالي:\nرقم الشحن: {single}\nاليوزر/الباسورد: {dual}\n\n📌 القيمة 1.0 = التخطيط الحالي\n📌 القيمة 1.5 = المسافة تزيد 50%\n📌 القيمة 0.5 = المسافة تنقص 50%\n\nأرسل القيمتين مفصولتين بمسافة:\nتباعد رقم الشحن تباعد اليوزر/الباسورد"
-PDF_VALUE_FONT_SIZE_PROMPT = "🔤 أحجام الخط الحالية:\nرقم شحن (أقصى): {single}\nيوزر/باسورد (أقصى): {dual}\n\n📌 النطاق المسموح: 8-16\n📌 الحد الأدنى ثابت = 7 دائماً\n\nأرسل القيمتين مفصولتين بمسافة:\nحجم_أقصى_رقم_شحن حجم_أقصى_يوزر/باسورد"
+PDF_LABEL_SPACING_PROMPT = "📐 تباعد النصوص الحالي:\nرقم الشحن: {single}\nاليوزر/الباسورد: {dual}\n\n📌 القيمة 1.0 = التخطيط الحالي\n📌 القيمة 1.5 = المسافة تزيد 50%\n📌 القيمة 0.5 = المسافة تنقص 50%\n\nأرسل القيمتين مفصولتين بمسافة:\nتباعد رقم الشحن تباعد اليوزر/الباسورد"  # noqa: E501
+PDF_VALUE_FONT_SIZE_PROMPT = "🔤 أحجام الخط الحالية:\nرقم شحن (أقصى): {single}\nيوزر/باسورد (أقصى): {dual}\n\n📌 النطاق المسموح: 8-16\n📌 الحد الأدنى ثابت = 7 دائماً\n\nأرسل القيمتين مفصولتين بمسافة:\nحجم_أقصى_رقم_شحن حجم_أقصى_يوزر/باسورد"  # noqa: E501
 PDF_BORDER_PROMPT = "📏 سمك الحدود الحالي: {value} مم\n\nأرسل القيمة الجديدة (رقم):"
 PDF_UNKNOWN_OPTION = "❌ خيار غير معروف"
 PDF_SEND_4_VALUES = "❌ أرسل 4 قيم مفصولين بمسافات"
@@ -374,13 +362,13 @@ HOTSPOT_STATS_RESET_BLOCK = """🔄 تم تصفير العدادات في يوم
 {reset_list}
 </pre>"""
 
-HOTSPOT_STATS_PROMPT = "📅 أدخل رقم اليوم (من الأيام المتاحة: {days}) لعرض المستخدمين الذين تم تصفير عداداتهم:"
+HOTSPOT_STATS_PROMPT = (
+    "📅 أدخل رقم اليوم (من الأيام المتاحة: {days}) لعرض المستخدمين الذين تم تصفير عداداتهم:"
+)
 
 HOTSPOT_STATS_DAY_INVALID = "❌ يرجى إدخال رقم يوم صحيح بين 1 و31."
 
-HOTSPOT_STATS_DAY_NOT_FOUND = (
-    "⚠️ لا توجد سجلات تصفير لليوم {day}. الأيام المتاحة: {days}."
-)
+HOTSPOT_STATS_DAY_NOT_FOUND = "⚠️ لا توجد سجلات تصفير لليوم {day}. الأيام المتاحة: {days}."
 
 HOTSPOT_STATS_NO_RESET = "ℹ️ لا توجد سجلات تصفير عدادات حسب اليوم."
 
@@ -402,8 +390,12 @@ HOTSPOT_EDIT_FIELD_PROMPT = "✏️ أرسل القيمة الجديدة للح�
 HOTSPOT_EDIT_CURRENT_VALUE = "📌 القيمة الحالية: <code>{current_value}</code>"
 HOTSPOT_EDIT_EMPTY_VALUE = "فارغ"
 
-HOTSPOT_PAGINATION_DELETE = "📋 تم العثور على {count} مستخدم ({slice_info}):\n\nاختر المستخدم للحذف:"
-HOTSPOT_PAGINATION_EDIT = "📋 تم العثور على {count} مستخدم ({slice_info}):\n\nاختر المستخدم للتعديل:"
+HOTSPOT_PAGINATION_DELETE = (
+    "📋 تم العثور على {count} مستخدم ({slice_info}):\n\nاختر المستخدم للحذف:"
+)
+HOTSPOT_PAGINATION_EDIT = (
+    "📋 تم العثور على {count} مستخدم ({slice_info}):\n\nاختر المستخدم للتعديل:"
+)
 
 HOTSPOT_ADD_BYTES_HINT = "{error}\n\n💡 أو اتركها فارغة للتخطي."
 HOTSPOT_ADD_INVALID_UPTIME = "❌ قيمة غير صالحة. الرجاء إدخال رقم صحيح."
@@ -414,7 +406,7 @@ HOTSPOT_ADD_USE_BUTTONS = "❌ الرجاء استخدام الأزرار أدن
 
 USERMAN_RESTORE_MENU = "🎫 استعادة User Manager\n\nاختر ملف الاستعادة:"
 USERMAN_RESTORE_NO_BACKUPS = "📭 لا توجد نسخ User Manager محفوظة"
-USERMAN_RESTORE_CONFIRM = "⚠️ هل أنت متأكد من استعادة User Manager من الملف؟\n\n📦 {name}\n\n⛔ سيتم إعادة إنشاء المستخدمين والبروفايلات!"
+USERMAN_RESTORE_CONFIRM = "⚠️ هل أنت متأكد من استعادة User Manager من الملف؟\n\n📦 {name}\n\n⛔ سيتم إعادة إنشاء المستخدمين والبروفايلات!"  # noqa: E501
 USERMAN_RESTORE_IN_PROGRESS = "⏳ جاري استعادة User Manager..."
 USERMAN_RESTORE_SUCCESS = "✅ تمت الاستعادة بنجاح:\n\n{summary}"
 USERMAN_RESTORE_FAILED = "❌ فشل الاستعادة: {error}"
@@ -423,25 +415,18 @@ USERMAN_RESTORE_PARTIAL = "⚠️ تمت الاستعادة مع بعض الأخ
 
 # ─── تنبيهات انتهاء الاشتراك ─────────────────────────────────
 # مصدر الثوابت في core/messages_expiry.py (لكي لا يعتمد core على bot)
-from core.messages_expiry import (
-    EXPIRY_ALERT_HEADER,
-    EXPIRY_ALERT_USER_ROW,
-    EXPIRY_ALERT_EMPTY,
-)
 
 # ─── حظر MAC ──────────────────────────────────────────────────
-BLOCK_MAC_SUCCESS = "🚫 تم حظر الجهاز <code>{mac}</code> بنجاح.\n\n⚠️ تأكد من وجود Firewall Rule تمنع address-list=hotspot_blocked من الاتصال."
+BLOCK_MAC_SUCCESS = "🚫 تم حظر الجهاز <code>{mac}</code> بنجاح.\n\n⚠️ تأكد من وجود Firewall Rule تمنع address-list=hotspot_blocked من الاتصال."  # noqa: E501
 BLOCK_MAC_FAIL = "❌ فشل حظر الجهاز. تحقق من الاتصال بالراوتر."
 UNBLOCK_MAC_SUCCESS = "✅ تم رفع الحظر عن <code>{mac}</code>"
 UNBLOCK_MAC_FAIL = "❌ فشل رفع الحظر. قد لا يكون الجهاز محظوراً."
-BLOCKED_LIST_HEADER = (
-    "🚫 <b>الأجهزة المحظورة ({count}):</b>\n\nاضغط على جهاز لرفع حظره:"
-)
+BLOCKED_LIST_HEADER = "🚫 <b>الأجهزة المحظورة ({count}):</b>\n\nاضغط على جهاز لرفع حظره:"
 BLOCKED_LIST_EMPTY = "✅ لا توجد أجهزة محظورة حالياً"
 
 # ─── نظام الفواتير ─────────────────────────────────────────────
 SALES_SUMMARY_HEADER = "💰 <b>ملخص المبيعات — آخر {days} يوم</b>\n\n"
-SALES_SUMMARY_ROW = "📦 إجمالي الدفعات: {total_batches}\n✅ مدفوعة: {paid_count}\n🆓 غير مدفوعة: {unpaid_count}\n⏳ مرحّلة: {deferred_count}\n💵 الإيرادات: {total_revenue:.2f}"
+SALES_SUMMARY_ROW = "📦 إجمالي الدفعات: {total_batches}\n✅ مدفوعة: {paid_count}\n🆓 غير مدفوعة: {unpaid_count}\n⏳ مرحّلة: {deferred_count}\n💵 الإيرادات: {total_revenue:.2f}"  # noqa: E501
 MARK_PAID_SUCCESS = "✅ تم تحديث حالة الدفع إلى: {status_label}"
 MARK_PAID_FAIL = "❌ فشل تحديث حالة الدفع"
 PAYMENT_STATUS_LABELS = {
@@ -451,7 +436,7 @@ PAYMENT_STATUS_LABELS = {
 }
 
 # ─── مشاركة كروت WiFi ─────────────────────────────────────────
-SHARE_CARD_PROMPT = "📤 أرسل Telegram User ID للعميل الذي تريد إرسال الكرت إليه:\n\n💡 يمكنك إيجاد الـ ID عبر بوت @userinfobot"
+SHARE_CARD_PROMPT = "📤 أرسل Telegram User ID للعميل الذي تريد إرسال الكرت إليه:\n\n💡 يمكنك إيجاد الـ ID عبر بوت @userinfobot"  # noqa: E501
 SHARE_CARD_TEMPLATE = """📶 <b>بيانات اتصال WiFi</b>
 
 👤 اسم المستخدم: <code>{username}</code>
@@ -482,8 +467,12 @@ BACKUP_ONLY_ON_ROUTER = "⚠️ الملفات لا تزال على الراوت
 BACKUP_FAILED_FULL = "❌ فشل النسخ الاحتياطي: {message}"
 BACKUP_SUCCESS_USERMAN = "✅ اكتمل النسخ الاحتياطي لـ User Manager بنجاح: {message}"
 BACKUP_FAILED_USERMAN = "❌ فشل النسخ لـ User Manager: {message}"
-BACKUP_ERROR_UNEXPECTED = "❌ حدث خطأ غير متوقع أثناء النسخ الاحتياطي في الخلفية للراوتر {router_key}."
-BACKUP_ALREADY_IN_PROGRESS = "⚠️ توجد عملية نسخ احتياطي جارية حالياً لهذا الراوتر. الرجاء الانتظار حتى تكتمل."
+BACKUP_ERROR_UNEXPECTED = (
+    "❌ حدث خطأ غير متوقع أثناء النسخ الاحتياطي في الخلفية للراوتر {router_key}."
+)
+BACKUP_ALREADY_IN_PROGRESS = (
+    "⚠️ توجد عملية نسخ احتياطي جارية حالياً لهذا الراوتر. الرجاء الانتظار حتى تكتمل."
+)
 BACKUP_BACKGROUND_NOTIFY = "{msg}\n\n⏳ يتم تشغيل المهمة في الخلفية، سيصلك إشعار عند الانتهاء."
 BACKUP_DL_INVALID_LINK = "⚠️ رابط تحميل غير صالح"
 BACKUP_DL_UNKNOWN_TYPE = "⚠️ نوع باكوب غير معروف"
@@ -530,7 +519,7 @@ USERMAN_SEARCH_FOUND = "🔍 تم العثور على {count}"
 USERMAN_SEARCH_LIMIT = " — يعرض أول {limit}:"
 USERMAN_SEARCH_STATUS_OFF = "🔴 معطل"
 USERMAN_SEARCH_STATUS_ON = "🟢 نشط"
-USERMAN_SEARCH_RESULT = "👤 مستخدم User Manager:\n📛 الاسم: {name}\n🔑 الرمز: {pwd}\n📋 البروفايل: {profile}\nوضع الحساب: {status}"
+USERMAN_SEARCH_RESULT = "👤 مستخدم User Manager:\n📛 الاسم: {name}\n🔑 الرمز: {pwd}\n📋 البروفايل: {profile}\nوضع الحساب: {status}"  # noqa: E501
 USERMAN_SEARCH_LOADING = "جاري البحث..."
 USERMAN_SEARCH_SESSION_EXPIRED = "⚠️ انتهت الجلسة أو بيانات غير صالحة."
 USERMAN_SEARCH_KICKED = "✅ تم طرد {killed} جلسة للمستخدم {username}."
@@ -556,7 +545,7 @@ TIMEOUT_MINS_30 = "30 دقيقة"
 TIMEOUT_MINS_60 = "60 دقيقة"
 TIMEOUT_NO_LIMIT = "بدون إغلاق"
 TIMEOUT_CANCEL_BTN = "❌ إلغاء"
-TIMEOUT_HEADER = "⏰ <b>إعداد مدة الخمول (Session Timeout)</b>\n\nاختر المدة التي سيتم بعدها إغلاق الجلسة وإجبارك على اختيار الراوتر مجدداً (لحماية النظام):"
+TIMEOUT_HEADER = "⏰ <b>إعداد مدة الخمول (Session Timeout)</b>\n\nاختر المدة التي سيتم بعدها إغلاق الجلسة وإجبارك على اختيار الراوتر مجدداً (لحماية النظام):"  # noqa: E501
 TIMEOUT_SAVED = "✅ تم حفظ إعداد الخمول بنجاح.\nالمدة الحالية: "
 TIMEOUT_SAVED_NO_LIMIT = "بدون إغلاق (مفتوح دائماً)."
 TIMEOUT_SAVED_MINS = "{val} دقيقة."

@@ -1,12 +1,12 @@
 """Tests for card batch persistence and serialization."""
 
+from core.card_models import CardData, deserialize_cards, serialize_cards
 from database.models import (
-    save_card_batch,
-    list_card_batches,
-    get_card_batch,
     delete_card_batch,
+    get_card_batch,
+    list_card_batches,
+    save_card_batch,
 )
-from core.card_models import CardData, serialize_cards, deserialize_cards
 
 SAMPLE_CARDS = [
     CardData(
@@ -17,9 +17,7 @@ SAMPLE_CARDS = [
         limit_bytes="1000",
         comment="batch",
     ),
-    CardData(
-        username="u2", password="", card_number=2, profile="10GB", limit_bytes="2000"
-    ),
+    CardData(username="u2", password="", card_number=2, profile="10GB", limit_bytes="2000"),
 ]
 
 
@@ -59,9 +57,7 @@ def test_list_card_batches_filters_by_router():
 
 
 def test_delete_card_batch():
-    bid = save_card_batch(
-        "discovered_1", "del", "hotspot", cards=serialize_cards(SAMPLE_CARDS)
-    )
+    bid = save_card_batch("discovered_1", "del", "hotspot", cards=serialize_cards(SAMPLE_CARDS))
     assert delete_card_batch(bid) == 1
     assert get_card_batch(bid) is None
 

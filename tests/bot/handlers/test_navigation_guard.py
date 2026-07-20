@@ -1,15 +1,16 @@
 """Tests for the centralized navigation guard (string-based classification)."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
+from bot.handlers.callback_constants import PATTERNS
 from bot.router_selector import (
-    navigation_guard,
-    requires_router_check,
     ROUTER_MGMT_COMMANDS,
     ROUTER_MGMT_PATTERN_NAMES,
+    navigation_guard,
+    requires_router_check,
 )
-from bot.handlers.callback_constants import PATTERNS
 
 
 @pytest.mark.asyncio

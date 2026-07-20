@@ -9,28 +9,30 @@ live here so ``bot/registrations.py`` stays a thin wiring layer.
 """
 
 from telegram.ext import (
-    CommandHandler,
     CallbackQueryHandler,
+    CommandHandler,
     MessageHandler,
     filters,
+)
+from telegram.ext import (
     ConversationHandler as CH,
 )
 
+import bot.handlers.constants as constants
 from bot.handlers.callback_constants import PATTERNS
 from bot.handlers.commands_basic import cancel
 from bot.handlers.menus import go_back
 from bot.handlers.routers import (
-    rename_router_start,
-    rename_router_value,
-    manual_add_start,
-    manual_add_ip,
-    manual_add_port,
-    manual_add_user,
-    manual_add_pass,
     manual_add_alias,
     manual_add_confirm,
+    manual_add_ip,
+    manual_add_pass,
+    manual_add_port,
+    manual_add_start,
+    manual_add_user,
+    rename_router_start,
+    rename_router_value,
 )
-import bot.handlers.constants as constants
 
 
 def _build_rename_handler() -> CH:
@@ -41,9 +43,7 @@ def _build_rename_handler() -> CH:
     takes precedence while active.
     """
     return CH(
-        entry_points=[
-            CallbackQueryHandler(rename_router_start, pattern=PATTERNS["rename_router"])
-        ],
+        entry_points=[CallbackQueryHandler(rename_router_start, pattern=PATTERNS["rename_router"])],
         states={
             constants.WAITING_RENAME: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, rename_router_value)
@@ -68,9 +68,7 @@ def _build_manual_add_handler() -> CH:
     """
     return CH(
         entry_points=[
-            CallbackQueryHandler(
-                manual_add_start, pattern=PATTERNS["manual_add_router"]
-            ),
+            CallbackQueryHandler(manual_add_start, pattern=PATTERNS["manual_add_router"]),
             CommandHandler("addrouter", manual_add_start),
         ],
         states={
@@ -90,9 +88,7 @@ def _build_manual_add_handler() -> CH:
                 MessageHandler(filters.TEXT & ~filters.COMMAND, manual_add_alias)
             ],
             constants.WAITING_MANUAL_CONFIRM: [
-                CallbackQueryHandler(
-                    manual_add_confirm, pattern=PATTERNS["confirm_manual_add"]
-                )
+                CallbackQueryHandler(manual_add_confirm, pattern=PATTERNS["confirm_manual_add"])
             ],
         },
         fallbacks=[

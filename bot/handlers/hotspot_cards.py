@@ -2,9 +2,11 @@ import logging
 import os
 from datetime import datetime
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
 
+from bot.handlers.handler_utils import make_back_step
+from bot.helpers.profiles import PROFILE_SOURCE_HOTSPOT, fetch_and_cache_profiles
 from bot.keyboards import (
     get_cancel_keyboard,
     get_hotspot_keyboard,
@@ -22,22 +24,23 @@ from bot.messages import (
     ERROR_OCCURRED,
     SEND_UPTIME_TYPE,
 )
+from bot.profile_callbacks import resolve_profile_from_callback
 from bot.router_selector import (
     cleanup_state,
     get_selected_router,
     nav_set,
     set_current_action,
 )
-from bot.handlers.handler_utils import make_back_step
-from bot.helpers.profiles import fetch_and_cache_profiles, PROFILE_SOURCE_HOTSPOT
 from core.card_models import CardSystem, serialize_cards
 from core.hotspot_manager import hotspot_manager
-from bot.profile_callbacks import resolve_profile_from_callback
+from database.models import save_card_batch
+from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import edit_clean, reply_final, send_step
 from utils.error_response import send_error
+
 from .constants import (
     WAITING_HOTSPOT_CARD_BYTES,
     WAITING_HOTSPOT_CARD_COUNT,
@@ -51,8 +54,6 @@ from .hotspot_flow_utils import (
     convert_uptime_value,
     set_uptime_unit,
 )
-from pdf.card_generator import card_generator
-from database.models import save_card_batch
 
 logger = logging.getLogger(__name__)
 
@@ -133,16 +134,12 @@ async def hotspot_cards_skip_prefix(update: Update, context: ContextTypes.DEFAUL
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_prefix"] = ""
-    await query.edit_message_text(
-        CHOOSE_CARD_SYSTEM, reply_markup=get_card_type_keyboard()
-    )
+    await query.edit_message_text(CHOOSE_CARD_SYSTEM, reply_markup=get_card_type_keyboard())
     return WAITING_HOTSPOT_CARD_TYPE
 
 
 @admin_only
-async def hotspot_cards_type_selected(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def hotspot_cards_type_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
     callback_data = query.data
@@ -165,9 +162,7 @@ async def hotspot_cards_type_selected(
         )
         await query.edit_message_text(
             CHOOSE_CARD_PROFILE,
-            reply_markup=get_profile_keyboard(
-                profile_names, "hs_card_profile", "hs_back_to_type"
-            ),
+            reply_markup=get_profile_keyboard(profile_names, "hs_card_profile", "hs_back_to_type"),
         )
     except Exception as e:
         await send_error(
@@ -185,9 +180,7 @@ async def hotspot_cards_type_selected(
 
 
 @admin_only
-async def hotspot_cards_profile_selected(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def hotspot_cards_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
     profile = resolve_profile_from_callback(context, query.data, "hs_card_profile_")
@@ -227,9 +220,7 @@ async def hotspot_cards_uptime_type(update: Update, context: ContextTypes.DEFAUL
 
 
 @admin_only
-async def hotspot_cards_skip_uptime_type(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def hotspot_cards_skip_uptime_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_uptime"] = ""
@@ -241,9 +232,7 @@ async def hotspot_cards_skip_uptime_type(
 
 
 @admin_only
-async def hotspot_cards_uptime_value(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def hotspot_cards_uptime_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
     value = update.message.text.strip()
     unit = context.user_data.get("hs_uptime_unit", "hours")
     uptime = convert_uptime_value(value, unit)
@@ -309,18 +298,14 @@ async def hotspot_cards_skip_bytes(update: Update, context: ContextTypes.DEFAULT
 async def _create_cards(update, context, query=None):
     router_key = get_selected_router(update.effective_user.id)
     if not router_key:
-        await reply_final(
-            update, context, "❌ لم يتم اختيار روتر.", get_hotspot_keyboard()
-        )
+        await reply_final(update, context, "❌ لم يتم اختيار روتر.", get_hotspot_keyboard())
         cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
 
     count = context.user_data.get("hs_card_count", 1)
     length = context.user_data.get("hs_card_length", 3)
     prefix = context.user_data.get("hs_card_prefix", "")
-    card_system = context.user_data.get(
-        "hs_card_system", CardSystem.DIFFERENT_CREDENTIALS
-    )
+    card_system = context.user_data.get("hs_card_system", CardSystem.DIFFERENT_CREDENTIALS)
     profile = context.user_data.get("hs_card_profile", "default")
     uptime = context.user_data.get("hs_card_uptime", "")
     bytes_limit = context.user_data.get("hs_card_bytes", "")
@@ -384,9 +369,7 @@ async def _create_cards(update, context, query=None):
                 "🏠 القائمة الرئيسية", reply_markup=get_hotspot_keyboard()
             )
         else:
-            await reply_final(
-                update, context, "🏠 القائمة الرئيسية", get_hotspot_keyboard()
-            )
+            await reply_final(update, context, "🏠 القائمة الرئيسية", get_hotspot_keyboard())
 
     except Exception as e:
         await send_error(
@@ -423,9 +406,7 @@ async def hs_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         await query.edit_message_text(
             CHOOSE_CARD_PROFILE,
-            reply_markup=get_profile_keyboard(
-                profile_names, "hs_card_profile", "hs_back_to_type"
-            ),
+            reply_markup=get_profile_keyboard(profile_names, "hs_card_profile", "hs_back_to_type"),
         )
     except Exception as e:
         await send_error(

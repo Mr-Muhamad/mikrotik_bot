@@ -35,9 +35,10 @@ class TestPDFRenderer:
             "show_qr": 0,
         }
 
-        with patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings), patch(
-            "pdf.pdf_renderer.CardRenderer"
-        ) as mock_cr:
+        with (
+            patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings),
+            patch("pdf.pdf_renderer.CardRenderer") as mock_cr,
+        ):
             mock_cr.return_value.render_card = MagicMock()
             result = self.renderer.generate_cards_pdf(self.cards, output_path)
         assert result == output_path
@@ -60,8 +61,9 @@ class TestPDFRenderer:
             "show_qr": 0,
         }
 
-        with patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings), patch(
-            "pdf.pdf_renderer.CardRenderer"
+        with (
+            patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings),
+            patch("pdf.pdf_renderer.CardRenderer"),
         ):
             result = self.renderer.generate_cards_pdf(self.cards, output_path)
         assert result == output_path
@@ -84,8 +86,9 @@ class TestPDFRenderer:
             "show_qr": 0,
         }
 
-        with patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings), patch(
-            "pdf.pdf_renderer.CardRenderer"
+        with (
+            patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings),
+            patch("pdf.pdf_renderer.CardRenderer"),
         ):
             result = self.renderer.generate_cards_pdf(cards, output_path)
         assert result == output_path
@@ -94,8 +97,9 @@ class TestPDFRenderer:
         output_path = str(tmp_path / "cards.pdf")
         settings = {}  # empty settings - should use defaults
 
-        with patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings), patch(
-            "pdf.pdf_renderer.CardRenderer"
+        with (
+            patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings),
+            patch("pdf.pdf_renderer.CardRenderer"),
         ):
             result = self.renderer.generate_cards_pdf(self.cards, output_path)
         assert result == output_path

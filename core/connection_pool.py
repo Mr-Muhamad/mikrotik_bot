@@ -1,18 +1,16 @@
 import logging
-import time
-import threading
 import queue
-from collections import OrderedDict
-
-from core.cache import TTLCache
+import threading
+import time
 
 from librouteros import connect
 from librouteros.api import Api
 from librouteros.exceptions import LibRouterosError
 
-from database.models import get_router_by_id
 from config import ROUTER_KEY_PREFIX
+from core.cache import TTLCache
 from core.exceptions import RouterNotFoundError
+from database.models import get_router_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +51,7 @@ class ConnectionPool:
             db_id = router_key.replace(ROUTER_KEY_PREFIX, "")
             router_cfg = get_router_by_id(int(db_id))
             if not router_cfg:
-                raise RouterNotFoundError(
-                    f"Discovered router #{db_id} not found in database"
-                )
+                raise RouterNotFoundError(f"Discovered router #{db_id} not found in database")
             return {
                 "host": router_cfg["ip_address"],
                 "port": router_cfg["port"],
@@ -88,9 +84,7 @@ class ConnectionPool:
                 api = self._connect(router_info, timeout=timeout)
                 with self._lock:
                     self.successful_connections += 1
-                logger.info(
-                    f"Connected to {router_info['name']} (attempt {attempt + 1})"
-                )
+                logger.info(f"Connected to {router_info['name']} (attempt {attempt + 1})")
                 return api
             except LibRouterosError as e:
                 with self._lock:
@@ -102,14 +96,10 @@ class ConnectionPool:
                 )
                 if attempt < MAX_RETRIES:
                     time.sleep(RETRY_DELAY)
-        logger.error(
-            f"Failed to connect to {router_info['name']} after {1 + MAX_RETRIES} attempts"
-        )
+        logger.error(f"Failed to connect to {router_info['name']} after {1 + MAX_RETRIES} attempts")
         raise last_error  # type: ignore[misc]
 
-    def get_connection(
-        self, router_key: str = "router1", timeout: int | None = None
-    ) -> Api:
+    def get_connection(self, router_key: str = "router1", timeout: int | None = None) -> Api:
         """
         يحصل على اتصال جاهز من الطابور، أو ينشئ اتصالاً جديداً إذا لم يتجاوز الحد.
         إذا تجاوز الحد (MAX_CONNECTIONS_PER_ROUTER)، سينتظر حتى يفرغ اتصال من الطابور.
@@ -153,7 +143,7 @@ class ConnectionPool:
                 )
                 raise TimeoutError(
                     "Connection pool timeout: too many concurrent requests to the router"
-                )
+                ) from None
 
     def release_connection(self, router_key: str, api: Api, broken: bool = False):
         """

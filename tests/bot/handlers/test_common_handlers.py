@@ -141,8 +141,9 @@ class TestCleanChat:
         sent_msg.message_id = 555
         context.bot.send_message = AsyncMock(return_value=sent_msg)
 
-        with patch("bot.handlers.commands_basic.clean_chat_messages", new=AsyncMock()), patch(
-            "bot.handlers.commands_basic.schedule_delete", new=AsyncMock()
-        ) as mock_sched:
+        with (
+            patch("bot.handlers.commands_basic.clean_chat_messages", new=AsyncMock()),
+            patch("bot.handlers.commands_basic.schedule_delete", new=AsyncMock()) as mock_sched,
+        ):
             await clean_chat(update, context)
         mock_sched.assert_called_once()

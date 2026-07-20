@@ -2,7 +2,7 @@
 
 import os
 import tempfile
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -17,23 +17,23 @@ OTHER_USER_ID = 800000002
 def role_db():
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         tmp = f.name
-    with patch("database.models.DB_PATH", tmp), patch(
-        "utils.crypto._get_key"
-    ) as mk, patch(
-        "database.models.encrypt_password",
-        side_effect=lambda p: f"enc_{p}" if p else "",
-    ), patch(
-        "database.models.decrypt_password",
-        side_effect=lambda t: t.replace("enc_", "", 1) if t.startswith("enc_") else t,
-    ), patch(
-        "utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]
+    with (
+        patch("database.models.DB_PATH", tmp),
+        patch("utils.crypto._get_key") as mk,
+        patch(
+            "database.models.encrypt_password",
+            side_effect=lambda p: f"enc_{p}" if p else "",
+        ),
+        patch(
+            "database.models.decrypt_password",
+            side_effect=lambda t: t.replace("enc_", "", 1) if t.startswith("enc_") else t,
+        ),
+        patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
     ):
         mk.return_value.encrypt.side_effect = lambda p: (
             f"enc_{p.decode()}" if isinstance(p, bytes) else f"enc_{p}"
         )
-        mk.return_value.decrypt.side_effect = (
-            lambda t: t.decode().replace("enc_", "", 1).encode()
-        )
+        mk.return_value.decrypt.side_effect = lambda t: t.decode().replace("enc_", "", 1).encode()
         init_db()
         yield
     try:
@@ -93,9 +93,7 @@ async def test_operator_blocked_from_admin_command(role_db):
     update = _callback_update(OTHER_USER_ID)
     result = await guarded(update, MagicMock())
     assert result is None
-    assert INSUFFICIENT_ROLE_MSG in str(
-        update.callback_query.edit_message_text.call_args
-    )
+    assert INSUFFICIENT_ROLE_MSG in str(update.callback_query.edit_message_text.call_args)
 
 
 @pytest.mark.asyncio

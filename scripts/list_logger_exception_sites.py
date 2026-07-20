@@ -12,7 +12,6 @@ import re
 import sys
 from pathlib import Path
 
-
 HANDLERS_DIR = Path("bot/handlers")
 
 

@@ -2,9 +2,10 @@ import logging
 import secrets
 import string
 from datetime import datetime
+
+from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
-from core.cache import TTLCache
 from core.mikrotik_client import MikrotikClient
 
 _CARD_TYPE_MAP = {
@@ -55,7 +56,7 @@ class UserManager:
             router_key,
             f"{base_path}/user/print",
             **{
-                ".proplist": ".id,name,username,password,profile,disabled,shared-users,caller-id,comment"
+                ".proplist": ".id,name,username,password,profile,disabled,shared-users,caller-id,comment"  # noqa: E501
             },
         )
         self._users_cache.set(router_key, users)
@@ -128,9 +129,7 @@ class UserManager:
                     if username not in existing:
                         break
                 else:
-                    logger.warning(
-                        "Could not generate unique username after 10 attempts"
-                    )
+                    logger.warning("Could not generate unique username after 10 attempts")
                     continue
 
                 result = self._create_user(
@@ -147,16 +146,14 @@ class UserManager:
 
                 time.sleep(0.05)
             except Exception as e:
-                logger.error(f"Card {i+1}/{count} failed on {router_key}: {e}")
+                logger.error(f"Card {i + 1}/{count} failed on {router_key}: {e}")
 
         logger.info(
-            f"Created {len(cards)}/{count} cards on {router_key} (type: {card_system.name}, profile: {profile})"
+            f"Created {len(cards)}/{count} cards on {router_key} (type: {card_system.name}, profile: {profile})"  # noqa: E501
         )
         return cards
 
-    def _create_user(
-        self, router_key, username, password, profile, comment="", caller_id=""
-    ):
+    def _create_user(self, router_key, username, password, profile, comment="", caller_id=""):
         """Create a User Manager user and attach the selected profile.
 
         The user is created WITHOUT the profile first so a rejected ``profile``
@@ -193,13 +190,9 @@ class UserManager:
             }
 
         if is_v7:
-            linked, err = self._attach_v7_profile(
-                router_key, base_path, username, profile
-            )
+            linked, err = self._attach_v7_profile(router_key, base_path, username, profile)
         else:
-            linked, err = self._attach_v6_profile(
-                router_key, base_path, username, profile
-            )
+            linked, err = self._attach_v6_profile(router_key, base_path, username, profile)
 
         return {
             "username": username,
@@ -276,9 +269,7 @@ class UserManager:
                     return True, None
             return False, "profile link not found after attach"
         except Exception as e:
-            logger.warning(
-                f"Could not verify profile link for '{username}' on {router_key}: {e}"
-            )
+            logger.warning(f"Could not verify profile link for '{username}' on {router_key}: {e}")
             return False, f"verify failed: {e}"
 
     def _get_user_id(self, router_key: str, username: str) -> str | None:
@@ -310,9 +301,7 @@ class UserManager:
             logger.warning(f"Error checking user by field '{field}': {e}")
         return None
 
-    def set_user_caller_id(
-        self, router_key: str, username: str, caller_id: str
-    ) -> None:
+    def set_user_caller_id(self, router_key: str, username: str, caller_id: str) -> None:
         """Set caller-id on an existing User Manager user after creation."""
         if not caller_id:
             return
@@ -320,17 +309,13 @@ class UserManager:
         base_path = self._api.get_userman_base_path(router_key)
         uid = self._get_user_id(router_key, username)
         if not uid:
-            logger.error(
-                f"Cannot find .id for User Manager user '{username}' to set caller-id"
-            )
+            logger.error(f"Cannot find .id for User Manager user '{username}' to set caller-id")
             return
 
         self._api.execute(
             router_key, f"{base_path}/user/set", **{".id": uid, "caller-id": caller_id}
         )
-        logger.info(
-            f"Set caller-id '{caller_id}' for user '{username}' on {router_key}"
-        )
+        logger.info(f"Set caller-id '{caller_id}' for user '{username}' on {router_key}")
 
     def list_users(self, router_key: str, limit: int = 50) -> list[dict]:
         """Return up to limit User Manager users from the router.
@@ -372,9 +357,7 @@ class UserManager:
         if not uid:
             return None
         base_path = self._api.get_userman_base_path(router_key)
-        results = self._api.execute(
-            router_key, f"{base_path}/user/print", **{".id": uid}
-        )
+        results = self._api.execute(router_key, f"{base_path}/user/print", **{".id": uid})
         for user in results or []:
             if user.get(".id") == uid:
                 entry = dict(user)
@@ -408,9 +391,7 @@ class UserManager:
         uid = self._get_user_id(router_key, username)
         if not uid:
             raise ValueError(f"User '{username}' not found")
-        result = self._api.execute(
-            router_key, f"{base_path}/user/remove", **{".id": uid}
-        )
+        result = self._api.execute(router_key, f"{base_path}/user/remove", **{".id": uid})
         logger.info(f"Deleted User Manager user '{username}' on {router_key}")
         return result
 
@@ -420,9 +401,7 @@ class UserManager:
         uid = self._get_user_id(router_key, username)
         if not uid:
             raise ValueError(f"User '{username}' not found")
-        result = self._api.execute(
-            router_key, f"{base_path}/user/enable", **{".id": uid}
-        )
+        result = self._api.execute(router_key, f"{base_path}/user/enable", **{".id": uid})
         logger.info(f"Enabled User Manager user '{username}' on {router_key}")
         return result
 
@@ -432,9 +411,7 @@ class UserManager:
         uid = self._get_user_id(router_key, username)
         if not uid:
             raise ValueError(f"User '{username}' not found")
-        result = self._api.execute(
-            router_key, f"{base_path}/user/disable", **{".id": uid}
-        )
+        result = self._api.execute(router_key, f"{base_path}/user/disable", **{".id": uid})
         logger.info(f"Disabled User Manager user '{username}' on {router_key}")
         return result
 
@@ -453,9 +430,7 @@ class UserManager:
             result = self._api.execute(
                 router_key, f"{base_path}/user/reset-counters", **{".id": uid}
             )
-        logger.info(
-            f"Reset counters for User Manager user '{username}' on {router_key}"
-        )
+        logger.info(f"Reset counters for User Manager user '{username}' on {router_key}")
         return result
 
     def get_active_sessions(self, router_key: str) -> list[dict]:
@@ -472,9 +447,7 @@ class UserManager:
             results = self._api.execute(
                 router_key, f"{base_path}/session/print", **{".proplist": proplist}
             )
-            results = [
-                s for s in results if str(s.get("active", "false")).lower() == "true"
-            ]
+            results = [s for s in results if str(s.get("active", "false")).lower() == "true"]
 
         normalized = []
         for session in results:

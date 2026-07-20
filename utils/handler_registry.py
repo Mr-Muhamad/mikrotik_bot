@@ -27,12 +27,14 @@ Example (multi-CH — grouped):
 """
 
 from collections import defaultdict
+
 from telegram.ext import (
-    CommandHandler,
     CallbackQueryHandler,
-    MessageHandler,
+    CommandHandler,
     ConversationHandler,
+    MessageHandler,
 )
+
 from utils.request_id import bind_request_id_from_update
 
 

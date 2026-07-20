@@ -19,21 +19,20 @@ def get_user_session(user_id):
         return None
 
 
-def save_user_session(
-    user_id, selected_router=None, current_action=None, action_data=None
-):
+def save_user_session(user_id, selected_router=None, current_action=None, action_data=None):
     from database.models import get_db
 
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            """INSERT INTO user_sessions (user_id, selected_router, current_action, action_data, last_activity)
+            """INSERT INTO user_sessions
+            (user_id, selected_router, current_action, action_data, last_activity)
                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
                ON CONFLICT(user_id) DO UPDATE SET
-                   selected_router=CASE 
-                       WHEN excluded.selected_router IS NOT NULL AND excluded.selected_router != '' 
-                       THEN excluded.selected_router 
-                       ELSE user_sessions.selected_router 
+                   selected_router=CASE
+                       WHEN excluded.selected_router IS NOT NULL AND excluded.selected_router != ''
+                       THEN excluded.selected_router
+                       ELSE user_sessions.selected_router
                    END,
                    current_action=excluded.current_action,
                    action_data=excluded.action_data,
@@ -49,7 +48,7 @@ def update_activity(user_id: int):
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            """INSERT INTO user_sessions (user_id, last_activity) 
+            """INSERT INTO user_sessions (user_id, last_activity)
                VALUES (?, CURRENT_TIMESTAMP)
                ON CONFLICT(user_id) DO UPDATE SET last_activity=CURRENT_TIMESTAMP""",
             (user_id,),
@@ -63,7 +62,7 @@ def set_session_timeout(user_id: int, timeout_minutes: int):
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            """INSERT INTO user_sessions (user_id, session_timeout, last_activity) 
+            """INSERT INTO user_sessions (user_id, session_timeout, last_activity)
                VALUES (?, ?, CURRENT_TIMESTAMP)
                ON CONFLICT(user_id) DO UPDATE SET session_timeout=excluded.session_timeout""",
             (user_id, timeout_minutes),
@@ -76,6 +75,4 @@ def clear_router_session(user_id: int):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE user_sessions SET selected_router='' WHERE user_id=?", (user_id,)
-        )
+        cursor.execute("UPDATE user_sessions SET selected_router='' WHERE user_id=?", (user_id,))

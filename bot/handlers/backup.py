@@ -1,55 +1,57 @@
 import logging
 import os
+
 from telegram import Update
-from utils.async_blocking import run_blocking
 from telegram.ext import ContextTypes, ConversationHandler
+
+from bot.handlers.handler_utils import get_query_message
 from bot.keyboards import (
     get_backup_keyboard,
-    get_schedule_keyboard,
     get_nav_back_keyboard,
+    get_schedule_keyboard,
 )
 from bot.messages import (
-    BACKUP_SUCCESS_FULL,
-    BACKUP_DOWNLOADED_LOCAL,
-    BACKUP_ONLY_ON_ROUTER,
-    BACKUP_FAILED_FULL,
-    BACKUP_SUCCESS_USERMAN,
-    BACKUP_FAILED_USERMAN,
-    BACKUP_ERROR_UNEXPECTED,
     BACKUP_ALREADY_IN_PROGRESS,
     BACKUP_BACKGROUND_NOTIFY,
     BACKUP_DL_INVALID_LINK,
-    BACKUP_DL_UNKNOWN_TYPE,
     BACKUP_DL_NOT_LOCAL,
-    BACKUP_DL_TOO_LARGE,
     BACKUP_DL_SEND_FAIL,
     BACKUP_DL_SEND_SUCCESS,
-    SCHEDULE_ENABLED,
-    SCHEDULE_DISABLED,
-    SCHEDULE_MENU,
-    SCHEDULE_TIME_PROMPT,
-    SCHEDULE_SET,
-    SCHEDULE_ERROR,
-    SCHEDULE_REMOVED,
+    BACKUP_DL_TOO_LARGE,
+    BACKUP_DL_UNKNOWN_TYPE,
+    BACKUP_DOWNLOADED_LOCAL,
+    BACKUP_ERROR_UNEXPECTED,
+    BACKUP_FAILED_FULL,
+    BACKUP_FAILED_USERMAN,
     BACKUP_FULL_IN_PROGRESS,
+    BACKUP_ONLY_ON_ROUTER,
+    BACKUP_SUCCESS_FULL,
+    BACKUP_SUCCESS_USERMAN,
     BACKUP_USERMAN_IN_PROGRESS,
     INVALID_TIME_FORMAT,
+    SCHEDULE_DISABLED,
+    SCHEDULE_ENABLED,
+    SCHEDULE_ERROR,
+    SCHEDULE_MENU,
+    SCHEDULE_REMOVED,
+    SCHEDULE_SET,
     SCHEDULE_TIME_LINE,
     SCHEDULE_TIME_LINE_EMPTY,
+    SCHEDULE_TIME_PROMPT,
 )
-from database.models import get_backup_schedule, record_backup_result
-from bot.router_selector import set_current_action, nav_set, cleanup_state
-from core.backup_service import backup_service
+from bot.router_selector import cleanup_state, nav_set, set_current_action
+from config import BACKUP_DIR
 from core.backup.files import resolve_local_backup_file, resolve_userman_backup_file
 from core.backup_scheduler import backup_scheduler
-from database.models import log_action
-from utils.callback_utils import safe_answer_callback, is_duplicate_callback
-from bot.handlers.handler_utils import get_query_message
-from utils.chat_cleaner import send_step, reply_final
-from .constants import WAITING_SCHEDULE_TIME
+from core.backup_service import backup_service
+from database.models import get_backup_schedule, log_action, record_backup_result
 from utils.admin_decorator import admin_only, require_role
+from utils.async_blocking import run_blocking
+from utils.callback_utils import is_duplicate_callback, safe_answer_callback
+from utils.chat_cleaner import reply_final, send_step
 from utils.error_response import send_error
-from config import BACKUP_DIR
+
+from .constants import WAITING_SCHEDULE_TIME
 
 logger = logging.getLogger(__name__)
 
@@ -145,9 +147,7 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    if query is not None and is_duplicate_callback(
-        query.data, update.effective_user.id
-    ):
+    if query is not None and is_duplicate_callback(query.data, update.effective_user.id):
         return
     await safe_answer_callback(query)
     router_key = context.user_data["router_key"]
@@ -232,9 +232,7 @@ async def schedule_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @admin_only
-async def schedule_menu_from_conversation(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def schedule_menu_from_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cleanup_state(update.effective_user.id, context.user_data)
     await schedule_menu(update, context)
     return ConversationHandler.END
@@ -248,9 +246,7 @@ async def schedule_enable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cleanup_state(query.from_user.id, context.user_data)
     set_current_action(query.from_user.id, "schedule_time")
     nav_set(context, "menu_backup")
-    await query.edit_message_text(
-        SCHEDULE_TIME_PROMPT, reply_markup=get_nav_back_keyboard()
-    )
+    await query.edit_message_text(SCHEDULE_TIME_PROMPT, reply_markup=get_nav_back_keyboard())
     return WAITING_SCHEDULE_TIME
 
 
@@ -335,9 +331,7 @@ async def backup_download_file(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.answer(BACKUP_DL_NOT_LOCAL, show_alert=True)
         return
     if os.path.getsize(fpath) >= 50 * 1024 * 1024:
-        await query.answer(
-            BACKUP_DL_TOO_LARGE, show_alert=True
-        )
+        await query.answer(BACKUP_DL_TOO_LARGE, show_alert=True)
         return
 
     try:
@@ -350,7 +344,7 @@ async def backup_download_file(update: Update, context: ContextTypes.DEFAULT_TYP
                 chat_id=msg.chat_id,
                 document=f,
                 filename=fname,
-                caption=f"📦 {'Full Backup' if backup_type == 'full' else 'User Manager'} — {fname}",
+                caption=f"📦 {'Full Backup' if backup_type == 'full' else 'User Manager'} — {fname}",  # noqa: E501
             )
         await query.answer(BACKUP_DL_SEND_SUCCESS, show_alert=False)
     except Exception as e:

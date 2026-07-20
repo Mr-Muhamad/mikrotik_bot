@@ -4,8 +4,6 @@ import sqlite3
 from contextlib import contextmanager
 from unittest.mock import patch
 
-import pytest
-
 PATCH_TARGET = "database.repositories.operator_permissions.get_db"
 
 
@@ -107,8 +105,8 @@ class TestRevokeRouter:
     def test_revoke_removes_only_target(self):
         from database.repositories.operator_permissions import (
             assign_router_to_operator,
-            revoke_router_from_operator,
             get_operator_routers,
+            revoke_router_from_operator,
         )
 
         get_db = _make_get_db()
@@ -173,8 +171,8 @@ class TestIsOperatorAllowed:
     def test_not_allowed_after_revoke(self):
         from database.repositories.operator_permissions import (
             assign_router_to_operator,
-            revoke_router_from_operator,
             is_operator_allowed,
+            revoke_router_from_operator,
         )
 
         get_db = _make_get_db()
@@ -213,9 +211,7 @@ class TestGetUserRouters:
         customer_id = 99999
         owned_routers = [self.ALL_ROUTERS[0], self.ALL_ROUTERS[2]]
         with (
-            patch(
-                "database.models.get_saved_routers", return_value=owned_routers
-            ) as mock_get,
+            patch("database.models.get_saved_routers", return_value=owned_routers) as mock_get,
             patch("config.ADMIN_IDS", [12345]),
         ):
             result = get_user_routers(customer_id)

@@ -8,7 +8,7 @@ from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from utils.chat_cleaner import _track_msg
-from utils.tg_helpers import get_query_message, get_query_chat_id
+from utils.tg_helpers import get_query_chat_id, get_query_message
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ ERROR_MESSAGES: dict[str, str] = {
     CATEGORY_CONNECTION: "❌ تعذر الاتصال بالروتر. تأكد من أن الجهاز قيد التشغيل ومتصل بالشبكة.",
     CATEGORY_AUTH: "❌ فشل تسجيل الدخول إلى الروتر. تحقق من اسم المستخدم وكلمة المرور.",
     CATEGORY_TIMEOUT: "⏱️ لم يستجب الروتر خلال المهلة المحددة. حاول مرة أخرى لاحقاً.",
-    CATEGORY_NOT_FOUND: "🔍 الروتر غير موجود. تأكد من اختيار روتر صحيح أو استخدم /start لإعادة الاكتشاف.",
+    CATEGORY_NOT_FOUND: "🔍 الروتر غير موجود. تأكد من اختيار روتر صحيح أو استخدم /start لإعادة الاكتشاف.",  # noqa: E501
     CATEGORY_GENERAL: "❌ حدث خطأ غير متوقع. حاول مرة أخرى أو استخدم /start.",
 }
 
@@ -90,10 +90,7 @@ def classify_error(error: Exception) -> str:
             return CATEGORY_TIMEOUT
         if any(kw in msg for kw in ("refused", "closed", "reset", "unreachable")):
             return CATEGORY_CONNECTION
-        if any(
-            kw in msg
-            for kw in ("auth", "password", "login", "credentials", "unauthorized")
-        ):
+        if any(kw in msg for kw in ("auth", "password", "login", "credentials", "unauthorized")):
             return CATEGORY_AUTH
         if any(kw in msg for kw in ("not found", "no such", "invalid argument")):
             return CATEGORY_NOT_FOUND
@@ -138,9 +135,7 @@ async def _dispatch_message(
         if query is not None and query_msg is not None:
             msg = await query.edit_message_text(text=text, reply_markup=reply_markup)
         elif update and update.effective_message:
-            msg = await update.effective_message.reply_text(
-                text=text, reply_markup=reply_markup
-            )
+            msg = await update.effective_message.reply_text(text=text, reply_markup=reply_markup)
         else:
             msg = await context.bot.send_message(
                 chat_id=target_id, text=text, reply_markup=reply_markup
@@ -170,9 +165,7 @@ async def send_error(
     # الأخطاء الحميدة (مثل "Message is not modified") شائعة أثناء تعديل الرسائل
     # ولا تستدعي تنبيهاً للمستخدم أو سجلاً على مستوى الخطأ.
     if is_benign_telegram_error(error):
-        logger.debug(
-            f"Benign Telegram error (ignored): {error_text} | type={type(error).__name__}"
-        )
+        logger.debug(f"Benign Telegram error (ignored): {error_text} | type={type(error).__name__}")
         return
     effective_router_key = router_key or get_router_key_from_context(context)
     text = format_error_message(error, effective_router_key)

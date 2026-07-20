@@ -1,12 +1,10 @@
 """Tests for bot.handlers.hotspot_common."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from telegram.ext import ConversationHandler
 
-from bot.handlers.hotspot_common import search_users_for_action, execute_add_user
-from bot.handlers.session_models import get_hotspot_add_session
 from bot.handlers.constants import (
     WAITING_DELETE_ID,
     WAITING_DELETE_SELECT,
@@ -14,6 +12,8 @@ from bot.handlers.constants import (
     WAITING_EDIT_VALUE,
     WAITING_INPUT,
 )
+from bot.handlers.hotspot_common import execute_add_user, search_users_for_action
+from bot.handlers.session_models import get_hotspot_add_session
 
 ADMIN_ID = 724730774
 
@@ -36,25 +36,26 @@ def _update():
 class TestSearchUsersForAction:
     @pytest.mark.asyncio
     async def test_no_router_ends(self):
-        with patch(
-            "bot.handlers.hotspot_common.get_selected_router", return_value=None
-        ), patch(
-            "bot.handlers.hotspot_common.reply_final", new=AsyncMock()
-        ) as mock_reply:
+        with (
+            patch("bot.handlers.hotspot_common.get_selected_router", return_value=None),
+            patch("bot.handlers.hotspot_common.reply_final", new=AsyncMock()) as mock_reply,
+        ):
             result = await search_users_for_action(_update(), _ctx(), "delete")
         assert result == ConversationHandler.END
         mock_reply.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_search_exception_ends(self):
-        with patch(
-            "bot.handlers.hotspot_common.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(side_effect=Exception("net down")),
-        ), patch(
-            "bot.handlers.hotspot_common.reply_final", new=AsyncMock()
+        with (
+            patch(
+                "bot.handlers.hotspot_common.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.hotspot_common.run_blocking",
+                new=AsyncMock(side_effect=Exception("net down")),
+            ),
+            patch("bot.handlers.hotspot_common.reply_final", new=AsyncMock()),
         ):
             result = await search_users_for_action(_update(), _ctx(), "delete")
         assert result == ConversationHandler.END
@@ -62,14 +63,16 @@ class TestSearchUsersForAction:
     @pytest.mark.asyncio
     async def test_no_results_reprompts_for_delete(self):
         users = []
-        with patch(
-            "bot.handlers.hotspot_common.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(return_value=users),
-        ), patch(
-            "bot.handlers.hotspot_common.send_step", new=AsyncMock()
+        with (
+            patch(
+                "bot.handlers.hotspot_common.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.hotspot_common.run_blocking",
+                new=AsyncMock(return_value=users),
+            ),
+            patch("bot.handlers.hotspot_common.send_step", new=AsyncMock()),
         ):
             result = await search_users_for_action(_update(), _ctx(), "delete")
         assert result == WAITING_DELETE_ID
@@ -77,14 +80,16 @@ class TestSearchUsersForAction:
     @pytest.mark.asyncio
     async def test_no_results_reprompts_for_edit(self):
         users = []
-        with patch(
-            "bot.handlers.hotspot_common.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(return_value=users),
-        ), patch(
-            "bot.handlers.hotspot_common.send_step", new=AsyncMock()
+        with (
+            patch(
+                "bot.handlers.hotspot_common.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.hotspot_common.run_blocking",
+                new=AsyncMock(return_value=users),
+            ),
+            patch("bot.handlers.hotspot_common.send_step", new=AsyncMock()),
         ):
             result = await search_users_for_action(_update(), _ctx(), "edit")
         assert result == WAITING_EDIT_FIELD
@@ -92,44 +97,50 @@ class TestSearchUsersForAction:
     @pytest.mark.asyncio
     async def test_single_user_delete_goes_to_confirm(self):
         users = [{".id": "*1"}]
-        with patch(
-            "bot.handlers.hotspot_common.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(return_value=users),
-        ), patch(
-            "bot.handlers.hotspot_common.send_step", new=AsyncMock()
-        ) as mock_send:
+        with (
+            patch(
+                "bot.handlers.hotspot_common.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.hotspot_common.run_blocking",
+                new=AsyncMock(return_value=users),
+            ),
+            patch("bot.handlers.hotspot_common.send_step", new=AsyncMock()),
+        ):
             result = await search_users_for_action(_update(), _ctx(), "delete")
         assert result == WAITING_INPUT
 
     @pytest.mark.asyncio
     async def test_single_user_edit_goes_to_field(self):
         users = [{".id": "*1"}]
-        with patch(
-            "bot.handlers.hotspot_common.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(return_value=users),
-        ), patch(
-            "bot.handlers.hotspot_common.send_step", new=AsyncMock()
-        ) as mock_send:
+        with (
+            patch(
+                "bot.handlers.hotspot_common.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.hotspot_common.run_blocking",
+                new=AsyncMock(return_value=users),
+            ),
+            patch("bot.handlers.hotspot_common.send_step", new=AsyncMock()),
+        ):
             result = await search_users_for_action(_update(), _ctx(), "edit")
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
     async def test_multiple_users_delete_shows_list(self):
         users = [{".id": "*1"}, {".id": "*2"}, {".id": "*3"}]
-        with patch(
-            "bot.handlers.hotspot_common.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(return_value=users),
-        ), patch(
-            "bot.handlers.hotspot_common.send_step", new=AsyncMock()
+        with (
+            patch(
+                "bot.handlers.hotspot_common.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.hotspot_common.run_blocking",
+                new=AsyncMock(return_value=users),
+            ),
+            patch("bot.handlers.hotspot_common.send_step", new=AsyncMock()),
         ):
             result = await search_users_for_action(_update(), _ctx(), "delete")
         assert result == WAITING_DELETE_SELECT
@@ -137,14 +148,16 @@ class TestSearchUsersForAction:
     @pytest.mark.asyncio
     async def test_multiple_users_edit_shows_list(self):
         users = [{".id": "*1"}, {".id": "*2"}]
-        with patch(
-            "bot.handlers.hotspot_common.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(return_value=users),
-        ), patch(
-            "bot.handlers.hotspot_common.send_step", new=AsyncMock()
+        with (
+            patch(
+                "bot.handlers.hotspot_common.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.hotspot_common.run_blocking",
+                new=AsyncMock(return_value=users),
+            ),
+            patch("bot.handlers.hotspot_common.send_step", new=AsyncMock()),
         ):
             result = await search_users_for_action(_update(), _ctx(), "edit")
         assert result == WAITING_EDIT_VALUE
@@ -154,9 +167,10 @@ class TestExecuteAddUser:
     @pytest.mark.asyncio
     async def test_success_returns_true(self):
         mock_log = MagicMock()
-        with patch(
-            "bot.handlers.hotspot_common.run_blocking", side_effect=[None, MagicMock()]
-        ), patch("bot.handlers.hotspot_common.log_action", return_value=mock_log):
+        with (
+            patch("bot.handlers.hotspot_common.run_blocking", side_effect=[None, MagicMock()]),
+            patch("bot.handlers.hotspot_common.log_action", return_value=mock_log),
+        ):
             ctx = _ctx()
             get_hotspot_add_session(ctx.user_data).username = "u1"
             get_hotspot_add_session(ctx.user_data).password = "p1"
@@ -201,9 +215,10 @@ class TestExecuteAddUser:
     @pytest.mark.asyncio
     async def test_optional_fields_use_defaults(self):
         mock_run = MagicMock(side_effect=[None, MagicMock()])
-        with patch(
-            "bot.handlers.hotspot_common.run_blocking", side_effect=mock_run
-        ), patch("database.models.log_action"):
+        with (
+            patch("bot.handlers.hotspot_common.run_blocking", side_effect=mock_run),
+            patch("database.models.log_action"),
+        ):
             ctx = _ctx()
             get_hotspot_add_session(ctx.user_data).username = "u1"
             get_hotspot_add_session(ctx.user_data).profile = "1M"

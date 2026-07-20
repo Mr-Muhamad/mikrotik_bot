@@ -1,7 +1,8 @@
 """Handler tests for card batch listing and PDF regeneration."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from bot.handlers import batch as batch_module
 
@@ -38,12 +39,11 @@ async def test_batches_command_lists_batches():
     # run_blocking is called twice: first for get_card_batches_count (returns int),
     # then for list_card_batches (returns the list).
     mock_run_blocking = AsyncMock(side_effect=[1, batches])
-    with patch("utils.admin_decorator.ADMIN_IDS", [1]), patch(
-        "bot.router_selector.get_selected_router", return_value="discovered_1"
-    ), patch.object(
-        batch_module, "run_blocking", new=mock_run_blocking
-    ), patch.object(
-        batch_module, "send_step", new=mock_send
+    with (
+        patch("utils.admin_decorator.ADMIN_IDS", [1]),
+        patch("bot.router_selector.get_selected_router", return_value="discovered_1"),
+        patch.object(batch_module, "run_blocking", new=mock_run_blocking),
+        patch.object(batch_module, "send_step", new=mock_send),
     ):
         await batch_module.batches_command(update, ctx)
 
@@ -86,12 +86,15 @@ async def test_batch_regen_sends_pdf():
             },
         ],
     }
-    with patch.object(
-        batch_module,
-        "run_blocking",
-        new=AsyncMock(side_effect=[batch, "/tmp/fake.pdf"]),
-    ), patch("builtins.open", MagicMock()), patch("os.remove"), patch(
-        "os.path.exists", return_value=True
+    with (
+        patch.object(
+            batch_module,
+            "run_blocking",
+            new=AsyncMock(side_effect=[batch, "/tmp/fake.pdf"]),
+        ),
+        patch("builtins.open", MagicMock()),
+        patch("os.remove"),
+        patch("os.path.exists", return_value=True),
     ):
         await batch_module.batch_regen(update, ctx)
 

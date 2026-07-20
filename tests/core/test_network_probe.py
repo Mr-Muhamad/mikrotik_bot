@@ -7,6 +7,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from core.network_probe import (
+    MNDP_TYPE_IDENTITY,
+    MNDP_TYPE_IPV4,
+    MNDP_TYPE_MAC,
+    MNDP_TYPE_VERSION,
     ARPTableProbe,
     DiscoveredRouter,
     MNDPListenerProbe,
@@ -15,12 +19,6 @@ from core.network_probe import (
     merge_probe_results,
     parse_arp_table_linux,
     parse_arp_table_windows,
-)
-from core.network_probe import (
-    MNDP_TYPE_IDENTITY,
-    MNDP_TYPE_IPV4,
-    MNDP_TYPE_MAC,
-    MNDP_TYPE_VERSION,
 )
 
 # ─── Pure helper tests ────────────────────────────────────────
@@ -41,20 +39,14 @@ class TestDecodeMndpPacket:
     def test_decodes_identity(self):
         identity = b"RouterOS-Test"
         packet = (
-            b"\x00\x00\x00\x00"
-            + struct.pack(">HH", MNDP_TYPE_IDENTITY, len(identity))
-            + identity
+            b"\x00\x00\x00\x00" + struct.pack(">HH", MNDP_TYPE_IDENTITY, len(identity)) + identity
         )
         result = decode_mndp_packet(packet)
         assert result["identity"] == "RouterOS-Test"
 
     def test_decodes_version(self):
         version = b"6.48.6"
-        packet = (
-            b"\x00\x00\x00\x00"
-            + struct.pack(">HH", MNDP_TYPE_VERSION, len(version))
-            + version
-        )
+        packet = b"\x00\x00\x00\x00" + struct.pack(">HH", MNDP_TYPE_VERSION, len(version)) + version
         result = decode_mndp_packet(packet)
         assert result["version"] == "6.48.6"
 
@@ -68,26 +60,20 @@ class TestDecodeMndpPacket:
 
     def test_decodes_ipv4(self):
         ipv4_bytes = socket.inet_aton("192.168.1.1")
-        packet = (
-            b"\x00\x00\x00\x00" + struct.pack(">HH", MNDP_TYPE_IPV4, 4) + ipv4_bytes
-        )
+        packet = b"\x00\x00\x00\x00" + struct.pack(">HH", MNDP_TYPE_IPV4, 4) + ipv4_bytes
         result = decode_mndp_packet(packet)
         assert result["ipv4"] == "192.168.1.1"
 
     def test_handles_truncated_length(self):
         # Length claims more data than available — should break gracefully
-        packet = (
-            b"\x00\x00\x00\x00" + struct.pack(">HH", MNDP_TYPE_IDENTITY, 100) + b"short"
-        )
+        packet = b"\x00\x00\x00\x00" + struct.pack(">HH", MNDP_TYPE_IDENTITY, 100) + b"short"
         result = decode_mndp_packet(packet)
         assert result == {}
 
     def test_handles_invalid_utf8_in_identity(self):
         identity = b"\xff\xfe invalid"
         packet = (
-            b"\x00\x00\x00\x00"
-            + struct.pack(">HH", MNDP_TYPE_IDENTITY, len(identity))
-            + identity
+            b"\x00\x00\x00\x00" + struct.pack(">HH", MNDP_TYPE_IDENTITY, len(identity)) + identity
         )
         result = decode_mndp_packet(packet)
         assert "identity" in result
@@ -141,9 +127,7 @@ class TestParseArpTableLinux:
 class TestARPTableProbe:
     def test_discover_windows(self):
         run_fn = MagicMock(
-            return_value=MagicMock(
-                stdout="  192.168.1.1           aa-bb-cc-dd-ee-ff     dynamic\n"
-            )
+            return_value=MagicMock(stdout="  192.168.1.1           aa-bb-cc-dd-ee-ff     dynamic\n")
         )
         probe = ARPTableProbe(run_fn=run_fn, system="Windows")
         result = probe.discover()
@@ -202,9 +186,7 @@ class TestPortScanProbe:
                 return (MagicMock(), MagicMock())
             raise ConnectionRefusedError("nope")
 
-        probe = PortScanProbe(
-            ips=["1.2.3.4", "5.6.7.8"], open_connection=selective_open
-        )
+        probe = PortScanProbe(ips=["1.2.3.4", "5.6.7.8"], open_connection=selective_open)
         result = await probe.discover()
         assert len(result) == 1
         assert result[0]["ip"] == "1.2.3.4"
@@ -321,9 +303,7 @@ class TestDiscoveredRouter:
         assert r.display_name() == "1.2.3.4"
 
     def test_display_name_with_version_and_board(self):
-        r = DiscoveredRouter(
-            ip_address="1.2.3.4", identity="MyR", version="6.48", board="RB951"
-        )
+        r = DiscoveredRouter(ip_address="1.2.3.4", identity="MyR", version="6.48", board="RB951")
         assert "MyR" in r.display_name()
         assert "v6.48" in r.display_name()
         assert "RB951" in r.display_name()

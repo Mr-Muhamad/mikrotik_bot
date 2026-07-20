@@ -9,7 +9,9 @@
 """
 
 from __future__ import annotations
-from typing import Callable, cast
+
+from collections.abc import Callable
+from typing import cast
 
 from telegram import CallbackQuery, Message, Update
 from telegram.ext import ContextTypes
@@ -96,7 +98,9 @@ async def parse_router_id(
         try:
             router_id = int(query.data.replace(prefix, ""))
         except (ValueError, IndexError):
-            await query.edit_message_text(ERROR_OCCURRED.format(""), reply_markup=get_router_keyboard())
+            await query.edit_message_text(
+                ERROR_OCCURRED.format(""), reply_markup=get_router_keyboard()
+            )
             return
     """
     if error_markup is None:
@@ -106,9 +110,7 @@ async def parse_router_id(
     try:
         return int(get_query_data(query).replace(prefix, ""))
     except (ValueError, IndexError):
-        await query.edit_message_text(
-            ERROR_OCCURRED.format(""), reply_markup=error_markup
-        )
+        await query.edit_message_text(ERROR_OCCURRED.format(""), reply_markup=error_markup)
         return None
 
 
@@ -121,7 +123,9 @@ def make_back_step(message: str, keyboard_fn: Callable, next_state: int):
     تُستخدم فقط للدوال التي لا تحتوي منطقاً إضافياً (profile fetch، error handling، إلخ).
 
     مثال:
-        add_back_to_username = make_back_step(ADD_USER_PROMPT, get_cancel_keyboard, WAITING_USERNAME)
+        add_back_to_username = make_back_step(
+            ADD_USER_PROMPT, get_cancel_keyboard, WAITING_USERNAME
+        )
     """
     from utils.admin_decorator import admin_only
 

@@ -17,7 +17,7 @@ def ensure_admin_role(admin_id, default_role="admin", changed_by=None):
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT OR IGNORE INTO admin_roles (admin_id, role, changed_by, changed_at) VALUES (?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO admin_roles (admin_id, role, changed_by, changed_at) VALUES (?, ?, ?, ?)",  # noqa: E501
             (admin_id, default_role, changed_by, _now_utc()),
         )
 
@@ -51,7 +51,7 @@ def set_admin_role(admin_id, role, changed_by=None):
             "INSERT INTO admin_roles (admin_id, role, changed_by, changed_at) "
             "VALUES (?, ?, ?, ?) "
             "ON CONFLICT(admin_id) DO UPDATE SET "
-            "role = excluded.role, changed_by = excluded.changed_by, changed_at = excluded.changed_at",
+            "role = excluded.role, changed_by = excluded.changed_by, changed_at = excluded.changed_at",  # noqa: E501
             (admin_id, role, changed_by, _now_utc()),
         )
 

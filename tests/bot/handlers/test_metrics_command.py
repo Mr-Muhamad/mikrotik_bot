@@ -35,10 +35,12 @@ async def test_metrics_command_sends_report_and_deletes(mock_update, mock_contex
     sent_msg.message_id = 99
     mock_context.bot.send_message = AsyncMock(return_value=sent_msg)
 
-    with patch("bot.handlers.commands_basic.mikrotik_api") as mock_api, patch(
-        "bot.handlers.commands_basic.schedule_delete", new=AsyncMock()
-    ) as mock_sched, patch(
-        "bot.handlers.commands_basic.run_blocking", new=AsyncMock(return_value=SAMPLE_METRICS)
+    with (
+        patch("bot.handlers.commands_basic.mikrotik_api") as mock_api,
+        patch("bot.handlers.commands_basic.schedule_delete", new=AsyncMock()) as mock_sched,
+        patch(
+            "bot.handlers.commands_basic.run_blocking", new=AsyncMock(return_value=SAMPLE_METRICS)
+        ),
     ):
         mock_api.get_metrics = MagicMock(return_value=SAMPLE_METRICS)
 
@@ -66,9 +68,11 @@ async def test_metrics_command_with_zero_attempts(mock_update, mock_context):
     }
     mock_context.bot.send_message = AsyncMock(return_value=MagicMock(message_id=1))
 
-    with patch("bot.handlers.commands_basic.mikrotik_api") as mock_api, patch(
-        "bot.handlers.commands_basic.schedule_delete", new=AsyncMock()
-    ), patch("bot.handlers.commands_basic.run_blocking", new=AsyncMock(return_value=zero)):
+    with (
+        patch("bot.handlers.commands_basic.mikrotik_api") as mock_api,
+        patch("bot.handlers.commands_basic.schedule_delete", new=AsyncMock()),
+        patch("bot.handlers.commands_basic.run_blocking", new=AsyncMock(return_value=zero)),
+    ):
         mock_api.get_metrics = MagicMock(return_value=zero)
 
         await metrics_command(mock_update, mock_context)
@@ -82,10 +86,12 @@ async def test_metrics_command_continues_on_delete_failure(mock_update, mock_con
     mock_update.message.delete = AsyncMock(side_effect=Exception("nope"))
     mock_context.bot.send_message = AsyncMock(return_value=MagicMock(message_id=1))
 
-    with patch("bot.handlers.commands_basic.mikrotik_api") as mock_api, patch(
-        "bot.handlers.commands_basic.schedule_delete", new=AsyncMock()
-    ), patch(
-        "bot.handlers.commands_basic.run_blocking", new=AsyncMock(return_value=SAMPLE_METRICS)
+    with (
+        patch("bot.handlers.commands_basic.mikrotik_api") as mock_api,
+        patch("bot.handlers.commands_basic.schedule_delete", new=AsyncMock()),
+        patch(
+            "bot.handlers.commands_basic.run_blocking", new=AsyncMock(return_value=SAMPLE_METRICS)
+        ),
     ):
         mock_api.get_metrics = MagicMock(return_value=SAMPLE_METRICS)
 

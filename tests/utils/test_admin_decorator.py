@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from bot.router_selector import require_router
 from config import ADMIN_IDS
 from utils.admin_decorator import (
     ADMIN_ONLY_MSG,
@@ -13,7 +14,6 @@ from utils.admin_decorator import (
     _rate_limit_data,
     admin_only,
 )
-from bot.router_selector import require_router
 
 
 def _update(user_id: int = 100, has_message: bool = True, has_callback: bool = False):
@@ -166,8 +166,9 @@ class TestCheckRateLimit:
 class TestRequireRouter:
     @pytest.mark.asyncio
     async def test_with_router_proceeds(self, monkeypatch):
-        from bot.router_selector import set_selected_router
         from unittest.mock import AsyncMock
+
+        from bot.router_selector import set_selected_router
 
         admin_id = next(iter(ADMIN_IDS))
         set_selected_router(admin_id, "discovered_1")

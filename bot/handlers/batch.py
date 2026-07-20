@@ -1,9 +1,13 @@
+import json
 import logging
 import os
+
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from bot.keyboards import get_batches_keyboard, get_batch_detail_keyboard
+from bot.handlers.constants import WAITING_SHARE_RECIPIENT
+from bot.handlers.handler_utils import get_query_message
+from bot.keyboards import get_batch_detail_keyboard, get_batches_keyboard
 from bot.messages import (
     MARK_PAID_FAIL,
     MARK_PAID_SUCCESS,
@@ -18,22 +22,19 @@ from bot.messages import (
     SHARE_CARD_TEMPLATE,
 )
 from bot.router_selector import cleanup_state, nav_set
-from bot.handlers.constants import WAITING_SHARE_RECIPIENT
 from core.card_models import deserialize_cards
 from database.models import (
-    list_card_batches,
     get_card_batch,
-    update_batch_payment,
     get_sales_summary,
+    list_card_batches,
+    update_batch_payment,
 )
 from database.repositories.pdf_settings import get_pdf_settings
+from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
-from bot.handlers.handler_utils import get_query_message
 from utils.formatters import format_bytes
-from pdf.card_generator import card_generator
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -52,15 +53,17 @@ async def batches_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     nav_set(context, "menu_hotspot")
     await _show_batches_page(update, context, page=0)
 
+
 async def _show_batches_page(update: Update, context: ContextTypes.DEFAULT_TYPE, page: int):
     router_key = context.user_data.get("router_key")
     if not router_key:
         return
-        
+
     page_size = 10
     offset = page * page_size
     try:
         from database.models import get_card_batches_count
+
         total = await run_blocking(get_card_batches_count, router_key)
         batches = await run_blocking(list_card_batches, router_key, page_size, offset)
     except Exception as e:
@@ -75,13 +78,14 @@ async def _show_batches_page(update: Update, context: ContextTypes.DEFAULT_TYPE,
     text = "📦 الدفعات المحفوظة (الأحدث أولاً):\n\n" + "\n".join(
         f"• {_batch_label(b)} — {b.get('created_at', '')}" for b in batches
     )
-    
+
     keyboard = get_batches_keyboard(batches, page=page, total=total, page_size=page_size)
-    
+
     if update.callback_query and update.callback_query.data.startswith("batch_page:"):
         await update.callback_query.edit_message_text(text, reply_markup=keyboard)
     else:
         await send_step(update, context, text, keyboard)
+
 
 async def batch_page_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -106,15 +110,11 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
         batch = await run_blocking(get_card_batch, batch_id)
     except Exception as e:
         logger.error(f"Failed to load batch {batch_id}: {e}")
-        await query.edit_message_text(
-            "❌ فشل تحميل الدفعة.", reply_markup=get_batches_keyboard([])
-        )
+        await query.edit_message_text("❌ فشل تحميل الدفعة.", reply_markup=get_batches_keyboard([]))
         return
 
     if not batch:
-        await query.edit_message_text(
-            "⚠️ الدفعة غير موجودة.", reply_markup=get_batches_keyboard([])
-        )
+        await query.edit_message_text("⚠️ الدفعة غير موجودة.", reply_markup=get_batches_keyboard([]))
         return
 
     await query.edit_message_text(
@@ -184,7 +184,6 @@ async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     try:
-
         pdf_path = await run_blocking(card_generator.generate_pdf, cards)
         msg = get_query_message(query)
         if msg is None:
@@ -226,18 +225,14 @@ async def mark_batch_paid_handler(update: Update, context: ContextTypes.DEFAULT_
     success = await run_blocking(update_batch_payment, batch_id, status)
     if success:
         status_label = PAYMENT_STATUS_LABELS.get(status, status)
-        await query.answer(
-            MARK_PAID_SUCCESS.format(status_label=status_label), show_alert=False
-        )
+        await query.answer(MARK_PAID_SUCCESS.format(status_label=status_label), show_alert=False)
         # أعد رسم keyboard بحالة الدفع الجديدة
         try:
             batch = await run_blocking(get_card_batch, batch_id)
             if batch:
                 await query.edit_message_text(
                     text=_format_batch_text(batch),
-                    reply_markup=get_batch_detail_keyboard(
-                        batch_id, payment_status=status
-                    ),
+                    reply_markup=get_batch_detail_keyboard(batch_id, payment_status=status),
                 )
         except Exception:
             pass

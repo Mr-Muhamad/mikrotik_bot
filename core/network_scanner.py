@@ -15,8 +15,8 @@ Requirements:
 """
 
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import datetime
-from typing import Awaitable, Callable
 
 from core.network_probe import DiscoveredRouter, MNDPListenerProbe
 

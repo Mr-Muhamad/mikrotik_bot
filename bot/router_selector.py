@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from functools import wraps
-import logging
-from typing import Any
 import asyncio
+import logging
+from datetime import UTC
+from functools import wraps
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from database.models import get_user_session, save_user_session
 from bot.keyboards import get_router_keyboard
 from bot.messages import NO_ROUTER_SELECTED
+from database.models import get_user_session, save_user_session
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +194,8 @@ def get_selected_router(user_id):
         return None
 
     # Check session timeout
-    from datetime import datetime, timezone
+    from datetime import datetime
+
     from database.models import UTC_TIMESTAMP_FORMAT
     from database.repositories.user_sessions import clear_router_session
 
@@ -203,10 +205,10 @@ def get_selected_router(user_id):
     # Only enforce if timeout_mins is > 0. If timeout_mins <= 0, it means no timeout.
     if last_activity_str and timeout_mins > 0:
         try:
-            last_activity = datetime.strptime(
-                last_activity_str, UTC_TIMESTAMP_FORMAT
-            ).replace(tzinfo=timezone.utc)
-            now = datetime.now(timezone.utc)
+            last_activity = datetime.strptime(last_activity_str, UTC_TIMESTAMP_FORMAT).replace(
+                tzinfo=UTC
+            )
+            now = datetime.now(UTC)
             diff = (now - last_activity).total_seconds() / 60.0
 
             if diff > timeout_mins:
@@ -239,9 +241,7 @@ def clear_action(user_id):
 
 def clear_router(user_id):
     """Clear all session state for a user (router selection and current action)."""
-    save_user_session(
-        user_id, selected_router="", current_action=None, action_data=None
-    )
+    save_user_session(user_id, selected_router="", current_action=None, action_data=None)
 
 
 def nav_set(context, back_to):
@@ -268,22 +268,19 @@ def cleanup_state(user_id: int, user_data: dict[str, Any] | None) -> None:
 async def _fast_reachability_check(router_key: str) -> bool:
     """إجراء فحص سريع للاتصال بالراوتر (1 ثانية كحد أقصى)."""
     try:
-        from database.repositories.routers import get_router_by_id
         from config import ROUTER_KEY_PREFIX
-        
+        from database.repositories.routers import get_router_by_id
+
         db_id = router_key.replace(ROUTER_KEY_PREFIX, "")
         router_cfg = get_router_by_id(int(db_id))
-        
+
         if not router_cfg:
             return False
-            
+
         ip = router_cfg["ip_address"]
         port = router_cfg["port"]
-        
-        reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(ip, port),
-            timeout=1.0
-        )
+
+        reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=1.0)
         writer.close()
         await writer.wait_closed()
         return True
@@ -315,11 +312,9 @@ def require_router(func):
                     NO_ROUTER_SELECTED, reply_markup=keyboard
                 )
             elif update.message:
-                await update.message.reply_text(
-                    NO_ROUTER_SELECTED, reply_markup=keyboard
-                )
+                await update.message.reply_text(NO_ROUTER_SELECTED, reply_markup=keyboard)
             return
-            
+
         if not await _fast_reachability_check(router_key):
             error_msg = "⚠️ الراوتر لا يستجيب حالياً. يرجى التحقق من اتصاله بالإنترنت."
             if update.callback_query:
@@ -358,9 +353,7 @@ def navigation_guard(func):
                     NO_ROUTER_SELECTED, reply_markup=keyboard
                 )
             elif update.message:
-                await update.message.reply_text(
-                    NO_ROUTER_SELECTED, reply_markup=keyboard
-                )
+                await update.message.reply_text(NO_ROUTER_SELECTED, reply_markup=keyboard)
             return
 
         if not await _fast_reachability_check(router_key):

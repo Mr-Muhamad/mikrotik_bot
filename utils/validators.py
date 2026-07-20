@@ -1,4 +1,5 @@
 import ipaddress
+
 from utils.formatters import parse_bytes
 
 
@@ -44,13 +45,7 @@ def validate_username(username: str) -> tuple[bool, str]:
         return False, "اسم المستخدم يجب أن يكون 3 أحرف على الأقل"
     if len(username) > 64:
         return False, "اسم المستخدم طويل جداً"
-    if (
-        not username.replace("_", "")
-        .replace("-", "")
-        .replace(":", "")
-        .replace(".", "")
-        .isalnum()
-    ):
+    if not username.replace("_", "").replace("-", "").replace(":", "").replace(".", "").isalnum():
         return False, "اسم المستخدم يجب أن يحتوي على أحرف وأرقام فقط"
     return True, ""
 

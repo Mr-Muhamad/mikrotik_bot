@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+from database.models import add_tracked_message, get_tracked_messages
 from utils.chat_cleaner import (
     MAX_MESSAGE_LENGTH,
     MAX_TRACKED_MSGS,
@@ -16,7 +17,6 @@ from utils.chat_cleaner import (
     send_loading,
     send_step,
 )
-from database.models import add_tracked_message, get_tracked_messages
 
 
 def _ctx(chat_id: int = 1, job_queue=None, user_data=None, bot_data=None):
@@ -47,9 +47,7 @@ def _update(text: str = "/clean", callback_data: str | None = None):
         update.callback_query.message = MagicMock()
         update.callback_query.message.chat_id = 1
         update.callback_query.message.message_id = 60
-        update.callback_query.edit_message_text = AsyncMock(
-            return_value=MagicMock(message_id=61)
-        )
+        update.callback_query.edit_message_text = AsyncMock(return_value=MagicMock(message_id=61))
     return update
 
 
@@ -262,9 +260,7 @@ class TestSendStep:
         await send_step(update, ctx, "step1", keyboard=None)
         # لا يحذف البوت رسالة المستخدم في المجموعة (صلاحية غير متاحة)
         user_msg_calls = [
-            c
-            for c in ctx.bot.delete_message.call_args_list
-            if c.kwargs.get("message_id") == 50
+            c for c in ctx.bot.delete_message.call_args_list if c.kwargs.get("message_id") == 50
         ]
         assert user_msg_calls == []
         # لكنه لا يزال يرسل رسالته الخاصة

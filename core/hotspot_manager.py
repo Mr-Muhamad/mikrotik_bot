@@ -1,13 +1,15 @@
-import re
 import logging
+import re
 import secrets
 import string
 from datetime import datetime
+
 from librouteros.exceptions import LibRouterosError
+
+from core.cache import TTLCache
+from core.card_models import CardData, CardSystem
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient
-from core.card_models import CardData, CardSystem
-from core.cache import TTLCache
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +42,7 @@ class HotspotManager:
         if cached is not None:
             return cast(list[dict], cached)
         # نجلب الأسماء فقط لتسريع التحقق من التكرار عند إنشاء الكروت
-        users = self._api.execute(
-            router_key, "ip/hotspot/user/print", **{".proplist": "name"}
-        )
+        users = self._api.execute(router_key, "ip/hotspot/user/print", **{".proplist": "name"})
         self._users_cache.set(router_key, users)
         return cast(list[dict], users)
 
@@ -75,9 +75,7 @@ class HotspotManager:
             logger.error(f"Failed to check user existence for '{name}': {e}")
             return False
 
-    def _generate_unique_username(
-        self, prefix: str, length: int, existing_names: set
-    ) -> str:
+    def _generate_unique_username(self, prefix: str, length: int, existing_names: set) -> str:
         """Generate a unique username that doesn't exist on the router."""
         max_attempts = 100
         for _ in range(max_attempts):
@@ -85,9 +83,7 @@ class HotspotManager:
             username = f"{prefix}{random_num}" if prefix else random_num
             if username not in existing_names:
                 return username
-        raise ValueError(
-            f"Failed to generate unique username after {max_attempts} attempts"
-        )
+        raise ValueError(f"Failed to generate unique username after {max_attempts} attempts")
 
     def add_user(
         self,
@@ -151,27 +147,21 @@ class HotspotManager:
 
     def enable_user(self, router_key: str, user_id: str) -> list[dict]:
         """Enable a hotspot user by its .id."""
-        result = self._api.execute(
-            router_key, "ip/hotspot/user/enable", **{"numbers": user_id}
-        )
+        result = self._api.execute(router_key, "ip/hotspot/user/enable", **{"numbers": user_id})
         self.invalidate_users_cache(router_key)
         logger.info(f"Enabled hotspot user {user_id} on {router_key}")
         return result
 
     def disable_user(self, router_key: str, user_id: str) -> list[dict]:
         """Disable a hotspot user by its .id."""
-        result = self._api.execute(
-            router_key, "ip/hotspot/user/disable", **{"numbers": user_id}
-        )
+        result = self._api.execute(router_key, "ip/hotspot/user/disable", **{"numbers": user_id})
         self.invalidate_users_cache(router_key)
         logger.info(f"Disabled hotspot user {user_id} on {router_key}")
         return result
 
     def delete_user(self, router_key: str, user_id: str) -> list[dict]:
         """Delete a hotspot user by its .id."""
-        result = self._api.execute(
-            router_key, "ip/hotspot/user/remove", **{".id": user_id}
-        )
+        result = self._api.execute(router_key, "ip/hotspot/user/remove", **{".id": user_id})
         self.invalidate_users_cache(router_key)
         logger.info(f"Deleted hotspot user {user_id} on {router_key}")
         return result
@@ -193,7 +183,7 @@ class HotspotManager:
                     "ip/hotspot/user/print",
                     **{
                         f"?{field}": f"*{search}*",
-                        ".proplist": ".id,name,profile,limit-uptime,limit-bytes-total,comment,bytes-in,bytes-out,uptime,password",
+                        ".proplist": ".id,name,profile,limit-uptime,limit-bytes-total,comment,bytes-in,bytes-out,uptime,password",  # noqa: E501
                     },
                 )
                 for user in batch:
@@ -303,9 +293,7 @@ class HotspotManager:
 
         for i in range(1, count + 1):
             try:
-                username = self._generate_unique_username(
-                    prefix, length, existing_names
-                )
+                username = self._generate_unique_username(prefix, length, existing_names)
                 existing_names.add(username)
 
                 if card_system == CardSystem.DIFFERENT_CREDENTIALS:
@@ -371,9 +359,7 @@ class HotspotManager:
 
         return _build(self._api, router_key, top_n)
 
-    def block_mac(
-        self, router_key: str, mac: str, comment: str = "blocked by bot"
-    ) -> bool:
+    def block_mac(self, router_key: str, mac: str, comment: str = "blocked by bot") -> bool:
         """يضيف MAC إلى address-list باسم hotspot_blocked.
 
         Delegates to ``core.hotspot_blocking.block_mac``.

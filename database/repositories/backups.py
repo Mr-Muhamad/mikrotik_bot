@@ -6,7 +6,7 @@ god-object ``database.models``.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 # عدد سجلات النسخ المحتفظ بها لكل راوتر قبل الحذف التلقائي (retention).
 BACKUP_JOBS_RETENTION_PER_ROUTER = 50
@@ -15,7 +15,7 @@ BACKUP_JOBS_RETENTION_PER_ROUTER = 50
 def _utc_now():
     from database.models import UTC_TIMESTAMP_FORMAT
 
-    return datetime.now(timezone.utc).strftime(UTC_TIMESTAMP_FORMAT)
+    return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)
 
 
 def get_backup_schedule() -> dict:
@@ -24,7 +24,7 @@ def get_backup_schedule() -> dict:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT schedule_enabled, schedule_hour, schedule_minute FROM backup_settings WHERE id = 1"
+            "SELECT schedule_enabled, schedule_hour, schedule_minute FROM backup_settings WHERE id = 1"  # noqa: E501
         )
         row = cursor.fetchone()
         if row:
@@ -89,9 +89,7 @@ def record_backup_result(
 
 
 def _prune_backup_jobs(cursor, router_key: str) -> None:
-    cursor.execute(
-        "SELECT COUNT(*) FROM backup_jobs WHERE router_key = ?", (router_key,)
-    )
+    cursor.execute("SELECT COUNT(*) FROM backup_jobs WHERE router_key = ?", (router_key,))
     count = cursor.fetchone()[0]
     if count > BACKUP_JOBS_RETENTION_PER_ROUTER:
         cursor.execute(

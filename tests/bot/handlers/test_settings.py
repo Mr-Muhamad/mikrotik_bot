@@ -1,12 +1,12 @@
 """Tests for bot.handlers.settings."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from telegram.ext import ConversationHandler
 
-from bot.handlers.settings import pdf_settings_option, pdf_settings_value
 from bot.handlers.constants import WAITING_PDF_VALUE
+from bot.handlers.settings import pdf_settings_option, pdf_settings_value
 from utils import admin_decorator
 
 ADMIN_ID = 724730774
@@ -21,8 +21,9 @@ def _reset_rate_limit():
 
 @pytest.fixture(autouse=True)
 def _mock_db():
-    with patch("bot.router_selector.get_user_session", return_value={}), patch(
-        "bot.router_selector.save_user_session"
+    with (
+        patch("bot.router_selector.get_user_session", return_value={}),
+        patch("bot.router_selector.save_user_session"),
     ):
         yield
 
@@ -84,18 +85,14 @@ class TestPdfSettingsOption:
     async def test_cards_per_row_option(self):
         with patch("bot.handlers.settings.pdf_settings") as mock_ps:
             mock_ps.get_settings.return_value = {"cards_per_row": 4}
-            result = await pdf_settings_option(
-                _query_update("pdf_cards_per_row"), _ctx()
-            )
+            result = await pdf_settings_option(_query_update("pdf_cards_per_row"), _ctx())
         assert result == WAITING_PDF_VALUE
 
     @pytest.mark.asyncio
     async def test_cards_per_page_option(self):
         with patch("bot.handlers.settings.pdf_settings") as mock_ps:
             mock_ps.get_settings.return_value = {"cards_per_page": 40}
-            result = await pdf_settings_option(
-                _query_update("pdf_cards_per_page"), _ctx()
-            )
+            result = await pdf_settings_option(_query_update("pdf_cards_per_page"), _ctx())
         assert result == WAITING_PDF_VALUE
 
     @pytest.mark.asyncio
@@ -147,8 +144,9 @@ class TestPdfSettingsOption:
 class TestPdfSettingsValue:
     @pytest.mark.asyncio
     async def test_margins_valid(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "margins"})
             update = _text_update("10 20 30 40")
@@ -160,8 +158,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_margins_invalid_count_reprompts(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.send_step", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.send_step", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "margins"})
             update = _text_update("10 20 30")
@@ -171,8 +170,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_spacing_valid(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "spacing"})
             update = _text_update("5 10")
@@ -190,8 +190,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_cards_per_row(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "cards_per_row"})
             update = _text_update("5")
@@ -209,8 +210,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_brand_name(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "brand_name"})
             update = _text_update("MyBrand")
@@ -220,8 +222,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_hotspot_dns(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "hotspot_dns"})
             update = _text_update("login.local")
@@ -231,8 +234,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_show_qr_enabled(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "show_qr"})
             update = _text_update("1")
@@ -242,8 +246,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_show_qr_disabled(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "show_qr"})
             update = _text_update("0")
@@ -253,8 +258,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_footer(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             ctx = _ctx({"pdf_option": "footer"})
             update = _text_update("MyFooter")
@@ -264,8 +270,9 @@ class TestPdfSettingsValue:
 
     @pytest.mark.asyncio
     async def test_invalid_value_exception_ends(self):
-        with patch("bot.handlers.settings.pdf_settings") as mock_ps, patch(
-            "bot.handlers.settings.reply_final", new=AsyncMock()
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.reply_final", new=AsyncMock()),
         ):
             mock_ps.update.side_effect = Exception("DB error")
             ctx = _ctx({"pdf_option": "cards_per_row"})

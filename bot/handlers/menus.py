@@ -13,37 +13,35 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from bot.keyboards import (
-    get_main_keyboard,
-    get_hotspot_keyboard,
-    get_userman_keyboard,
-    get_stats_keyboard,
-    get_backup_keyboard,
-    get_pdf_settings_keyboard,
-    get_routers_keyboard,
-    get_reports_keyboard,
-)
-from bot.messages import (
-    MAIN_MENU,
-    HOTSPOT_MENU,
-    USERMAN_MENU,
-    STATS_MENU,
-    BACKUP_MENU,
-    PDF_SETTINGS_MENU,
-    ROUTERS_MENU,
-    REPORTS_MENU,
-)
-from bot.handlers.router_system import get_router_system_part as _get_router_system_part
-from bot.router_selector import get_selected_router
-from utils.admin_decorator import admin_only
-from utils.chat_cleaner import safe_edit_or_send, send_and_track
-from utils.callback_utils import safe_answer_callback
-from bot.router_selector import cleanup_state, nav_get
-from bot.handlers.routers import saved_routers_list as sr
-
 # Shared helpers kept in ``common`` to avoid a circular import between
 # ``menus`` and ``commands_basic`` (both depend on these primitives).
-from bot.handlers.common import _show_menu, _get_router_part
+from bot.handlers.common import _get_router_part, _show_menu
+from bot.handlers.router_system import get_router_system_part as _get_router_system_part
+from bot.handlers.routers import saved_routers_list as sr
+from bot.keyboards import (
+    get_backup_keyboard,
+    get_hotspot_keyboard,
+    get_main_keyboard,
+    get_pdf_settings_keyboard,
+    get_reports_keyboard,
+    get_routers_keyboard,
+    get_stats_keyboard,
+    get_userman_keyboard,
+)
+from bot.messages import (
+    BACKUP_MENU,
+    HOTSPOT_MENU,
+    MAIN_MENU,
+    PDF_SETTINGS_MENU,
+    REPORTS_MENU,
+    ROUTERS_MENU,
+    STATS_MENU,
+    USERMAN_MENU,
+)
+from bot.router_selector import cleanup_state, get_selected_router, nav_get
+from utils.admin_decorator import admin_only
+from utils.callback_utils import safe_answer_callback
+from utils.chat_cleaner import safe_edit_or_send, send_and_track
 
 logger = logging.getLogger(__name__)
 
@@ -79,9 +77,7 @@ async def _internal_reports_menu(update, context):
 async def _internal_pdf_settings_menu(update, context):
     query = update.callback_query
     await safe_answer_callback(query)
-    await safe_edit_or_send(
-        query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard()
-    )
+    await safe_edit_or_send(query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard())
 
 
 async def _internal_main_menu(update, context):
@@ -92,16 +88,12 @@ async def _internal_main_menu(update, context):
     admin_name = update.effective_user.full_name
     router_part = await _get_router_part(router_key)
     system_part = await _get_router_system_part(router_key)
-    text = MAIN_MENU.format(
-        admin_name=admin_name, router_part=router_part, system_part=system_part
-    )
+    text = MAIN_MENU.format(admin_name=admin_name, router_part=router_part, system_part=system_part)
     if query:
         await safe_answer_callback(query)
         await safe_edit_or_send(query, context, text, get_main_keyboard())
     else:
-        await send_and_track(
-            context, update.effective_chat.id, text, get_main_keyboard()
-        )
+        await send_and_track(context, update.effective_chat.id, text, get_main_keyboard())
 
 
 # ─── EXTERNAL MENU HANDLERS (with @admin_only) ─────────────
@@ -116,9 +108,7 @@ async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin_name = update.effective_user.full_name
     router_part = await _get_router_part(router_key)
     system_part = await _get_router_system_part(router_key)
-    text = MAIN_MENU.format(
-        admin_name=admin_name, router_part=router_part, system_part=system_part
-    )
+    text = MAIN_MENU.format(admin_name=admin_name, router_part=router_part, system_part=system_part)
 
     if query:
         await safe_answer_callback(query)
@@ -151,9 +141,7 @@ async def backup_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_answer_callback(query)
         await safe_edit_or_send(query, context, BACKUP_MENU, get_backup_keyboard())
     else:
-        await send_and_track(
-            context, update.effective_chat.id, BACKUP_MENU, get_backup_keyboard()
-        )
+        await send_and_track(context, update.effective_chat.id, BACKUP_MENU, get_backup_keyboard())
 
 
 @admin_only
@@ -161,9 +149,7 @@ async def pdf_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query:
         await safe_answer_callback(query)
-        await safe_edit_or_send(
-            query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard()
-        )
+        await safe_edit_or_send(query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard())
     else:
         await send_and_track(
             context,
@@ -189,9 +175,7 @@ async def reports_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @admin_only
-async def menu_userman_from_conversation(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def menu_userman_from_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await _end_conversation(update, context, "menu_userman")
 
 
@@ -201,9 +185,7 @@ async def end_conversation_to_main(update: Update, context: ContextTypes.DEFAULT
 
 
 @admin_only
-async def end_conversation_to_hotspot(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def end_conversation_to_hotspot(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await _end_conversation(update, context, "menu_hotspot")
 
 
@@ -213,30 +195,22 @@ async def end_conversation_to_stats(update: Update, context: ContextTypes.DEFAUL
 
 
 @admin_only
-async def end_conversation_to_backup(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def end_conversation_to_backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await _end_conversation(update, context, "menu_backup")
 
 
 @admin_only
-async def end_conversation_to_pdf_settings(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def end_conversation_to_pdf_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await _end_conversation(update, context, "menu_pdf_settings")
 
 
 @admin_only
-async def end_conversation_to_routers(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def end_conversation_to_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await _end_conversation(update, context, "menu_routers")
 
 
 @admin_only
-async def end_conversation_to_reports(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def end_conversation_to_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return await _end_conversation(update, context, "menu_reports")
 
 

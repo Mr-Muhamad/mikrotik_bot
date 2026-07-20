@@ -19,14 +19,18 @@ def temp_db():
     """Replace DB_PATH with a temp file and init tables before each test."""
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         tmp_path = f.name
-    with patch("database.models.DB_PATH", tmp_path), patch(
-        "database.models.os.path.dirname", return_value=os.path.dirname(tmp_path)
-    ), patch("utils.crypto._get_key") as mock_key, patch(
-        "database.models.encrypt_password",
-        side_effect=lambda p: f"enc_{p}" if p else "",
-    ), patch(
-        "database.models.decrypt_password",
-        side_effect=lambda t: t.replace("enc_", "", 1) if t.startswith("enc_") else t,
+    with (
+        patch("database.models.DB_PATH", tmp_path),
+        patch("database.models.os.path.dirname", return_value=os.path.dirname(tmp_path)),
+        patch("utils.crypto._get_key") as mock_key,
+        patch(
+            "database.models.encrypt_password",
+            side_effect=lambda p: f"enc_{p}" if p else "",
+        ),
+        patch(
+            "database.models.decrypt_password",
+            side_effect=lambda t: t.replace("enc_", "", 1) if t.startswith("enc_") else t,
+        ),
     ):
         # Fernet.encrypt/decrypt are bytes-in/bytes-out; crypto encodes/decodes around them.
         mock_key.return_value.encrypt.side_effect = lambda p: b"enc_" + p

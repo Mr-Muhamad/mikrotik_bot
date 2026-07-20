@@ -3,6 +3,7 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from bot.handlers.handler_utils import ack_callback, get_query_message, parse_router_id
 from bot.keyboards import get_main_keyboard, get_reboot_keyboard, get_router_keyboard
 from bot.messages import (
     NO_REBOOT_ROUTER,
@@ -12,13 +13,12 @@ from bot.messages import (
     ROUTER_NOT_FOUND,
 )
 from bot.router_selector import get_selected_router
-from bot.handlers.handler_utils import ack_callback, parse_router_id, get_query_message
 from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
 from database.models import get_router_by_id, log_action
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
-from utils.callback_utils import safe_answer_callback, is_duplicate_callback
+from utils.callback_utils import is_duplicate_callback, safe_answer_callback
 from utils.chat_cleaner import clean_command, schedule_delete, send_and_track
 
 logger = logging.getLogger(__name__)
@@ -59,19 +59,15 @@ async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_T
     if query.data.startswith("reboot_yes_"):
         router_key = query.data.replace("reboot_yes_", "")
         if not router_key:
-            await query.edit_message_text(
-                NO_REBOOT_ROUTER, reply_markup=get_router_keyboard()
-            )
+            await query.edit_message_text(NO_REBOOT_ROUTER, reply_markup=get_router_keyboard())
             return
         router_name = await run_blocking(mikrotik_api.get_router_name, router_key)
         await query.edit_message_text(REBOOT_IN_PROGRESS)
         try:
             mikrotik_api.execute_non_blocking(router_key, "system/reboot")
-            await run_blocking(
-                log_action, "reboot", router_name, router_key, query.from_user.id
-            )
+            await run_blocking(log_action, "reboot", router_name, router_key, query.from_user.id)
             await query.edit_message_text(
-                f"✅ تم بدء إعادة تشغيل {router_name}\n\n⏳ قد يستغرق الأمر 10-30 ثانية حتى يعود الراوتر متاحاً",
+                f"✅ تم بدء إعادة تشغيل {router_name}\n\n⏳ قد يستغرق الأمر 10-30 ثانية حتى يعود الراوتر متاحاً",  # noqa: E501
                 reply_markup=get_main_keyboard(),
             )
             msg = get_query_message(query)
@@ -80,16 +76,14 @@ async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_T
         except Exception as e:
             logger.info(f"Reboot command sent (connection may be lost): {e}")
             await query.edit_message_text(
-                f"✅ تم بدء إعادة تشغيل {router_name}\n\n⏳ قد يستغرق الأمر 10-30 ثانية حتى يعود الراوتر متاحاً",
+                f"✅ تم بدء إعادة تشغيل {router_name}\n\n⏳ قد يستغرق الأمر 10-30 ثانية حتى يعود الراوتر متاحاً",  # noqa: E501
                 reply_markup=get_main_keyboard(),
             )
             msg = get_query_message(query)
             if msg is not None:
                 await schedule_delete(context, msg.chat_id, msg.message_id)
     elif query.data == "reboot_no":
-        await query.edit_message_text(
-            REBOOT_CANCELLED, reply_markup=get_main_keyboard()
-        )
+        await query.edit_message_text(REBOOT_CANCELLED, reply_markup=get_main_keyboard())
 
 
 @require_role("admin")

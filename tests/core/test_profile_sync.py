@@ -47,9 +47,7 @@ class TestProfileSync:
     def test_get_profiles_exception_returns_empty(self):
         from core.profile_sync import mikrotik_api
 
-        mikrotik_api.get_userman_base_path = MagicMock(
-            side_effect=Exception("net down")
-        )
+        mikrotik_api.get_userman_base_path = MagicMock(side_effect=Exception("net down"))
 
         result = self.sync.get_userman_profiles(self.router_key)
 

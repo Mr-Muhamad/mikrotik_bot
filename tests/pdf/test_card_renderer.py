@@ -3,7 +3,6 @@
 import os
 from unittest.mock import MagicMock, patch
 
-
 from core.card_models import CardData
 from pdf.card_generator import CardGenerator
 from pdf.card_renderer import (
@@ -75,9 +74,7 @@ class TestCardRendererInit:
         assert r.hotspot_dns == ""
 
     def test_custom_construction(self):
-        r = CardRenderer(
-            font_name="Arial", brand_name="MyNet", hotspot_dns="login.mynet.com"
-        )
+        r = CardRenderer(font_name="Arial", brand_name="MyNet", hotspot_dns="login.mynet.com")
         assert r.font_name == "Arial"
         assert r.brand_name == "MyNet"
         assert r.hotspot_dns == "login.mynet.com"

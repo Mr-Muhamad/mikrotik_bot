@@ -7,16 +7,17 @@ payloads. Isolated from the former god-object ``database.models``.
 from __future__ import annotations
 
 import json
+from datetime import UTC
 
 from utils.crypto import decrypt_data, encrypt_data
 
 
 def _now_utc():
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from database.models import UTC_TIMESTAMP_FORMAT
 
-    return datetime.now(timezone.utc).strftime(UTC_TIMESTAMP_FORMAT)
+    return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)
 
 
 def save_card_batch(
@@ -54,7 +55,8 @@ def save_card_batch(
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO card_batches
-               (router_key, name, batch_type, profile, comment_prefix, count, cards_json, created_by, created_at)
+               (router_key, name, batch_type, profile, comment_prefix,
+               count, cards_json, created_by, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 router_key,
@@ -79,13 +81,13 @@ def list_card_batches(router_key=None, limit=20, offset=0):
         cursor = conn.cursor()
         if router_key:
             cursor.execute(
-                "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, created_by, created_at "
+                "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, created_by, created_at "  # noqa: E501
                 "FROM card_batches WHERE router_key = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
                 (router_key, limit, offset),
             )
         else:
             cursor.execute(
-                "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, created_by, created_at "
+                "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, created_by, created_at "  # noqa: E501
                 "FROM card_batches ORDER BY created_at DESC LIMIT ? OFFSET ?",
                 (limit, offset),
             )
@@ -100,8 +102,7 @@ def get_card_batches_count(router_key=None):
         cursor = conn.cursor()
         if router_key:
             cursor.execute(
-                "SELECT COUNT(*) as c FROM card_batches WHERE router_key = ?",
-                (router_key,)
+                "SELECT COUNT(*) as c FROM card_batches WHERE router_key = ?", (router_key,)
             )
         else:
             cursor.execute("SELECT COUNT(*) as c FROM card_batches")
@@ -133,7 +134,7 @@ def get_card_batch(batch_id):
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, cards_json, created_by, created_at "
+            "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, cards_json, created_by, created_at "  # noqa: E501
             "FROM card_batches WHERE id = ?",
             (batch_id,),
         )
@@ -164,7 +165,7 @@ def update_batch_payment(
     status: 'paid' | 'unpaid' | 'deferred'
     يُعيد True عند النجاح.
     """
-    from database.models import get_db, _now_utc
+    from database.models import _now_utc, get_db
 
     valid_statuses = ("paid", "unpaid", "deferred")
     if status not in valid_statuses:
@@ -197,7 +198,8 @@ def get_sales_summary(days: int = 7) -> dict:
                        SUM(CASE WHEN payment_status='paid' THEN 1 ELSE 0 END) AS paid_count,
                        SUM(CASE WHEN payment_status='unpaid' THEN 1 ELSE 0 END) AS unpaid_count,
                        SUM(CASE WHEN payment_status='deferred' THEN 1 ELSE 0 END) AS deferred_count,
-                       SUM(CASE WHEN payment_status='paid' THEN sale_price ELSE 0 END) AS total_revenue
+                       SUM(CASE WHEN payment_status='paid'
+                       THEN sale_price ELSE 0 END) AS total_revenue
                    FROM card_batches
                    WHERE created_at >= datetime('now', ?)""",
                 (f"-{days} days",),
@@ -208,7 +210,8 @@ def get_sales_summary(days: int = 7) -> dict:
                        SUM(CASE WHEN payment_status='paid' THEN 1 ELSE 0 END) AS paid_count,
                        SUM(CASE WHEN payment_status='unpaid' THEN 1 ELSE 0 END) AS unpaid_count,
                        SUM(CASE WHEN payment_status='deferred' THEN 1 ELSE 0 END) AS deferred_count,
-                       SUM(CASE WHEN payment_status='paid' THEN sale_price ELSE 0 END) AS total_revenue
+                       SUM(CASE WHEN payment_status='paid'
+                       THEN sale_price ELSE 0 END) AS total_revenue
                    FROM card_batches""")
         row = cursor.fetchone()
         if not row:

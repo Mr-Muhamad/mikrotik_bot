@@ -1,6 +1,8 @@
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
+from bot.handlers.handler_utils import make_back_step
+from bot.helpers.profiles import PROFILE_SOURCE_HOTSPOT, fetch_and_cache_profiles
 from bot.keyboards import (
     get_back_keyboard,
     get_cancel_keyboard,
@@ -8,13 +10,6 @@ from bot.keyboards import (
     get_profile_keyboard,
 )
 from bot.messages import (
-    HOTSPOT_EDIT_RESET_SUCCESS,
-    HOTSPOT_EDIT_KICK_COUNT,
-    HOTSPOT_EDIT_KICK_COUNT_INLINE,
-    HOTSPOT_EDIT_SUCCESS,
-    HOTSPOT_EDIT_FIELD_PROMPT,
-    HOTSPOT_EDIT_CURRENT_VALUE,
-    HOTSPOT_EDIT_EMPTY_VALUE,
     CHOOSE_NEW_PROFILE,
     DATA_ERROR,
     DUPLICATE_USER,
@@ -22,6 +17,13 @@ from bot.messages import (
     EDIT_SELECT_FIELD,
     EDIT_USER_PROMPT,
     ERROR_OCCURRED,
+    HOTSPOT_EDIT_CURRENT_VALUE,
+    HOTSPOT_EDIT_EMPTY_VALUE,
+    HOTSPOT_EDIT_FIELD_PROMPT,
+    HOTSPOT_EDIT_KICK_COUNT,
+    HOTSPOT_EDIT_KICK_COUNT_INLINE,
+    HOTSPOT_EDIT_RESET_SUCCESS,
+    HOTSPOT_EDIT_SUCCESS,
     INVALID_PROFILE,
     NO_ACTIVE_DEVICES,
     NO_ACTIVE_DEVICES_FOR_USER,
@@ -30,27 +32,26 @@ from bot.messages import (
     USER_NOT_FOUND,
     USER_NOT_SELECTED,
 )
+from bot.profile_callbacks import resolve_profile_from_callback
 from bot.router_selector import (
     cleanup_state,
     get_selected_router,
     nav_set,
     set_current_action,
 )
-from bot.handlers.handler_utils import make_back_step
-from .session_models import get_hotspot_edit_session
-from bot.helpers.profiles import fetch_and_cache_profiles, PROFILE_SOURCE_HOTSPOT
 from core.hotspot_manager import hotspot_manager
 from database.models import log_action
-from bot.profile_callbacks import resolve_profile_from_callback
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import edit_clean, reply_final, send_step
 from utils.error_response import send_error
 from utils.formatters import format_bytes, format_hotspot_user
-from utils.validators import validate_username, validate_bytes_input
+from utils.validators import validate_bytes_input, validate_username
+
 from .constants import WAITING_EDIT_FIELD, WAITING_EDIT_VALUE
 from .hotspot_common import search_users_for_action
+from .session_models import get_hotspot_edit_session
 
 FIELD_API_KEYS = {
     "name": "name",
@@ -136,9 +137,7 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
     try:
         await run_blocking(hotspot_manager.reset_user_counters, router_key, user_id)
         username = str(user_data.get("name", ""))
-        kicked = (
-            await run_blocking(hotspot_manager.kick_user, router_key, username) or []
-        )
+        kicked = await run_blocking(hotspot_manager.kick_user, router_key, username) or []
         await run_blocking(
             log_action,
             "reset_counters",
@@ -201,11 +200,11 @@ async def hotspot_edit_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
     router_key = get_selected_router(query.from_user.id)
 
     try:
-        kicked = (
-            await run_blocking(hotspot_manager.kick_user, router_key, username) or []
-        )
+        kicked = await run_blocking(hotspot_manager.kick_user, router_key, username) or []
         fresh_user = await run_blocking(
-            hotspot_manager.get_user, router_key, get_hotspot_edit_session(context.user_data).user_id
+            hotspot_manager.get_user,
+            router_key,
+            get_hotspot_edit_session(context.user_data).user_id,
         )
         if fresh_user:
             get_hotspot_edit_session(context.user_data).user_data = fresh_user
@@ -264,9 +263,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
         new_value = "yes" if new_disabled else "no"
 
         try:
-            await run_blocking(
-                hotspot_manager.edit_user, router_key, user_id, disabled=new_value
-            )
+            await run_blocking(hotspot_manager.edit_user, router_key, user_id, disabled=new_value)
             await run_blocking(
                 log_action, "toggle_disabled", user_id, router_key, query.from_user.id
             )
@@ -275,9 +272,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             is_disabled = new_disabled
             toggle_msg = TOGGLE_DISABLED_OFF if new_disabled else TOGGLE_DISABLED_ON
 
-            text = f"{toggle_msg}\n\n" + EDIT_SELECT_FIELD.format(
-                format_hotspot_user(user_data)
-            )
+            text = f"{toggle_msg}\n\n" + EDIT_SELECT_FIELD.format(format_hotspot_user(user_data))
             await query.edit_message_text(
                 text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
             )
@@ -304,9 +299,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 query,
                 context,
                 CHOOSE_NEW_PROFILE,
-                keyboard=get_profile_keyboard(
-                    profile_names, "edit_profile", "edit_back_to_fields"
-                ),
+                keyboard=get_profile_keyboard(profile_names, "edit_profile", "edit_back_to_fields"),
             )
             return WAITING_EDIT_VALUE
         except Exception as e:
@@ -329,8 +322,8 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await edit_clean(
         query,
         context,
-        HOTSPOT_EDIT_FIELD_PROMPT.format(field_name=field_names.get(field, field)) +
-        HOTSPOT_EDIT_CURRENT_VALUE.format(current_value=current_value),
+        HOTSPOT_EDIT_FIELD_PROMPT.format(field_name=field_names.get(field, field))
+        + HOTSPOT_EDIT_CURRENT_VALUE.format(current_value=current_value),
         keyboard=get_back_keyboard("edit_back_to_fields"),
     )
     return WAITING_EDIT_VALUE
@@ -347,12 +340,8 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
     router_key = get_selected_router(query.from_user.id)
     user_id = get_hotspot_edit_session(context.user_data).user_id
     try:
-        await run_blocking(
-            hotspot_manager.edit_user, router_key, user_id, profile=profile
-        )
-        await run_blocking(
-            log_action, "edit_user", user_id, router_key, query.from_user.id
-        )
+        await run_blocking(hotspot_manager.edit_user, router_key, user_id, profile=profile)
+        await run_blocking(log_action, "edit_user", user_id, router_key, query.from_user.id)
         user_data = get_hotspot_edit_session(context.user_data).user_data
         if user_data:
             user_data["profile"] = profile
@@ -393,16 +382,12 @@ async def edit_back_to_fields(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup=get_edit_field_keyboard(is_disabled=is_disabled),
         )
     else:
-        await query.edit_message_text(
-            EDIT_USER_PROMPT, reply_markup=get_cancel_keyboard()
-        )
+        await query.edit_message_text(EDIT_USER_PROMPT, reply_markup=get_cancel_keyboard())
         return WAITING_EDIT_FIELD
     return WAITING_EDIT_VALUE
 
 
-edit_back_search = make_back_step(
-    EDIT_USER_PROMPT, get_cancel_keyboard, WAITING_EDIT_FIELD
-)
+edit_back_search = make_back_step(EDIT_USER_PROMPT, get_cancel_keyboard, WAITING_EDIT_FIELD)
 
 
 @admin_only
@@ -427,9 +412,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         current_name = str(get_hotspot_edit_session(context.user_data).user_data.get("name", ""))
         if new_value != current_name:
             try:
-                exists = await run_blocking(
-                    hotspot_manager.user_exists, router_key, new_value
-                )
+                exists = await run_blocking(hotspot_manager.user_exists, router_key, new_value)
             except Exception as e:
                 await send_error(
                     update,
@@ -453,21 +436,15 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
     try:
         user_data = get_hotspot_edit_session(context.user_data).user_data
         user_name = user_data.get("name", "") or user_id
-        await run_blocking(
-            hotspot_manager.edit_user, router_key, user_id, **{api_field: new_value}
-        )
-        await run_blocking(
-            log_action, "edit_user", user_id, router_key, update.effective_user.id
-        )
+        await run_blocking(hotspot_manager.edit_user, router_key, user_id, **{api_field: new_value})
+        await run_blocking(log_action, "edit_user", user_id, router_key, update.effective_user.id)
 
         user_data[api_field] = new_value
 
         kick_msg = ""
         if field == "bytes":
             if user_name:
-                kicked = await run_blocking(
-                    hotspot_manager.kick_user, router_key, user_name
-                )
+                kicked = await run_blocking(hotspot_manager.kick_user, router_key, user_name)
                 if kicked:
                     kick_msg = HOTSPOT_EDIT_KICK_COUNT_INLINE.format(count=len(kicked))
 
@@ -479,9 +456,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         text = HOTSPOT_EDIT_SUCCESS.format(kick_msg=kick_msg) + EDIT_SELECT_FIELD.format(
             format_hotspot_user(user_data)
         )
-        await send_step(
-            update, context, text, get_edit_field_keyboard(is_disabled=is_disabled)
-        )
+        await send_step(update, context, text, get_edit_field_keyboard(is_disabled=is_disabled))
         return WAITING_EDIT_VALUE
     except Exception as e:
         await send_error(

@@ -6,9 +6,10 @@
 
 import asyncio
 import contextvars
-from functools import partial
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -17,7 +18,7 @@ T = TypeVar("T")
 _executor = ThreadPoolExecutor(max_workers=50, thread_name_prefix="mikrotik_worker")
 
 
-async def run_blocking(func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
+async def run_blocking[T](func: Callable[..., T], *args: Any, **kwargs: Any) -> T:
     """تنفيذ دالة متزامنة في executor مع الحفاظ على ContextVars.
 
     يستخدم ``contextvars.copy_context()`` لضمان نقل الـ request_id

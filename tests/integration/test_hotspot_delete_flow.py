@@ -15,11 +15,11 @@ from bot.handlers.hotspot_delete import (
     hotspot_delete_select,
     hotspot_delete_start,
 )
+from bot.router_selector import cleanup_state
 from core.hotspot_manager import hotspot_manager
 from tests.fixtures.telegram_mocks import make_mock_update
 from utils import admin_decorator
 from utils.callback_utils import _CALLBACK_DEDUP
-from bot.router_selector import cleanup_state
 
 ADMIN_ID = 724730774
 ROUTER_KEY = "discovered_1"
@@ -124,9 +124,7 @@ class TestHotspotDeleteSelect:
         update = make_mock_update(callback_data=f"delete_user_{uid}")
         context = _make_context()
 
-        with patch(
-            "bot.handlers.hotspot_delete.send_error", new=AsyncMock()
-        ) as mock_err:
+        with patch("bot.handlers.hotspot_delete.send_error", new=AsyncMock()) as mock_err:
             with patch(
                 "bot.handlers.hotspot_delete.run_blocking",
                 new=AsyncMock(side_effect=Exception("boom")),
@@ -195,9 +193,7 @@ class TestConfirmCallback:
         context = _make_context()
         context.user_data["delete_user_id"] = uid
 
-        with patch(
-            "bot.handlers.hotspot_delete.send_error", new=AsyncMock()
-        ) as mock_err:
+        with patch("bot.handlers.hotspot_delete.send_error", new=AsyncMock()) as mock_err:
             with patch(
                 "bot.handlers.hotspot_delete.run_blocking",
                 new=AsyncMock(side_effect=Exception("net down")),

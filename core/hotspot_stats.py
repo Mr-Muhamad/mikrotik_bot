@@ -7,10 +7,11 @@ so the presentation/aggregation responsibility lives here instead of in
 the user-management class.
 """
 
-import re
 import logging
+import re
 
 from librouteros.exceptions import LibRouterosError
+
 from utils.formatters import format_bytes, parse_bytes
 
 logger = logging.getLogger(__name__)
@@ -143,9 +144,7 @@ def build_usage_report(api, router_key: str, top_n: int = 15) -> dict:
     users = api.execute_long(
         router_key,
         "ip/hotspot/user/print",
-        **{
-            ".proplist": ".id,name,profile,disabled,bytes-in,bytes-out,limit-bytes-total,comment"
-        },
+        **{".proplist": ".id,name,profile,disabled,bytes-in,bytes-out,limit-bytes-total,comment"},
     )
 
     rows: list[dict] = []

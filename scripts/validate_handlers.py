@@ -11,21 +11,26 @@ intentionally ignored because they are not handler functions.
 import ast
 import sys
 
-
-HANDLER_CLASSES = frozenset({
-    "CallbackQueryHandler", "MessageHandler", "CommandHandler",
-    "add_error_handler",
-})
+HANDLER_CLASSES = frozenset(
+    {
+        "CallbackQueryHandler",
+        "MessageHandler",
+        "CommandHandler",
+        "add_error_handler",
+    }
+)
 
 
 HANDLER_METHODS = frozenset({"add_handler", "add_error_handler"})
-REGISTRY_DECORATORS = frozenset({
-    "entry_point",
-    "state",
-    "fallback",
-    "standalone",
-    "reg_err",
-})
+REGISTRY_DECORATORS = frozenset(
+    {
+        "entry_point",
+        "state",
+        "fallback",
+        "standalone",
+        "reg_err",
+    }
+)
 
 
 def _get_callee_name(func: ast.AST) -> str | None:
@@ -92,7 +97,11 @@ def main():
 
     imported: set = set()
     for node in ast.walk(tree):
-        if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("bot.handlers"):
+        if (
+            isinstance(node, ast.ImportFrom)
+            and node.module
+            and node.module.startswith("bot.handlers")
+        ):
             for alias in node.names:
                 imported.add(alias.asname or alias.name)
 
@@ -112,9 +121,9 @@ def main():
 
     if imported_but_not_used:
         actual_handlers = {
-            n for n in imported_but_not_used
-            if not n.startswith("WAITING_") and not n.startswith("filters")
-            and not n.isupper()
+            n
+            for n in imported_but_not_used
+            if not n.startswith("WAITING_") and not n.startswith("filters") and not n.isupper()
         }
         if actual_handlers:
             has_error = True

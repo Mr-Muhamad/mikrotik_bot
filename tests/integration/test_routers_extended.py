@@ -77,9 +77,7 @@ class TestDiscoveredRouterSelected:
         update = make_mock_update(callback_data="disc_router_99.99.99.99")
         context = _make_context()
 
-        with patch(
-            "bot.handlers.router_flows.discovery.get_router_by_ip", return_value=None
-        ):
+        with patch("bot.handlers.router_flows.discovery.get_router_by_ip", return_value=None):
             result = await discovered_router_selected(update, context)
         assert result == WAITING_DISC_USERNAME
 
@@ -121,17 +119,15 @@ class TestDiscEnterPassword:
                 return await result
             return result
 
-        with patch(
-            "bot.handlers.router_flows.discovery.mikrotik_api"
-        ) as mock_api, patch(
-            "bot.handlers.router_flows.discovery.run_blocking",
-            new=AsyncMock(side_effect=fake_run_blocking),
-        ), patch(
-            "bot.handlers.router_flows.discovery.schedule_delete", new=AsyncMock()
+        with (
+            patch("bot.handlers.router_flows.discovery.mikrotik_api") as mock_api,
+            patch(
+                "bot.handlers.router_flows.discovery.run_blocking",
+                new=AsyncMock(side_effect=fake_run_blocking),
+            ),
+            patch("bot.handlers.router_flows.discovery.schedule_delete", new=AsyncMock()),
         ):
-            mock_api.test_connection = AsyncMock(
-                return_value=(True, "7.10", "MyRouter")
-            )
+            mock_api.test_connection = AsyncMock(return_value=(True, "7.10", "MyRouter"))
             result = await disc_enter_password(update, context)
         assert result == ConversationHandler.END
         assert get_selected_router(ADMIN_ID) is not None
@@ -147,13 +143,14 @@ class TestDiscEnterPassword:
         status_msg.edit_text = AsyncMock()
         update.message.reply_text = AsyncMock(return_value=status_msg)
 
-        with patch("bot.handlers.router_flows.discovery.mikrotik_api"), patch(
-            "bot.handlers.router_flows.discovery.run_blocking",
-            new=AsyncMock(return_value=(False, "auth fail", "")),
-        ), patch(
-            "bot.handlers.router_flows.discovery.schedule_delete", new=AsyncMock()
-        ), patch(
-            "bot.handlers.router_flows.discovery.get_router_by_ip", return_value=None
+        with (
+            patch("bot.handlers.router_flows.discovery.mikrotik_api"),
+            patch(
+                "bot.handlers.router_flows.discovery.run_blocking",
+                new=AsyncMock(return_value=(False, "auth fail", "")),
+            ),
+            patch("bot.handlers.router_flows.discovery.schedule_delete", new=AsyncMock()),
+            patch("bot.handlers.router_flows.discovery.get_router_by_ip", return_value=None),
         ):
             result = await disc_enter_password(update, context)
         assert result == ConversationHandler.END
@@ -169,13 +166,14 @@ class TestDiscEnterPassword:
         status_msg.edit_text = AsyncMock()
         update.message.reply_text = AsyncMock(return_value=status_msg)
 
-        with patch("bot.handlers.router_flows.discovery.mikrotik_api"), patch(
-            "bot.handlers.router_flows.discovery.run_blocking",
-            new=AsyncMock(side_effect=Exception("net down")),
-        ), patch(
-            "bot.handlers.router_flows.discovery.schedule_delete", new=AsyncMock()
-        ), patch(
-            "bot.handlers.router_flows.discovery.get_router_by_ip", return_value=None
+        with (
+            patch("bot.handlers.router_flows.discovery.mikrotik_api"),
+            patch(
+                "bot.handlers.router_flows.discovery.run_blocking",
+                new=AsyncMock(side_effect=Exception("net down")),
+            ),
+            patch("bot.handlers.router_flows.discovery.schedule_delete", new=AsyncMock()),
+            patch("bot.handlers.router_flows.discovery.get_router_by_ip", return_value=None),
         ):
             result = await disc_enter_password(update, context)
         assert result == ConversationHandler.END

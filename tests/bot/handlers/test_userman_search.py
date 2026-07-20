@@ -1,20 +1,20 @@
 """Tests for bot.handlers.userman_search."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from telegram.ext import ConversationHandler
 
+from bot.handlers.constants import WAITING_USERMAN_SEARCH
 from bot.handlers.userman_search import (
-    userman_search_start,
-    userman_search_query,
-    userman_search_select,
     userman_search_action,
-    userman_search_back,
     userman_search_add_profile,
     userman_search_add_profile_selected,
+    userman_search_back,
+    userman_search_query,
+    userman_search_select,
+    userman_search_start,
 )
-from bot.handlers.constants import WAITING_USERMAN_SEARCH
 from bot.messages import USERMAN_SEARCH_PROMPT
 from utils import admin_decorator
 
@@ -79,13 +79,9 @@ class TestUsermanSearchStart:
         from utils.handler_registry import _registry
 
         matches = [
-            e
-            for e in _registry["entry_points"]
-            if e["func"].__name__ == "userman_search_start"
+            e for e in _registry["entry_points"] if e["func"].__name__ == "userman_search_start"
         ]
-        assert (
-            matches
-        ), "userman_search_start must be a main ConversationHandler entry point"
+        assert matches, "userman_search_start must be a main ConversationHandler entry point"
         assert matches[0]["cls"].__name__ == "CallbackQueryHandler"
         assert matches[0]["kwargs"].get("pattern") == r"^userman_search$"
 
@@ -98,11 +94,10 @@ class TestUsermanSearchQuery:
         update.message.text = "ali"
         context = _ctx()
 
-        with patch(
-            "bot.handlers.userman_search.get_selected_router", return_value=None
-        ), patch(
-            "bot.handlers.userman_search.reply_final", new=AsyncMock()
-        ) as mock_reply:
+        with (
+            patch("bot.handlers.userman_search.get_selected_router", return_value=None),
+            patch("bot.handlers.userman_search.reply_final", new=AsyncMock()) as mock_reply,
+        ):
             result = await userman_search_query(update, context)
         assert result == ConversationHandler.END
         mock_reply.assert_called_once()
@@ -118,19 +113,21 @@ class TestUsermanSearchQuery:
         loading = MagicMock()
         loading.message_id = 999
 
-        with patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.send_loading",
-            new=AsyncMock(return_value=loading),
-        ), patch(
-            "bot.handlers.userman_search.delete_now", new=AsyncMock()
-        ), patch(
-            "bot.handlers.userman_search.send_step", new=AsyncMock()
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(return_value=users),
+        with (
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.send_loading",
+                new=AsyncMock(return_value=loading),
+            ),
+            patch("bot.handlers.userman_search.delete_now", new=AsyncMock()),
+            patch("bot.handlers.userman_search.send_step", new=AsyncMock()),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(return_value=users),
+            ),
         ):
             result = await userman_search_query(update, context)
         assert result == WAITING_USERMAN_SEARCH
@@ -146,19 +143,21 @@ class TestUsermanSearchQuery:
         loading = MagicMock()
         loading.message_id = 999
 
-        with patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.send_loading",
-            new=AsyncMock(return_value=loading),
-        ), patch(
-            "bot.handlers.userman_search.delete_now", new=AsyncMock()
-        ), patch(
-            "bot.handlers.userman_search.send_step", new=AsyncMock()
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(side_effect=Exception("net down")),
+        with (
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.send_loading",
+                new=AsyncMock(return_value=loading),
+            ),
+            patch("bot.handlers.userman_search.delete_now", new=AsyncMock()),
+            patch("bot.handlers.userman_search.send_step", new=AsyncMock()),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(side_effect=Exception("net down")),
+            ),
         ):
             result = await userman_search_query(update, context)
         assert result == WAITING_USERMAN_SEARCH
@@ -210,11 +209,12 @@ class TestUsermanSearchAction:
         context.user_data["search_um_hosts"] = [{"name": "ali"}]
         context.user_data["kick_um_idx"] = 0
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=True
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=True),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
         ):
             result = await userman_search_action(update, context)
         assert result is None
@@ -231,9 +231,10 @@ class TestUsermanSearchAction:
         context.user_data["search_um_hosts"] = [{"name": "ali"}]
         context.user_data["kick_um_idx"] = 0
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch("bot.handlers.userman_search.get_selected_router", return_value=None):
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch("bot.handlers.userman_search.get_selected_router", return_value=None),
+        ):
             result = await userman_search_action(update, context)
         assert result == ConversationHandler.END
 
@@ -257,16 +258,17 @@ class TestUsermanSearchAction:
 
         mock_edit = AsyncMock()
         mock_edit.return_value = MagicMock(message_id=1)
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(side_effect=Exception("boom")),
-        ), patch(
-            "bot.handlers.userman_search.safe_edit_plain", new=mock_edit
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(side_effect=Exception("boom")),
+            ),
+            patch("bot.handlers.userman_search.safe_edit_plain", new=mock_edit),
         ):
             result = await userman_search_action(update, context)
         assert result == WAITING_USERMAN_SEARCH
@@ -286,15 +288,14 @@ class TestUsermanSearchAction:
         context.user_data["search_um_hosts"] = [{"name": "ali", "disabled": "false"}]
         context.user_data["kick_um_idx"] = 0
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking", new=AsyncMock()
-        ) as mock_block, patch(
-            "bot.handlers.userman_search.edit_clean", new=AsyncMock()
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch("bot.handlers.userman_search.run_blocking", new=AsyncMock()) as mock_block,
+            patch("bot.handlers.userman_search.edit_clean", new=AsyncMock()),
         ):
             result = await userman_search_action(update, context)
         assert result == WAITING_USERMAN_SEARCH
@@ -312,15 +313,14 @@ class TestUsermanSearchAction:
         context.user_data["search_um_hosts"] = [{"name": "ali", "disabled": "false"}]
         context.user_data["kick_um_idx"] = 0
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking", new=AsyncMock()
-        ), patch(
-            "bot.handlers.userman_search.edit_clean", new=AsyncMock()
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch("bot.handlers.userman_search.run_blocking", new=AsyncMock()),
+            patch("bot.handlers.userman_search.edit_clean", new=AsyncMock()),
         ):
             result = await userman_search_action(update, context)
         assert result == WAITING_USERMAN_SEARCH
@@ -336,18 +336,18 @@ class TestUsermanSearchAction:
         update.callback_query = query
         context = _ctx()
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
         ):
             result = await userman_search_action(update, context)
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
     async def test_kick_execute_terminates_matching_sessions(self):
-        from unittest.mock import call
 
         update = _admin_update()
         query = MagicMock()
@@ -365,16 +365,17 @@ class TestUsermanSearchAction:
             {"user": "ali", ".id": "*3"},
         ]
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(side_effect=[sessions, None, None]),
-        ) as mock_block, patch(
-            "bot.handlers.userman_search.edit_clean", new=AsyncMock()
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(side_effect=[sessions, None, None]),
+            ) as mock_block,
+            patch("bot.handlers.userman_search.edit_clean", new=AsyncMock()),
         ):
             result = await userman_search_action(update, context)
         assert result == WAITING_USERMAN_SEARCH
@@ -397,15 +398,14 @@ class TestUsermanSearchAction:
         context.user_data["search_um_hosts"] = [{"name": "ali", "disabled": "false"}]
         context.user_data["kick_um_idx"] = 0
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking", new=AsyncMock()
-        ) as mock_block, patch(
-            "bot.handlers.userman_search.edit_clean", new=AsyncMock()
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch("bot.handlers.userman_search.run_blocking", new=AsyncMock()) as mock_block,
+            patch("bot.handlers.userman_search.edit_clean", new=AsyncMock()),
         ):
             result = await userman_search_action(update, context)
         assert result == WAITING_USERMAN_SEARCH
@@ -438,9 +438,7 @@ class TestUsermanSearchBack:
         update.callback_query = query
         context = _ctx()
 
-        with patch(
-            "bot.handlers.userman_search.edit_clean", new=AsyncMock()
-        ) as mock_edit:
+        with patch("bot.handlers.userman_search.edit_clean", new=AsyncMock()) as mock_edit:
             result = await userman_search_back(update, context)
         assert result == WAITING_USERMAN_SEARCH
         sent_text = mock_edit.call_args.args[2]
@@ -460,15 +458,17 @@ class TestUsermanSearchAddProfile:
         context.user_data["kick_um_idx"] = 0
 
         profiles = ["1M", "2M"]
-        with patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(return_value=profiles),
-        ), patch(
-            "bot.handlers.userman_search.safe_edit_plain", new=AsyncMock()
-        ) as mock_edit:
+        with (
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(return_value=profiles),
+            ),
+            patch("bot.handlers.userman_search.safe_edit_plain", new=AsyncMock()) as mock_edit,
+        ):
             result = await userman_search_add_profile(update, context)
         assert result == WAITING_USERMAN_SEARCH
         assert context.user_data["add_profile_username"] == "ahmed"
@@ -489,14 +489,14 @@ class TestUsermanSearchAddProfile:
         context.user_data["search_um_hosts"] = [{"name": "ahmed", "disabled": "true"}]
         context.user_data["kick_um_idx"] = 0
 
-        with patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking", new=AsyncMock(return_value=[])
-        ), patch(
-            "bot.handlers.userman_search.safe_edit_plain", new=AsyncMock()
-        ) as mock_edit:
+        with (
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch("bot.handlers.userman_search.run_blocking", new=AsyncMock(return_value=[])),
+            patch("bot.handlers.userman_search.safe_edit_plain", new=AsyncMock()) as mock_edit,
+        ):
             result = await userman_search_add_profile(update, context)
         assert result == WAITING_USERMAN_SEARCH
         from bot.messages import USERMAN_NO_PROFILES_TO_ADD
@@ -516,17 +516,18 @@ class TestUsermanSearchAddProfile:
         context.user_data["search_um_hosts"] = [{"name": "ahmed", "disabled": "false"}]
         context.user_data["kick_um_idx"] = 0
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(return_value=(True, None)),
-        ), patch(
-            "bot.handlers.userman_search.safe_edit_plain", new=AsyncMock()
-        ) as mock_edit:
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(return_value=(True, None)),
+            ),
+            patch("bot.handlers.userman_search.safe_edit_plain", new=AsyncMock()) as mock_edit,
+        ):
             result = await userman_search_add_profile_selected(update, context)
         assert result == WAITING_USERMAN_SEARCH
         from bot.messages import USERMAN_ADD_PROFILE_SUCCESS
@@ -549,17 +550,18 @@ class TestUsermanSearchAddProfile:
         context.user_data["search_um_hosts"] = [{"name": "ahmed", "disabled": "true"}]
         context.user_data["kick_um_idx"] = 0
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(return_value=(False, "boom")),
-        ), patch(
-            "bot.handlers.userman_search.safe_edit_plain", new=AsyncMock()
-        ) as mock_edit:
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(return_value=(False, "boom")),
+            ),
+            patch("bot.handlers.userman_search.safe_edit_plain", new=AsyncMock()) as mock_edit,
+        ):
             result = await userman_search_add_profile_selected(update, context)
         assert result == WAITING_USERMAN_SEARCH
         from bot.messages import USERMAN_ADD_PROFILE_FAILED
@@ -575,9 +577,9 @@ class TestUsermanSearchFlowE2E:
     @pytest.mark.asyncio
     async def test_full_add_profile_flow(self):
         from bot.messages import (
-            USERMAN_SEARCH_PROMPT,
             USERMAN_ADD_PROFILE_PROMPT,
             USERMAN_ADD_PROFILE_SUCCESS,
+            USERMAN_SEARCH_PROMPT,
         )
         from utils import admin_decorator
 
@@ -620,23 +622,25 @@ class TestUsermanSearchFlowE2E:
 
         loading = MagicMock()
         loading.message_id = 999
-        with patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.send_loading",
-            new=AsyncMock(return_value=loading),
-        ), patch(
-            "bot.handlers.userman_search.delete_now", new=AsyncMock()
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(
-                return_value=[
-                    {"name": "ali", "profile": "1M", "disabled": "false"},
-                ]
+        with (
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
             ),
-        ), patch(
-            "bot.handlers.userman_search.send_step", new=blocked["send_step"]
+            patch(
+                "bot.handlers.userman_search.send_loading",
+                new=AsyncMock(return_value=loading),
+            ),
+            patch("bot.handlers.userman_search.delete_now", new=AsyncMock()),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(
+                    return_value=[
+                        {"name": "ali", "profile": "1M", "disabled": "false"},
+                    ]
+                ),
+            ),
+            patch("bot.handlers.userman_search.send_step", new=blocked["send_step"]),
         ):
             result = await userman_search_query(query_update, context)
         assert result == WAITING_USERMAN_SEARCH
@@ -665,23 +669,25 @@ class TestUsermanSearchFlowE2E:
         addq.data = "um_add_profile"
         add_update.callback_query = addq
 
-        with patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(return_value=profiles),
-        ), patch(
-            "bot.handlers.userman_search.safe_edit_plain",
-            new=blocked["safe_edit_plain"],
+        with (
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(return_value=profiles),
+            ),
+            patch(
+                "bot.handlers.userman_search.safe_edit_plain",
+                new=blocked["safe_edit_plain"],
+            ),
         ):
             result = await userman_search_add_profile(add_update, context)
         assert result == WAITING_USERMAN_SEARCH
         assert context.user_data["add_profile_username"] == "ali"
         assert context.user_data["add_profile_list"] == profiles
-        assert (
-            blocked["safe_edit_plain"].call_args.args[2] == USERMAN_ADD_PROFILE_PROMPT
-        )
+        assert blocked["safe_edit_plain"].call_args.args[2] == USERMAN_ADD_PROFILE_PROMPT
         blocked["safe_edit_plain"].reset_mock()
 
         # 5) Pick the second profile (index 1)
@@ -692,22 +698,25 @@ class TestUsermanSearchFlowE2E:
         pickq.data = "um_profile_1"
         pick_update.callback_query = pickq
 
-        with patch(
-            "bot.handlers.userman_search.is_duplicate_callback", return_value=False
-        ), patch(
-            "bot.handlers.userman_search.get_selected_router",
-            return_value="discovered_1",
-        ), patch(
-            "bot.handlers.userman_search.run_blocking",
-            new=AsyncMock(return_value=(True, None)),
-        ), patch(
-            "bot.handlers.userman_search.safe_edit_plain",
-            new=blocked["safe_edit_plain"],
+        with (
+            patch("bot.handlers.userman_search.is_duplicate_callback", return_value=False),
+            patch(
+                "bot.handlers.userman_search.get_selected_router",
+                return_value="discovered_1",
+            ),
+            patch(
+                "bot.handlers.userman_search.run_blocking",
+                new=AsyncMock(return_value=(True, None)),
+            ),
+            patch(
+                "bot.handlers.userman_search.safe_edit_plain",
+                new=blocked["safe_edit_plain"],
+            ),
         ):
             result = await userman_search_add_profile_selected(pick_update, context)
         assert result == WAITING_USERMAN_SEARCH
-        assert blocked["safe_edit_plain"].call_args.args[
-            2
-        ] == USERMAN_ADD_PROFILE_SUCCESS.format(profile="2M", username="ali")
+        assert blocked["safe_edit_plain"].call_args.args[2] == USERMAN_ADD_PROFILE_SUCCESS.format(
+            profile="2M", username="ali"
+        )
         assert "add_profile_username" not in context.user_data
         assert "add_profile_list" not in context.user_data

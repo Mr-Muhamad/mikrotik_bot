@@ -1,24 +1,24 @@
-import logging
 import html
-from utils.callback_utils import safe_answer_callback
+import logging
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from bot.keyboards import get_hotspot_keyboard, get_back_keyboard
+from bot.handlers.constants import WAITING_STATS_DAY
+from bot.keyboards import get_back_keyboard, get_hotspot_keyboard
 from bot.messages import (
     HOTSPOT_STATS,
-    HOTSPOT_STATS_RESET_BLOCK,
-    HOTSPOT_STATS_PROMPT,
-    HOTSPOT_STATS_NO_RESET,
     HOTSPOT_STATS_DAY_INVALID,
     HOTSPOT_STATS_DAY_NOT_FOUND,
+    HOTSPOT_STATS_NO_RESET,
+    HOTSPOT_STATS_PROMPT,
+    HOTSPOT_STATS_RESET_BLOCK,
 )
+from bot.router_selector import cleanup_state, nav_set
 from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only
-from bot.router_selector import cleanup_state, nav_set
-from bot.handlers.constants import WAITING_STATS_DAY
 from utils.async_blocking import run_blocking
+from utils.callback_utils import safe_answer_callback
 from utils.error_response import send_error
 
 logger = logging.getLogger(__name__)
@@ -82,9 +82,7 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = _summary_text(stats)
         reset_days = stats["reset_days"]
         if reset_days:
-            text += "\n\n" + HOTSPOT_STATS_PROMPT.format(
-                days=", ".join(map(str, reset_days))
-            )
+            text += "\n\n" + HOTSPOT_STATS_PROMPT.format(days=", ".join(map(str, reset_days)))
             await query.edit_message_text(
                 text,
                 reply_markup=get_back_keyboard("menu_hotspot"),

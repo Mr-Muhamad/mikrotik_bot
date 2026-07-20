@@ -15,9 +15,7 @@ _DEDUP_CLEANUP_INTERVAL = 30.0
 _last_cleanup: float = 0.0
 
 
-def is_duplicate_callback(
-    callback_data: str | None, user_id: int | None = None
-) -> bool:
+def is_duplicate_callback(callback_data: str | None, user_id: int | None = None) -> bool:
     if not callback_data:
         return False
     global _last_cleanup
@@ -30,9 +28,7 @@ def is_duplicate_callback(
 
     # Periodic cleanup to prevent unbounded growth
     if now - _last_cleanup > _DEDUP_CLEANUP_INTERVAL:
-        old_keys = [
-            k for k, t in list(_CALLBACK_DEDUP.items()) if now - t > _DEDUP_MAX_AGE
-        ]
+        old_keys = [k for k, t in list(_CALLBACK_DEDUP.items()) if now - t > _DEDUP_MAX_AGE]
         for k in old_keys:
             _CALLBACK_DEDUP.pop(k, None)
         _last_cleanup = now
@@ -40,9 +36,7 @@ def is_duplicate_callback(
     return False
 
 
-async def safe_answer_callback(
-    query, text: str | None = None, show_alert: bool = False
-):
+async def safe_answer_callback(query, text: str | None = None, show_alert: bool = False):
     """Safely answer a callback query, ignoring 'Query is too old' errors.
 
     This error occurs when the bot takes too long (>30s) to respond

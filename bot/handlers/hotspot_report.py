@@ -1,20 +1,21 @@
-import logging
 import csv
 import io
+import logging
 import os
 import tempfile
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from bot.handlers.handler_utils import get_query_message
 from bot.keyboards import get_report_keyboard
-from bot.router_selector import nav_set, cleanup_state
+from bot.router_selector import cleanup_state, nav_set
 from core.hotspot_manager import hotspot_manager
-from core.stats import stats_manager
 from core.mikrotik_api import mikrotik_api
+from core.stats import stats_manager
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
-from bot.handlers.handler_utils import get_query_message
 
 logger = logging.getLogger(__name__)
 

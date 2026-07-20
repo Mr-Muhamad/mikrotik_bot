@@ -3,38 +3,36 @@ import os
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from utils.tg_helpers import get_from_user_id
-
 from bot.keyboards import (
+    get_back_keyboard,
     get_backup_restore_keyboard,
     get_restore_confirm_keyboard,
-    get_back_keyboard,
-    get_userman_restore_keyboard,
     get_userman_restore_confirm_keyboard,
+    get_userman_restore_keyboard,
 )
 from bot.messages import (
-    BACKUP_RESTORE_INVALID_NAME,
-    BACKUP_RESTORE_NOT_FOUND,
-    BACKUP_RESTORE_PROFILES_COUNT,
-    BACKUP_RESTORE_USERS_COUNT,
-    BACKUP_RESTORE_SKIPPED,
-    BACKUP_RESTORE_NONE,
     BACKUP_RESTORE_AVAILABLE,
     BACKUP_RESTORE_CONFIRM,
-    BACKUP_RESTORE_IN_PROGRESS,
-    BACKUP_RESTORE_SUCCESS,
     BACKUP_RESTORE_FAILED,
+    BACKUP_RESTORE_IN_PROGRESS,
+    BACKUP_RESTORE_INVALID_NAME,
     BACKUP_RESTORE_NO_BACKUPS,
+    BACKUP_RESTORE_NONE,
+    BACKUP_RESTORE_NOT_FOUND,
+    BACKUP_RESTORE_PROFILES_COUNT,
+    BACKUP_RESTORE_SKIPPED,
+    BACKUP_RESTORE_SUCCESS,
+    BACKUP_RESTORE_USERS_COUNT,
     ROUTER_NO_CREDENTIALS,
+    USERMAN_RESTORE_CONFIRM,
+    USERMAN_RESTORE_FAILED,
+    USERMAN_RESTORE_IN_PROGRESS,
     USERMAN_RESTORE_MENU,
     USERMAN_RESTORE_NO_BACKUPS,
-    USERMAN_RESTORE_CONFIRM,
-    USERMAN_RESTORE_IN_PROGRESS,
-    USERMAN_RESTORE_SUCCESS,
-    USERMAN_RESTORE_FAILED,
     USERMAN_RESTORE_PARTIAL,
+    USERMAN_RESTORE_SUCCESS,
 )
-from bot.router_selector import get_selected_router, nav_set, cleanup_state
+from bot.router_selector import cleanup_state, get_selected_router, nav_set
 from core.backup_service import (
     backup_restore,
     backup_service,
@@ -44,8 +42,9 @@ from database.models import log_action
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
-from utils.chat_cleaner import send_step, edit_clean
+from utils.chat_cleaner import edit_clean, send_step
 from utils.error_response import send_error
+from utils.tg_helpers import get_from_user_id
 
 
 @require_role("admin")
@@ -126,9 +125,7 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
     await query.edit_message_text(BACKUP_RESTORE_IN_PROGRESS.format(name=backup_name))
 
     try:
-        result = await run_blocking(
-            backup_restore.restore_backup, router_key, backup_name
-        )
+        result = await run_blocking(backup_restore.restore_backup, router_key, backup_name)
         await run_blocking(
             log_action,
             "restore_backup",
@@ -138,14 +135,10 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
         )
 
         if result.get("success"):
-            await query.edit_message_text(
-                BACKUP_RESTORE_SUCCESS.format(name=backup_name)
-            )
+            await query.edit_message_text(BACKUP_RESTORE_SUCCESS.format(name=backup_name))
         else:
             await query.edit_message_text(
-                BACKUP_RESTORE_FAILED.format(
-                    error=result.get("message", "Unknown error")
-                )
+                BACKUP_RESTORE_FAILED.format(error=result.get("message", "Unknown error"))
             )
     except Exception as e:
         await send_error(
@@ -204,9 +197,7 @@ async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_T
 
     idx = int(query.data.split(":")[-1]) if query.data else 0
     tar_files = context.user_data.get("userman_restore_list", [])
-    tar_filename = (
-        tar_files[idx].get("filename", "") if 0 <= idx < len(tar_files) else ""
-    )
+    tar_filename = tar_files[idx].get("filename", "") if 0 <= idx < len(tar_files) else ""
     context.user_data["userman_restore_tar"] = tar_filename
 
     text = USERMAN_RESTORE_CONFIRM.format(name=tar_filename)
@@ -238,17 +229,13 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
         return
 
     if not os.path.isfile(tar_path):
-        await query.edit_message_text(
-            USERMAN_RESTORE_FAILED.format(error=BACKUP_RESTORE_NOT_FOUND)
-        )
+        await query.edit_message_text(USERMAN_RESTORE_FAILED.format(error=BACKUP_RESTORE_NOT_FOUND))
         return
 
     await query.edit_message_text(USERMAN_RESTORE_IN_PROGRESS)
 
     try:
-        result = await run_blocking(
-            backup_service.userman_restore, router_key, tar_path
-        )
+        result = await run_blocking(backup_service.userman_restore, router_key, tar_path)
         await run_blocking(
             log_action,
             "userman_restore",
@@ -260,27 +247,23 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
         if result["success"] and not result.get("errors"):
             parts = []
             if result.get("profiles_restored"):
-                parts.append(BACKUP_RESTORE_PROFILES_COUNT.format(count=result["profiles_restored"]))
+                parts.append(
+                    BACKUP_RESTORE_PROFILES_COUNT.format(count=result["profiles_restored"])
+                )
             if result.get("users_restored"):
                 parts.append(BACKUP_RESTORE_USERS_COUNT.format(count=result["users_restored"]))
-            if result.get("skipped", {}).get("profiles") or result.get(
-                "skipped", {}
-            ).get("users"):
+            if result.get("skipped", {}).get("profiles") or result.get("skipped", {}).get("users"):
                 skipped = result["skipped"]["profiles"] + result["skipped"]["users"]
                 parts.append(BACKUP_RESTORE_SKIPPED.format(skipped=skipped))
             summary = "، ".join(parts) if parts else BACKUP_RESTORE_NONE
-            await query.edit_message_text(
-                USERMAN_RESTORE_SUCCESS.format(summary=summary)
-            )
+            await query.edit_message_text(USERMAN_RESTORE_SUCCESS.format(summary=summary))
         elif result.get("errors"):
             await query.edit_message_text(
                 USERMAN_RESTORE_PARTIAL.format(summary=result.get("message", ""))
             )
         else:
             await query.edit_message_text(
-                USERMAN_RESTORE_FAILED.format(
-                    error=result.get("message", "Unknown error")
-                )
+                USERMAN_RESTORE_FAILED.format(error=result.get("message", "Unknown error"))
             )
     except Exception as e:
         await send_error(

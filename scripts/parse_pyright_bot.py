@@ -1,4 +1,5 @@
-import json, sys
+import json
+import sys
 from collections import defaultdict
 
 path = sys.argv[1] if len(sys.argv) > 1 else ".bob/tmp/pyright_bot.json"
@@ -26,7 +27,9 @@ for fname, items in sorted(by_file.items()):
         r = d["range"]["start"]
         msg = d["message"].replace("\n", " | ")[:130]
         rule = d.get("rule", "")
-        print(f"  L{r['line']+1}:{r['character']+1} [{rule}] {msg}")
+        print(f"  L{r['line'] + 1}:{r['character'] + 1} [{rule}] {msg}")
     print()
 
-print(f"TOTAL: {total_errors} errors in {len([f for f,v in by_file.items() if any(x['severity']=='error' for x in v)])} files")
+print(
+    f"TOTAL: {total_errors} errors in {len([f for f, v in by_file.items() if any(x['severity'] == 'error' for x in v)])} files"  # noqa: E501
+)

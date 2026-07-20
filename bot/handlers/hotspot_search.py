@@ -12,12 +12,6 @@ from bot.keyboards import (
     get_search_results_keyboard,
 )
 from bot.messages import (
-    HOTSPOT_SEARCH_OFFLINE,
-    HOTSPOT_SEARCH_FOUND,
-    HOTSPOT_SEARCH_LIMIT,
-    HOTSPOT_KICK_SUCCESS_SINGLE,
-    HOTSPOT_INVALID_BLOCK_DATA,
-    HOTSPOT_INVALID_UNBLOCK_DATA,
     BLOCK_MAC_FAIL,
     BLOCK_MAC_SUCCESS,
     BLOCKED_LIST_EMPTY,
@@ -25,17 +19,21 @@ from bot.messages import (
     DEVICE_NOT_FOUND,
     DEVICE_NOT_SELECTED,
     HOST_KICK_FAILED,
+    HOTSPOT_INVALID_BLOCK_DATA,
+    HOTSPOT_INVALID_UNBLOCK_DATA,
+    HOTSPOT_KICK_SUCCESS_SINGLE,
+    HOTSPOT_SEARCH_FOUND,
+    HOTSPOT_SEARCH_OFFLINE,
     INVALID_SELECTION,
     NO_RESULTS,
     NO_ROUTER_SELECTED,
+    SEARCH_ADVANCED_HINT,
     SEARCH_PROMPT,
     SEARCHING_HOSTS,
     UNBLOCK_MAC_FAIL,
     UNBLOCK_MAC_SUCCESS,
     UNKNOWN_NAME,
-    SEARCH_ADVANCED_HINT,
 )
-from utils.formatters import format_bytes
 from bot.router_selector import (
     cleanup_state,
     get_selected_router,
@@ -55,6 +53,8 @@ from utils.chat_cleaner import (
     send_step,
 )
 from utils.error_response import send_error
+from utils.formatters import format_bytes
+
 from .constants import WAITING_HOTSPOT_SEARCH
 
 logger = logging.getLogger(__name__)
@@ -91,9 +91,7 @@ async def hotspot_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
     if text.startswith("user:"):
         hosts = await _search_users(router_key, text[5:].strip())
     elif text.startswith("mac:"):
-        hosts = await _search_hosts_by_field(
-            router_key, "mac-address", text[4:].strip()
-        )
+        hosts = await _search_hosts_by_field(router_key, "mac-address", text[4:].strip())
     elif text.startswith("comment:"):
         hosts = await _search_users(router_key, text[8:].strip())
     elif text.startswith("ip:"):
@@ -103,10 +101,11 @@ async def hotspot_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
 
     context.user_data["search_hosts"] = hosts
     await delete_now(context, update.effective_chat.id, loading.message_id)
-    
+
     from utils.pagination import Paginator
+
     paginator = Paginator(hosts, page=0)
-    
+
     await send_step(
         update,
         context,
@@ -115,25 +114,31 @@ async def hotspot_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
     )
     return WAITING_HOTSPOT_SEARCH
 
+
 @admin_only
 async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
-    
+
     try:
         page = int(query.data.split("_")[-1])
     except (ValueError, IndexError):
         page = 0
-        
+
     hosts = context.user_data.get("search_hosts")
     if hosts is None:
-        await safe_edit_plain(query, context, "⚠️ عذراً، انتهت صلاحية البحث. يرجى البحث مجدداً.", get_cancel_keyboard())
+        await safe_edit_plain(
+            query, context, "⚠️ عذراً، انتهت صلاحية البحث. يرجى البحث مجدداً.", get_cancel_keyboard()
+        )
         return WAITING_HOTSPOT_SEARCH
-        
+
     from utils.pagination import Paginator
+
     paginator = Paginator(hosts, page=page)
     res_text = _format_search_results_text(paginator)
-    await query.edit_message_text(res_text, reply_markup=get_search_results_keyboard(paginator, is_userman=False))
+    await query.edit_message_text(
+        res_text, reply_markup=get_search_results_keyboard(paginator, is_userman=False)
+    )
     return WAITING_HOTSPOT_SEARCH
 
 
@@ -233,6 +238,7 @@ async def hotspot_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE
     if on_host_detail and hosts is not None:
         context.user_data.pop("kick_host_idx", None)
         from utils.pagination import Paginator
+
         # Default to page 0 if returning from detail, ideally we should remember the page
         # but for now this matches old behavior where it re-shows results
         paginator = Paginator(hosts, page=0)
@@ -322,9 +328,7 @@ async def hotspot_host_action(update: Update, context: ContextTypes.DEFAULT_TYPE
             cleanup_state(query.from_user.id, context.user_data)
             return ConversationHandler.END
         target = host.get("mac-address") or host.get("address") or ""
-        success, host_name = await run_blocking(
-            hotspot_manager.kick_host, router_key, target
-        )
+        success, host_name = await run_blocking(hotspot_manager.kick_host, router_key, target)
         if success:
             await safe_edit_plain(
                 query,
@@ -383,9 +387,7 @@ async def block_mac_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=get_hotspot_keyboard(),
         )
     else:
-        await safe_edit_plain(
-            query, context, BLOCK_MAC_FAIL, reply_markup=get_hotspot_keyboard()
-        )
+        await safe_edit_plain(query, context, BLOCK_MAC_FAIL, reply_markup=get_hotspot_keyboard())
     cleanup_state(query.from_user.id, context.user_data)
     return ConversationHandler.END
 
@@ -420,9 +422,7 @@ async def unblock_mac_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
             reply_markup=get_hotspot_keyboard(),
         )
     else:
-        await safe_edit_plain(
-            query, context, UNBLOCK_MAC_FAIL, reply_markup=get_hotspot_keyboard()
-        )
+        await safe_edit_plain(query, context, UNBLOCK_MAC_FAIL, reply_markup=get_hotspot_keyboard())
     return ConversationHandler.END
 
 
@@ -447,7 +447,5 @@ async def show_blocked_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     else:
         text = BLOCKED_LIST_HEADER.format(count=len(blocked))
-        await safe_edit_plain(
-            query, context, text, reply_markup=get_blocked_macs_keyboard(blocked)
-        )
+        await safe_edit_plain(query, context, text, reply_markup=get_blocked_macs_keyboard(blocked))
     return WAITING_HOTSPOT_SEARCH

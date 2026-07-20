@@ -6,8 +6,8 @@ are pure with respect to the MikroTik API client: they take an API handle
 and return plain dicts/lists, keeping the search/kick responsibility here.
 """
 
-import re
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,9 @@ def search_hosts(api, router_key: str, search_term: str) -> list[dict]:
     search_lower = search_term.lower().strip()
     hosts = []
 
-    proplist = ".id,mac-address,address,host-name,user,bypass-bypassed,uptime,bytes-in,bytes-out,server"
+    proplist = (
+        ".id,mac-address,address,host-name,user,bypass-bypassed,uptime,bytes-in,bytes-out,server"
+    )
     try:
         hosts = api.execute(
             router_key,
@@ -48,9 +50,7 @@ def search_hosts(api, router_key: str, search_term: str) -> list[dict]:
         logger.warning(f"Error searching hotspot hosts: {e}")
 
     if not hosts:
-        all_hosts = api.execute(
-            router_key, "ip/hotspot/host/print", **{".proplist": proplist}
-        )
+        all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": proplist})
         for h in all_hosts:
             mac = str(h.get("mac-address", "")).lower()
             ip = str(h.get("address", "")).lower()
@@ -60,9 +60,7 @@ def search_hosts(api, router_key: str, search_term: str) -> list[dict]:
     if not hosts:
         return []
 
-    matched_macs = {
-        str(h.get("mac-address", "")).lower() for h in hosts if h.get("mac-address")
-    }
+    matched_macs = {str(h.get("mac-address", "")).lower() for h in hosts if h.get("mac-address")}
     lease_by_mac = get_leases_by_mac(api, router_key, matched_macs)
     for h in hosts:
         mac = str(h.get("mac-address", "")).lower()
@@ -93,9 +91,7 @@ def kick_host(api, router_key: str, mac_or_ip: str) -> tuple[bool, str | None]:
         logger.warning(f"Error fetching host details for '{target}': {e}")
 
     if not hosts:
-        all_hosts = api.execute(
-            router_key, "ip/hotspot/host/print", **{".proplist": proplist}
-        )
+        all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": proplist})
         for h in all_hosts:
             if (
                 str(h.get("mac-address", "")).lower() == target
@@ -140,9 +136,7 @@ def kick_user(api, router_key: str, username: str) -> list[str]:
         active = api.execute(
             router_key, "ip/hotspot/active/print", **{".proplist": active_proplist}
         )
-        active_sessions = [
-            s for s in active if str(s.get("user", "")).lower() == target
-        ]
+        active_sessions = [s for s in active if str(s.get("user", "")).lower() == target]
 
     for s in active_sessions:
         mac = s.get("mac-address", "")
@@ -173,9 +167,7 @@ def kick_user(api, router_key: str, username: str) -> list[str]:
                 )
                 matched_hosts.extend(mac_hosts)
     except Exception:
-        all_hosts = api.execute(
-            router_key, "ip/hotspot/host/print", **{".proplist": host_proplist}
-        )
+        all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": host_proplist})
         for h in all_hosts:
             mac = str(h.get("mac-address", "")).lower()
             ip = str(h.get("address", "")).lower()
@@ -193,9 +185,7 @@ def kick_user(api, router_key: str, username: str) -> list[str]:
         return []
 
     matched_macs = {
-        str(h.get("mac-address", "")).lower()
-        for h in unique_hosts
-        if h.get("mac-address")
+        str(h.get("mac-address", "")).lower() for h in unique_hosts if h.get("mac-address")
     }
     lease_by_mac = get_leases_by_mac(api, router_key, matched_macs)
 
@@ -203,9 +193,7 @@ def kick_user(api, router_key: str, username: str) -> list[str]:
         mac = str(h.get("mac-address", "")).lower()
         host_id = h.get(".id")
         lease = lease_by_mac.get(mac, {})
-        host_name = (
-            lease.get("host-name") or h.get("user") or mac or h.get("address", "")
-        )
+        host_name = lease.get("host-name") or h.get("user") or mac or h.get("address", "")
 
         api.execute(router_key, "ip/hotspot/host/remove", **{".id": host_id})
         kicked.append(host_name)

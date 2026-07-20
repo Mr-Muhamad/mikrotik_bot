@@ -1,29 +1,27 @@
 import logging
 import os
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from core.backup import files as backup_files
 from core.backup.files import (
     cleanup_old_backups,
     cleanup_router_files,
-    get_ftp_port,
     sanitize_router_name,
 )
 from core.mikrotik_api import mikrotik_api
 
 logger = logging.getLogger(__name__)
 
-from core.backup.ftp import download_files_via_ftp
+from core.backup.ftp import download_files_via_ftp  # noqa: E402
 
 
 class SystemBackupService:
-
     def full_backup(self, router_key: str, backup_root: str | None = None) -> dict:
         router_name = mikrotik_api.get_router_name(router_key)
         backup_root = backup_root or backup_files.BACKUP_DIR
         file_prefix = sanitize_router_name(router_name)
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_dir = os.path.join(backup_root, "system", f"{file_prefix}_{timestamp}")
         os.makedirs(backup_dir, exist_ok=True)
 
@@ -61,9 +59,7 @@ class SystemBackupService:
                 "downloaded": downloaded,
             }
             if not downloaded:
-                result["warning"] = (
-                    "تم إنشاء الملفات على الراوتر لكن فشل التحميل المحلي"
-                )
+                result["warning"] = "تم إنشاء الملفات على الراوتر لكن فشل التحميل المحلي"
                 logger.warning(
                     f"Full backup created on router but FTP download failed for {router_key}"
                 )

@@ -1,16 +1,16 @@
+import contextlib
 import logging
 import re
-import time
 import threading
-import contextlib
+import time
 
 from librouteros import connect
 from librouteros.exceptions import LibRouterosError
 
-from core.connection_pool import ConnectionPool, API_TIMEOUT, LONG_TIMEOUT
+from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
+from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
 from core.mikrotik_client import MikrotikClient
 from database.models import get_router_by_id, get_router_display_name
-from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +87,7 @@ class MikrotikAPI:
     def get_userman_base_path(self, router_key: str = "router1") -> str:
         version = self.get_version(router_key)
         if not version or version == "unknown":
-            logger.warning(
-                f"Unknown RouterOS version for {router_key}, defaulting to v6 API path"
-            )
+            logger.warning(f"Unknown RouterOS version for {router_key}, defaulting to v6 API path")
             return "tool/user-manager"
         try:
             major = int(version.split(".")[0])
@@ -110,9 +108,7 @@ class MikrotikAPI:
         return self._pool.has_active_connection(router_key)
 
     @contextlib.contextmanager
-    def _connection_ctx(
-        self, router_key: str, timeout: int, force_reconnect: bool = False
-    ):
+    def _connection_ctx(self, router_key: str, timeout: int, force_reconnect: bool = False):
         if force_reconnect:
             api = self._pool.reconnect(router_key, timeout=timeout)
         else:
@@ -176,9 +172,7 @@ class MikrotikAPI:
     def _debug_log(self, method: str, command: str, kwargs: dict):
         """يسجل kwargs مع إخفاء كلمات المرور."""
         if kwargs:
-            sanitized = {
-                k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()
-            }
+            sanitized = {k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()}
             logger.debug(f"{method} {command} kwargs={sanitized}")
 
     # ──────────────────────────────────────────────────────────────
@@ -203,8 +197,7 @@ class MikrotikAPI:
                 raise
 
             logger.warning(
-                f"Error executing {command} on {router_key}: {e}, "
-                f"retrying with fresh connection..."
+                f"Error executing {command} on {router_key}: {e}, retrying with fresh connection..."
             )
             try:
                 with self._connection_ctx(
@@ -223,15 +216,11 @@ class MikrotikAPI:
         """الأمر العادي — مهلة 30 ثانية، يعيد المحاولة عند الخطأ."""
         return self._execute_with_retry(router_key, command, API_TIMEOUT, **kwargs)
 
-    def execute_long(
-        self, router_key: str, command: str, **kwargs: object
-    ) -> list[dict]:
+    def execute_long(self, router_key: str, command: str, **kwargs: object) -> list[dict]:
         """أمر طويل — مهلة 120 ثانية، يعيد المحاولة عند الخطأ."""
         return self._execute_with_retry(router_key, command, LONG_TIMEOUT, **kwargs)
 
-    def execute_non_blocking(
-        self, router_key: str, command: str, **kwargs: object
-    ) -> None:
+    def execute_non_blocking(self, router_key: str, command: str, **kwargs: object) -> None:
         """أمر غير متزامن — لا يعيد المحاولة، يسجل الخطأ ويتجاوزه."""
         try:
             with self._connection_ctx(router_key, timeout=API_TIMEOUT) as api:
@@ -273,9 +262,7 @@ class MikrotikAPI:
             result = list(api.path("system", "resource")("print"))
             version = str(result[0].get("version", "unknown")) if result else "unknown"
             identity_result = list(api.path("system", "identity")("print"))
-            identity = (
-                str(identity_result[0].get("name", ip)) if identity_result else ip
-            )
+            identity = str(identity_result[0].get("name", ip)) if identity_result else ip
             return True, version, identity
         except LibRouterosError as e:
             logger.error(f"test_connection LibRouterosError for {ip}:{port}: {e}")
@@ -374,9 +361,7 @@ class MikrotikAPI:
                 "wrong user",
             )
         ):
-            return (
-                "🔑 فشل تسجيل الدخول إلى الروتر. اسم المستخدم أو كلمة المرور غير صحيح."
-            )
+            return "🔑 فشل تسجيل الدخول إلى الروتر. اسم المستخدم أو كلمة المرور غير صحيح."
 
         # أي خطأ آخر: نعرض نصاً معقّماً
         sanitized = self._sanitize_connect_detail(msg)

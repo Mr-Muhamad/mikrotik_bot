@@ -13,11 +13,12 @@ class BackupScheduler:
         self._running = False
 
     async def _do_backup(self, context):
+        from librouteros.exceptions import LibRouterosError
+
+        from config import ADMIN_IDS, ROUTER_KEY_PREFIX
         from core.backup_service import backup_service
         from core.mikrotik_api import mikrotik_api
-        from config import ROUTER_KEY_PREFIX, ADMIN_IDS
         from database.models import get_saved_routers, record_backup_result
-        from librouteros.exceptions import LibRouterosError
 
         failed_routers: list[str] = []
         successful_routers: list[str] = []
@@ -97,12 +98,8 @@ class BackupScheduler:
                     )
                 else:
                     msg = full_result.get("message", "scheduled full backup failed")
-                    logger.error(
-                        f"Scheduled full backup failed for {router_key}: {msg}"
-                    )
-                    failed_routers.append(
-                        f"{r.get('identity', router_key)} (باكوب كامل)"
-                    )
+                    logger.error(f"Scheduled full backup failed for {router_key}: {msg}")
+                    failed_routers.append(f"{r.get('identity', router_key)} (باكوب كامل)")
                     await run_blocking(
                         record_backup_result,
                         router_key,
@@ -114,9 +111,7 @@ class BackupScheduler:
 
         # تقرير النتائج
         if successful_routers:
-            logger.info(
-                f"Backup completed successfully for {len(successful_routers)} routers"
-            )
+            logger.info(f"Backup completed successfully for {len(successful_routers)} routers")
 
         if failed_routers and context.bot:
             for admin_id in ADMIN_IDS:
@@ -127,16 +122,14 @@ class BackupScheduler:
                         + "\n".join(f"• {r}" for r in failed_routers),
                     )
                 except (OSError, ConnectionError) as e:
-                    logger.warning(
-                        f"Failed to notify admin {admin_id} about backup failures: {e}"
-                    )
+                    logger.warning(f"Failed to notify admin {admin_id} about backup failures: {e}")
 
     async def _do_expiry_check(self, context):
         """فحص يومي لاشتراكات Hotspot المشارفة على الانتهاء وإرسال تنبيه للمشرفين."""
+        from config import ADMIN_IDS, ROUTER_KEY_PREFIX
         from core.hotspot_manager import hotspot_manager
-        from config import ROUTER_KEY_PREFIX, ADMIN_IDS
-        from database.models import get_saved_routers
         from core.messages_expiry import EXPIRY_ALERT_HEADER, EXPIRY_ALERT_USER_ROW
+        from database.models import get_saved_routers
 
         routers = await run_blocking(get_saved_routers, active_only=True)
         days = 3
@@ -147,9 +140,7 @@ class BackupScheduler:
             router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
             router_name = r.get("identity", router_key)
             try:
-                expiring = await run_blocking(
-                    hotspot_manager.get_expiring_users, router_key, days
-                )
+                expiring = await run_blocking(hotspot_manager.get_expiring_users, router_key, days)
             except Exception as e:
                 logger.warning(f"Expiry check failed for {router_key}: {e}")
                 continue
@@ -171,14 +162,12 @@ class BackupScheduler:
                 try:
                     await context.bot.send_message(admin_id, message, parse_mode="HTML")
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to notify admin {admin_id} about expiry: {e}"
-                    )
+                    logger.warning(f"Failed to notify admin {admin_id} about expiry: {e}")
 
     async def _do_stats_snapshot(self, context):
         """حفظ snapshot يومي لإحصائيات كل راوتر في قاعدة البيانات."""
-        from core.stats import stats_manager
         from config import ROUTER_KEY_PREFIX
+        from core.stats import stats_manager
         from database.models import get_saved_routers
         from database.repositories.stats_snapshots import save_snapshot
 
@@ -202,9 +191,7 @@ class BackupScheduler:
             except Exception as e:
                 logger.warning(f"Stats snapshot failed for {router_key}: {e}")
 
-    def start_daily(
-        self, job_queue, hour: int = 3, minute: int = 0, persist: bool = True
-    ) -> None:
+    def start_daily(self, job_queue, hour: int = 3, minute: int = 0, persist: bool = True) -> None:
         self.stop(job_queue, persist=False)
         now = datetime.now()
         target_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -216,9 +203,9 @@ class BackupScheduler:
             name=JOB_NAME,
         )
         # فحص انتهاء الاشتراكات بعد 5 دقائق من الـ backup
-        expiry_time = now.replace(
-            hour=hour, minute=minute, second=0, microsecond=0
-        ) + timedelta(minutes=5)
+        expiry_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0) + timedelta(
+            minutes=5
+        )
         if expiry_time <= now:
             expiry_time += timedelta(days=1)
         job_queue.run_daily(
@@ -227,9 +214,9 @@ class BackupScheduler:
             name=f"{JOB_NAME}_expiry",
         )
         # snapshot إحصائيات بعد 10 دقائق من الـ backup
-        snapshot_time = now.replace(
-            hour=hour, minute=minute, second=0, microsecond=0
-        ) + timedelta(minutes=10)
+        snapshot_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0) + timedelta(
+            minutes=10
+        )
         if snapshot_time <= now:
             snapshot_time += timedelta(days=1)
         job_queue.run_daily(
@@ -242,9 +229,7 @@ class BackupScheduler:
             from database.models import save_backup_schedule
 
             save_backup_schedule(True, hour, minute)
-        logger.info(
-            f"Backup scheduler started, next run daily at {hour:02d}:{minute:02d}"
-        )
+        logger.info(f"Backup scheduler started, next run daily at {hour:02d}:{minute:02d}")
 
     def stop(self, job_queue, persist: bool = True):
         self._running = False
@@ -259,9 +244,7 @@ class BackupScheduler:
             from database.models import get_backup_schedule, save_backup_schedule
 
             current = get_backup_schedule()
-            save_backup_schedule(
-                False, current["schedule_hour"], current["schedule_minute"]
-            )
+            save_backup_schedule(False, current["schedule_hour"], current["schedule_minute"])
 
     def is_running(self, job_queue=None) -> bool:
         if job_queue:

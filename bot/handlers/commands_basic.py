@@ -11,54 +11,53 @@ import logging
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from bot.keyboards import get_router_keyboard, get_main_keyboard
-from bot.messages import (
-    WELCOME,
-    MAIN_MENU,
-    SELECT_ROUTER,
-    HELP,
-    CLEAN_DONE,
-    SYNC_COMMANDS_DONE,
-    METRICS_HEADER,
-    METRICS_ACTIVE,
-    METRICS_STALE,
-    METRICS_TOTAL,
-    METRICS_SUCCESS,
-    METRICS_FAILED,
-    METRICS_CACHE,
-    METRICS_SERVER_HEALTH,
+# Shared helpers kept in ``common`` to avoid a circular import between
+# ``menus`` and ``commands_basic`` (both depend on these primitives).
+from bot.handlers.common import _get_router_part
+from bot.handlers.constants import (
+    WAITING_CARD_PROFILE,
+    WAITING_CARD_TYPE,
+    WAITING_DELETE_SELECT,
 )
+from bot.handlers.menus import _resolve_nav_target
 from bot.handlers.router_system import get_router_system_part as _get_router_system_part
+from bot.keyboards import get_main_keyboard, get_router_keyboard
+from bot.messages import (
+    CLEAN_DONE,
+    HELP,
+    MAIN_MENU,
+    METRICS_ACTIVE,
+    METRICS_CACHE,
+    METRICS_FAILED,
+    METRICS_HEADER,
+    METRICS_SERVER_HEALTH,
+    METRICS_STALE,
+    METRICS_SUCCESS,
+    METRICS_TOTAL,
+    SELECT_ROUTER,
+    SYNC_COMMANDS_DONE,
+    WELCOME,
+)
 from bot.router_selector import (
-    get_selected_router,
-    set_current_action,
+    cleanup_state,
     clear_action,
     clear_router,
-    cleanup_state,
-)
-from bot.handlers.constants import (
-    WAITING_DELETE_SELECT,
-    WAITING_CARD_TYPE,
-    WAITING_CARD_PROFILE,
+    get_selected_router,
+    set_current_action,
 )
 from core.mikrotik_api import mikrotik_api
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
+from utils.bot_commands import set_bot_commands
+from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import (
     clean_chat_messages,
-    schedule_delete,
-    send_and_track,
     delete_now,
     safe_edit_or_send,
+    schedule_delete,
+    send_and_track,
     send_step,
 )
-from utils.callback_utils import safe_answer_callback
-from utils.bot_commands import set_bot_commands
-
-# Shared helpers kept in ``common`` to avoid a circular import between
-# ``menus`` and ``commands_basic`` (both depend on these primitives).
-from bot.handlers.common import _get_router_part
-from bot.handlers.menus import _resolve_nav_target
 
 logger = logging.getLogger(__name__)
 
@@ -79,9 +78,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         temp_msg = await context.bot.send_message(
             chat_id, "⏳ جاري التحقق من حالة الاتصال بالراوتر..."
         )
-        is_healthy, reason = await run_blocking(
-            mikrotik_api.check_connection_health, router_key
-        )
+        is_healthy, reason = await run_blocking(mikrotik_api.check_connection_health, router_key)
         try:
             await context.bot.delete_message(chat_id, temp_msg.message_id)
         except Exception:
@@ -162,9 +159,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
     router_key = get_selected_router(update.effective_user.id)
-    admin_name = (
-        update.effective_user.full_name or update.effective_user.username or "مشرف"
-    )
+    admin_name = update.effective_user.full_name or update.effective_user.username or "مشرف"
     router_part = await _get_router_part(router_key, fmt=" | 🌐 {}")
     system_part = await _get_router_system_part(router_key)
 
@@ -195,9 +190,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.debug(f"Failed to delete user message: {e}")
         if last_msg_id:
             try:
-                await context.bot.delete_message(
-                    chat_id=chat_id, message_id=last_msg_id
-                )
+                await context.bot.delete_message(chat_id=chat_id, message_id=last_msg_id)
             except Exception as e:
                 logger.debug(f"Failed to delete last message {last_msg_id}: {e}")
         if router_key:
@@ -245,7 +238,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await send_and_track(
                 context,
                 update.effective_chat.id,
-                "❌ حدث خطأ غير متوقع.\nاستخدم /cancel للخروج من الوضع الحالي\nأو /start للعودة للقائمة.",
+                "❌ حدث خطأ غير متوقع.\nاستخدم /cancel للخروج من الوضع الحالي\nأو /start للعودة للقائمة.",  # noqa: E501
             )
         except Exception as e:
             logger.debug(f"Failed to send error message: {e}")
@@ -309,10 +302,11 @@ async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     server_health_text = ""
     try:
-        import psutil
         import os
         import time
         from datetime import timedelta
+
+        import psutil
 
         cpu_percent = psutil.cpu_percent(interval=0.1)
         ram = psutil.virtual_memory()
@@ -376,15 +370,11 @@ async def reprompt_select_user(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def reprompt_card_type_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await send_step(
-        update, context, "❌ الرجاء اختيار نوع الكروت من الأزرار (1 أو 2 أو 3)."
-    )
+    await send_step(update, context, "❌ الرجاء اختيار نوع الكروت من الأزرار (1 أو 2 أو 3).")
     return WAITING_CARD_TYPE
 
 
 @admin_only
-async def reprompt_card_profile_text(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def reprompt_card_profile_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_step(update, context, "❌ الرجاء اختيار البروفايل من الأزرار أعلاه.")
     return WAITING_CARD_PROFILE

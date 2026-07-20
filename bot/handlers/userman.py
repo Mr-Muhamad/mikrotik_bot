@@ -4,65 +4,67 @@ from datetime import datetime
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
+
+from bot.handlers.handler_utils import make_back_step
+from bot.helpers.profiles import PROFILE_SOURCE_USERMAN, fetch_and_cache_profiles
 from bot.keyboards import (
+    get_back_keyboard,
+    get_card_mac_keyboard,
+    get_card_payment_keyboard,
     get_card_type_keyboard,
     get_profile_keyboard,
-    get_card_payment_keyboard,
-    get_card_mac_keyboard,
-    get_userman_keyboard,
-    get_back_keyboard,
     get_skip_keyboard,
+    get_userman_keyboard,
 )
 from bot.messages import (
-    USERMAN_PAYMENT_UNSPECIFIED,
-    USERMAN_UNLINKED_WARNING,
-    CARDS_PROMPT,
-    ERROR_OCCURRED,
-    CHOOSE_PROFILE,
-    INVALID_PROFILE,
-    NO_PROFILES_AVAILABLE,
-    SEND_CARD_COUNT,
-    MAX_CARDS_EXCEEDED,
-    CREATING_CARDS,
     CARDS_CREATED_DETAIL,
-    PDF_FILE_CAPTION,
-    PROFILES_HEADER,
-    NO_PROFILES,
+    CARDS_PROMPT,
+    CHOOSE_MAC_BIND,
     CHOOSE_PAYMENT,
+    CHOOSE_PROFILE,
+    CREATING_CARDS,
+    ENTER_CARD_PREFIX,
+    ERROR_OCCURRED,
+    INVALID_PROFILE,
+    MAX_CARDS_EXCEEDED,
+    NO_PROFILES,
+    NO_PROFILES_AVAILABLE,
     PAYMENT_PAID,
     PAYMENT_UNPAID,
-    CHOOSE_MAC_BIND,
-    ENTER_CARD_PREFIX,
+    PDF_FILE_CAPTION,
+    PROFILES_HEADER,
+    SEND_CARD_COUNT,
+    USERMAN_PAYMENT_UNSPECIFIED,
+    USERMAN_UNLINKED_WARNING,
 )
+from bot.profile_callbacks import resolve_profile_from_callback
 from bot.router_selector import (
-    get_selected_router,
     cleanup_state,
+    get_selected_router,
     nav_set,
     set_current_action,
 )
-from bot.handlers.handler_utils import make_back_step
-from bot.helpers.profiles import fetch_and_cache_profiles, PROFILE_SOURCE_USERMAN
-from core.userman_manager import userman_manager
-from core.profile_sync import profile_sync
 from core.card_models import CardData, serialize_cards
+from core.profile_sync import profile_sync
+from core.userman_manager import userman_manager
 from database.models import log_action, save_card_batch
-from utils.formatters import format_user_list
-from utils.validators import validate_positive_int
-from utils.chat_cleaner import send_and_track, send_step, edit_clean, track_message
 from pdf.card_generator import card_generator
-from .constants import (
-    WAITING_CARD_TYPE,
-    WAITING_CARD_PROFILE,
-    WAITING_CARD_COUNT,
-    WAITING_CARD_PAYMENT,
-    WAITING_CARD_MAC,
-    WAITING_CARD_PREFIX,
-)
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
+from utils.chat_cleaner import edit_clean, send_and_track, send_step, track_message
 from utils.error_response import send_error
-from bot.profile_callbacks import resolve_profile_from_callback
+from utils.formatters import format_user_list
+from utils.validators import validate_positive_int
+
+from .constants import (
+    WAITING_CARD_COUNT,
+    WAITING_CARD_MAC,
+    WAITING_CARD_PAYMENT,
+    WAITING_CARD_PREFIX,
+    WAITING_CARD_PROFILE,
+    WAITING_CARD_TYPE,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -85,9 +87,7 @@ async def userman_cards_start(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 
 @admin_only
-async def userman_card_type_selected(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def userman_card_type_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -103,9 +103,7 @@ async def userman_card_type_selected(
     if profile_names:
         await query.edit_message_text(
             CHOOSE_PROFILE,
-            reply_markup=get_profile_keyboard(
-                profile_names, "card_profile", "card_back_to_type"
-            ),
+            reply_markup=get_profile_keyboard(profile_names, "card_profile", "card_back_to_type"),
         )
         return WAITING_CARD_PROFILE
     else:
@@ -115,9 +113,7 @@ async def userman_card_type_selected(
 
 
 @admin_only
-async def userman_card_profile_selected(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def userman_card_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -128,16 +124,12 @@ async def userman_card_profile_selected(
         return ConversationHandler.END
     context.user_data["card_profile"] = profile
 
-    await query.edit_message_text(
-        CHOOSE_PAYMENT, reply_markup=get_card_payment_keyboard()
-    )
+    await query.edit_message_text(CHOOSE_PAYMENT, reply_markup=get_card_payment_keyboard())
     return WAITING_CARD_PAYMENT
 
 
 @admin_only
-async def userman_card_payment_selected(
-    update: Update, context: ContextTypes.DEFAULT_TYPE
-):
+async def userman_card_payment_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -193,9 +185,7 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         if status_msg:
             try:
-                await context.bot.delete_message(
-                    chat_id=chat_id, message_id=status_msg.message_id
-                )
+                await context.bot.delete_message(chat_id=chat_id, message_id=status_msg.message_id)
             except Exception as e:
                 logger.debug(f"Failed to delete status message: {e}")
 
@@ -248,8 +238,8 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 "",
             )
             detail += (
-                USERMAN_UNLINKED_WARNING.format(unlinked=unlinked_count, total=len(cards)) +
-                f"«{context.user_data.get('card_profile', '')}»"
+                USERMAN_UNLINKED_WARNING.format(unlinked=unlinked_count, total=len(cards))
+                + f"«{context.user_data.get('card_profile', '')}»"
                 + (f":\n{first_err}" if first_err else "")
             )
         await send_and_track(context, chat_id, detail)
@@ -325,9 +315,7 @@ async def userman_card_mac_selected(update: Update, context: ContextTypes.DEFAUL
 @admin_only
 async def userman_card_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["card_prefix"] = update.message.text.strip()
-    await send_step(
-        update, context, SEND_CARD_COUNT, get_back_keyboard("card_back_to_prefix")
-    )
+    await send_step(update, context, SEND_CARD_COUNT, get_back_keyboard("card_back_to_prefix"))
     return WAITING_CARD_COUNT
 
 
@@ -344,9 +332,7 @@ async def userman_card_skip_prefix(update: Update, context: ContextTypes.DEFAULT
 
 # ─── USERMAN BACK HANDLERS ────────────────────────────────────
 
-userman_back_to_type = make_back_step(
-    CARDS_PROMPT, get_card_type_keyboard, WAITING_CARD_TYPE
-)
+userman_back_to_type = make_back_step(CARDS_PROMPT, get_card_type_keyboard, WAITING_CARD_TYPE)
 
 
 @admin_only
@@ -361,9 +347,7 @@ async def userman_back_to_profile(update: Update, context: ContextTypes.DEFAULT_
     )
     await query.edit_message_text(
         CHOOSE_PROFILE,
-        reply_markup=get_profile_keyboard(
-            profile_names, "card_profile", "card_back_to_type"
-        ),
+        reply_markup=get_profile_keyboard(profile_names, "card_profile", "card_back_to_type"),
     )
     return WAITING_CARD_PROFILE
 
@@ -371,9 +355,7 @@ async def userman_back_to_profile(update: Update, context: ContextTypes.DEFAULT_
 userman_back_to_payment = make_back_step(
     CHOOSE_PAYMENT, get_card_payment_keyboard, WAITING_CARD_PAYMENT
 )
-userman_back_to_mac = make_back_step(
-    CHOOSE_MAC_BIND, get_card_mac_keyboard, WAITING_CARD_MAC
-)
+userman_back_to_mac = make_back_step(CHOOSE_MAC_BIND, get_card_mac_keyboard, WAITING_CARD_MAC)
 userman_back_to_prefix = make_back_step(
     ENTER_CARD_PREFIX,
     lambda: get_skip_keyboard("card_skip_prefix", "card_back_to_mac"),

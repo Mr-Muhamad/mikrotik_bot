@@ -1,5 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock
-from telegram import Update, Message, User, Chat
+
+from telegram import Chat, Message, Update, User
 from telegram.ext import ContextTypes, JobQueue
 
 

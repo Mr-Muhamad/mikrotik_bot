@@ -18,15 +18,12 @@ Only ``_get_router_part`` and ``_show_menu`` remain here on purpose.
 
 import logging
 
-from telegram import Update
-from telegram.ext import ContextTypes
-
+from bot.router_selector import get_selected_router
 from core.exceptions import RouterNotFoundError
 from core.mikrotik_api import mikrotik_api
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import safe_edit_or_send, send_and_track
-from bot.router_selector import get_selected_router
 
 logger = logging.getLogger(__name__)
 

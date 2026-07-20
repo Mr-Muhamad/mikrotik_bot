@@ -1,8 +1,7 @@
-"""Tests for utils.crypto — Fernet password encryption (no session fallback, ENCRYPTION_KEY required)."""
-
-from cryptography.fernet import Fernet
+"""Tests for utils.crypto — Fernet password encryption (no session fallback, ENCRYPTION_KEY required)."""  # noqa: E501
 
 import pytest
+from cryptography.fernet import Fernet
 
 from utils import crypto
 from utils.crypto import decrypt_password, encrypt_password

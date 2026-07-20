@@ -1,10 +1,10 @@
 """Complete mock for MikrotikAPI — no real RouterOS connections."""
 
 from tests.fixtures.hotspot_users import (
-    SAMPLE_HOTSPOT_USERS,
-    SAMPLE_HOTSPOT_PROFILES,
-    SAMPLE_HOTSPOT_HOSTS,
     SAMPLE_DHCP_LEASES,
+    SAMPLE_HOTSPOT_HOSTS,
+    SAMPLE_HOTSPOT_PROFILES,
+    SAMPLE_HOTSPOT_USERS,
 )
 
 
@@ -19,7 +19,7 @@ class MikrotikAPIMock:
         self._users: list[dict] = [dict(u) for u in SAMPLE_HOTSPOT_USERS]
         self._profiles: list[dict] = [dict(p) for p in SAMPLE_HOTSPOT_PROFILES]
         self._hosts: list[dict] = [dict(h) for h in SAMPLE_HOTSPOT_HOSTS]
-        self._leases: list[dict] = [dict(l) for l in SAMPLE_DHCP_LEASES]
+        self._leases: list[dict] = [dict(lease) for lease in SAMPLE_DHCP_LEASES]
         self.commands_executed: list[tuple[str, str, dict]] = []
         self.last_router_key: str | None = None
         self._version = "7.15"
@@ -97,9 +97,7 @@ class MikrotikAPIMock:
         if not kwargs:
             return list(self._users)
         limit = kwargs.get("limit")
-        filter_kwargs = {
-            k: v for k, v in kwargs.items() if k not in ("limit", ".proplist")
-        }
+        filter_kwargs = {k: v for k, v in kwargs.items() if k not in ("limit", ".proplist")}
         results = []
         for field, value in filter_kwargs.items():
             field_name = field.lstrip("?")

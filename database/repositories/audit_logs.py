@@ -7,6 +7,8 @@ re-exports these repositories at import time).
 
 from __future__ import annotations
 
+from datetime import UTC
+
 
 def _logs_where_clauses(filters):
     """Build SQL WHERE clauses and params for log filtering.
@@ -45,7 +47,7 @@ def log_action(action: str, username: str, router_name: str, admin_id: int) -> N
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO logs (action, username, router_name, admin_id, timestamp) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO logs (action, username, router_name, admin_id, timestamp) VALUES (?, ?, ?, ?, ?)",  # noqa: E501
             (
                 action,
                 username,
@@ -65,7 +67,7 @@ def get_logs(limit=20, offset=0, filters=None):
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            f"SELECT action, username, router_name, timestamp FROM logs{where} ORDER BY timestamp DESC LIMIT ? OFFSET ?",
+            f"SELECT action, username, router_name, timestamp FROM logs{where} ORDER BY timestamp DESC LIMIT ? OFFSET ?",  # noqa: E501
             params,
         )
         return [dict(row) for row in cursor.fetchall()]
@@ -90,7 +92,7 @@ def get_distinct_log_actions():
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT DISTINCT action FROM logs WHERE action IS NOT NULL AND action != '' ORDER BY action"
+            "SELECT DISTINCT action FROM logs WHERE action IS NOT NULL AND action != '' ORDER BY action"  # noqa: E501
         )
         return [row["action"] for row in cursor.fetchall()]
 
@@ -102,7 +104,7 @@ def get_distinct_log_admins():
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT DISTINCT admin_id, username FROM logs WHERE admin_id IS NOT NULL ORDER BY admin_id"
+            "SELECT DISTINCT admin_id, username FROM logs WHERE admin_id IS NOT NULL ORDER BY admin_id"  # noqa: E501
         )
         return [dict(row) for row in cursor.fetchall()]
 
@@ -114,7 +116,7 @@ def get_distinct_log_routers():
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT DISTINCT router_name FROM logs WHERE router_name IS NOT NULL AND router_name != '' ORDER BY router_name"
+            "SELECT DISTINCT router_name FROM logs WHERE router_name IS NOT NULL AND router_name != '' ORDER BY router_name"  # noqa: E501
         )
         return [row["router_name"] for row in cursor.fetchall()]
 
@@ -124,16 +126,14 @@ def cleanup_old_logs(days: int) -> int:
 
     The function is intentionally opt-in; init_db() never deletes production logs.
     """
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from database.models import UTC_TIMESTAMP_FORMAT, get_db
 
     if days <= 0:
         raise ValueError("days must be a positive integer")
-    cutoff = datetime.now(timezone.utc).timestamp() - (days * 24 * 60 * 60)
-    cutoff_text = datetime.fromtimestamp(cutoff, tz=timezone.utc).strftime(
-        UTC_TIMESTAMP_FORMAT
-    )
+    cutoff = datetime.now(UTC).timestamp() - (days * 24 * 60 * 60)
+    cutoff_text = datetime.fromtimestamp(cutoff, tz=UTC).strftime(UTC_TIMESTAMP_FORMAT)
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM logs WHERE timestamp < ?", (cutoff_text,))
@@ -141,8 +141,8 @@ def cleanup_old_logs(days: int) -> int:
 
 
 def _now_utc():
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from database.models import UTC_TIMESTAMP_FORMAT
 
-    return datetime.now(timezone.utc).strftime(UTC_TIMESTAMP_FORMAT)
+    return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)

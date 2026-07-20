@@ -7,15 +7,15 @@ log lines from the same update can be correlated in production logs.
 Also configures RotatingFileHandler for production log rotation.
 """
 
+import io
+import json
 import logging
 import logging.handlers
-import json
-import sys
-import io
 import os
-from uuid import uuid4
+import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
+from uuid import uuid4
 
 # Production configuration from environment
 LOG_LEVEL = int(os.getenv("LOG_LEVEL", logging.INFO))
@@ -109,12 +109,9 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
     # Check if already configured (idempotent)
     has_root_filter = any(isinstance(f, RequestIdFilter) for f in root.filters)
     has_console = any(
-        isinstance(h, logging.StreamHandler) and h.stream is sys.stdout
-        for h in root.handlers
+        isinstance(h, logging.StreamHandler) and h.stream is sys.stdout for h in root.handlers
     )
-    has_file = any(
-        isinstance(h, logging.handlers.RotatingFileHandler) for h in root.handlers
-    )
+    has_file = any(isinstance(h, logging.handlers.RotatingFileHandler) for h in root.handlers)
 
     # Add RequestIdFilter to all existing handlers that don't have it
     for handler in root.handlers:
@@ -124,10 +121,7 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
     if has_root_filter and has_console and has_file:
         # Already fully configured - just update handler levels if needed
         for handler in root.handlers:
-            if (
-                isinstance(handler, logging.StreamHandler)
-                and handler.stream is sys.stdout
-            ):
+            if isinstance(handler, logging.StreamHandler) and handler.stream is sys.stdout:
                 if handler.level != level:
                     handler.setLevel(level)
         return

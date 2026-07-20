@@ -1,12 +1,19 @@
 from database.models import get_pdf_settings, update_pdf_settings
 
 _NUMERIC_VALIDATORS = {
-    "margin_top": (0, 100), "margin_bottom": (0, 100),
-    "margin_left": (0, 100), "margin_right": (0, 100),
-    "border_width": (0, 10), "spacing_x": (0, 50), "spacing_y": (0, 50),
-    "cards_per_row": (1, 10), "cards_per_page": (1, 200),
-    "value_max_font_single": (6, 24), "value_max_font_dual": (6, 24),
-    "label_spacing_single": (0.1, 5.0), "label_spacing_dual": (0.1, 5.0),
+    "margin_top": (0, 100),
+    "margin_bottom": (0, 100),
+    "margin_left": (0, 100),
+    "margin_right": (0, 100),
+    "border_width": (0, 10),
+    "spacing_x": (0, 50),
+    "spacing_y": (0, 50),
+    "cards_per_row": (1, 10),
+    "cards_per_page": (1, 200),
+    "value_max_font_single": (6, 24),
+    "value_max_font_dual": (6, 24),
+    "label_spacing_single": (0.1, 5.0),
+    "label_spacing_dual": (0.1, 5.0),
 }
 
 
@@ -29,7 +36,7 @@ class PDFSettings:
         settings = self.get_settings()
         lines = [
             "⚙️ إعدادات PDF الحالية:",
-            f"📏 الهوامش: أعلى={settings.get('margin_top', 10)} | أسفل={settings.get('margin_bottom', 10)} | يسار={settings.get('margin_left', 10)} | يمين={settings.get('margin_right', 10)}",
+            f"📏 الهوامش: أعلى={settings.get('margin_top', 10)} | أسفل={settings.get('margin_bottom', 10)} | يسار={settings.get('margin_left', 10)} | يمين={settings.get('margin_right', 10)}",  # noqa: E501
             f"📏 سمك الحدود: {settings.get('border_width', 1)} مم",
             f"↔️ الفواصل الأفقية: {settings.get('spacing_x', 5)} مم",
             f"↕️ الفواصل العمودية: {settings.get('spacing_y', 5)} مم",

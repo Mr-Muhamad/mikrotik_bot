@@ -12,10 +12,10 @@ from bot.keyboards import (
 from bot.messages import (
     CONFIRM_DELETE,
     EDIT_SELECT_FIELD,
-    NO_RESULTS,
-    NO_ROUTER_SELECTED,
     HOTSPOT_PAGINATION_DELETE,
     HOTSPOT_PAGINATION_EDIT,
+    NO_RESULTS,
+    NO_ROUTER_SELECTED,
 )
 from bot.router_selector import cleanup_state, get_selected_router
 from core.hotspot_manager import hotspot_manager
@@ -25,7 +25,7 @@ from utils.chat_cleaner import reply_final, send_step
 from utils.error_response import send_error
 from utils.formatters import format_hotspot_user
 from utils.pagination import Paginator
-from .session_models import get_hotspot_add_session, get_hotspot_edit_session
+
 from .constants import (
     WAITING_DELETE_ID,
     WAITING_DELETE_SELECT,
@@ -33,6 +33,7 @@ from .constants import (
     WAITING_EDIT_VALUE,
     WAITING_INPUT,
 )
+from .session_models import get_hotspot_add_session, get_hotspot_edit_session
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +48,7 @@ async def search_users_for_action(update, context, action):
         return ConversationHandler.END
 
     try:
-        users = await run_blocking(
-            hotspot_manager.search_users, router_key, search_term
-        )
+        users = await run_blocking(hotspot_manager.search_users, router_key, search_term)
     except Exception as e:
         await send_error(
             update,

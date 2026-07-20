@@ -1,14 +1,14 @@
-import os
 import io
-import tempfile
 import logging
+import os
 import threading
-import qrcode
 from urllib.parse import quote
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+
+import qrcode
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,8 @@ def _setup_arabic_support():
         try:
             from arabic_reshaper import ArabicReshaper
             from bidi.algorithm import get_display
-            _ARABIC_RESHAPER = ArabicReshaper(configuration={'delete_harakat': False})
+
+            _ARABIC_RESHAPER = ArabicReshaper(configuration={"delete_harakat": False})
             _BIDI_DISPLAY = get_display
         except ImportError:
             logger.warning("arabic_reshaper or python-bidi not installed")
@@ -80,9 +81,18 @@ def _arabic_text(text):
 class CardRenderer:
     """Renders individual hotspot/userman cards onto a PDF canvas."""
 
-    def __init__(self, font_name=None, brand_name="", hotspot_dns="", footer_text="", show_qr=1,
-                 label_spacing_single=1.0, label_spacing_dual=1.0,
-                 value_max_font_single=12, value_max_font_dual=11):
+    def __init__(
+        self,
+        font_name=None,
+        brand_name="",
+        hotspot_dns="",
+        footer_text="",
+        show_qr=1,
+        label_spacing_single=1.0,
+        label_spacing_dual=1.0,
+        value_max_font_single=12,
+        value_max_font_dual=11,
+    ):
         self.font_name = font_name or _setup_arabic_support()
         self.brand_name = brand_name
         self.hotspot_dns = hotspot_dns
@@ -153,7 +163,9 @@ class CardRenderer:
         """Draw username and password fields with dynamic font sizing."""
         username = str(card.get("username", "") if isinstance(card, dict) else card.username)
         password = str(card.get("password", "") if isinstance(card, dict) else card.password)
-        show_password = card.get("show_password", False) if isinstance(card, dict) else card.show_password
+        show_password = (
+            card.get("show_password", False) if isinstance(card, dict) else card.show_password
+        )
 
         data_top = y + height - 10.5 * mm
         footer_line_y = y + 5 * mm
@@ -166,7 +178,9 @@ class CardRenderer:
             value_x = x + 11 * mm * spacing
             max_text_width = (x + width) - value_x - 1.5 * mm
 
-            fs = self._dynamic_font_size(username, max_text_width, max_font=self.value_max_font_single, min_font=7)
+            fs = self._dynamic_font_size(
+                username, max_text_width, max_font=self.value_max_font_single, min_font=7
+            )
             c.setFont(self.font_name, 6.5)
             c.setFillColorRGB(0, 0, 0)
             c.drawString(label_x, v_middle - 0.9 * mm, _arabic_text(":رقم الشحن"))
@@ -180,7 +194,9 @@ class CardRenderer:
             max_text_width = (x + width) - value_x - 1.5 * mm
 
             longer = username if len(username) >= len(password) else password
-            fs = self._dynamic_font_size(longer, max_text_width, max_font=self.value_max_font_dual, min_font=7)
+            fs = self._dynamic_font_size(
+                longer, max_text_width, max_font=self.value_max_font_dual, min_font=7
+            )
 
             c.setFont(self.font_name, 7)
             c.setFillColorRGB(0, 0, 0)

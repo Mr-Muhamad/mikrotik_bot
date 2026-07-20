@@ -2,8 +2,8 @@
 
 from unittest.mock import patch
 
-from core.hotspot_manager import hotspot_manager
 from bot.handlers.hotspot_report import build_csv
+from core.hotspot_manager import hotspot_manager
 
 
 def _fake_users():
