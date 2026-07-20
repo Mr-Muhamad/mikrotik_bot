@@ -786,6 +786,18 @@ def _build_manual_add_handler() -> CH:
     )
 
 
+def _register_separate_conversation_handlers(application) -> None:
+    """Register separate ConversationHandlers before standalone handlers.
+
+    These must be registered BEFORE standalone handlers so their
+    ``/cancel`` and ``/start`` fallbacks take precedence while a
+    conversation is active. Otherwise the standalone ``cancel``
+    CommandHandler preempts them and the conversation state stays STUCK.
+    """
+    application.add_handler(_build_rename_handler())
+    application.add_handler(_build_manual_add_handler())
+
+
 def build_all(application):
     """Build all handlers from registry and add to application.
 
@@ -801,6 +813,5 @@ def build_all(application):
        and the main CH keeps priority over standalone for its own fallback
        commands.
     """
-    application.add_handler(_build_rename_handler())
-    application.add_handler(_build_manual_add_handler())
+    _register_separate_conversation_handlers(application)
     build_application(application, constants)
