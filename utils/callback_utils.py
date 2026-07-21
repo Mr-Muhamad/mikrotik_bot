@@ -6,6 +6,8 @@ Provides wrappers that handle common Telegram callback query errors gracefully.
 import logging
 import time
 
+from telegram import CallbackQuery
+
 logger = logging.getLogger(__name__)
 
 _CALLBACK_DEDUP: dict[str, float] = {}
@@ -36,17 +38,21 @@ def is_duplicate_callback(callback_data: str | None, user_id: int | None = None)
     return False
 
 
-async def safe_answer_callback(query, text: str | None = None, show_alert: bool = False):
+async def safe_answer_callback(
+    query: CallbackQuery | None, text: str | None = None, show_alert: bool = False
+) -> None:
     """Safely answer a callback query, ignoring 'Query is too old' errors.
 
     This error occurs when the bot takes too long (>30s) to respond
     to a callback query. It's non-critical and can be safely ignored.
 
     Args:
-        query: The callback query object.
+        query: The callback query object, or None to skip answering.
         text: Optional text to show in notification.
         show_alert: Whether to show as alert popup.
     """
+    if query is None:
+        return
     try:
         await query.answer(text=text, show_alert=show_alert)
     except Exception as e:

@@ -5,20 +5,20 @@ from cryptography.fernet import Fernet
 
 logger = logging.getLogger(__name__)
 
-_KEY = None
+_key: Fernet | None = None
 
 
-def _get_key():
-    global _KEY
-    if _KEY is not None:
-        return _KEY
+def _get_key() -> Fernet:
+    global _key
+    if _key is not None:
+        return _key
     raw = os.getenv("ENCRYPTION_KEY")
     if not raw:
         raise RuntimeError("ENCRYPTION_KEY not set — config.py should have exited already")
     try:
-        _KEY = Fernet(raw.encode())
+        _key = Fernet(raw.encode())
         logger.info("Encryption key loaded successfully from environment")
-        return _KEY
+        return _key
     except Exception as e:
         logger.error(f"Invalid ENCRYPTION_KEY format: {e}")
         raise ValueError("ENCRYPTION_KEY in .env is invalid. Fix or remove it.") from e

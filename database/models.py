@@ -14,6 +14,7 @@ and this re-export shim can be removed.
 
 import logging
 import os
+import re
 import sqlite3
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -55,13 +56,30 @@ def _now_utc():
     return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)
 
 
+_VALID_IDENTIFIER_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+
+def _validate_table_name(table_name: str) -> None:
+    if not _VALID_IDENTIFIER_RE.match(table_name):
+        raise ValueError(f"Invalid table name: {table_name!r}")
+
+
+def _validate_column_name(column_name: str) -> None:
+    if not _VALID_IDENTIFIER_RE.match(column_name):
+        raise ValueError(f"Invalid column name: {column_name!r}")
+
+
 def _column_exists(cursor, table_name: str, column_name: str) -> bool:
+    _validate_table_name(table_name)
+    _validate_column_name(column_name)
     cursor.execute(f"PRAGMA table_info({table_name})")
     return any(row["name"] == column_name for row in cursor.fetchall())
 
 
 def _add_column_if_missing(cursor, table_name: str, column_def: str) -> None:
+    _validate_table_name(table_name)
     column_name = column_def.split()[0]
+    _validate_column_name(column_name)
     if _column_exists(cursor, table_name, column_name):
         return
     cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_def}")

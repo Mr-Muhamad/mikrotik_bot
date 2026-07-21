@@ -1,223 +1,216 @@
-"""initial schema
+"""Initial schema migration for MikroTik Telegram Bot.
 
-Revision ID: a2dac0a43dc6
-Revises:
-Create Date: 2026-07-19 12:53:17.000000
-
+Creates the core tables required by the application. Column additions
+performed later by ``database.models.migrate_*`` helpers are intentionally
+kept out of this baseline to avoid losing data on existing installations.
 """
-
-from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from config import DEFAULT_API_PORT
 
 
 # revision identifiers, used by Alembic.
-revision: str = "a2dac0a43dc6"
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision = "a2dac0a43dc6"
+down_revision = None
+branch_labels = None
+depends_on = None
 
 
 def upgrade() -> None:
-    # ─── TABLES ──────────────────────────────────────────────────
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            action TEXT NOT NULL,
-            username TEXT,
-            router_name TEXT,
-            admin_id INTEGER,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS admin_roles (
-            admin_id INTEGER PRIMARY KEY,
-            role TEXT NOT NULL,
-            changed_by INTEGER,
-            changed_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS card_batches (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            router_key TEXT NOT NULL,
-            name TEXT NOT NULL,
-            batch_type TEXT NOT NULL,
-            profile TEXT DEFAULT '',
-            comment_prefix TEXT DEFAULT '',
-            count INTEGER DEFAULT 0,
-            cards_json TEXT NOT NULL,
-            created_by INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            customer_name TEXT DEFAULT '',
-            payment_status TEXT DEFAULT 'unpaid',
-            sale_price REAL DEFAULT 0,
-            sold_at DATETIME
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS pdf_settings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            margin_top REAL DEFAULT 10,
-            margin_bottom REAL DEFAULT 10,
-            margin_left REAL DEFAULT 10,
-            margin_right REAL DEFAULT 10,
-            border_width REAL DEFAULT 1,
-            card_width REAL DEFAULT 85,
-            card_height REAL DEFAULT 55,
-            spacing_x REAL DEFAULT 5,
-            spacing_y REAL DEFAULT 5,
-            cards_per_row INTEGER DEFAULT 4,
-            header_text TEXT DEFAULT '',
-            footer_text TEXT DEFAULT '',
-            brand_name TEXT DEFAULT '',
-            hotspot_dns TEXT DEFAULT '',
-            show_qr INTEGER DEFAULT 1,
-            cards_per_page INTEGER DEFAULT 40,
-            label_spacing_single REAL DEFAULT 1.0,
-            label_spacing_dual REAL DEFAULT 1.0,
-            value_max_font_single INTEGER DEFAULT 12,
-            value_max_font_dual INTEGER DEFAULT 11
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS backup_settings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            backup_dir TEXT DEFAULT './backups',
-            send_telegram INTEGER DEFAULT 1,
-            save_local INTEGER DEFAULT 1,
-            schedule_enabled INTEGER DEFAULT 0,
-            schedule_hour INTEGER DEFAULT 3,
-            schedule_minute INTEGER DEFAULT 0
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS backup_jobs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            router_key TEXT,
-            router_name TEXT DEFAULT '',
-            backup_type TEXT DEFAULT 'full',
-            status TEXT DEFAULT 'success',
-            details TEXT DEFAULT '',
-            file_name TEXT DEFAULT '',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS router_health_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            router_key TEXT NOT NULL,
-            status TEXT NOT NULL,
-            checked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            error_msg TEXT DEFAULT ''
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS tracked_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id INTEGER NOT NULL,
-            message_id INTEGER NOT NULL,
-            tracked_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS stats_snapshots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            router_key TEXT NOT NULL,
-            snapshot_date DATE NOT NULL,
-            active_users INTEGER DEFAULT 0,
-            total_users INTEGER DEFAULT 0,
-            bytes_in INTEGER DEFAULT 0,
-            bytes_out INTEGER DEFAULT 0,
-            UNIQUE(router_key, snapshot_date)
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS operator_router_permissions (
-            operator_id INTEGER NOT NULL,
-            router_id INTEGER NOT NULL,
-            assigned_by INTEGER,
-            assigned_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (operator_id, router_id)
-        )
-    """)
-
-    op.execute("""
-        CREATE TABLE IF NOT EXISTS user_sessions (
-            user_id INTEGER PRIMARY KEY,
-            selected_router TEXT DEFAULT 'router1',
-            current_action TEXT,
-            action_data TEXT,
-            last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
-            session_timeout INTEGER DEFAULT 600
-        )
-    """)
-
-    op.execute(f"""
-        CREATE TABLE IF NOT EXISTS discovered_routers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip_address TEXT NOT NULL UNIQUE,
-            mac_address TEXT,
-            identity TEXT DEFAULT 'Unknown',
-            version TEXT,
-            board TEXT,
-            software_id TEXT,
-            platform TEXT DEFAULT 'MikroTik',
-            uptime TEXT,
-            port INTEGER DEFAULT {DEFAULT_API_PORT},
-            username TEXT,
-            password TEXT,
-            last_seen DATETIME,
-            added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            is_active INTEGER DEFAULT 1,
-            name_alias TEXT DEFAULT '',
-            owner_id INTEGER DEFAULT 0
-        )
-    """)
-
-    # ─── INDEXES ─────────────────────────────────────────────────
-    op.execute("CREATE INDEX IF NOT EXISTS idx_logs_admin ON logs(admin_id)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_logs_timestamp ON logs(timestamp)")
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS idx_routers_active ON discovered_routers(is_active, added_at DESC)"
+    op.create_table(
+        "discovered_routers",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("ip_address", sa.String, unique=True, nullable=False),
+        sa.Column("mac_address", sa.String, default=""),
+        sa.Column("identity", sa.String, default="Unknown"),
+        sa.Column("version", sa.String, default=""),
+        sa.Column("board", sa.String, default=""),
+        sa.Column("software_id", sa.String, default=""),
+        sa.Column("platform", sa.String, default="MikroTik"),
+        sa.Column("uptime", sa.String, default=""),
+        sa.Column("port", sa.Integer, default=8728),
+        sa.Column("username", sa.String, default=""),
+        sa.Column("password", sa.String, default=""),
+        sa.Column("last_seen", sa.String, default=""),
+        sa.Column("added_at", sa.String, default=""),
+        sa.Column("is_active", sa.Integer, server_default=sa.text("1")),
+        sa.Column("name_alias", sa.String, default=""),
+        sa.Column("owner_id", sa.Integer, default=0),
     )
-    op.execute("CREATE INDEX IF NOT EXISTS idx_routers_ip ON discovered_routers(ip_address)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_backup_jobs_router ON backup_jobs(router_key)")
-    op.execute("CREATE INDEX IF NOT EXISTS idx_backup_jobs_created ON backup_jobs(created_at DESC)")
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS idx_health_router_time ON router_health_log(router_key, checked_at DESC)"
+    op.create_index(
+        "idx_routers_ip", "discovered_routers", ["ip_address"]
     )
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS idx_snapshots_router_date ON stats_snapshots(router_key, snapshot_date DESC)"
-    )
-    op.execute("CREATE INDEX IF NOT EXISTS idx_tracked_messages_chat ON tracked_messages(chat_id)")
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS idx_tracked_messages_date ON tracked_messages(tracked_at)"
+    op.create_index(
+        "idx_routers_active", "discovered_routers", ["is_active", "added_at"]
     )
 
-    # ─── DEFAULT VALUES ──────────────────────────────────────────
-    op.execute("""
-        INSERT INTO pdf_settings (id)
-        SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM pdf_settings)
-    """)
-    op.execute("""
-        INSERT INTO backup_settings (id)
-        SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM backup_settings)
-    """)
+    op.create_table(
+        "user_sessions",
+        sa.Column("user_id", sa.Integer, primary_key=True),
+        sa.Column("selected_router", sa.String, default=""),
+        sa.Column("current_action", sa.String, default=""),
+        sa.Column("action_data", sa.String, default=""),
+        sa.Column("last_activity", sa.DateTime, server_default=sa.func.now()),
+        sa.Column("session_timeout", sa.Integer, default=600),
+    )
+    op.create_index(
+        "idx_sessions_user", "user_sessions", ["user_id"]
+    )
+
+    op.create_table(
+        "logs",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("action", sa.String, nullable=False),
+        sa.Column("username", sa.String, default=""),
+        sa.Column("router_name", sa.String, default=""),
+        sa.Column("admin_id", sa.Integer),
+        sa.Column("timestamp", sa.String, default=""),
+    )
+    op.create_index("idx_logs_admin", "logs", ["admin_id"])
+    op.create_index("idx_logs_timestamp", "logs", ["timestamp"])
+
+    op.create_table(
+        "admin_roles",
+        sa.Column("admin_id", sa.Integer, primary_key=True),
+        sa.Column("role", sa.String, nullable=False),
+        sa.Column("changed_by", sa.Integer),
+        sa.Column("changed_at", sa.String, default=""),
+    )
+
+    op.create_table(
+        "card_batches",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("router_key", sa.String, nullable=False),
+        sa.Column("name", sa.String, nullable=False),
+        sa.Column("batch_type", sa.String, nullable=False),
+        sa.Column("profile", sa.String, default=""),
+        sa.Column("comment_prefix", sa.String, default=""),
+        sa.Column("count", sa.Integer, default=0),
+        sa.Column("cards_json", sa.String, default=""),
+        sa.Column("created_by", sa.Integer),
+        sa.Column("created_at", sa.String, default=""),
+        sa.Column("customer_name", sa.String, default=""),
+        sa.Column("payment_status", sa.String, default="unpaid"),
+        sa.Column("sale_price", sa.Float, default=0.0),
+        sa.Column("sold_at", sa.DateTime),
+    )
+
+    op.create_table(
+        "pdf_settings",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("margin_top", sa.Integer, default=10),
+        sa.Column("margin_bottom", sa.Integer, default=10),
+        sa.Column("margin_left", sa.Integer, default=10),
+        sa.Column("margin_right", sa.Integer, default=10),
+        sa.Column("border_width", sa.Float, default=1.0),
+        sa.Column("card_width", sa.Float, default=90.0),
+        sa.Column("card_height", sa.Float, default=54.0),
+        sa.Column("spacing_x", sa.Float, default=5.0),
+        sa.Column("spacing_y", sa.Float, default=5.0),
+        sa.Column("cards_per_row", sa.Integer, default=2),
+        sa.Column("cards_per_page", sa.Integer, default=40),
+        sa.Column("footer_text", sa.String, default=""),
+        sa.Column("header_text", sa.String, default=""),
+        sa.Column("brand_name", sa.String, default=""),
+        sa.Column("hotspot_dns", sa.String, default=""),
+        sa.Column("show_qr", sa.Integer, default=1),
+        sa.Column("label_spacing_single", sa.Float, default=1.0),
+        sa.Column("label_spacing_dual", sa.Float, default=1.0),
+        sa.Column("value_max_font_single", sa.Integer, default=12),
+        sa.Column("value_max_font_dual", sa.Integer, default=11),
+    )
+
+    op.create_table(
+        "backup_settings",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("schedule_enabled", sa.Integer, default=0),
+        sa.Column("schedule_hour", sa.Integer, default=3),
+        sa.Column("schedule_minute", sa.Integer, default=0),
+    )
+
+    op.create_table(
+        "backup_jobs",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("router_key", sa.String, nullable=False),
+        sa.Column("router_name", sa.String, default=""),
+        sa.Column("backup_type", sa.String, nullable=False),
+        sa.Column("status", sa.String, nullable=False),
+        sa.Column("details", sa.String, default=""),
+        sa.Column("file_name", sa.String, default=""),
+        sa.Column("created_at", sa.String, default=""),
+    )
+    op.create_index(
+        "idx_backup_jobs_router", "backup_jobs", ["router_key"]
+    )
+    op.create_index(
+        "idx_backup_jobs_created", "backup_jobs", ["created_at"]
+    )
+
+    op.create_table(
+        "router_health_log",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("router_key", sa.String, nullable=False),
+        sa.Column("status", sa.String, nullable=False),
+        sa.Column("checked_at", sa.String, default=""),
+        sa.Column("error_msg", sa.String, default=""),
+    )
+    op.create_index(
+        "idx_health_router_time", "router_health_log", ["router_key", "checked_at"]
+    )
+
+    op.create_table(
+        "stats_snapshots",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("router_key", sa.String, nullable=False),
+        sa.Column("snapshot_date", sa.String, default=""),
+        sa.Column("active_users", sa.Integer, default=0),
+        sa.Column("total_users", sa.Integer, default=0),
+    )
+    op.create_index(
+        "idx_snapshots_router_date", "stats_snapshots", ["router_key", "snapshot_date"]
+    )
+
+    op.create_table(
+        "tracked_messages",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("chat_id", sa.Integer, nullable=False),
+        sa.Column("message_id", sa.Integer, nullable=False),
+        sa.Column("tracked_at", sa.String, default=""),
+    )
+    op.create_index(
+        "idx_tracked_messages_chat", "tracked_messages", ["chat_id"]
+    )
+    op.create_index(
+        "idx_tracked_messages_date", "tracked_messages", ["tracked_at"]
+    )
+
+    op.create_table(
+        "operator_router_permissions",
+        sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
+        sa.Column("operator_id", sa.Integer, nullable=False),
+        sa.Column("router_id", sa.Integer, nullable=False),
+        sa.Column("assigned_by", sa.Integer),
+        sa.Column("assigned_at", sa.String, default=""),
+    )
+    # Insert default singleton rows for settings tables
+    op.execute(
+        "INSERT OR IGNORE INTO pdf_settings (id, margin_top, margin_bottom, margin_left, margin_right, border_width, card_width, card_height, spacing_x, spacing_y, cards_per_row, cards_per_page, footer_text, header_text, brand_name, hotspot_dns, show_qr, label_spacing_single, label_spacing_dual, value_max_font_single, value_max_font_dual) VALUES (1, 10, 10, 10, 10, 1.0, 90.0, 54.0, 5.0, 5.0, 4, 40, '', '', '', '', 1, 1.0, 1.0, 12, 11)"
+    )
+    op.execute(
+        "INSERT OR IGNORE INTO backup_settings (id, schedule_enabled, schedule_hour, schedule_minute) VALUES (1, 0, 3, 0)"
+    )
 
 
 def downgrade() -> None:
-    pass
+    op.drop_table("operator_router_permissions")
+    op.drop_table("tracked_messages")
+    op.drop_table("stats_snapshots")
+    op.drop_table("router_health_log")
+    op.drop_table("backup_jobs")
+    op.drop_table("backup_settings")
+    op.drop_table("pdf_settings")
+    op.drop_table("card_batches")
+    op.drop_table("admin_roles")
+    op.drop_table("logs")
+    op.drop_table("user_sessions")
+    op.drop_table("discovered_routers")

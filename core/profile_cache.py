@@ -6,6 +6,7 @@
 import logging
 import threading
 import time
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +57,7 @@ class ProfileCache:
         with self._lock:
             self._store.clear()
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, Any]:
         """إحصائيات الكاش للمراقبة."""
         with self._lock:
             now = time.time()

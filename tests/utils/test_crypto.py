@@ -10,9 +10,9 @@ from utils.crypto import decrypt_password, encrypt_password
 @pytest.fixture(autouse=True)
 def _reset_crypto_state():
     """Reset crypto module state between tests."""
-    crypto._KEY = None
+    crypto._key = None
     yield
-    crypto._KEY = None
+    crypto._key = None
 
 
 def _valid_key() -> str:

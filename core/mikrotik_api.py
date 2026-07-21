@@ -3,13 +3,14 @@ import logging
 import re
 import threading
 import time
+from typing import Any
 
 from librouteros import connect
 from librouteros.exceptions import LibRouterosError
 
 from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
-from core.mikrotik_client import MikrotikClient
+from core.mikrotik_client import MikrotikClient, RouterOSResponse
 from database.models import get_router_by_id, get_router_display_name
 
 logger = logging.getLogger(__name__)
@@ -160,7 +161,7 @@ class MikrotikAPI:
     #  Low-level building blocks
     # ──────────────────────────────────────────────────────────────
 
-    def _call_command(self, api, command: str, **kwargs: object) -> list[dict]:
+    def _call_command(self, api, command: str, **kwargs: object) -> RouterOSResponse:
         """ينفذ أمر MikroTik واحد على اتصال موجود (بدون retry)."""
         parts = command.split("/")
         cmd = parts.pop()
@@ -169,7 +170,7 @@ class MikrotikAPI:
             return list(cmd_path(cmd, **kwargs))
         return list(cmd_path(cmd))
 
-    def _debug_log(self, method: str, command: str, kwargs: dict):
+    def _debug_log(self, method: str, command: str, kwargs: dict[str, Any]):
         """يسجل kwargs مع إخفاء كلمات المرور."""
         if kwargs:
             sanitized = {k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()}
@@ -181,7 +182,7 @@ class MikrotikAPI:
 
     def _execute_with_retry(
         self, router_key: str, command: str, timeout: int, **kwargs: object
-    ) -> list[dict]:
+    ) -> RouterOSResponse:
         """القالب الأساسي: throttle → تنفيذ → retry عند الخطأ القابل للإصلاح."""
         self._throttle(router_key)
         try:
@@ -212,11 +213,11 @@ class MikrotikAPI:
     #  Public API — thin wrappers
     # ──────────────────────────────────────────────────────────────
 
-    def execute(self, router_key: str, command: str, **kwargs: object) -> list[dict]:
+    def execute(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse:
         """الأمر العادي — مهلة 30 ثانية، يعيد المحاولة عند الخطأ."""
         return self._execute_with_retry(router_key, command, API_TIMEOUT, **kwargs)
 
-    def execute_long(self, router_key: str, command: str, **kwargs: object) -> list[dict]:
+    def execute_long(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse:
         """أمر طويل — مهلة 120 ثانية، يعيد المحاولة عند الخطأ."""
         return self._execute_with_retry(router_key, command, LONG_TIMEOUT, **kwargs)
 

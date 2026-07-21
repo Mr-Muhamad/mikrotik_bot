@@ -1,10 +1,16 @@
+from typing import Any
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from database.models import get_router_display_name
 
+# Type aliases for keyboard construction
+_KeyboardRow = list[InlineKeyboardButton]
+_KeyboardLayout = list[_KeyboardRow]
+
 SUBMENU_PAGE_SIZE = 20
 
-TIME_OPTIONS = [
+TIME_OPTIONS: list[tuple[str, int | None]] = [
     ("اليوم", 1),
     ("آخر 7 أيام", 7),
     ("آخر 30 يوماً", 30),
@@ -12,7 +18,7 @@ TIME_OPTIONS = [
 ]
 
 
-def get_router_keyboard():
+def get_router_keyboard() -> InlineKeyboardMarkup:
     """Return the keyboard for selecting saved routers or discovering new ones."""
     from bot.handlers.callback_constants import CALLBACKS
 
@@ -24,7 +30,7 @@ def get_router_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_main_keyboard():
+def get_main_keyboard() -> InlineKeyboardMarkup:
     """Return the main bot menu keyboard with feature sections ordered by workflow.
 
     Layout philosophy (top → bottom by frequency & importance):
@@ -59,7 +65,7 @@ def get_main_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_routers_keyboard():
+def get_routers_keyboard() -> InlineKeyboardMarkup:
     """Return the router management submenu keyboard.
 
     Groups all router-level operations: discover, saved list, add manual.
@@ -80,7 +86,7 @@ def get_routers_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_reports_keyboard():
+def get_reports_keyboard() -> InlineKeyboardMarkup:
     """Return the reports submenu keyboard (usage report + sales/batches)."""
     keyboard = [
         [
@@ -96,7 +102,7 @@ def get_reports_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_hotspot_keyboard():
+def get_hotspot_keyboard() -> InlineKeyboardMarkup:
     """Return the Hotspot management submenu keyboard."""
     keyboard = [
         [
@@ -116,7 +122,7 @@ def get_hotspot_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_userman_keyboard():
+def get_userman_keyboard() -> InlineKeyboardMarkup:
     """Return the User Manager submenu keyboard."""
     keyboard = [
         [
@@ -132,7 +138,7 @@ def get_userman_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_stats_keyboard():
+def get_stats_keyboard() -> InlineKeyboardMarkup:
     """Return the statistics submenu keyboard."""
     keyboard = [
         [
@@ -144,7 +150,7 @@ def get_stats_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_report_keyboard():
+def get_report_keyboard() -> InlineKeyboardMarkup:
     """Return the Hotspot usage report keyboard with export and refresh options."""
     keyboard = [
         [InlineKeyboardButton("📄 ملف إكسيل (CSV)", callback_data="report_csv")],
@@ -154,16 +160,21 @@ def get_report_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_batches_keyboard(batches, page=0, total=0, page_size=10):
+def get_batches_keyboard(
+    batches: list[dict[str, Any]],
+    page: int = 0,
+    total: int = 0,
+    page_size: int = 10,
+) -> InlineKeyboardMarkup:
     """Return a keyboard listing saved card batches for selection with pagination."""
     from bot.handlers.callback_constants import batch_page
 
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for b in batches:
         label = f"#{b['id']} • {b.get('name', '')} • {b.get('count', 0)}"
         keyboard.append([InlineKeyboardButton(label, callback_data=f"batch_sel:{b['id']}")])
 
-    nav_row = []
+    nav_row: _KeyboardRow = []
     if page > 0:
         nav_row.append(InlineKeyboardButton("⬅️ السابق", callback_data=batch_page(page - 1)))
     if total > (page + 1) * page_size:
@@ -176,7 +187,7 @@ def get_batches_keyboard(batches, page=0, total=0, page_size=10):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_batch_detail_keyboard(batch_id, payment_status: str = "unpaid"):
+def get_batch_detail_keyboard(batch_id: int, payment_status: str = "unpaid") -> InlineKeyboardMarkup:
     """Return the action keyboard for a single card batch with payment controls."""
     from bot.handlers.callback_constants import mark_payment_cb
 
@@ -203,7 +214,7 @@ def get_batch_detail_keyboard(batch_id, payment_status: str = "unpaid"):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_backup_keyboard():
+def get_backup_keyboard() -> InlineKeyboardMarkup:
     """Return the backup submenu keyboard."""
     keyboard = [
         [
@@ -220,7 +231,7 @@ def get_backup_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_pdf_settings_keyboard():
+def get_pdf_settings_keyboard() -> InlineKeyboardMarkup:
     """Return the PDF settings main categories keyboard."""
     keyboard = [
         [InlineKeyboardButton("🔤 إعدادات النصوص والهوية", callback_data="pdf_group_text")],
@@ -231,7 +242,7 @@ def get_pdf_settings_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_pdf_text_keyboard():
+def get_pdf_text_keyboard() -> InlineKeyboardMarkup:
     """Return the PDF text settings submenu."""
     keyboard = [
         [
@@ -245,7 +256,7 @@ def get_pdf_text_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_pdf_layout_keyboard():
+def get_pdf_layout_keyboard() -> InlineKeyboardMarkup:
     """Return the PDF layout settings submenu."""
     keyboard = [
         [InlineKeyboardButton("📏 الهوامش", callback_data="pdf_margins")],
@@ -260,7 +271,7 @@ def get_pdf_layout_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_pdf_misc_keyboard():
+def get_pdf_misc_keyboard() -> InlineKeyboardMarkup:
     """Return the PDF miscellaneous settings submenu."""
     keyboard = [
         [InlineKeyboardButton("📱 تفعيل QR Code", callback_data="pdf_show_qr")],
@@ -269,7 +280,7 @@ def get_pdf_misc_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_card_type_keyboard():
+def get_card_type_keyboard() -> InlineKeyboardMarkup:
     """Return the card type selection keyboard for User Manager."""
     keyboard = [
         [InlineKeyboardButton("1️⃣ اسم + سر مختلفين", callback_data="card_type1")],
@@ -280,7 +291,7 @@ def get_card_type_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_card_payment_keyboard():
+def get_card_payment_keyboard() -> InlineKeyboardMarkup:
     """Return the payment-status selection keyboard for User Manager cards."""
     keyboard = [
         [InlineKeyboardButton("💰 مدفوع", callback_data="card_paid")],
@@ -290,7 +301,7 @@ def get_card_payment_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_card_mac_keyboard():
+def get_card_mac_keyboard() -> InlineKeyboardMarkup:
     """Return the MAC-binding choice keyboard for User Manager cards."""
     keyboard = [
         [InlineKeyboardButton("🖥️ ربط بجهاز معروف", callback_data="card_bind_known")],
@@ -300,18 +311,22 @@ def get_card_mac_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_profile_keyboard(profiles, prefix, back_callback="main_menu"):
+def get_profile_keyboard(
+    profiles: list[str],
+    prefix: str,
+    back_callback: str = "main_menu",
+) -> InlineKeyboardMarkup:
     """Return a keyboard listing profiles; callback_data uses index (prefix_0, prefix_1, …)."""
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for index, profile in enumerate(profiles):
-        name = profile if isinstance(profile, str) else profile.get("name", "unknown")
+        name: str = profile if isinstance(profile, str) else str(profile.get("name", "unknown"))
         keyboard.append([InlineKeyboardButton(name, callback_data=f"{prefix}_{index}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data=back_callback)])
     keyboard.append([InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")])
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_confirm_keyboard():
+def get_confirm_keyboard() -> InlineKeyboardMarkup:
     """Return a confirm/cancel confirmation keyboard."""
     keyboard = [
         [
@@ -322,11 +337,13 @@ def get_confirm_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_discovered_routers_keyboard(routers):
+def get_discovered_routers_keyboard(
+    routers: list[Any],
+) -> InlineKeyboardMarkup:
     """Return a keyboard listing discovered routers for selection."""
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for router in routers:
-        name = router.display_name()
+        name: str = router.display_name()
         keyboard.append(
             [InlineKeyboardButton(name, callback_data=f"disc_router_{router.ip_address}")]
         )
@@ -335,12 +352,14 @@ def get_discovered_routers_keyboard(routers):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_saved_routers_keyboard(routers):
+def get_saved_routers_keyboard(
+    routers: list[dict[str, Any]],
+) -> InlineKeyboardMarkup:
     """Return a keyboard listing saved routers with version info."""
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for r in routers:
-        name = get_router_display_name(r)
-        version = r.get("version", "")
+        name: str = get_router_display_name(r)
+        version: str = r.get("version", "")
         if version:
             name += f" (v{version})"
         keyboard.append([InlineKeyboardButton(name, callback_data=f"saved_router_{r['id']}")])
@@ -349,7 +368,7 @@ def get_saved_routers_keyboard(routers):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_router_action_keyboard(router_id):
+def get_router_action_keyboard(router_id) -> InlineKeyboardMarkup:
     """Return the action keyboard for a saved router (connect, reboot, rename, delete)."""
     keyboard = [
         [
@@ -365,7 +384,7 @@ def get_router_action_keyboard(router_id):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_delete_router_confirm_keyboard(router_id):
+def get_delete_router_confirm_keyboard(router_id) -> InlineKeyboardMarkup:
     """Return a confirmation keyboard for deleting a saved router."""
     keyboard = [
         [
@@ -378,7 +397,7 @@ def get_delete_router_confirm_keyboard(router_id):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_schedule_keyboard():
+def get_schedule_keyboard() -> InlineKeyboardMarkup:
     """Return the backup schedule enable/disable keyboard."""
     keyboard = [
         [
@@ -390,7 +409,7 @@ def get_schedule_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_reboot_keyboard(router_key):
+def get_reboot_keyboard(router_key) -> InlineKeyboardMarkup:
     """Return a confirmation keyboard for rebooting a router."""
     keyboard = [
         [
@@ -410,11 +429,15 @@ def _user_button_label(user: dict) -> str:
     return label
 
 
-def get_user_selection_keyboard(users, action_prefix, back_callback="menu_hotspot"):
+def get_user_selection_keyboard(
+    users: list[dict[str, Any]],
+    action_prefix: str,
+    back_callback: str = "menu_hotspot",
+) -> InlineKeyboardMarkup:
     """Return a keyboard listing hotspot users for selection with a given action prefix."""
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for user in users:
-        user_id = user.get(".id") or "*0"
+        user_id: str = user.get(".id") or "*0"
         keyboard.append(
             [
                 InlineKeyboardButton(
@@ -427,11 +450,16 @@ def get_user_selection_keyboard(users, action_prefix, back_callback="menu_hotspo
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_paginated_user_keyboard(users, action_prefix, paginator, back_callback="menu_hotspot"):
+def get_paginated_user_keyboard(
+    users: list[dict[str, Any]],
+    action_prefix: str,
+    paginator: Any,
+    back_callback: str = "menu_hotspot",
+) -> InlineKeyboardMarkup:
     """Return a paginated keyboard listing hotspot users for selection."""
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for user in paginator.current_items:
-        user_id = user.get(".id") or "*0"
+        user_id: str = user.get(".id") or "*0"
         keyboard.append(
             [
                 InlineKeyboardButton(
@@ -440,7 +468,7 @@ def get_paginated_user_keyboard(users, action_prefix, paginator, back_callback="
             ]
         )
 
-    nav_row = []
+    nav_row: _KeyboardRow = []
     if paginator.has_prev():
         nav_row.append(
             InlineKeyboardButton(
@@ -463,17 +491,17 @@ def get_paginated_user_keyboard(users, action_prefix, paginator, back_callback="
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_edit_user_keyboard(users):
+def get_edit_user_keyboard(users) -> InlineKeyboardMarkup:
     """Return a keyboard listing hotspot users for selection to edit."""
     return get_user_selection_keyboard(users, "edit_user", "menu_hotspot")
 
 
-def get_delete_user_keyboard(users):
+def get_delete_user_keyboard(users) -> InlineKeyboardMarkup:
     """Return a keyboard listing hotspot users for selection to delete."""
     return get_user_selection_keyboard(users, "delete_user", "menu_hotspot")
 
 
-def get_edit_field_keyboard(is_disabled: bool = False):
+def get_edit_field_keyboard(is_disabled: bool = False) -> InlineKeyboardMarkup:
     """Return the field selection keyboard for editing a hotspot user."""
     toggle_label = "🔴 تعطيل" if not is_disabled else "🟢 تفعيل"
     keyboard = [
@@ -500,7 +528,7 @@ def get_edit_field_keyboard(is_disabled: bool = False):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_back_keyboard(callback_data):
+def get_back_keyboard(callback_data) -> InlineKeyboardMarkup:
     """Return a keyboard with a back button and home button."""
     keyboard = [
         [InlineKeyboardButton("🔙 رجوع", callback_data=callback_data)],
@@ -509,7 +537,7 @@ def get_back_keyboard(callback_data):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_nav_back_keyboard():
+def get_nav_back_keyboard() -> InlineKeyboardMarkup:
     """Return a navigation back button keyboard."""
     keyboard = [
         [InlineKeyboardButton("🔙 رجوع", callback_data="go_back")],
@@ -518,7 +546,7 @@ def get_nav_back_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_skip_keyboard(skip_callback, back_callback):
+def get_skip_keyboard(skip_callback, back_callback) -> InlineKeyboardMarkup:
     """Return a keyboard with skip and back buttons."""
     keyboard = [
         [
@@ -530,7 +558,7 @@ def get_skip_keyboard(skip_callback, back_callback):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_cancel_keyboard():
+def get_cancel_keyboard() -> InlineKeyboardMarkup:
     """Return a cancel and home button keyboard."""
     keyboard = [
         [InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")],
@@ -539,23 +567,26 @@ def get_cancel_keyboard():
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_search_results_keyboard(paginator, is_userman=False):
+def get_search_results_keyboard(
+    paginator: Any,
+    is_userman: bool = False,
+) -> InlineKeyboardMarkup:
     """Return a keyboard listing search result hosts for selection using Paginator."""
     from bot.handlers.callback_constants import hotspot_search_page, userman_search_page
 
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     prefix = "um_sel_" if is_userman else "host_sel_"
 
     # We iterate over current_items but need their absolute index
-    start_idx = paginator.page * paginator.page_size
+    start_idx: int = paginator.page * paginator.page_size
     for i, h in enumerate(paginator.current_items):
-        abs_idx = start_idx + i
-        name = str(h.get("name") or h.get("host-name") or h.get("user") or "") or "غير معروف"
-        ip = str(h.get("address") or "") or "—"
-        label = f"{abs_idx + 1}. {name}" if name else f"{abs_idx + 1}. {ip}"
+        abs_idx: int = start_idx + i
+        name: str = str(h.get("name") or h.get("host-name") or h.get("user") or "") or "غير معروف"
+        ip: str = str(h.get("address") or "") or "—"
+        label: str = f"{abs_idx + 1}. {name}" if name else f"{abs_idx + 1}. {ip}"
         keyboard.append([InlineKeyboardButton(label, callback_data=f"{prefix}{abs_idx}")])
 
-    nav_row = []
+    nav_row: _KeyboardRow = []
     if paginator.has_prev():
         cb_data = (
             userman_search_page(paginator.prev_page())
@@ -578,7 +609,7 @@ def get_search_results_keyboard(paginator, is_userman=False):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_host_detail_keyboard(is_disabled=False, mac: str = ""):
+def get_host_detail_keyboard(is_disabled=False, mac: str = "") -> InlineKeyboardMarkup:
     """Return the host detail keyboard with kick, block, and toggle options."""
     from bot.handlers.callback_constants import block_mac_cb
 
@@ -597,21 +628,23 @@ def get_host_detail_keyboard(is_disabled=False, mac: str = ""):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_blocked_macs_keyboard(blocked: list[dict]) -> InlineKeyboardMarkup:
+def get_blocked_macs_keyboard(
+    blocked: list[dict[str, Any]],
+) -> InlineKeyboardMarkup:
     """لوحة مفاتيح قائمة MACs المحظورة مع زر رفع الحظر لكل عنصر."""
     from bot.handlers.callback_constants import unblock_mac_cb
 
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for entry in blocked:
-        mac = entry.get("address", "")
-        comment = entry.get("comment", "")
-        label = f"🔓 {mac}" + (f" ({comment[:15]})" if comment else "")
+        mac: str = entry.get("address", "")
+        comment: str = entry.get("comment", "")
+        label: str = f"🔓 {mac}" + (f" ({comment[:15]})" if comment else "")
         keyboard.append([InlineKeyboardButton(label, callback_data=unblock_mac_cb(mac))])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="hotspot_search")])
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_userman_detail_keyboard(is_disabled=False):
+def get_userman_detail_keyboard(is_disabled=False) -> InlineKeyboardMarkup:
     """Return the User Manager detail keyboard with management options."""
     toggle_text = "🟢 تفعيل المستخدم" if is_disabled else "🔴 تعطيل المستخدم"
     keyboard = [
@@ -627,23 +660,28 @@ def get_userman_detail_keyboard(is_disabled=False):
     return InlineKeyboardMarkup(keyboard)
 
 
-def _logs_time_label(filters):
-    since_days = filters.get("since_days")
+def _logs_time_label(filters: dict[str, Any]) -> str:
+    since_days: int | None = filters.get("since_days")
     if not since_days:
         return "الكل"
     return next((name for name, days in TIME_OPTIONS if days == since_days), "الكل")
 
 
-def get_logs_filter_keyboard(filters, page=0, total=0, page_size=10):
+def get_logs_filter_keyboard(
+    filters: dict[str, Any],
+    page: int = 0,
+    total: int = 0,
+    page_size: int = 10,
+) -> InlineKeyboardMarkup:
     """Return the filter + pagination keyboard for the audit log view."""
-    has_prev = page > 0
-    has_next = (page + 1) * page_size < total
-    router_label = filters.get("router") or "الكل"
-    admin_label = filters.get("admin_label") or filters.get("admin_id") or "الكل"
-    action_label = filters.get("action") or "الكل"
-    time_label = _logs_time_label(filters)
+    has_prev: bool = page > 0
+    has_next: bool = (page + 1) * page_size < total
+    router_label: str = filters.get("router") or "الكل"
+    admin_label: str = filters.get("admin_label") or filters.get("admin_id") or "الكل"
+    action_label: str = filters.get("action") or "الكل"
+    time_label: str = _logs_time_label(filters)
 
-    keyboard = [
+    keyboard: _KeyboardLayout = [
         [
             InlineKeyboardButton(f"🔍 راوتر: {router_label}", callback_data="logs_filter_router"),
             InlineKeyboardButton(f"👤 مشرف: {admin_label}", callback_data="logs_filter_admin"),
@@ -663,7 +701,7 @@ def get_logs_filter_keyboard(filters, page=0, total=0, page_size=10):
     ):
         keyboard.append([InlineKeyboardButton("🧹 مسح الفلاتر", callback_data="logs_clear")])
 
-    nav_buttons = []
+    nav_buttons: _KeyboardRow = []
     if has_prev:
         nav_buttons.append(InlineKeyboardButton("◀️ السابس", callback_data=f"logs_page_{page - 1}"))
     if has_next:
@@ -674,19 +712,24 @@ def get_logs_filter_keyboard(filters, page=0, total=0, page_size=10):
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_logs_submenu_keyboard(suffix, options, page=0, page_size=SUBMENU_PAGE_SIZE):
+def get_logs_submenu_keyboard(
+    suffix: str,
+    options: list[Any],
+    page: int = 0,
+    page_size: int = SUBMENU_PAGE_SIZE,
+) -> InlineKeyboardMarkup:
     """Return a keyboard listing filter options for the given category."""
-    start = page * page_size
-    chunk = options[start : start + page_size]
-    keyboard = []
+    start: int = page * page_size
+    chunk: list[Any] = options[start : start + page_size]
+    keyboard: _KeyboardLayout = []
     for i, opt in enumerate(chunk):
-        label = str(opt)
+        label: str = str(opt)
         if len(label) > 60:
             label = label[:57] + "..."
         keyboard.append(
             [InlineKeyboardButton(label, callback_data=f"logs_set_{suffix}_{start + i}")]
         )
-    nav_buttons = []
+    nav_buttons: _KeyboardRow = []
     if page > 0:
         nav_buttons.append(InlineKeyboardButton("◀️ السابق", callback_data="logs_sub_prev"))
     if start + page_size < len(options):
@@ -697,18 +740,20 @@ def get_logs_submenu_keyboard(suffix, options, page=0, page_size=SUBMENU_PAGE_SI
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_backup_restore_keyboard(backups):
+def get_backup_restore_keyboard(
+    backups: list[dict[str, Any]],
+) -> InlineKeyboardMarkup:
     """Return keyboard listing available backups for restore."""
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for idx, b in enumerate(backups[:10]):
-        name = b.get("name", "")
-        btype = "📦" if b.get("type") == "system" else "📄"
+        name: str = b.get("name", "")
+        btype: str = "📦" if b.get("type") == "system" else "📄"
         keyboard.append([InlineKeyboardButton(f"{btype} {name}", callback_data=f"restore:{idx}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_backup")])
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_restore_confirm_keyboard():
+def get_restore_confirm_keyboard() -> InlineKeyboardMarkup:
     """Return confirmation keyboard for backup restore."""
     keyboard = [
         [InlineKeyboardButton("⚠️ نعم، استعادة", callback_data="confirm_restore")],
@@ -729,7 +774,7 @@ def get_backup_download_keyboard(
         backup_type: "full" أو "userman".
         local_path: المسار المحلي للملفات (يُخزّن في user_data).
     """
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for idx, fname in enumerate(downloaded):
         keyboard.append(
             [
@@ -743,13 +788,15 @@ def get_backup_download_keyboard(
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_userman_restore_keyboard(tar_files: list[dict]) -> InlineKeyboardMarkup:
+def get_userman_restore_keyboard(
+    tar_files: list[dict[str, Any]],
+) -> InlineKeyboardMarkup:
     """Return keyboard listing saved User Manager tar backups for restore."""
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for idx, f in enumerate(tar_files):
-        name = f.get("filename", "")
-        size_kb = f.get("size", 0) // 1024
-        label = f"{name} ({size_kb}KB)"
+        name: str = f.get("filename", "")
+        size_kb: int = f.get("size", 0) // 1024
+        label: str = f"{name} ({size_kb}KB)"
         keyboard.append([InlineKeyboardButton(label, callback_data=f"userman_restore_tar:{idx}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_backup")])
     return InlineKeyboardMarkup(keyboard)
@@ -766,7 +813,7 @@ def get_userman_restore_confirm_keyboard() -> InlineKeyboardMarkup:
 
 def get_operator_router_assignment_keyboard(
     operator_id: int,
-    all_routers: list[dict],
+    all_routers: list[dict[str, Any]],
     assigned_router_ids: list[int],
 ) -> InlineKeyboardMarkup:
     """لوحة مفاتيح إسناد/سحب الروترات لمشغّل معيّن.
@@ -775,17 +822,17 @@ def get_operator_router_assignment_keyboard(
     """
     from bot.handlers.callback_constants import op_assign_cb, op_revoke_cb
 
-    keyboard = []
+    keyboard: _KeyboardLayout = []
     for r in all_routers:
-        rid = r.get("id")
+        rid: int | None = r.get("id")
         if rid is None:
             continue
-        rid_int = int(rid)
-        name = r.get("name_alias") or r.get("identity") or str(rid_int)
-        ip = r.get("ip_address", "")
-        label_name = f"{name} ({ip})" if ip else name
+        rid_int: int = int(rid)
+        name: str = r.get("name_alias") or r.get("identity") or str(rid_int)
+        ip: str = r.get("ip_address", "")
+        label_name: str = f"{name} ({ip})" if ip else name
         if rid_int in assigned_router_ids:
-            label = f"✅ {label_name}"
+            label: str = f"✅ {label_name}"
             cb = op_revoke_cb(operator_id, rid_int)
         else:
             label = f"⬜ {label_name}"

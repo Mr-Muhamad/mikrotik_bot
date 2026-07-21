@@ -1,5 +1,6 @@
 import re
 from functools import lru_cache
+from typing import Any
 
 SUFFIX_MULTIPLIER = {"k": 1000, "m": 1000000, "g": 1000000000, "t": 1000000000000}
 
@@ -25,7 +26,7 @@ def parse_bytes(raw: str) -> str:
     except ValueError:
         pass
     parts = raw.lower().replace(" ", "").split("-")
-    converted = []
+    converted: list[str] = []
     for part in parts:
         try:
             float(part)
@@ -86,7 +87,7 @@ SENSITIVE_API_FIELDS = frozenset(
 )
 
 
-def sanitize_api_response(response: list[dict]) -> list[dict]:
+def sanitize_api_response(response: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Remove sensitive fields from MikroTik API responses for safe logging."""
     if not response:
         return response
@@ -96,7 +97,7 @@ def sanitize_api_response(response: list[dict]) -> list[dict]:
     ]
 
 
-def format_user_list(users: list[dict], max_items: int = 20) -> str:
+def format_user_list(users: list[dict[str, Any]], max_items: int = 20) -> str:
     """Format a list of user dicts into a numbered Arabic display string."""
     if not users:
         return "📭 لا يوجد مستخدمين"
@@ -119,7 +120,7 @@ def format_user_list(users: list[dict], max_items: int = 20) -> str:
     return "\n".join(lines)
 
 
-def format_hotspot_user(user: dict) -> str:
+def format_hotspot_user(user: dict[str, Any]) -> str:
     """Format a hotspot user dict into a human-readable Arabic string."""
     bytes_in = user.get("bytes-in", "0")
     bytes_out = user.get("bytes-out", "0")
@@ -145,7 +146,7 @@ def format_hotspot_user(user: dict) -> str:
     return "\n".join(lines)
 
 
-def format_hotspot_stats(stats: dict | None, router_name: str) -> str:
+def format_hotspot_stats(stats: dict[str, Any] | None, router_name: str) -> str:
     """Format hotspot stats dict into an Arabic display string."""
     if not stats:
         return "❌ خطأ في جلب إحصائيات Hotspot"
@@ -161,7 +162,7 @@ def format_hotspot_stats(stats: dict | None, router_name: str) -> str:
     )
 
 
-def format_userman_stats(stats: dict | None, router_name: str) -> str:
+def format_userman_stats(stats: dict[str, Any] | None, router_name: str) -> str:
     """Format User Manager stats dict into an Arabic display string."""
     if not stats:
         return "❌ خطأ في جلب إحصائيات User Manager"
@@ -174,7 +175,7 @@ def format_userman_stats(stats: dict | None, router_name: str) -> str:
     )
 
 
-def format_hotspot_usage_report(report: dict, router_name: str) -> str:
+def format_hotspot_usage_report(report: dict[str, Any], router_name: str) -> str:
     """Format a Hotspot usage report dict into an Arabic Telegram summary."""
     if not report or report.get("total", 0) == 0:
         return f"📊 تقرير استخدام Hotspot - {router_name}\n\n📭 لا يوجد مستخدمون لإنشاء تقرير."
@@ -199,7 +200,7 @@ def format_hotspot_usage_report(report: dict, router_name: str) -> str:
     return "\n".join(lines)
 
 
-def format_trend_chart(snapshots: list[dict]) -> str:
+def format_trend_chart(snapshots: list[dict[str, Any]]) -> str:
     """تنسيق آخر 7 أيام كـ ASCII bar chart نصي بسيط.
 
     كل سطر: التاريخ | شريط | عدد المستخدمين
@@ -217,8 +218,8 @@ def format_trend_chart(snapshots: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def format_vs_yesterday(current: dict, yesterday: dict | None) -> str:
-    """مقارنة المستخدمين النشطين اليوم مقابل الأمس.
+def format_vs_yesterday(current: dict[str, Any], yesterday: dict[str, Any] | None) -> str:
+    """مقارنة المستخدمين النشطين اليوم versus الأمس.
 
     يُعيد نص HTML مثل: ↑5 مقارنةً بالأمس (25 → 30)
     """

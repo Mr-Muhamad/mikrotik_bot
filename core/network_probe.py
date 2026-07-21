@@ -22,7 +22,7 @@ import subprocess
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from config import DEFAULT_API_PORT
 
@@ -142,7 +142,7 @@ class NetworkProbe(Protocol):
     The scanner orchestrator awaits the result if it's a coroutine.
     """
 
-    def discover(self) -> list[dict]: ...
+    def discover(self) -> list[dict[str, Any]]: ...
 
 
 # ─── DiscoveredRouter dataclass (moved from network_scanner) ───
@@ -206,7 +206,7 @@ class ARPTableProbe:
         self._run = run_fn
         self._system = system or platform.system()
 
-    def discover(self) -> list[dict]:
+    def discover(self) -> list[dict[str, Any]]:
         """Return ``[{ip, mac, source}]`` for each dynamic ARP entry."""
         try:
             if self._system == "Windows":
@@ -242,7 +242,7 @@ class PortScanProbe:
         self._timeout = timeout
         self._open_connection = open_connection
 
-    async def discover(self) -> list[dict]:
+    async def discover(self) -> list[dict[str, Any]]:
         """Return ``[{ip, port, source}]`` for IPs that accept TCP connections."""
         if not self._ips:
             return []
@@ -315,7 +315,7 @@ class MNDPListenerProbe:
         self._timeout = timeout
         self._socket_factory = socket_factory or socket.socket
 
-    async def discover(self) -> list[dict]:
+    async def discover(self) -> list[dict[str, Any]]:
         """Return ``[{ip, source, last_seen, ...attributes}]`` for each MNDP reply.
 
         Raises:
@@ -324,10 +324,10 @@ class MNDPListenerProbe:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._discover_sync)
 
-    def _discover_sync(self) -> list[dict]:
+    def _discover_sync(self) -> list[dict[str, Any]]:
         """Single-socket send+listen cycle (runs in executor thread)."""
 
-        discovered: dict[str, dict] = {}
+        discovered: dict[str, dict[str, Any]] = {}
         local_ips = _get_local_ips()
         sock = None
 
@@ -429,9 +429,9 @@ class MNDPListenerProbe:
 
 
 def merge_probe_results(
-    arp_results: list[dict],
-    port_results: list[dict],
-    mndp_results: list[dict],
+    arp_results: list[dict[str, Any]],
+    port_results: list[dict[str, Any]],
+    mndp_results: list[dict[str, Any]],
 ) -> list[DiscoveredRouter]:
     """Merge candidate dicts from the three probes into a deduplicated list of routers.
 

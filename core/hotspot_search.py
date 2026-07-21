@@ -8,17 +8,24 @@ and return plain dicts/lists, keeping the search/kick responsibility here.
 
 import logging
 import re
+from typing import Any
+
+from core.mikrotik_client import MikrotikClient, RouterOSResponse
 
 logger = logging.getLogger(__name__)
 
 
-def get_leases_by_mac(api, router_key: str, macs: set) -> dict[str, dict]:
+# DHCP leases returned by RouterOS are loosely typed dicts.
+LeaseDict = dict[str, Any]
+
+
+def get_leases_by_mac(api: MikrotikClient, router_key: str, macs: set[str]) -> dict[str, LeaseDict]:
     """Fetch DHCP leases and return a dict keyed by lower-case MAC address.
 
     Moved verbatim from ``HotspotManager._get_leases_by_mac`` so that search
     and kick functions can enrich host entries with DHCP lease host names.
     """
-    leases = api.execute(router_key, "ip/dhcp-server/lease/print")
+    leases: RouterOSResponse = api.execute(router_key, "ip/dhcp-server/lease/print")
     return {
         str(lease.get("mac-address", "")).lower(): lease
         for lease in leases
@@ -26,10 +33,10 @@ def get_leases_by_mac(api, router_key: str, macs: set) -> dict[str, dict]:
     }
 
 
-def search_hosts(api, router_key: str, search_term: str) -> list[dict]:
+def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> RouterOSResponse:
     """Search hotspot hosts by IP or MAC address with enriched host names from DHCP leases."""
     search_lower = search_term.lower().strip()
-    hosts = []
+    hosts: RouterOSResponse = []
 
     proplist = (
         ".id,mac-address,address,host-name,user,bypass-bypassed,uptime,bytes-in,bytes-out,server"
@@ -69,10 +76,10 @@ def search_hosts(api, router_key: str, search_term: str) -> list[dict]:
     return hosts
 
 
-def kick_host(api, router_key: str, mac_or_ip: str) -> tuple[bool, str | None]:
+def kick_host(api: MikrotikClient, router_key: str, mac_or_ip: str) -> tuple[bool, str | None]:
     """Remove a hotspot host by MAC or IP address."""
     target = mac_or_ip.lower().strip()
-    hosts = []
+    hosts: RouterOSResponse = []
 
     proplist = ".id,mac-address,address,user"
     try:
@@ -116,15 +123,15 @@ def kick_host(api, router_key: str, mac_or_ip: str) -> tuple[bool, str | None]:
     return True, host_name
 
 
-def kick_user(api, router_key: str, username: str) -> list[str]:
+def kick_user(api: MikrotikClient, router_key: str, username: str) -> list[str]:
     """Kick an active hotspot user and remove all matching host entries."""
     target = str(username).lower().strip()
     is_mac_target = bool(re.match(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$", target))
 
-    kicked = []
-    macs_to_kick = set()
+    kicked: list[str] = []
+    macs_to_kick: set[str] = set()
 
-    active_sessions = []
+    active_sessions: RouterOSResponse = []
     active_proplist = ".id,user,mac-address"
     try:
         active_sessions = api.execute(
@@ -141,10 +148,10 @@ def kick_user(api, router_key: str, username: str) -> list[str]:
     for s in active_sessions:
         mac = s.get("mac-address", "")
         if mac:
-            macs_to_kick.add(mac.lower())
+            macs_to_kick.add(str(mac).lower())
         api.execute(router_key, "ip/hotspot/active/remove", **{".id": s.get(".id")})
 
-    matched_hosts = []
+    matched_hosts: RouterOSResponse = []
     host_proplist = ".id,mac-address,address,user"
     try:
         if is_mac_target:
@@ -196,6 +203,6 @@ def kick_user(api, router_key: str, username: str) -> list[str]:
         host_name = lease.get("host-name") or h.get("user") or mac or h.get("address", "")
 
         api.execute(router_key, "ip/hotspot/host/remove", **{".id": host_id})
-        kicked.append(host_name)
+        kicked.append(str(host_name))
 
     return list(set(kicked))

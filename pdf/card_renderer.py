@@ -2,6 +2,7 @@ import io
 import logging
 import os
 import threading
+from typing import Any, cast
 from urllib.parse import quote
 
 import qrcode
@@ -9,6 +10,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen.canvas import Canvas
 
 logger = logging.getLogger(__name__)
 
@@ -17,13 +19,13 @@ CARD_SEPARATOR_LINE_WIDTH = 0.2
 
 FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts")
 
-_ARABIC_FONT = None
-_ARABIC_RESHAPER = None
-_BIDI_DISPLAY = None
+_ARABIC_FONT: str | None = None
+_ARABIC_RESHAPER: Any = None
+_BIDI_DISPLAY: Any = None
 _INIT_LOCK = threading.Lock()
 
 
-def _setup_arabic_support():
+def _setup_arabic_support() -> str:
     """Initialize Arabic text reshaping and bidirectional support."""
     global _ARABIC_FONT, _ARABIC_RESHAPER, _BIDI_DISPLAY
 
@@ -64,7 +66,7 @@ def _setup_arabic_support():
     return _ARABIC_FONT
 
 
-def _arabic_text(text):
+def _arabic_text(text: Any) -> str:
     """Reshape and reorder Arabic text for correct PDF rendering."""
     if not text:
         return ""
@@ -72,7 +74,8 @@ def _arabic_text(text):
         return str(text)
     try:
         reshaped = _ARABIC_RESHAPER.reshape(str(text))
-        return _BIDI_DISPLAY(reshaped)
+        result = _BIDI_DISPLAY(reshaped)
+        return cast(str, result)
     except Exception as e:
         logger.debug(f"Arabic text reshaping failed, using raw text: {e}")
         return str(text)
@@ -83,15 +86,15 @@ class CardRenderer:
 
     def __init__(
         self,
-        font_name=None,
-        brand_name="",
-        hotspot_dns="",
-        footer_text="",
-        show_qr=1,
-        label_spacing_single=1.0,
-        label_spacing_dual=1.0,
-        value_max_font_single=12,
-        value_max_font_dual=11,
+        font_name: str | None = None,
+        brand_name: str = "",
+        hotspot_dns: str = "",
+        footer_text: str = "",
+        show_qr: int = 1,
+        label_spacing_single: float = 1.0,
+        label_spacing_dual: float = 1.0,
+        value_max_font_single: int = 12,
+        value_max_font_dual: int = 11,
     ):
         self.font_name = font_name or _setup_arabic_support()
         self.brand_name = brand_name
@@ -103,7 +106,16 @@ class CardRenderer:
         self.value_max_font_single = value_max_font_single
         self.value_max_font_dual = value_max_font_dual
 
-    def render_card(self, canvas_obj, x, y, width, height, card, index):
+    def render_card(
+        self,
+        canvas_obj: Canvas,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        card: dict[str, Any],
+        index: int,
+    ) -> None:
         """Draw a single card at the given coordinates."""
         canvas_obj.saveState()
 
@@ -117,13 +129,13 @@ class CardRenderer:
 
         canvas_obj.restoreState()
 
-    def _draw_border(self, c, x, y, width, height):
+    def _draw_border(self, c: Canvas, x: float, y: float, width: float, height: float) -> None:
         """Draw rounded rectangle border."""
         c.setStrokeColorRGB(0, 0, 0)
         c.setLineWidth(CARD_BORDER_LINE_WIDTH)
         c.roundRect(x, y, width, height, 2)
 
-    def _draw_header(self, c, x, y, width, height):
+    def _draw_header(self, c: Canvas, x: float, y: float, width: float, height: float) -> None:
         """Draw brand name and separator line."""
         if not self.brand_name:
             return
@@ -136,7 +148,7 @@ class CardRenderer:
         c.setLineWidth(CARD_BORDER_LINE_WIDTH)
         c.line(x + 1.5 * mm, line_y, x + width - 1.5 * mm, line_y)
 
-    def _draw_title(self, c, x, y, width, height):
+    def _draw_title(self, c: Canvas, x: float, y: float, width: float, height: float) -> None:
         """Draw card data title."""
         title_y = y + height - 9.5 * mm
         c.setFont(self.font_name, 7)
@@ -147,7 +159,9 @@ class CardRenderer:
         c.setLineWidth(CARD_SEPARATOR_LINE_WIDTH)
         c.line(x + 4 * mm, sep_y, x + width - 4 * mm, sep_y)
 
-    def _dynamic_font_size(self, text, max_width_mm, max_font=11, min_font=6):
+    def _dynamic_font_size(
+        self, text: str, max_width_mm: float, max_font: int = 11, min_font: int = 6
+    ) -> int:
         """Pick the largest integer font size so *text* fits *max_width_mm*."""
         if not text:
             return max_font
@@ -159,7 +173,9 @@ class CardRenderer:
                 return size
         return min_font
 
-    def _draw_credentials(self, c, x, y, width, height, card):
+    def _draw_credentials(
+        self, c: Canvas, x: float, y: float, width: float, height: float, card: dict[str, Any]
+    ) -> None:
         """Draw username and password fields with dynamic font sizing."""
         username = str(card.get("username", "") if isinstance(card, dict) else card.username)
         password = str(card.get("password", "") if isinstance(card, dict) else card.password)
@@ -209,7 +225,7 @@ class CardRenderer:
             c.setFont("Helvetica-Bold", fs)
             c.drawString(value_x, v_middle - 3.8 * mm, password)
 
-    def _draw_qr(self, c, x, y, width, height, card):
+    def _draw_qr(self, c: Canvas, x: float, y: float, width: float, height: float, card: dict[str, Any]) -> None:
         """Draw QR code for hotspot login."""
         username = str(card.get("username", "") if isinstance(card, dict) else card.username)
 
@@ -228,7 +244,7 @@ class CardRenderer:
         buf.seek(0)
         c.drawImage(ImageReader(buf), qr_x, qr_y, width=qr_size, height=qr_size)
 
-    def _draw_footer(self, c, x, y, width, card=None):
+    def _draw_footer(self, c: Canvas, x: float, y: float, width: float, card: dict[str, Any] | None = None) -> None:
         """Draw footer line and footer text."""
         footer_line_y = y + 5 * mm
         c.setLineWidth(CARD_BORDER_LINE_WIDTH)

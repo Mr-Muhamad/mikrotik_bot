@@ -1,3 +1,5 @@
+from typing import Any
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from bot.messages import SEND_UPTIME_DAYS, SEND_UPTIME_HOURS
@@ -27,7 +29,7 @@ def convert_uptime_value(value: str, unit: str) -> str:
     return f"{num}d00:00:00"
 
 
-def set_uptime_unit(user_data: dict | None, key: str, unit: str) -> tuple[str, str]:
+def set_uptime_unit(user_data: dict[str, Any] | None, key: str, unit: str) -> tuple[str, str]:
     if user_data is None:
         user_data = {}
     user_data[key] = unit

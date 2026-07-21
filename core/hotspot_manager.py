@@ -3,13 +3,14 @@ import re
 import secrets
 import string
 from datetime import datetime
+from typing import Any
 
 from librouteros.exceptions import LibRouterosError
 
 from core.cache import TTLCache
 from core.card_models import CardData, CardSystem
 from core.mikrotik_api import mikrotik_api
-from core.mikrotik_client import MikrotikClient
+from core.mikrotik_client import MikrotikClient, RouterOSResponse
 
 logger = logging.getLogger(__name__)
 
@@ -35,16 +36,16 @@ class HotspotManager:
         """Generate a cryptographically secure random number of specified length."""
         return "".join(secrets.choice(string.digits) for _ in range(length))
 
-    def _get_all_users_cached(self, router_key: str) -> list[dict]:
+    def _get_all_users_cached(self, router_key: str) -> RouterOSResponse:
         from typing import cast
 
         cached = self._users_cache.get(router_key)
         if cached is not None:
-            return cast(list[dict], cached)
+            return cast(RouterOSResponse, cached)
         # نجلب الأسماء فقط لتسريع التحقق من التكرار عند إنشاء الكروت
         users = self._api.execute(router_key, "ip/hotspot/user/print", **{".proplist": "name"})
         self._users_cache.set(router_key, users)
-        return cast(list[dict], users)
+        return cast(RouterOSResponse, users)
 
     def invalidate_users_cache(self, router_key: str):
         self._users_cache.invalidate(router_key)
@@ -94,7 +95,7 @@ class HotspotManager:
         bytes_total: str = "",
         uptime: str = "",
         comment: str = "",
-    ) -> list[dict]:
+    ) -> RouterOSResponse:
         """Add a new hotspot user with optional bandwidth limit, uptime limit, and comment."""
         params = {
             "name": name,
@@ -114,7 +115,7 @@ class HotspotManager:
         logger.info(f"Added hotspot user '{name}' on {router_key}")
         return result
 
-    def edit_user(self, router_key: str, user_id: str, **kwargs: object) -> list[dict]:
+    def edit_user(self, router_key: str, user_id: str, **kwargs: object) -> RouterOSResponse:
         """Update allowed fields of an existing hotspot user by its .id."""
         params = {".id": user_id}
         allowed_fields = [
@@ -136,7 +137,7 @@ class HotspotManager:
         logger.info(f"Edited hotspot user {user_id} on {router_key}")
         return result
 
-    def reset_user_counters(self, router_key: str, user_id: str) -> list[dict]:
+    def reset_user_counters(self, router_key: str, user_id: str) -> RouterOSResponse:
         """Reset traffic counters for a hotspot user."""
         result = self._api.execute(
             router_key, "ip/hotspot/user/reset-counters", **{"numbers": user_id}
@@ -145,36 +146,36 @@ class HotspotManager:
         logger.info(f"Reset counters for hotspot user {user_id} on {router_key}")
         return result
 
-    def enable_user(self, router_key: str, user_id: str) -> list[dict]:
+    def enable_user(self, router_key: str, user_id: str) -> RouterOSResponse:
         """Enable a hotspot user by its .id."""
         result = self._api.execute(router_key, "ip/hotspot/user/enable", **{"numbers": user_id})
         self.invalidate_users_cache(router_key)
         logger.info(f"Enabled hotspot user {user_id} on {router_key}")
         return result
 
-    def disable_user(self, router_key: str, user_id: str) -> list[dict]:
+    def disable_user(self, router_key: str, user_id: str) -> RouterOSResponse:
         """Disable a hotspot user by its .id."""
         result = self._api.execute(router_key, "ip/hotspot/user/disable", **{"numbers": user_id})
         self.invalidate_users_cache(router_key)
         logger.info(f"Disabled hotspot user {user_id} on {router_key}")
         return result
 
-    def delete_user(self, router_key: str, user_id: str) -> list[dict]:
+    def delete_user(self, router_key: str, user_id: str) -> RouterOSResponse:
         """Delete a hotspot user by its .id."""
         result = self._api.execute(router_key, "ip/hotspot/user/remove", **{".id": user_id})
         self.invalidate_users_cache(router_key)
         logger.info(f"Deleted hotspot user {user_id} on {router_key}")
         return result
 
-    def search_users(self, router_key: str, search_term: str) -> list[dict]:
+    def search_users(self, router_key: str, search_term: str) -> RouterOSResponse:
         """Search hotspot users by name or comment (case-insensitive substring match).
 
         Uses API-side ?name= and ?comment= filters when possible, with automatic
         fallback to in-memory filtering if the RouterOS version doesn't support it.
         """
         search = search_term.lower()
-        seen = set()
-        results = []
+        seen: set[str] = set()
+        results: RouterOSResponse = []
 
         for field in ("name", "comment"):
             try:
@@ -236,12 +237,12 @@ class HotspotManager:
 
         return _fn(self._api, router_key, username)
 
-    def list_users(self, router_key: str, limit: int = 50) -> list[dict]:
+    def list_users(self, router_key: str, limit: int = 50) -> RouterOSResponse:
         """Return up to limit hotspot users from the router."""
         all_users = self._get_all_users_cached(router_key)
         return all_users[:limit] if all_users else []
 
-    def get_user(self, router_key: str, user_id: str) -> dict | None:
+    def get_user(self, router_key: str, user_id: str) -> dict[str, Any] | None:
         """Return a single hotspot user dict by its .id, or None if not found."""
         all_users = self._get_all_users_cached(router_key)
         for user in all_users:
@@ -249,7 +250,7 @@ class HotspotManager:
                 return user
         return None
 
-    def _get_leases_by_mac(self, router_key: str, macs: set) -> dict[str, dict]:
+    def _get_leases_by_mac(self, router_key: str, macs: set[str]) -> dict[str, dict[str, Any]]:
         """Fetch DHCP leases and return a dict keyed by lower-case MAC address."""
         leases = self._api.execute(router_key, "ip/dhcp-server/lease/print")
         return {

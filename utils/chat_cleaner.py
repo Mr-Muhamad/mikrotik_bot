@@ -1,10 +1,17 @@
 import asyncio
 import logging
 from datetime import UTC
+from typing import Any, Generator, Sequence, TypedDict, cast
 
-from telegram import Message
+from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
+from telegram.ext import CallbackContext, ExtBot, Job, JobQueue
 
 logger = logging.getLogger(__name__)
+
+# Type alias for the bot context used across this module
+_CleanerContext = CallbackContext[ExtBot[None], dict[str, Any], dict[str, Any], dict[str, Any]]
+_Update = Update
+_CallbackQuery = CallbackQuery
 
 DELETE_DELAY = 120  # دقيقتين — وقت مناسب للمستخدم للقراءة والتفاعل
 MAX_TRACKED_MSGS = 200
@@ -18,7 +25,13 @@ CHAT_MSGS_TTL_SECONDS = 2 * 3600
 DELETE_MESSAGES_CHUNK = 100
 
 # إحصائيات الأداء (للمراقبة)
-_stats = {
+class _Stats(TypedDict):
+    messages_tracked: int
+    messages_deleted: int
+    cleanup_runs: int
+
+
+_stats: _Stats = {
     "messages_tracked": 0,
     "messages_deleted": 0,
     "cleanup_runs": 0,
@@ -44,7 +57,12 @@ def _is_benign_edit_error(err: Exception) -> bool:
     return any(s in str(err) for s in _BENIGN_EDIT_ERRORS)
 
 
-def _track_msg(context, chat_id, message_id, chat_type=None):
+def _track_msg(
+    context: _CleanerContext,
+    chat_id: int,
+    message_id: int,
+    chat_type: str | None = None,
+) -> None:
     """تتبع رسالة للتنظيف التلقائي عبر قاعدة البيانات.
 
     لا يُتتبَّع إلا رسائل البوت الصادرة. تُتخطّى القنوات (channel) فقط؛ أمّا
@@ -60,7 +78,11 @@ def _track_msg(context, chat_id, message_id, chat_type=None):
     _stats["messages_tracked"] += 1
 
 
-async def clean_chat_messages(context, chat_id, chat_type=None):
+async def clean_chat_messages(
+    context: _CleanerContext,
+    chat_id: int,
+    chat_type: str | None = None,
+) -> None:
     """Delete all tracked (bot) messages for a chat and remove them from tracking.
 
     تُتخطّى القنوات (channel) بالكامل. في المجموعات/السوبر-جروب يُسمح للبوت بحذف
@@ -68,13 +90,13 @@ async def clean_chat_messages(context, chat_id, chat_type=None):
     """
     if chat_type and chat_type in _PROTECTED_CHAT_TYPES:
         return
-    cached_type = context.bot_data.get(f"_chat_type_{chat_id}")
+    cached_type: str | None = cast(str | None, context.bot_data.get(f"_chat_type_{chat_id}"))
     if cached_type and cached_type in _PROTECTED_CHAT_TYPES:
         return
 
     from database.models import get_tracked_messages, remove_tracked_messages
 
-    msgs_ids = get_tracked_messages(chat_id)
+    msgs_ids: list[int] | None = get_tracked_messages(chat_id)
     if not msgs_ids:
         return
 
@@ -88,13 +110,17 @@ async def clean_chat_messages(context, chat_id, chat_type=None):
     _stats["messages_deleted"] += deleted_count
 
 
-def _chunks(items, size):
+def _chunks(items: Sequence[int], size: int) -> Generator[list[int], None, None]:
     """Yield successive chunks of ``items`` bounded by ``size`` elements."""
     for i in range(0, len(items), size):
-        yield items[i : i + size]
+        yield list(items[i : i + size])
 
 
-async def _delete_message_ids(context, chat_id, message_ids):
+async def _delete_message_ids(
+    context: _CleanerContext,
+    chat_id: int,
+    message_ids: list[int],
+) -> int:
     """Delete a set of message ids efficiently with resilient per-message fallback.
 
     Uses the batched ``delete_messages`` API (available in PTB 22.7) when there is
@@ -114,7 +140,9 @@ async def _delete_message_ids(context, chat_id, message_ids):
             return 0
 
     try:
-        result = await context.bot.delete_messages(chat_id=chat_id, message_ids=message_ids)
+        result = await context.bot.delete_messages(
+            chat_id=chat_id, message_ids=message_ids
+        )
         if result is True:
             return len(message_ids)
     except Exception as e:
@@ -132,19 +160,25 @@ async def _delete_message_ids(context, chat_id, message_ids):
     return deleted
 
 
-def _delete_job_name(chat_id, message_id):
+def _delete_job_name(chat_id: int, message_id: int) -> str:
     return f"del_{chat_id}_{message_id}"
 
 
-async def schedule_delete(context, chat_id, message_id, delay=DELETE_DELAY):
+async def schedule_delete(
+    context: _CleanerContext,
+    chat_id: int,
+    message_id: int,
+    delay: int = DELETE_DELAY,
+) -> None:
     """Schedule automatic deletion of a message after a delay in seconds."""
     if not message_id:
         return
     job_name = _delete_job_name(chat_id, message_id)
-    existing = context.job_queue.get_jobs_by_name(job_name)
+    job_queue: Any = context.job_queue
+    existing: list[Job[Any]] = job_queue.get_jobs_by_name(job_name)
     for j in existing:
         j.schedule_removal()
-    context.job_queue.run_once(
+    job_queue.run_once(
         _delete_job,
         when=delay,
         data={"chat_id": chat_id, "message_id": message_id},
@@ -152,8 +186,8 @@ async def schedule_delete(context, chat_id, message_id, delay=DELETE_DELAY):
     )
 
 
-async def _delete_job(context):
-    data = context.job.data
+async def _delete_job(context: _CleanerContext) -> None:
+    data: dict[str, Any] = cast(dict[str, Any], context.job.data)
     try:
         await context.bot.delete_message(
             chat_id=data["chat_id"],
@@ -164,7 +198,7 @@ async def _delete_job(context):
         logger.debug(f"Delete failed: {e}")
 
 
-async def delete_now(context, chat_id, message_id):
+async def delete_now(context: _CleanerContext, chat_id: int, message_id: int) -> None:
     """Immediately delete a specific message, ignoring errors silently."""
     try:
         await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
@@ -173,18 +207,24 @@ async def delete_now(context, chat_id, message_id):
         logger.debug(f"delete_now failed: {e}")
 
 
-def track_message(context, chat_id, message_id):
+def track_message(context: _CleanerContext, chat_id: int, message_id: int) -> None:
     """Register an already-sent message for future cleanup via /clean."""
     _track_msg(context, chat_id, message_id)
 
 
-async def clean_command(update, context):
+async def clean_command(update: _Update, context: _CleanerContext) -> None:
     """Delete the user's command message that triggered this handler."""
     if update.message:
         await delete_now(context, update.effective_chat.id, update.message.message_id)
 
 
-async def send_and_track(context, chat_id, text, keyboard=None, parse_mode="HTML"):
+async def send_and_track(
+    context: _CleanerContext,
+    chat_id: int,
+    text: str,
+    keyboard: InlineKeyboardMarkup | None = None,
+    parse_mode: str = "HTML",
+) -> Message:
     """Send a message and track it for cleanup — unified helper."""
     msg = await context.bot.send_message(
         chat_id=chat_id, text=text, reply_markup=keyboard, parse_mode=parse_mode
@@ -193,7 +233,11 @@ async def send_and_track(context, chat_id, text, keyboard=None, parse_mode="HTML
     return msg
 
 
-async def send_loading(update, context, text="⏳ جاري العمل..."):
+async def send_loading(
+    update: _Update,
+    context: _CleanerContext,
+    text: str = "⏳ جاري العمل...",
+) -> Message:
     """Send a loading indicator message and track it for future cleanup."""
     chat_id = update.effective_chat.id
     # الرسالة عابرة (مؤشر تحميل) — لا نطلق إشعاراً للمستخدم
@@ -210,25 +254,40 @@ def _truncate(text: str) -> str:
     return text
 
 
-async def safe_edit_or_send(query, context, text, keyboard=None):
+async def safe_edit_or_send(
+    query: CallbackQuery | None,
+    context: _CleanerContext,
+    text: str,
+    keyboard: InlineKeyboardMarkup | None = None,
+) -> Message | None:
     """Edit the callback message in place; fall back to a new message if edit fails.
 
     Handles the case where the original message was deleted (e.g., by /clean or
     a previous send_step) — instead of a silent no-op, a fresh message is sent
     so the user always gets a visible response.
     """
+    if query is None:
+        return None
     text = _truncate(text)
-    chat_id = query.message.chat_id
+    message = query.message
+    if message is None:
+        return None
+    chat_id = cast(int, getattr(message, "chat_id", None))
+    if chat_id is None:
+        return None
     try:
-        msg = await query.edit_message_text(text=text, reply_markup=keyboard, parse_mode="HTML")
-        if msg:
-            _track_msg(context, chat_id, msg.message_id)
-            context.user_data["last_msg"] = msg.message_id
-        return msg
+        edited: Message | bool = await query.edit_message_text(
+            text=text, reply_markup=keyboard, parse_mode="HTML"
+        )
+        if isinstance(edited, Message):
+            _track_msg(context, chat_id, edited.message_id)
+            context.user_data["last_msg"] = edited.message_id
+            return edited
+        return None
     except Exception as e:
         str(e)
         if _is_benign_edit_error(e):
-            prev = context.user_data.pop("last_msg", None)
+            prev: int | None = context.user_data.pop("last_msg", None)
             if prev:
                 await delete_now(context, chat_id, prev)
             msg = await context.bot.send_message(
@@ -240,44 +299,77 @@ async def safe_edit_or_send(query, context, text, keyboard=None):
         raise
 
 
-async def edit_clean(query, context, text, keyboard=None):
+async def edit_clean(
+    query: CallbackQuery | None,
+    context: _CleanerContext,
+    text: str,
+    keyboard: InlineKeyboardMarkup | None = None,
+) -> Message | None:
     """Edit a callback query message with new text and track the edit for cleanup."""
+    if query is None:
+        return None
     text = _truncate(text)
+    message = query.message
+    chat_id = 0
+    if message is not None:
+        chat_id = cast(int, getattr(message, "chat_id", 0))
+        if chat_id == 0:
+            return None
     try:
-        msg = await query.edit_message_text(text=text, reply_markup=keyboard, parse_mode="HTML")
+        edited: Message | bool = await query.edit_message_text(
+            text=text, reply_markup=keyboard, parse_mode="HTML"
+        )
     except Exception as e:
         if _is_benign_edit_error(e):
             # المحتوى لم يتغير أو الرسالة محذوفة — حالة حميدة، نتجاهلها بصمت
             logger.debug(f"edit_clean benign skip: {e}")
             return None
         raise
-    if msg is not None:
-        _track_msg(context, query.message.chat_id, msg.message_id)
-        context.user_data["last_msg"] = msg.message_id
-    return msg
+    if isinstance(edited, Message) and message is not None:
+        _track_msg(context, chat_id, edited.message_id)
+        context.user_data["last_msg"] = edited.message_id
+    return edited if isinstance(edited, Message) else None
 
 
-async def safe_edit_plain(query, context, text, reply_markup=None):
+async def safe_edit_plain(
+    query: CallbackQuery | None,
+    context: _CleanerContext,
+    text: str,
+    reply_markup: InlineKeyboardMarkup | None = None,
+) -> Message | None:
     """عدّل رسالة الاستدعاء مع تجاهل أخطاء التعديل الحميدة.
 
     يُبقي على parse_mode الافتراضي (بدون HTML) المستخدم في الاستدعاءات المباشرة
     لـ ``query.edit_message_text``، ويتجاهل أخطاء مثل "Message is not modified"
     دون إنهاء تدفق المحادثة.
     """
+    if query is None:
+        return None
+    message = query.message
+    chat_id = 0
+    if message is not None:
+        chat_id = cast(int, getattr(message, "chat_id", 0))
+        if chat_id == 0:
+            return None
     try:
-        msg = await query.edit_message_text(text=text, reply_markup=reply_markup)
+        edited: Message | bool = await query.edit_message_text(text=text, reply_markup=reply_markup)
     except Exception as e:
         if _is_benign_edit_error(e):
             logger.debug(f"safe_edit_plain benign skip: {e}")
             return None
         raise
-    if msg is not None:
-        _track_msg(context, query.message.chat_id, msg.message_id)
-        context.user_data["last_msg"] = msg.message_id
-    return msg
+    if isinstance(edited, Message) and message is not None:
+        _track_msg(context, chat_id, edited.message_id)
+        context.user_data["last_msg"] = edited.message_id
+    return edited if isinstance(edited, Message) else None
 
 
-async def _send_replacing_last(update, context, text, keyboard) -> Message | None:
+async def _send_replacing_last(
+    update: _Update,
+    context: _CleanerContext,
+    text: str,
+    keyboard: InlineKeyboardMarkup | None,
+) -> Message | None:
     """Delete the triggering message and the previous step, then send a fresh message.
 
     الرسالة المُطلِقة (رسالة المستخدم) تُحذف في المحادثة الخاصة فقط، لأن بوت
@@ -289,7 +381,7 @@ async def _send_replacing_last(update, context, text, keyboard) -> Message | Non
     chat_type = update.effective_chat.type if update.effective_chat else None
     if update.message and chat_type == "private":
         await delete_now(context, chat_id, update.message.message_id)
-    prev = context.user_data.pop("last_msg", None)
+    prev: int | None = context.user_data.pop("last_msg", None)
     if prev:
         await delete_now(context, chat_id, prev)
     msg = await context.bot.send_message(
@@ -299,7 +391,12 @@ async def _send_replacing_last(update, context, text, keyboard) -> Message | Non
     return msg
 
 
-async def send_step(update, context, text, keyboard=None) -> Message | None:
+async def send_step(
+    update: _Update,
+    context: _CleanerContext,
+    text: str,
+    keyboard: InlineKeyboardMarkup | None = None,
+) -> Message | None:
     """Send a new step message while cleaning up the previous step message."""
     text = _truncate(text)
     msg = await _send_replacing_last(update, context, text, keyboard)
@@ -308,13 +405,18 @@ async def send_step(update, context, text, keyboard=None) -> Message | None:
     return msg
 
 
-async def reply_final(update, context, text, keyboard=None) -> Message | None:
+async def reply_final(
+    update: _Update,
+    context: _CleanerContext,
+    text: str,
+    keyboard: InlineKeyboardMarkup | None = None,
+) -> Message | None:
     """Send a final reply message while cleaning up the previous step message."""
     text = _truncate(text)
     return await _send_replacing_last(update, context, text, keyboard)
 
 
-async def run_background_cleanup(context):
+async def run_background_cleanup(context: _CleanerContext) -> None:
     """Background task to remove old tracked messages from the database.
 
     Messages older than 48 hours cannot be deleted from Telegram anyway,
@@ -334,6 +436,6 @@ async def run_background_cleanup(context):
         logger.debug(f"Cleaned {cleaned_health} old router health records.")
 
 
-def get_cleanup_stats() -> dict:
+def get_cleanup_stats() -> _Stats:
     """إرجاع إحصائيات الأداء للمراقبة."""
     return _stats.copy()

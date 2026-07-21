@@ -1,3 +1,5 @@
+from typing import Any
+
 import logging
 
 from telegram import Update
@@ -142,7 +144,7 @@ async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFA
     return WAITING_HOTSPOT_SEARCH
 
 
-async def _search_users(router_key: str, term: str) -> list[dict]:
+async def _search_users(router_key: str, term: str) -> list[dict[str, Any]]:
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, term)
     except Exception:
@@ -162,7 +164,7 @@ async def _search_users(router_key: str, term: str) -> list[dict]:
     ]
 
 
-async def _search_hosts_by_field(router_key: str, field: str, value: str) -> list[dict]:
+async def _search_hosts_by_field(router_key: str, field: str, value: str) -> list[dict[str, Any]]:
     """Search hotspot hosts by a specific field (mac-address or address).
 
     Delegates to :meth:`HotspotManager.search_hosts` so the host list is fetched
@@ -177,7 +179,7 @@ async def _search_hosts_by_field(router_key: str, field: str, value: str) -> lis
     return [h for h in hosts if value in str(h.get(field) or "").lower()]
 
 
-async def _search_hosts_with_users(router_key: str, query: str) -> list[dict]:
+async def _search_hosts_with_users(router_key: str, query: str) -> list[dict[str, Any]]:
     try:
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, query)
         try:
@@ -201,7 +203,9 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[dict]:
     return hosts
 
 
-def _format_search_results_text(paginator):
+from utils.pagination import Paginator
+
+def _format_search_results_text(paginator: Paginator) -> str:
     if not paginator.items:
         return NO_RESULTS
     lines = []

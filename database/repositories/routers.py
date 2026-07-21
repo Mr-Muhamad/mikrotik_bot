@@ -42,8 +42,8 @@ def save_discovered_router(
             """
             INSERT INTO discovered_routers
                 (ip_address, mac_address, identity, version, board, software_id,
-                 platform, uptime, port, username, password, last_seen, owner_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 platform, uptime, port, username, password, last_seen, owner_id, is_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
             ON CONFLICT(ip_address) DO UPDATE SET
                 mac_address=excluded.mac_address,
                 identity=excluded.identity,

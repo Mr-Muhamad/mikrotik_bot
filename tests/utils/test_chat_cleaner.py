@@ -2,7 +2,9 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
+import datetime
 import pytest
+from telegram import Chat, Message
 
 from database.models import add_tracked_message, get_tracked_messages
 from utils.chat_cleaner import (
@@ -47,7 +49,13 @@ def _update(text: str = "/clean", callback_data: str | None = None):
         update.callback_query.message = MagicMock()
         update.callback_query.message.chat_id = 1
         update.callback_query.message.message_id = 60
-        update.callback_query.edit_message_text = AsyncMock(return_value=MagicMock(message_id=61))
+        update.callback_query.edit_message_text = AsyncMock(
+            return_value=Message(
+                message_id=61,
+                date=datetime.datetime.now(datetime.timezone.utc),
+                chat=Chat(id=1, type="private"),
+            )
+        )
     return update
 
 

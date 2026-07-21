@@ -10,7 +10,13 @@ This module deliberately imports nothing from ``core`` to stay cycle-free.
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
+
+
+# RouterOS API responses are loosely typed dicts; use this alias
+# instead of bare ``list[dict]`` so pyright strict mode can infer
+# ``dict[str, Any]`` for keys/values and avoid ``Unknown`` cascades.
+RouterOSResponse = list[dict[str, Any]]
 
 
 @runtime_checkable
@@ -18,9 +24,9 @@ class MikrotikClient(Protocol):
     """Command execution and router-metadata contract used across the app."""
 
     # ── Command execution ──────────────────────────────────────
-    def execute(self, router_key: str, command: str, **kwargs: object) -> list[dict]: ...
+    def execute(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse: ...
 
-    def execute_long(self, router_key: str, command: str, **kwargs: object) -> list[dict]: ...
+    def execute_long(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse: ...
 
     def execute_non_blocking(self, router_key: str, command: str, **kwargs: object) -> None: ...
 
@@ -35,7 +41,7 @@ class MikrotikClient(Protocol):
 
     def get_userman_base_path(self, router_key: str = ...) -> str: ...
 
-    def get_router_info(self, router_key: str) -> dict: ...
+    def get_router_info(self, router_key: str) -> dict[str, Any]: ...
 
     def check_connection_health(self, router_key: str) -> tuple[bool, str]: ...
 
@@ -47,7 +53,7 @@ class MikrotikClient(Protocol):
     def invalidate_version(self, router_key: str) -> None: ...
 
     # ── Diagnostics / lifecycle ────────────────────────────────
-    def get_metrics(self) -> dict: ...
+    def get_metrics(self) -> dict[str, Any]: ...
 
     def test_connection(
         self, ip: str, username: str, password: str, port: int = ...

@@ -2,7 +2,9 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import datetime
 import pytest
+from telegram import Chat, Message
 from telegram.error import BadRequest
 
 from utils.chat_cleaner import edit_clean, safe_edit_plain
@@ -27,7 +29,13 @@ def _callback_update(chat_id: int = 1, edit_raises=None):
     query.message.chat_id = chat_id
     query.message.message_id = 60
     if edit_raises is None:
-        query.edit_message_text = AsyncMock(return_value=MagicMock(message_id=61))
+        query.edit_message_text = AsyncMock(
+            return_value=Message(
+                message_id=61,
+                date=datetime.datetime.now(datetime.timezone.utc),
+                chat=Chat(id=chat_id, type="private"),
+            )
+        )
     else:
         query.edit_message_text = AsyncMock(side_effect=edit_raises)
     update.callback_query = query
@@ -92,7 +100,13 @@ class TestSafeEditsBenign:
         query = MagicMock()
         query.message = MagicMock()
         query.message.chat_id = 1
-        query.edit_message_text = AsyncMock(return_value=MagicMock(message_id=70))
+        query.edit_message_text = AsyncMock(
+            return_value=Message(
+                message_id=70,
+                date=datetime.datetime.now(datetime.timezone.utc),
+                chat=Chat(id=1, type="private"),
+            )
+        )
         ctx = _ctx()
         msg = await safe_edit_plain(query, ctx, "hi", reply_markup=None)
         assert msg is not None

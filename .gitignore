@@ -17,3 +17,4 @@ venv/
 fonts/*.ttf
 logs/
 scratch/
+scripts/Activate.ps1/

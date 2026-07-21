@@ -6,7 +6,7 @@ from datetime import datetime
 from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
-from core.mikrotik_client import MikrotikClient
+from core.mikrotik_client import MikrotikClient, RouterOSResponse
 
 _CARD_TYPE_MAP = {
     "type1": CardSystem.DIFFERENT_CREDENTIALS,
@@ -46,12 +46,12 @@ class UserManager:
         """Injected client, or the shared module singleton (late-bound for tests)."""
         return self._api_override if self._api_override is not None else mikrotik_api
 
-    def _get_all_users_cached(self, router_key: str, base_path: str) -> list[dict]:
+    def _get_all_users_cached(self, router_key: str, base_path: str) -> RouterOSResponse:
         from typing import cast
 
         cached = self._users_cache.get(router_key)
         if cached is not None:
-            return cast(list[dict], cached)
+            return cast(RouterOSResponse, cached)
         users = self._api.execute(
             router_key,
             f"{base_path}/user/print",
@@ -60,7 +60,7 @@ class UserManager:
             },
         )
         self._users_cache.set(router_key, users)
-        return cast(list[dict], users)
+        return cast(RouterOSResponse, users)
 
     def invalidate_users_cache(self, router_key: str):
         self._users_cache.invalidate(router_key)
@@ -86,7 +86,7 @@ class UserManager:
         username_length: int = 8,
         prefix: str = "",
         caller_id: str = "",
-    ) -> list[dict]:
+    ) -> RouterOSResponse:
         """Create multiple User Manager cards with the specified type and profile.
 
         Binds to caller-id directly during creation if provided.
@@ -317,7 +317,7 @@ class UserManager:
         )
         logger.info(f"Set caller-id '{caller_id}' for user '{username}' on {router_key}")
 
-    def list_users(self, router_key: str, limit: int = 50) -> list[dict]:
+    def list_users(self, router_key: str, limit: int = 50) -> RouterOSResponse:
         """Return up to limit User Manager users from the router.
 
         Handles both v6 (``username`` attribute) and v7 (``name`` attribute) so
@@ -325,7 +325,7 @@ class UserManager:
         """
         base_path = self._api.get_userman_base_path(router_key)
         results = self._get_all_users_cached(router_key, base_path)
-        normalized = []
+        normalized: RouterOSResponse = []
         for user in results:
             entry = dict(user)
             if "name" not in entry and "username" in entry:
@@ -333,7 +333,7 @@ class UserManager:
             normalized.append(entry)
         return normalized[:limit]
 
-    def search_users(self, router_key: str, search_term: str) -> list[dict]:
+    def search_users(self, router_key: str, search_term: str) -> RouterOSResponse:
         """Search User Manager users by name."""
         base_path = self._api.get_userman_base_path(router_key)
         is_v7 = not base_path.startswith("tool/")
@@ -341,7 +341,7 @@ class UserManager:
 
         results = self._get_all_users_cached(router_key, base_path)
         search = search_term.lower()
-        matches = []
+        matches: RouterOSResponse = []
         for user in results or []:
             name = str(user.get(field, "")).lower()
             if search in name:
@@ -385,7 +385,7 @@ class UserManager:
             return self._attach_v7_profile(router_key, base_path, username, profile)
         return self._attach_v6_profile(router_key, base_path, username, profile)
 
-    def delete_user(self, router_key: str, username: str) -> list[dict]:
+    def delete_user(self, router_key: str, username: str) -> RouterOSResponse:
         """Delete a User Manager user by name."""
         base_path = self._api.get_userman_base_path(router_key)
         uid = self._get_user_id(router_key, username)
@@ -395,7 +395,7 @@ class UserManager:
         logger.info(f"Deleted User Manager user '{username}' on {router_key}")
         return result
 
-    def enable_user(self, router_key: str, username: str) -> list[dict]:
+    def enable_user(self, router_key: str, username: str) -> RouterOSResponse:
         """Enable a User Manager user."""
         base_path = self._api.get_userman_base_path(router_key)
         uid = self._get_user_id(router_key, username)
@@ -405,7 +405,7 @@ class UserManager:
         logger.info(f"Enabled User Manager user '{username}' on {router_key}")
         return result
 
-    def disable_user(self, router_key: str, username: str) -> list[dict]:
+    def disable_user(self, router_key: str, username: str) -> RouterOSResponse:
         """Disable a User Manager user."""
         base_path = self._api.get_userman_base_path(router_key)
         uid = self._get_user_id(router_key, username)
@@ -415,7 +415,7 @@ class UserManager:
         logger.info(f"Disabled User Manager user '{username}' on {router_key}")
         return result
 
-    def reset_user_counters(self, router_key: str, username: str) -> list[dict]:
+    def reset_user_counters(self, router_key: str, username: str) -> RouterOSResponse:
         """Reset counters / clear profiles for a User Manager user."""
         base_path = self._api.get_userman_base_path(router_key)
         uid = self._get_user_id(router_key, username)
@@ -433,7 +433,7 @@ class UserManager:
         logger.info(f"Reset counters for User Manager user '{username}' on {router_key}")
         return result
 
-    def get_active_sessions(self, router_key: str) -> list[dict]:
+    def get_active_sessions(self, router_key: str) -> RouterOSResponse:
         """Return a list of active User Manager sessions."""
         base_path = self._api.get_userman_base_path(router_key)
         proplist = ".id,user,username,active,host-ip,uptime,download,upload"
@@ -449,7 +449,7 @@ class UserManager:
             )
             results = [s for s in results if str(s.get("active", "false")).lower() == "true"]
 
-        normalized = []
+        normalized: RouterOSResponse = []
         for session in results:
             entry = dict(session)
             if "user" not in entry and "username" in entry:
@@ -457,7 +457,7 @@ class UserManager:
             normalized.append(entry)
         return normalized
 
-    def terminate_session(self, router_key: str, session_id: str) -> list[dict]:
+    def terminate_session(self, router_key: str, session_id: str) -> RouterOSResponse:
         """Terminate a specific User Manager session by its .id or numbers."""
         base_path = self._api.get_userman_base_path(router_key)
 
