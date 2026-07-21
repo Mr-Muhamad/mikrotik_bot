@@ -1,5 +1,8 @@
 import logging
 from datetime import datetime, timedelta
+from typing import Any
+
+from telegram.ext import CallbackContext, Job
 
 from utils.async_blocking import run_blocking
 
@@ -7,12 +10,15 @@ logger = logging.getLogger(__name__)
 
 JOB_NAME = "scheduled_backup"
 
+# Type alias for router dicts returned by get_saved_routers
+_RouterDict = dict[str, Any]
+
 
 class BackupScheduler:
-    def __init__(self):
+    def __init__(self) -> None:
         self._running = False
 
-    async def _do_backup(self, context):
+    async def _do_backup(self, context: CallbackContext[Any, Any, Any, Job[Any]]) -> None:
         from librouteros.exceptions import LibRouterosError
 
         from config import ADMIN_IDS, ROUTER_KEY_PREFIX
@@ -22,11 +28,10 @@ class BackupScheduler:
 
         failed_routers: list[str] = []
         successful_routers: list[str] = []
-        routers = await run_blocking(get_saved_routers, active_only=True)
+        routers: list[_RouterDict] = await run_blocking(get_saved_routers, active_only=True)
 
         logger.info(f"Scheduled backup starting for {len(routers)} routers...")
 
-        r: dict
         router_key: str
         for r in routers:
             if not r.get("username"):
@@ -47,7 +52,6 @@ class BackupScheduler:
             try:
                 await run_blocking(backup_service.userman_backup, router_key)
                 successful_routers.append(r.get("identity", router_key))
-                from database.models import record_backup_result
 
                 await run_blocking(
                     record_backup_result,
@@ -61,7 +65,6 @@ class BackupScheduler:
             except (LibRouterosError, ConnectionError, OSError) as e:
                 logger.error(f"Scheduled backup failed for {router_key}: {e}")
                 failed_routers.append(r.get("identity", router_key))
-                from database.models import record_backup_result
 
                 await run_blocking(
                     record_backup_result,
@@ -124,14 +127,14 @@ class BackupScheduler:
                 except (OSError, ConnectionError) as e:
                     logger.warning(f"Failed to notify admin {admin_id} about backup failures: {e}")
 
-    async def _do_expiry_check(self, context):
+    async def _do_expiry_check(self, context: CallbackContext[Any, Any, Any, Job[Any]]) -> None:
         """فحص يومي لاشتراكات Hotspot المشارفة على الانتهاء وإرسال تنبيه للمشرفين."""
         from config import ADMIN_IDS, ROUTER_KEY_PREFIX
         from core.hotspot_manager import hotspot_manager
         from core.messages_expiry import EXPIRY_ALERT_HEADER, EXPIRY_ALERT_USER_ROW
         from database.models import get_saved_routers
 
-        routers = await run_blocking(get_saved_routers, active_only=True)
+        routers: list[_RouterDict] = await run_blocking(get_saved_routers, active_only=True)
         days = 3
 
         for r in routers:
@@ -164,14 +167,14 @@ class BackupScheduler:
                 except Exception as e:
                     logger.warning(f"Failed to notify admin {admin_id} about expiry: {e}")
 
-    async def _do_stats_snapshot(self, context):
+    async def _do_stats_snapshot(self, context: CallbackContext[Any, Any, Any, Job[Any]]) -> None:
         """حفظ snapshot يومي لإحصائيات كل راوتر في قاعدة البيانات."""
         from config import ROUTER_KEY_PREFIX
         from core.stats import stats_manager
         from database.models import get_saved_routers
         from database.repositories.stats_snapshots import save_snapshot
 
-        routers = await run_blocking(get_saved_routers, active_only=True)
+        routers: list[_RouterDict] = await run_blocking(get_saved_routers, active_only=True)
         for r in routers:
             if not r.get("username"):
                 continue
@@ -180,7 +183,7 @@ class BackupScheduler:
                 raw = await run_blocking(stats_manager.get_hotspot_stats, router_key)
                 if not raw:
                     continue
-                snapshot_data = {
+                snapshot_data: dict[str, Any] = {
                     "active_users": raw.get("active_users", 0),
                     "total_users": raw.get("total_users", 0),
                     "bytes_in": 0,
@@ -191,7 +194,7 @@ class BackupScheduler:
             except Exception as e:
                 logger.warning(f"Stats snapshot failed for {router_key}: {e}")
 
-    def start_daily(self, job_queue, hour: int = 3, minute: int = 0, persist: bool = True) -> None:
+    def start_daily(self, job_queue: Any, hour: int = 3, minute: int = 0, persist: bool = True) -> None:
         self.stop(job_queue, persist=False)
         now = datetime.now()
         target_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -231,7 +234,7 @@ class BackupScheduler:
             save_backup_schedule(True, hour, minute)
         logger.info(f"Backup scheduler started, next run daily at {hour:02d}:{minute:02d}")
 
-    def stop(self, job_queue, persist: bool = True):
+    def stop(self, job_queue: Any, persist: bool = True) -> None:
         self._running = False
         if job_queue:
             for job in job_queue.get_jobs_by_name(JOB_NAME):
@@ -246,7 +249,7 @@ class BackupScheduler:
             current = get_backup_schedule()
             save_backup_schedule(False, current["schedule_hour"], current["schedule_minute"])
 
-    def is_running(self, job_queue=None) -> bool:
+    def is_running(self, job_queue: Any = None) -> bool:
         if job_queue:
             jobs = job_queue.get_jobs_by_name(JOB_NAME)
             if len(jobs) > 0:
@@ -255,7 +258,7 @@ class BackupScheduler:
 
         return get_backup_schedule().get("schedule_enabled", False)
 
-    def restore(self, job_queue) -> None:
+    def restore(self, job_queue: Any) -> None:
         from database.models import get_backup_schedule
 
         settings = get_backup_schedule()

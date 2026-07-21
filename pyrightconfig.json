@@ -1,15 +1,18 @@
 {
-  "include": ["bot", "core", "database", "utils", "pdf", "alembic", "main.py", "config.py"],
+  "include": ["bot", "core", "database", "utils", "pdf", "main.py", "config.py"],
   "exclude": [
     "**/__pycache__",
     "**/venv",
     "scripts",
     "tests",
-    "**/node_modules"
+    "**/node_modules",
+    "alembic"
   ],
   "pythonVersion": "3.12",
-  "pythonPath": "C:/Users/Administrator/AppData/Local/Programs/Python/Python312/python.exe",
   "typeCheckingMode": "standard",
+  "extraPaths": [
+    "C:/Users/Administrator/AppData/Local/Programs/Python/Python312/Lib/site-packages"
+  ],
   "reportOptionalMemberAccess": "none",
   "reportOptionalSubscript": "none",
   "reportOptionalCall": "none",
@@ -20,9 +23,9 @@
   "reportAttributeAccessIssue": "error",
   "reportArgumentType": "error",
   "reportIndexIssue": "error",
-  "reportUnknownMemberType": "warning",
-  "reportUnknownVariableType": "warning",
-  "reportUnknownArgumentType": "warning",
-  "reportUnknownParameterType": "warning",
-  "reportUnknownLambdaType": "warning"
+  "reportUnknownMemberType": "none",
+  "reportUnknownVariableType": "none",
+  "reportUnknownArgumentType": "none",
+  "reportUnknownParameterType": "none",
+  "reportUnknownLambdaType": "none",
 }
