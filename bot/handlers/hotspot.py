@@ -19,6 +19,7 @@ from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
+from utils.chat_cleaner import safe_edit_or_send
 from utils.error_response import send_error
 
 logger = logging.getLogger(__name__)
@@ -183,7 +184,6 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
                     context,
                     text,
                     keyboard=get_back_keyboard("menu_hotspot"),
-                    parse_mode="HTML",
                 )
             else:
                 await update.message.reply_text(
@@ -200,7 +200,6 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
                 context,
                 text,
                 keyboard=get_back_keyboard("menu_hotspot"),
-                parse_mode="HTML",
             )
         else:
             await update.message.reply_text(
