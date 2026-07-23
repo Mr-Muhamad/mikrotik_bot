@@ -218,16 +218,4 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_layout"])(pdf_group
 standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_misc"])(pdf_group_misc)
 
 
-async def unhandled_callback_handler(update, context):
-    query = update.callback_query
-    if query:
-        from utils.callback_utils import safe_answer_callback
 
-        await safe_answer_callback(
-            query,
-            text="⚠️ هذه القائمة قديمة أو منتهية. يرجى التفاعل مع آخر رسالة أو كتابة /start لتحديث الواجهة.",
-            show_alert=True,
-        )
-
-
-standalone(CallbackQueryHandler, pattern=r"^.*$")(unhandled_callback_handler)

@@ -208,6 +208,25 @@ fallback(CallbackQueryHandler, pattern=PATTERNS["schedule_enable"])(schedule_ena
 fallback(CallbackQueryHandler, pattern=PATTERNS["go_back"])(go_back)
 fallback(CommandHandler, command="usage")(usage_start)
 
+# Catch-all fallback for stale callbacks from old messages.
+# Must be LAST fallback so it only fires when no other handler matches.
+async def _unhandled_callback_handler(update, context):
+    query = update.callback_query
+    if query:
+        from utils.callback_utils import safe_answer_callback
+
+        await safe_answer_callback(
+            query,
+            text=(
+                "⚠️ هذه القائمة قديمة أو منتهية. يرجى التفاعل مع آخر رسالة"
+                " أو كتابة /start لتحديث الواجهة."
+            ),
+            show_alert=True,
+        )
+
+
+fallback(CallbackQueryHandler, pattern=r"^.*$")(_unhandled_callback_handler)
+
 # ─── STATES (main ConversationHandler) ─────────────────────────
 
 # hotspot_add flow
