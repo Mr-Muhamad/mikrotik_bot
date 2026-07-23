@@ -159,7 +159,6 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
                 reply_markup=get_main_keyboard(),
             )
             reset_rate_limit(update.effective_user.id)
-            await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
         else:
             await status_msg.edit_text(
                 f"{DISCOVERY_FAILED}\n\n{version}", reply_markup=get_router_keyboard()
