@@ -157,18 +157,6 @@ def require_role(min_role: str):
                 await _send_reply(update, INSUFFICIENT_ROLE_MSG)
                 return
 
-            if not _check_rate_limit(user_id):
-                if update.callback_query:
-                    try:
-                        await update.callback_query.answer(text="⏳", show_alert=False)
-                    except Exception:
-                        pass
-                return
-
-            from database.repositories.user_sessions import update_activity
-
-            update_activity(user_id)
-
             return await func(update, context)
 
         return wrapper
