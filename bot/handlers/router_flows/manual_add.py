@@ -98,48 +98,52 @@ async def manual_add_ip(update: Update, context: ContextTypes.DEFAULT_TYPE):
             MANUAL_ADD_DUPLICATE.format(raw, existing.get("identity", raw)),
         )
         return WAITING_MANUAL_IP
+    _cancel_kb = InlineKeyboardMarkup([[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]])
     context.user_data["manual_ip"] = raw
-    await send_step(update, context, MANUAL_ADD_PORT_PROMPT.format(DEFAULT_API_PORT))
+    await send_step(update, context, MANUAL_ADD_PORT_PROMPT.format(DEFAULT_API_PORT), keyboard=_cancel_kb)
     return WAITING_MANUAL_PORT
 
 
 @admin_only
 async def manual_add_port(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    _cancel_kb = InlineKeyboardMarkup([[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]])
     raw = update.message.text.strip()
     if raw == "":
         port = DEFAULT_API_PORT
     else:
         ok, msg = validate_port(raw)
         if not ok:
-            await send_step(update, context, MANUAL_ADD_INVALID.format(msg))
+            await send_step(update, context, MANUAL_ADD_INVALID.format(msg), keyboard=_cancel_kb)
             return WAITING_MANUAL_PORT
         port = int(raw)
     context.user_data["manual_port"] = port
-    await send_step(update, context, MANUAL_ADD_USER_PROMPT)
+    await send_step(update, context, MANUAL_ADD_USER_PROMPT, keyboard=_cancel_kb)
     return WAITING_MANUAL_USER
 
 
 @admin_only
 async def manual_add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    _cancel_kb = InlineKeyboardMarkup([[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]])
     raw = update.message.text.strip()
     ok, msg = validate_username(raw)
     if not ok:
-        await send_step(update, context, MANUAL_ADD_INVALID.format(msg))
+        await send_step(update, context, MANUAL_ADD_INVALID.format(msg), keyboard=_cancel_kb)
         return WAITING_MANUAL_USER
     context.user_data["manual_user"] = raw
-    await send_step(update, context, MANUAL_ADD_PASS_PROMPT)
+    await send_step(update, context, MANUAL_ADD_PASS_PROMPT, keyboard=_cancel_kb)
     return WAITING_MANUAL_PASS
 
 
 @admin_only
 async def manual_add_pass(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    _cancel_kb = InlineKeyboardMarkup([[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]])
     raw = update.message.text.strip()
     ok, msg = validate_password(raw)
     if not ok:
-        await send_step(update, context, MANUAL_ADD_INVALID.format(msg))
+        await send_step(update, context, MANUAL_ADD_INVALID.format(msg), keyboard=_cancel_kb)
         return WAITING_MANUAL_PASS
     context.user_data["manual_pass"] = raw
-    await send_step(update, context, MANUAL_ADD_ALIAS_PROMPT)
+    await send_step(update, context, MANUAL_ADD_ALIAS_PROMPT, keyboard=_cancel_kb)
     return WAITING_MANUAL_ALIAS
 
 
