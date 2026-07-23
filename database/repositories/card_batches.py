@@ -28,8 +28,9 @@ def save_card_batch(
     comment_prefix="",
     cards=None,
     created_by=None,
+    unit_price: float = 0.0,
 ):
-    """Persist a generated card batch.
+    """Persist a generated card batch with optional unit price calculation.
 
     ``cards`` is a JSON-serializable list (list of dicts or CardData). The payload
     is stored encrypted with Fernet so card credentials are not saved in plaintext.
@@ -51,13 +52,14 @@ def save_card_batch(
         payload = json.dumps(cards, ensure_ascii=False)
         count = len(cards)
     encrypted = encrypt_data(payload)
+    total_price = round(count * unit_price, 2)
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
             """INSERT INTO card_batches
                (router_key, name, batch_type, profile, comment_prefix,
-               count, cards_json, created_by, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+               count, cards_json, created_by, created_at, sale_price)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 router_key,
                 name,
@@ -68,6 +70,7 @@ def save_card_batch(
                 encrypted,
                 created_by,
                 _now_utc(),
+                total_price,
             ),
         )
         return cursor.lastrowid

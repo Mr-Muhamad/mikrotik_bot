@@ -83,6 +83,8 @@ async def _internal_pdf_settings_menu(update, context):
 async def _internal_main_menu(update, context):
     """Internal main_menu without @admin_only — safe for go_back/end_conversation."""
     query = update.callback_query
+    if query:
+        await safe_answer_callback(query)
     user_id = update.effective_user.id
     router_key = get_selected_router(user_id)
     admin_name = update.effective_user.full_name
@@ -90,7 +92,6 @@ async def _internal_main_menu(update, context):
     system_part = await _get_router_system_part(router_key)
     text = MAIN_MENU.format(admin_name=admin_name, router_part=router_part, system_part=system_part)
     if query:
-        await safe_answer_callback(query)
         await safe_edit_or_send(query, context, text, get_main_keyboard())
     else:
         await send_and_track(context, update.effective_chat.id, text, get_main_keyboard())
@@ -103,6 +104,8 @@ async def _internal_main_menu(update, context):
 @admin_only
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    if query:
+        await safe_answer_callback(query)
     user_id = update.effective_user.id
     router_key = get_selected_router(user_id)
     admin_name = update.effective_user.full_name
@@ -111,7 +114,6 @@ async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = MAIN_MENU.format(admin_name=admin_name, router_part=router_part, system_part=system_part)
 
     if query:
-        await safe_answer_callback(query)
         await safe_edit_or_send(query, context, text, get_main_keyboard())
     else:
         await update.message.reply_text(text, reply_markup=get_main_keyboard())

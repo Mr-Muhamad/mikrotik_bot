@@ -167,7 +167,7 @@ def _delete_job_name(chat_id: int, message_id: int) -> str:
 async def schedule_delete(
     context: _CleanerContext,
     chat_id: int,
-    message_id: int,
+    message_id: int | None,
     delay: int = DELETE_DELAY,
 ) -> None:
     """Schedule automatic deletion of a message after a delay in seconds."""

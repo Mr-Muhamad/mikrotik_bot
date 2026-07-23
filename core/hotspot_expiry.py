@@ -95,3 +95,63 @@ def get_expiring_users(api, router_key: str, days: int = 3) -> list[dict]:
     except (LibRouterosError, ConnectionError, OSError) as e:
         logger.warning(f"get_expiring_users failed for {router_key}: {e}")
     return sorted(result, key=lambda x: x["remaining_days"])
+
+
+def parse_renewal_day_from_comment(comment: str) -> tuple[str, int | None]:
+    """استخراج اسم المستخدم اليومي ويوم التجديد من حقل التعليق (مثل: `user/22` أو `أحمد-15`).
+
+    يُعيد: (display_name, renewal_day)
+    """
+    if not comment:
+        return "", None
+    comment = comment.strip()
+    match = re.search(r"(?:[/\-])\s*(\d{1,2})\b", comment)
+    if not match:
+        return comment, None
+    try:
+        renewal_day = int(match.group(1))
+        if 1 <= renewal_day <= 31:
+            name_part = comment[: match.start()].strip()
+            return name_part or comment, renewal_day
+    except ValueError:
+        pass
+    return comment, None
+
+
+def get_custom_expiring_users(api, router_key: str, days_window: int = 3) -> list[dict]:
+    """إعادة قائمة المستخدمين الذين يقترب يوم تجديدهم المحدد في التعليق خلال `days_window` أيام."""
+    import datetime
+
+    result: list[dict] = []
+    try:
+        users = api.execute(
+            router_key,
+            "ip/hotspot/user/print",
+            **{".proplist": "name,profile,comment,disabled"},
+        )
+        today = datetime.datetime.now().day
+
+        for user in users:
+            if not isinstance(user, dict):
+                continue
+            if str(user.get("disabled", "false")).lower() == "true":
+                continue
+            comment = str(user.get("comment", ""))
+            clean_name, renewal_day = parse_renewal_day_from_comment(comment)
+            if renewal_day is None:
+                continue
+
+            days_left = (renewal_day - today) if renewal_day >= today else (30 - today + renewal_day)
+            if 0 <= days_left <= days_window:
+                result.append(
+                    {
+                        "username": user.get("name", ""),
+                        "display_name": clean_name or user.get("name", ""),
+                        "renewal_day": renewal_day,
+                        "days_left": days_left,
+                        "profile": user.get("profile", "—"),
+                    }
+                )
+    except Exception as e:
+        logger.warning(f"get_custom_expiring_users failed for {router_key}: {e}")
+    return sorted(result, key=lambda x: x["days_left"])

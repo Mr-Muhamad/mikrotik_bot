@@ -94,7 +94,8 @@ async def backup_restore_start(update: Update, context: ContextTypes.DEFAULT_TYP
 async def backup_restore_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show confirmation dialog for selected backup."""
     query = update.callback_query
-    assert query is not None
+    if query is None:
+        return
     await safe_answer_callback(query)
 
     idx = int(query.data.split(":")[-1]) if query.data else 0
@@ -112,7 +113,8 @@ async def backup_restore_select(update: Update, context: ContextTypes.DEFAULT_TY
 async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Execute backup restore after confirmation."""
     query = update.callback_query
-    assert query is not None
+    if query is None:
+        return
     await safe_answer_callback(query)
 
     backup_name = context.user_data.get("restore_backup_name", "")
@@ -123,6 +125,7 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
         return ConversationHandler.END
 
     await query.edit_message_text(BACKUP_RESTORE_IN_PROGRESS.format(name=backup_name))
+
 
     try:
         result = await run_blocking(backup_restore.restore_backup, router_key, backup_name)
@@ -192,7 +195,8 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
 async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show confirmation dialog for selected userman backup."""
     query = update.callback_query
-    assert query is not None
+    if query is None:
+        return
     await safe_answer_callback(query)
 
     idx = int(query.data.split(":")[-1]) if query.data else 0
@@ -210,8 +214,10 @@ async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_T
 async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Execute User Manager restore from selected tar file."""
     query = update.callback_query
-    assert query is not None
+    if query is None:
+        return
     await safe_answer_callback(query)
+
 
     tar_filename = context.user_data.get("userman_restore_tar", "")
     router_key = get_selected_router(get_from_user_id(query))

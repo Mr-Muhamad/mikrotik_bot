@@ -107,8 +107,12 @@ class UserManager:
                     **{".proplist": "name,username"},
                 )
             }
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                f"Failed to fetch existing User Manager users for deduplication on {router_key}: {e}"
+            )
             existing = set()
+
 
         base_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
         batch_comment = f"{prefix}_{base_time}" if prefix else base_time
@@ -142,16 +146,14 @@ class UserManager:
                 )
                 cards.append(result)
                 existing.add(username)
-                import time
-
-                time.sleep(0.05)
             except Exception as e:
                 logger.error(f"Card {i + 1}/{count} failed on {router_key}: {e}")
 
         logger.info(
-            f"Created {len(cards)}/{count} cards on {router_key} (type: {card_system.name}, profile: {profile})"  # noqa: E501
+            f"Created {len(cards)}/{count} User Manager cards on {router_key} (type: {card_system.name}, profile: {profile})"  # noqa: E501
         )
         return cards
+
 
     def _create_user(self, router_key, username, password, profile, comment="", caller_id=""):
         """Create a User Manager user and attach the selected profile.

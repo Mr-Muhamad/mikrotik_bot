@@ -39,15 +39,50 @@ def record_check_result(router_key: str, is_online: bool) -> str:
 
 
 def check_router_health(router_key: str) -> dict:
-    """Check if a router is reachable. Returns status dict."""
+    """Check if a router is reachable and monitor CPU/memory thresholds. Returns status dict."""
     try:
-        mikrotik_api.execute(router_key, "system/resource/print")
+        res = mikrotik_api.execute(router_key, "system/resource/print")
+        cpu_load = None
+        free_mem = None
+        if res and isinstance(res, list) and len(res) > 0:
+            info = res[0]
+            try:
+                cpu_load = int(info.get("cpu-load", 0))
+                free_mem = int(info.get("free-memory", 0))
+            except (ValueError, TypeError):
+                pass
+
         with _router_status_lock:
             _router_status.setdefault(router_key, {})
             _router_status[router_key]["last_ok"] = datetime.now()
             _router_status[router_key]["alert_sent"] = False
+            _router_status[router_key]["cpu_load"] = cpu_load
+            _router_status[router_key]["free_memory"] = free_mem
+
         record_health(router_key, "online")
-        return {"online": True, "error": None}
+
+        # Upstream ISP Failover & Ping Monitor
+        isp_ok = True
+        latency_ms = None
+        try:
+            import socket
+            import time
+
+            start_time = time.monotonic()
+            s = socket.create_connection(("8.8.8.8", 53), timeout=2.0)
+            s.close()
+            latency_ms = round((time.monotonic() - start_time) * 1000, 1)
+        except Exception:
+            isp_ok = False
+
+        return {
+            "online": True,
+            "error": None,
+            "cpu_load": cpu_load,
+            "free_memory": free_mem,
+            "isp_ok": isp_ok,
+            "latency_ms": latency_ms,
+        }
     except (LibRouterosError, ConnectionError, OSError) as e:
         with _router_status_lock:
             _router_status.setdefault(router_key, {})

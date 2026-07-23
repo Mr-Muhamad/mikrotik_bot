@@ -68,15 +68,18 @@ def _confirm_keyboard():
 @admin_only
 async def manual_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    cancel_keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("❌ إلغاء", callback_data="cancel_edit")]]
+    )
     if query:
         await safe_answer_callback(query)
         cleanup_state(query.from_user.id, context.user_data)
         nav_set(context, "saved_routers")
-        await query.edit_message_text(MANUAL_ADD_IP_PROMPT)
+        await query.edit_message_text(MANUAL_ADD_IP_PROMPT, reply_markup=cancel_keyboard)
     else:
         cleanup_state(update.effective_user.id, context.user_data)
         nav_set(context, "saved_routers")
-        await update.message.reply_text(MANUAL_ADD_IP_PROMPT)
+        await update.message.reply_text(MANUAL_ADD_IP_PROMPT, reply_markup=cancel_keyboard)
     return WAITING_MANUAL_IP
 
 

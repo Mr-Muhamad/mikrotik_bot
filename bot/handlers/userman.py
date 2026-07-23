@@ -150,9 +150,10 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return WAITING_CARD_COUNT
 
     count = int(text)
-    if count > 100:
+    if count > 500:
         await send_step(update, context, MAX_CARDS_EXCEEDED)
         return WAITING_CARD_COUNT
+
 
     router_key = get_selected_router(update.effective_user.id)
     chat_id = update.effective_chat.id

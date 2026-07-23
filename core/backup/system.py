@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import threading
 from datetime import UTC, datetime
 
 from core.backup import files as backup_files
@@ -15,15 +16,39 @@ logger = logging.getLogger(__name__)
 
 from core.backup.ftp import download_files_via_ftp  # noqa: E402
 
+_BACKUP_LOCKS: dict[str, threading.RLock] = {}
+_BACKUP_LOCKS_GUARD = threading.Lock()
+
+
+def _get_backup_lock(router_key: str) -> threading.RLock:
+    with _BACKUP_LOCKS_GUARD:
+        if router_key not in _BACKUP_LOCKS:
+            _BACKUP_LOCKS[router_key] = threading.RLock()
+        return _BACKUP_LOCKS[router_key]
+
 
 class SystemBackupService:
     def full_backup(self, router_key: str, backup_root: str | None = None) -> dict:
+        lock = _get_backup_lock(router_key)
+        if not lock.acquire(blocking=False):
+            return {
+                "success": False,
+                "message": "⚠️ توجد عملية نسخ احتياطي جارية حالياً لهذا الراوتر. الرجاء الانتظار حتى تكتمل.",
+            }
+
+        try:
+            return self._full_backup_internal(router_key, backup_root)
+        finally:
+            lock.release()
+
+    def _full_backup_internal(self, router_key: str, backup_root: str | None = None) -> dict:
         router_name = mikrotik_api.get_router_name(router_key)
         backup_root = backup_root or backup_files.BACKUP_DIR
         file_prefix = sanitize_router_name(router_name)
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_dir = os.path.join(backup_root, "system", f"{file_prefix}_{timestamp}")
         os.makedirs(backup_dir, exist_ok=True)
+
 
         try:
             mikrotik_api.execute_long(

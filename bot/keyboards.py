@@ -117,6 +117,9 @@ def get_hotspot_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton("🎫 توليد كروت", callback_data="hotspot_cards"),
             InlineKeyboardButton("📊 إحصائيات", callback_data="hotspot_stats"),
         ],
+        [
+            InlineKeyboardButton("🧹 تنظيف المنتهية", callback_data="hotspot_purge_expired"),
+        ],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -517,6 +520,7 @@ def get_edit_field_keyboard(is_disabled: bool = False) -> InlineKeyboardMarkup:
             InlineKeyboardButton("⏰ مدة الصلاحية", callback_data="edit_field_uptime"),
             InlineKeyboardButton("💬 التعليق", callback_data="edit_field_comment"),
         ],
+        [InlineKeyboardButton("📅 يوم التجديد (التعليق)", callback_data="edit_field_renewal_day")],
         [InlineKeyboardButton(toggle_label, callback_data="edit_field_toggle_disabled")],
         [InlineKeyboardButton("🔄 تصفير العدادات", callback_data="edit_field_reset")],
         [InlineKeyboardButton("⛔ طرد المستخدم", callback_data="edit_kick_user")],

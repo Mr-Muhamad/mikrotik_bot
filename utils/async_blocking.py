@@ -13,9 +13,8 @@ from typing import Any, TypeVar
 
 T = TypeVar("T")
 
-# إنشاء مجمع خيوط مخصص (Custom ThreadPool) بحجم كبير لتجنب تجميد البوت (Starvation)
-# عند وجود عدة روترات غير متصلة (Offline) تستنفد الخيوط الافتراضية
-_executor = ThreadPoolExecutor(max_workers=50, thread_name_prefix="mikrotik_worker")
+# إنشاء مجمع خيوط مخصص (Custom ThreadPool) بحجم مناسب (15) لتوازن الموارد والأداء
+_executor = ThreadPoolExecutor(max_workers=15, thread_name_prefix="mikrotik_worker")
 
 
 async def run_blocking[T](func: Callable[..., T], *args: Any, **kwargs: Any) -> T:

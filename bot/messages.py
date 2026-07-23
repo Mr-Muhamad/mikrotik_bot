@@ -268,7 +268,8 @@ USERMAN_ADD_PROFILE_SUCCESS = "✅ تمت إضافة الباقة «{profile}» 
 USERMAN_ADD_PROFILE_FAILED = "❌ فشل إضافة الباقة «{profile}» للمستخدم {username}: {error}"
 USERMAN_NO_PROFILES_TO_ADD = "📭 لا توجد بروفايلات متاحة لإضافتها على هذا الروتر."
 SEND_CARD_COUNT = "🔢 أرسل عدد الكروت:"
-MAX_CARDS_EXCEEDED = "❌ الحد الأقصى 100 كارت"
+MAX_CARDS_EXCEEDED = "❌ الحد الأقصى 500 كارت"
+
 CREATING_CARDS = "⏳ جاري إنشاء الكروت..."
 PDF_FILE_CAPTION = "📄 ملف PDF للكروت"
 PROFILES_HEADER = "📋 البروفايلات:\n"

@@ -180,8 +180,9 @@ class DiscoveredRouter:
 
     def display_line(self) -> str:
         """Return a formatted multi-line display string with status emoji."""
-        status_emoji = "🟢" if self.version else "🟡"
-        line = f"{status_emoji} {self.identity}"
+        status_emoji = "🟢" if self.version else "🌐"
+        name = self.identity if self.identity and self.identity != "Unknown" else f"راوتر MikroTik ({self.ip_address})"
+        line = f"{status_emoji} {name}"
         if self.version:
             line += f" v{self.version}"
         if self.board:
@@ -190,6 +191,7 @@ class DiscoveredRouter:
             line += f" | ⏱ {self.uptime}"
         line += f"\n   📍 {self.ip_address}:{self.port}"
         return line
+
 
 
 # ─── Concrete probes ───────────────────────────────────────────
@@ -435,14 +437,16 @@ def merge_probe_results(
 ) -> list[DiscoveredRouter]:
     """Merge candidate dicts from the three probes into a deduplicated list of routers.
 
-    Priority order (highest first):
-    1. MNDP (richest metadata)
-    2. Port scan (proves API reachable)
-    3. ARP table (just IP/MAC)
+    Priority & Validation:
+    1. MNDP: Guaranteed MikroTik router (richest metadata).
+    2. Port scan: Verified MikroTik API port (8728) reachable.
+    3. ARP table: Used ONLY to enrich MAC addresses for verified routers. Plain ARP
+       entries without open API port (8728) or MNDP response are ignored (non-router LAN devices).
     """
     by_ip: dict[str, DiscoveredRouter] = {}
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # 1. Add verified routers with open API port (8728)
     for entry in port_results:
         ip = entry["ip"]
         by_ip[ip] = DiscoveredRouter(
@@ -452,21 +456,11 @@ def merge_probe_results(
             last_seen=now,
         )
 
-    for entry in arp_results:
-        ip = entry["ip"]
-        if ip in by_ip:
-            by_ip[ip].mac_address = entry.get("mac", by_ip[ip].mac_address)
-            by_ip[ip].source = "arp+port"
-        else:
-            by_ip[ip] = DiscoveredRouter(
-                ip_address=ip,
-                mac_address=entry.get("mac", ""),
-                source="arp",
-                last_seen=now,
-            )
-
+    # 2. Add or enrich with MNDP discovery (richest metadata)
     for entry in mndp_results:
-        ip = entry["ip"]
+        ip = entry.get("ipv4") or entry.get("ip", "")
+        if not ip:
+            continue
         if ip in by_ip:
             existing = by_ip[ip]
             existing.source = f"mndp+{existing.source}" if "port" in existing.source else "mndp"
@@ -504,4 +498,14 @@ def merge_probe_results(
                     setattr(router, attr, entry[key])
             by_ip[ip] = router
 
+    # 3. Enrich MAC addresses from ARP table ONLY for confirmed routers
+    for entry in arp_results:
+        ip = entry.get("ip")
+        if ip and ip in by_ip:
+            if not by_ip[ip].mac_address and entry.get("mac"):
+                by_ip[ip].mac_address = entry["mac"]
+            if "mndp" not in by_ip[ip].source:
+                by_ip[ip].source = "arp+port"
+
     return list(by_ip.values())
+

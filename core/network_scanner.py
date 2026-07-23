@@ -17,6 +17,7 @@ Requirements:
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import datetime
+from typing import Any
 
 from core.network_probe import DiscoveredRouter, MNDPListenerProbe
 
@@ -30,13 +31,10 @@ class MNDPPermissionError(PermissionError):
 
 
 async def discover_routers(
-    mndp_timeout: float = 10,
+    mndp_timeout: float = 8.0,
     progress_callback: ProgressCallback | None = None,
 ) -> list[DiscoveredRouter]:
-    """Discover MikroTik routers using MNDP protocol.
-
-    MNDP (MikroTik Neighbor Discovery Protocol) is MikroTik's proprietary
-    protocol for discovering MikroTik devices on the local network.
+    """Discover MikroTik routers using a multi-strategy probe: MNDP + ARP + Port Scan.
 
     Args:
         mndp_timeout: How long the MNDP listener waits for replies (seconds).
@@ -44,40 +42,50 @@ async def discover_routers(
 
     Returns:
         A list of DiscoveredRouter objects for discovered MikroTik devices.
-
-    Raises:
-        MNDPPermissionError: If the OS denies raw UDP socket access (Windows
-            requires running as Administrator).
     """
-    logger.info("Starting MNDP router discovery...")
+    from core.network_probe import ARPTableProbe, PortScanProbe, merge_probe_results
+
+    logger.info("Starting multi-strategy router discovery...")
     if progress_callback:
-        await progress_callback("جاري بحث MNDP عن أجهزة MikroTik...")
+        await progress_callback("جاري البحث عن أجهزة MikroTik عبر الشبكة المحلية (MNDP + ARP)...")
 
-    mndp_probe = MNDPListenerProbe(timeout=mndp_timeout)
-    mndp_results = await mndp_probe.discover()
-    logger.info(f"MNDP found {len(mndp_results)} MikroTik devices")
+    # 1. MNDP Discovery
+    mndp_results: list[dict[str, Any]] = []
+    try:
+        mndp_probe = MNDPListenerProbe(timeout=mndp_timeout)
+        mndp_results = await mndp_probe.discover()
+        logger.info(f"MNDP found {len(mndp_results)} devices")
+    except PermissionError:
+        logger.warning("MNDP requires Administrator privileges, falling back to ARP/Port scan")
+    except Exception as e:
+        logger.warning(f"MNDP discovery error: {e}")
 
-    # Convert MNDP results to DiscoveredRouter objects
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    routers = []
-    for entry in mndp_results:
-        router = DiscoveredRouter(
-            ip_address=entry.get("ipv4") or entry.get("ip", ""),
-            mac_address=entry.get("mac", ""),
-            identity=entry.get("identity", "Unknown"),
-            version=entry.get("version", ""),
-            board=entry.get("board", ""),
-            software_id=entry.get("software_id", ""),
-            platform=entry.get("platform", "MikroTik"),
-            uptime=entry.get("uptime", ""),
-            interface_name=entry.get("interface_name", ""),
-            source="mndp",
-            last_seen=entry.get("last_seen", now),
-        )
-        routers.append(router)
+    # 2. ARP Table Probe
+    arp_results: list[dict[str, Any]] = []
+    try:
+        arp_probe = ARPTableProbe()
+        arp_results = arp_probe.discover()
+        logger.info(f"ARP probe found {len(arp_results)} dynamic entries")
+    except Exception as e:
+        logger.warning(f"ARP probe error: {e}")
+
+    # 3. Port Scan Probe on candidate IPs from ARP
+    port_results: list[dict[str, Any]] = []
+    candidate_ips = [r["ip"] for r in arp_results if r.get("ip")]
+    if candidate_ips:
+        try:
+            port_probe = PortScanProbe(ips=candidate_ips, port=8728, timeout=1.5)
+            port_results = await port_probe.discover()
+            logger.info(f"Port scan found {len(port_results)} reachable API ports")
+        except Exception as e:
+            logger.warning(f"Port scan error: {e}")
+
+    # Merge results from all probes
+    routers = merge_probe_results(arp_results, port_results, mndp_results)
 
     if progress_callback:
-        await progress_callback(f"تم العثور على {len(routers)} روتر MikroTik")
+        await progress_callback(f"تم العثور على {len(routers)} روتر MikroTik على الشبكة")
 
-    logger.info(f"MNDP discovered: {len(routers)} MikroTik routers")
+    logger.info(f"Multi-strategy discovery finished: {len(routers)} routers found")
     return routers
+

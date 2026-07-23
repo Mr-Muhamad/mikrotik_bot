@@ -166,12 +166,26 @@ class TestHotspotManager:
         assert "categories" in stats
 
     def test_parse_reset_day(self):
+        from core.hotspot_expiry import parse_renewal_day_from_comment
         from core.hotspot_manager import hotspot_manager as hm
 
         assert hm._parse_reset_day("BATCH_2026-07-05_10:00") == 5
         assert hm._parse_reset_day("PREFIX_2026-12-31_23:59") == 31
         assert hm._parse_reset_day("foo/12") == 12
         assert hm._parse_reset_day("no date here") is None
+
+        # Test parse_renewal_day_from_comment for slash and dash
+        name1, day1 = parse_renewal_day_from_comment("user/22")
+        assert name1 == "user"
+        assert day1 == 22
+
+        name2, day2 = parse_renewal_day_from_comment("أحمد-15")
+        assert name2 == "أحمد"
+        assert day2 == 15
+
+        name3, day3 = parse_renewal_day_from_comment("محمد / 5")
+        assert name3 == "محمد"
+        assert day3 == 5
 
     def test_get_hotspot_stats_groups_resets_by_day(self):
         from core.hotspot_manager import mikrotik_api

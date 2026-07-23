@@ -10,6 +10,7 @@ from telegram.ext import (
 )
 
 from utils import handler_registry as reg
+from utils.handler_registry import _RegistryEntry
 
 
 @pytest.fixture(autouse=True)
@@ -131,7 +132,7 @@ class TestBuildApplication:
         async def func(update, context):
             pass
 
-        entry = {
+        entry: _RegistryEntry = {
             "cls": CommandHandler,
             "func": func,
             "kwargs": {"command": "x"},

@@ -72,41 +72,36 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     router_key = get_selected_router(user_id)
     if router_key:
-        # متصل بالفعل — عرض القائمة الرئيسية بدون مسح الجلسة
         cleanup_state(user_id, context.user_data)
+        from bot.router_selector import _fast_reachability_check
 
-        temp_msg = await context.bot.send_message(
-            chat_id, "⏳ جاري التحقق من حالة الاتصال بالراوتر..."
-        )
-        is_healthy, reason = await run_blocking(mikrotik_api.check_connection_health, router_key)
-        try:
-            await context.bot.delete_message(chat_id, temp_msg.message_id)
-        except Exception:
-            pass
-
-        router_part = await _get_router_part(router_key)
-        system_part = await _get_router_system_part(router_key)
-        if is_healthy:
+        if await _fast_reachability_check(router_key):
+            router_part = await _get_router_part(router_key)
+            system_part = await _get_router_system_part(router_key)
             text = MAIN_MENU.format(
                 admin_name=update.effective_user.full_name,
                 router_part=router_part,
                 system_part=system_part,
             )
-        else:
-            text = (
-                f"⚠️ <b>تنبيه:</b> تعذر الاتصال بالراوتر حالياً ({reason}).\n\n"
-                + MAIN_MENU.format(
-                    admin_name=update.effective_user.full_name,
-                    router_part=router_part,
-                    system_part=system_part,
-                )
+            await send_and_track(
+                context,
+                chat_id,
+                text,
+                get_main_keyboard(),
             )
+            return ConversationHandler.END
 
+        # الراوتر المختار غير متصل أو مطفأ — التوجيه لشاشة اختيار الأجهزة مع رسالة عربية مبسطة
+        offline_msg = (
+            f"👋 أهلاً بك <b>{update.effective_user.full_name}</b>!\n\n"
+            "⚠️ <b>تنبيه:</b> الراوتر المختار حالياً مطفأ أو غير متصل بالشبكة.\n"
+            "يرجى اختيار راوتر آخر أو إضافة راوتر جديد للمتابعة:"
+        )
         await send_and_track(
             context,
             chat_id,
-            text,
-            get_main_keyboard(),
+            offline_msg,
+            get_router_keyboard(),
         )
         return ConversationHandler.END
 

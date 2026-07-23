@@ -237,11 +237,10 @@ class TestMergeProbeResults:
         assert result[0].ip_address == "1.2.3.4"
         assert result[0].source == "port_check"
 
-    def test_arp_only(self):
+    def test_arp_only_ignored_without_verified_port(self):
         arp = [{"ip": "1.2.3.4", "mac": "aa:bb:cc:dd:ee:ff", "source": "arp"}]
         result = merge_probe_results(arp, [], [])
-        assert len(result) == 1
-        assert result[0].mac_address == "aa:bb:cc:dd:ee:ff"
+        assert result == []
 
     def test_mndp_only(self):
         mndp = [
@@ -287,8 +286,9 @@ class TestMergeProbeResults:
         ]
         port = [{"ip": "1.2.3.4", "port": 8728, "source": "port_check"}]
         result = merge_probe_results(arp, port, [])
-        assert len(result) == 2
-        assert {r.ip_address for r in result} == {"1.2.3.4", "1.2.3.5"}
+        assert len(result) == 1
+        assert result[0].ip_address == "1.2.3.4"
+        assert result[0].mac_address == "aa:bb:cc:dd:ee:ff"
 
     def test_empty_inputs(self):
         assert merge_probe_results([], [], []) == []
@@ -319,6 +319,6 @@ class TestDiscoveredRouter:
         r = DiscoveredRouter(ip_address="1.2.3.4", version="6.48")
         assert "🟢" in r.display_line()
 
-    def test_display_line_uses_yellow_when_no_version(self):
+    def test_display_line_uses_globe_when_no_version(self):
         r = DiscoveredRouter(ip_address="1.2.3.4")
-        assert "🟡" in r.display_line()
+        assert "🌐" in r.display_line()

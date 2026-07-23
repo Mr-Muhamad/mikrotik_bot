@@ -60,6 +60,7 @@ FIELD_API_KEYS = {
     "bytes": "limit-bytes-total",
     "uptime": "limit-uptime",
     "comment": "comment",
+    "renewal_day": "comment",
 }
 
 
@@ -433,8 +434,20 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await reply_final(update, context, str(e))
             return WAITING_EDIT_VALUE
 
+    user_data = get_hotspot_edit_session(context.user_data).user_data
+    if field == "renewal_day":
+        if not new_value.isdigit() or not (1 <= int(new_value) <= 31):
+            await reply_final(update, context, "❌ يرجى إدخال رقم يوم صالح بين 1 و 31 (مثال: 15 أو 22)")
+            return WAITING_EDIT_VALUE
+        day_num = int(new_value)
+        current_comment = str(user_data.get("comment", ""))
+        from core.hotspot_expiry import parse_renewal_day_from_comment
+
+        clean_name, _ = parse_renewal_day_from_comment(current_comment)
+        name_prefix = clean_name if clean_name else (user_data.get("name", "") or "user")
+        new_value = f"{name_prefix}/{day_num}"
+
     try:
-        user_data = get_hotspot_edit_session(context.user_data).user_data
         user_name = user_data.get("name", "") or user_id
         await run_blocking(hotspot_manager.edit_user, router_key, user_id, **{api_field: new_value})
         await run_blocking(log_action, "edit_user", user_id, router_key, update.effective_user.id)

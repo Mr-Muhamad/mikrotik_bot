@@ -84,7 +84,8 @@ async def hotspot_cards_start(update: Update, context: ContextTypes.DEFAULT_TYPE
     return WAITING_HOTSPOT_CARD_COUNT
 
 
-MAX_HOTSPOT_CARDS = 200  # حد أعلى لتجنب إغراق الراوتر
+MAX_HOTSPOT_CARDS = 500  # حد أعلى لتجنب إغراق الراوتر
+
 
 
 @admin_only

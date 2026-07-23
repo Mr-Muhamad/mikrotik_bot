@@ -17,19 +17,29 @@ def block_mac(api, router_key: str, mac: str, comment: str = "blocked by bot") -
     يُعيد True عند النجاح وFalse عند الفشل.
     ملاحظة: يحتاج إلى firewall rule منفصلة لحظر الاتصال فعلياً.
     """
+    from utils.validators import validate_mac
+
+    if not validate_mac(mac):
+        logger.warning(f"Invalid MAC address format rejected in block_mac: {mac!r}")
+        return False
+
+    # Sanitize comment string to avoid special characters injection
+    safe_comment = comment.replace("\n", " ").replace("\r", "").strip()[:100]
+
     try:
         api.execute(
             router_key,
             "ip/firewall/address-list/add",
             address=mac,
             list="hotspot_blocked",
-            comment=comment,
+            comment=safe_comment,
         )
         logger.info(f"Blocked MAC {mac} on {router_key}")
         return True
     except (LibRouterosError, ConnectionError, OSError) as e:
         logger.error(f"Failed to block MAC {mac} on {router_key}: {e}")
         return False
+
 
 
 def unblock_mac(api, router_key: str, mac: str) -> bool:

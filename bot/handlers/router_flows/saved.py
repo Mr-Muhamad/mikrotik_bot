@@ -63,8 +63,12 @@ def _build_router_status_text(routers: list[dict]) -> str:
 @admin_only
 async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    user_id = update.effective_user.id if update.effective_user else 0
+    from config import ADMIN_IDS
+
+    owner_id = None if user_id in ADMIN_IDS else user_id
     try:
-        routers = await run_blocking(get_saved_routers, active_only=True)
+        routers = await run_blocking(get_saved_routers, active_only=True, owner_id=owner_id)
     except Exception as e:
         await send_error(
             update,

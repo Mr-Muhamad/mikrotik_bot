@@ -1,10 +1,18 @@
 """Integration tests for core.network_scanner using mocked probes."""
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from core.network_scanner import discover_routers
+
+
+def _fake_arp():
+    return MagicMock(discover=MagicMock(return_value=[]))
+
+
+def _fake_port(results=None):
+    return MagicMock(discover=AsyncMock(return_value=results or []))
 
 
 class TestDiscoverRoutersOrchestrator:
@@ -17,8 +25,8 @@ class TestDiscoverRoutersOrchestrator:
             "version": "7.15",
             "board": "RB4011",
         }
-        with pytest.MonkeyPatch.context() as m:
-            m.setattr(
+        with (
+            patch(
                 "core.network_scanner.MNDPListenerProbe",
                 type(
                     "FakeProbe",
@@ -28,7 +36,16 @@ class TestDiscoverRoutersOrchestrator:
                         "discover": AsyncMock(return_value=[mndp_entry]),
                     },
                 ),
-            )
+            ),
+            patch(
+                "core.network_probe.ARPTableProbe",
+                lambda: _fake_arp(),
+            ),
+            patch(
+                "core.network_probe.PortScanProbe",
+                lambda **kw: _fake_port(),
+            ),
+        ):
             result = await discover_routers()
         assert len(result) == 1
         assert result[0].ip_address == "1.2.3.4"
@@ -37,8 +54,8 @@ class TestDiscoverRoutersOrchestrator:
 
     @pytest.mark.asyncio
     async def test_empty_mndp_returns_empty(self):
-        with pytest.MonkeyPatch.context() as m:
-            m.setattr(
+        with (
+            patch(
                 "core.network_scanner.MNDPListenerProbe",
                 type(
                     "FakeProbe",
@@ -48,15 +65,24 @@ class TestDiscoverRoutersOrchestrator:
                         "discover": AsyncMock(return_value=[]),
                     },
                 ),
-            )
+            ),
+            patch(
+                "core.network_probe.ARPTableProbe",
+                lambda: _fake_arp(),
+            ),
+            patch(
+                "core.network_probe.PortScanProbe",
+                lambda **kw: _fake_port(),
+            ),
+        ):
             result = await discover_routers()
         assert result == []
 
     @pytest.mark.asyncio
     async def test_progress_callback_invoked(self):
         callback = AsyncMock()
-        with pytest.MonkeyPatch.context() as m:
-            m.setattr(
+        with (
+            patch(
                 "core.network_scanner.MNDPListenerProbe",
                 type(
                     "FakeProbe",
@@ -66,7 +92,16 @@ class TestDiscoverRoutersOrchestrator:
                         "discover": AsyncMock(return_value=[]),
                     },
                 ),
-            )
+            ),
+            patch(
+                "core.network_probe.ARPTableProbe",
+                lambda: _fake_arp(),
+            ),
+            patch(
+                "core.network_probe.PortScanProbe",
+                lambda **kw: _fake_port(),
+            ),
+        ):
             await discover_routers(progress_callback=callback)
         assert callback.call_count >= 1
         messages = [c.args[0] for c in callback.await_args_list]

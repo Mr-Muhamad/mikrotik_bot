@@ -19,7 +19,38 @@ _GB = 1_000_000_000
 _DATE_RE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
 
 
+def _parse_uptime_seconds(val: str) -> int:
+    """Parse RouterOS uptime string (e.g. '1d2h3m4s', '24:00:00', '3600s') to seconds."""
+    if not val:
+        return 0
+    total = 0
+    d_match = re.search(r"(\d+)d", val)
+    h_match = re.search(r"(\d+)h", val)
+    m_match = re.search(r"(\d+)m", val)
+    s_match = re.search(r"(\d+)s", val)
+    if d_match or h_match or m_match or s_match:
+        if d_match:
+            total += int(d_match.group(1)) * 86400
+        if h_match:
+            total += int(h_match.group(1)) * 3600
+        if m_match:
+            total += int(m_match.group(1)) * 60
+        if s_match:
+            total += int(s_match.group(1))
+        return total
+    parts = val.split(":")
+    try:
+        if len(parts) == 3:
+            return int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2])
+        elif len(parts) == 2:
+            return int(parts[0]) * 60 + int(parts[1])
+        return int(val)
+    except ValueError:
+        return 0
+
+
 class HotspotManager:
+
     """Manages MikroTik Hotspot users, hosts, profiles, and session kick operations."""
 
     def __init__(self, api: MikrotikClient | None = None):
@@ -285,13 +316,15 @@ class HotspotManager:
         limit_uptime: str = "",
         limit_bytes: str = "",
     ) -> list[CardData]:
-        """Create multiple hotspot users with random numbers and duplicate checking."""
+        """Create multiple hotspot users with optimized chunked batch insertion."""
         cards = []
         base_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
         batch_comment = f"{prefix}_{base_time}" if prefix else base_time
 
         existing_names = self._get_existing_usernames(router_key)
 
+        # 1. Generate all unique card credentials in memory first
+        prepared_users = []
         for i in range(1, count + 1):
             try:
                 username = self._generate_unique_username(prefix, length, existing_names)
@@ -304,34 +337,49 @@ class HotspotManager:
                 else:
                     password = ""
 
-                self.add_user(
-                    router_key=router_key,
-                    name=username,
+                card_item = CardData(
+                    username=username,
                     password=password,
+                    card_number=i,
                     profile=profile,
-                    bytes_total=limit_bytes,
-                    uptime=limit_uptime,
+                    limit_uptime=limit_uptime,
+                    limit_bytes=limit_bytes,
                     comment=batch_comment,
                 )
-                import time
 
-                time.sleep(0.05)
-                cards.append(
-                    CardData(
-                        username=username,
-                        password=password,
-                        card_number=i,
-                        profile=profile,
-                        limit_uptime=limit_uptime,
-                        limit_bytes=limit_bytes,
-                        comment=batch_comment,
-                    )
-                )
-            except (LibRouterosError, ConnectionError, OSError) as e:
-                logger.error(f"Failed to create card user at index {i}: {e}")
+                user_params = {
+                    "name": username,
+                    "profile": profile,
+                    "comment": batch_comment,
+                }
+                if password:
+                    user_params["password"] = password
+                if limit_bytes:
+                    user_params["limit-bytes-total"] = limit_bytes
+                if limit_uptime:
+                    user_params["limit-uptime"] = limit_uptime
 
+                prepared_users.append((card_item, user_params))
+            except ValueError as e:
+                logger.error(f"Card preparation error at index {i}: {e}")
+                break
+
+        # 2. Execute additions in safe chunked batches (chunks of 50)
+        chunk_size = 50
+        for idx in range(0, len(prepared_users), chunk_size):
+            chunk = prepared_users[idx : idx + chunk_size]
+            for card_item, user_params in chunk:
+                try:
+                    self._api.execute(router_key, "ip/hotspot/user/add", **user_params)
+                    cards.append(card_item)
+                except (LibRouterosError, ConnectionError, OSError) as e:
+                    logger.error(f"Failed to add hotspot card user '{card_item.username}': {e}")
+
+        # 3. Invalidate cache ONCE at the end
         self.invalidate_users_cache(router_key)
+        logger.info(f"Created {len(cards)}/{count} hotspot cards on {router_key} in batch")
         return cards
+
 
     def _parse_reset_day(self, comment: str) -> int | None:
         """Extract the reset day (1-31) from a hotspot user comment.
@@ -395,6 +443,42 @@ class HotspotManager:
         from core.hotspot_expiry import get_expiring_users as _fn
 
         return _fn(self._api, router_key, days)
+
+    def purge_expired_users(self, router_key: str) -> int:
+        """حذف المستخدمين المنتهية صلاحيتهم أو المستنفدين لبياناتهم دفعة واحدة وتحديد العدد المحذوف."""
+        try:
+            users = self._api.execute(
+                router_key,
+                "ip/hotspot/user/print",
+                **{".proplist": ".id,bytes-out,bytes-in,limit-bytes-total,uptime,limit-uptime"},
+            )
+            purged = 0
+            for u in users:
+                if not isinstance(u, dict):
+                    continue
+                uid = u.get(".id")
+                if not uid:
+                    continue
+                limit_bytes = int(u.get("limit-bytes-total", 0) or 0)
+                bytes_used = int(u.get("bytes-out", 0) or 0) + int(u.get("bytes-in", 0) or 0)
+                
+                limit_up_sec = _parse_uptime_seconds(str(u.get("limit-uptime", "")))
+                uptime_sec = _parse_uptime_seconds(str(u.get("uptime", "")))
+
+                is_bytes_expired = limit_bytes > 0 and bytes_used >= limit_bytes
+                is_uptime_expired = limit_up_sec > 0 and uptime_sec >= limit_up_sec
+
+                if is_bytes_expired or is_uptime_expired:
+
+                    try:
+                        self.delete_user(router_key, uid)
+                        purged += 1
+                    except Exception as ex:
+                        logger.warning("Failed to purge user %s: %s", uid, ex)
+            return purged
+        except Exception as e:
+            logger.error("Failed to purge expired users on %s: %s", router_key, e)
+            return 0
 
 
 hotspot_manager = HotspotManager()

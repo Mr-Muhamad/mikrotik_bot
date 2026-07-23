@@ -162,7 +162,7 @@ class TestUsermanCardCount:
         update.effective_user = MagicMock(id=ADMIN_ID)
         update.effective_chat = MagicMock(id=1)
         update.message = MagicMock()
-        update.message.text = "500"
+        update.message.text = "501"
 
         with (
             patch("bot.handlers.userman.validate_positive_int", return_value=(True, "")),

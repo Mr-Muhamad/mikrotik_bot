@@ -265,8 +265,20 @@ def cleanup_state(user_id: int, user_data: dict[str, Any] | None) -> None:
             user_data.pop(key, None)
 
 
+# Cache for fast reachability check results: {router_key: (is_reachable: bool, timestamp: float)}
+_REACHABILITY_CACHE: dict[str, tuple[bool, float]] = {}
+_REACHABILITY_CACHE_TTL = 30.0  # seconds
+
+
 async def _fast_reachability_check(router_key: str) -> bool:
-    """إجراء فحص سريع للاتصال بالراوتر (1 ثانية كحد أقصى)."""
+    """إجراء فحص سريع للاتصال بالراوتر (1 ثانية كحد أقصى) مع التخزين المؤقت (Cache) لمدة 30 ثانية."""
+    import time
+    now = time.monotonic()
+    if router_key in _REACHABILITY_CACHE:
+        result, ts = _REACHABILITY_CACHE[router_key]
+        if now - ts < _REACHABILITY_CACHE_TTL:
+            return result
+
     try:
         from config import ROUTER_KEY_PREFIX
         from database.repositories.routers import get_router_by_id
@@ -275,6 +287,7 @@ async def _fast_reachability_check(router_key: str) -> bool:
         router_cfg = get_router_by_id(int(db_id))
 
         if not router_cfg:
+            _REACHABILITY_CACHE[router_key] = (False, now)
             return False
 
         ip = router_cfg["ip_address"]
@@ -283,9 +296,11 @@ async def _fast_reachability_check(router_key: str) -> bool:
         reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=1.0)
         writer.close()
         await writer.wait_closed()
+        _REACHABILITY_CACHE[router_key] = (True, now)
         return True
     except Exception as e:
         logger.warning(f"Fast reachability check failed for {router_key}: {e}")
+        _REACHABILITY_CACHE[router_key] = (False, now)
         return False
 
 
@@ -316,11 +331,13 @@ def require_router(func):
             return
 
         if not await _fast_reachability_check(router_key):
-            error_msg = "⚠️ الراوتر لا يستجيب حالياً. يرجى التحقق من اتصاله بالإنترنت."
+            keyboard = get_router_keyboard()
+            error_msg = "⚠️ الراوتر المحدد مطفأ أو لا يستجيب حالياً. يرجى اختيار راوتر آخر أو المحاولة لاحقاً."
             if update.callback_query:
                 await update.callback_query.answer(error_msg, show_alert=True)
+                await update.callback_query.edit_message_text(error_msg, reply_markup=keyboard)
             elif update.message:
-                await update.message.reply_text(error_msg)
+                await update.message.reply_text(error_msg, reply_markup=keyboard)
             return
 
         context.user_data["router_key"] = router_key
@@ -357,11 +374,13 @@ def navigation_guard(func):
             return
 
         if not await _fast_reachability_check(router_key):
-            error_msg = "⚠️ الراوتر لا يستجيب حالياً. يرجى التحقق من اتصاله بالإنترنت."
+            keyboard = get_router_keyboard()
+            error_msg = "⚠️ الراوتر المحدد مطفأ أو لا يستجيب حالياً. يرجى اختيار راوتر آخر أو المحاولة لاحقاً."
             if update.callback_query:
                 await update.callback_query.answer(error_msg, show_alert=True)
+                await update.callback_query.edit_message_text(error_msg, reply_markup=keyboard)
             elif update.message:
-                await update.message.reply_text(error_msg)
+                await update.message.reply_text(error_msg, reply_markup=keyboard)
             return
 
         context.user_data["router_key"] = router_key
