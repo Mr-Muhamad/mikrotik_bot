@@ -205,9 +205,11 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
             display = identity or ip
             router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
             set_selected_router(query.from_user.id, router_key)
+            from core.router_info import detect_router_system
             from core.watchdog import check_router_health
 
             await run_blocking(check_router_health, router_key)
+            await run_blocking(detect_router_system, router_key)
             await run_blocking(log_action, "add_router_manual", ip, display, query.from_user.id)
             await query.edit_message_text(
                 MANUAL_ADD_SAVED.format(display, ip), reply_markup=get_main_keyboard()
