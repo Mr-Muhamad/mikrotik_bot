@@ -97,9 +97,9 @@ def classify_error(error: Exception) -> str:
         if any(kw in msg for kw in ("not found", "no such", "invalid argument")):
             return CATEGORY_NOT_FOUND
         return CATEGORY_GENERAL
-    if isinstance(error, (ConnectionError, OSError)):
+    if isinstance(error, (TimeoutError, ConnectionError, OSError)):
         msg = str(error).lower()
-        if "timeout" in msg:
+        if "timeout" in msg or "timed out" in msg:
             return CATEGORY_TIMEOUT
         if any(kw in msg for kw in ("space", "disk full", "nospc", "permission denied")):
             return CATEGORY_STORAGE
@@ -108,6 +108,17 @@ def classify_error(error: Exception) -> str:
         msg = str(error).lower()
         if "not found" in msg:
             return CATEGORY_NOT_FOUND
+
+    try:
+        import httpx
+
+        if isinstance(error, httpx.TimeoutException):
+            return CATEGORY_TIMEOUT
+        if isinstance(error, httpx.ConnectError):
+            return CATEGORY_CONNECTION
+    except ImportError:
+        pass
+
     return CATEGORY_GENERAL
 
 

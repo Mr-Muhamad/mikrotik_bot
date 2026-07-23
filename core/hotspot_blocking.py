@@ -19,9 +19,11 @@ def block_mac(api, router_key: str, mac: str, comment: str = "blocked by bot") -
     """
     from utils.validators import validate_mac
 
-    if not validate_mac(mac):
+    is_valid, normalized_mac = validate_mac(mac)
+    if not is_valid:
         logger.warning(f"Invalid MAC address format rejected in block_mac: {mac!r}")
         return False
+    mac = normalized_mac
 
     # Sanitize comment string to avoid special characters injection
     safe_comment = comment.replace("\n", " ").replace("\r", "").strip()[:100]

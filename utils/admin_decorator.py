@@ -29,36 +29,55 @@ ROLE_LABELS = {
 INSUFFICIENT_ROLE_MSG = "⛔ صلاحيتك غير كافية لتنفيذ هذا الأمر."
 
 RATE_LIMIT_WINDOW = 1.0
+RATE_LIMITS: dict[str, float] = {
+    "default": 1.0,
+    "reboot": 10.0,
+    "backup": 30.0,
+    "restore": 60.0,
+    "delete": 5.0,
+    "add": 2.0,
+    "edit": 2.0,
+}
 _RATE_LIMIT_MAX_AGE = 3600
 _RATE_LIMIT_CLEANUP_INTERVAL = 300.0
-_rate_limit_data: dict[int, float] = {}
+_rate_limit_data: dict[tuple[int, str], float] = {}
 _last_cleanup: float = 0.0
 _rate_limit_lock = threading.Lock()
+
+
+def _get_rate_limit(func_name: str) -> float:
+    for key, limit in RATE_LIMITS.items():
+        if key != "default" and key in func_name.lower():
+            return limit
+    return RATE_LIMITS["default"]
 
 
 def reset_rate_limit(user_id: int):
     """Reset rate limit for a user — call after successful router connection."""
     with _rate_limit_lock:
-        _rate_limit_data.pop(user_id, None)
+        keys_to_del = [k for k in _rate_limit_data if k[0] == user_id]
+        for k in keys_to_del:
+            _rate_limit_data.pop(k, None)
 
 
-def _check_rate_limit(user_id: int) -> bool:
+def _check_rate_limit(user_id: int, func_name: str = "") -> bool:
     global _last_cleanup
     now = time.monotonic()
+    limit = _get_rate_limit(func_name)
+    key = (user_id, func_name)
 
     with _rate_limit_lock:
         if now - _last_cleanup > _RATE_LIMIT_CLEANUP_INTERVAL:
-            stale = [
-                uid for uid, ts in list(_rate_limit_data.items()) if now - ts > _RATE_LIMIT_MAX_AGE
-            ]
-            for uid in stale:
-                del _rate_limit_data[uid]
+            stale = [k for k, ts in list(_rate_limit_data.items()) if now - ts > _RATE_LIMIT_MAX_AGE]
+            for k in stale:
+                del _rate_limit_data[k]
             _last_cleanup = now
 
-        last = _rate_limit_data.get(user_id, 0.0)
-        if now - last < RATE_LIMIT_WINDOW:
+        last = _rate_limit_data.get(key, 0.0)
+        if now - last < limit:
             return False
-        _rate_limit_data[user_id] = now
+
+        _rate_limit_data[key] = now
         return True
 
 
@@ -104,7 +123,7 @@ def admin_only(func):
                 await _send_reply(update, ADMIN_ONLY_MSG)
                 return
 
-        if not _check_rate_limit(user_id):
+        if not _check_rate_limit(user_id, func.__name__):
             if update.callback_query:
                 try:
                     await update.callback_query.answer(text="⏳", show_alert=False)
