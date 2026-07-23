@@ -146,6 +146,9 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
                 )
             router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
             set_selected_router(update.effective_user.id, router_key)
+            from core.watchdog import check_router_health
+
+            await run_blocking(check_router_health, router_key)
             await run_blocking(
                 log_action, "connect_discovered", ip, identity, update.effective_user.id
             )

@@ -124,7 +124,19 @@ def get_router_status_detail(router_key: str) -> dict:
     status["version"] = None
     status["active_users"] = None
 
-    if has_active:
+    if not online:
+        # Check if we can perform a fast check or if router version/data exists in DB
+        try:
+            res = check_router_health(router_key)
+            if res.get("online"):
+                online = True
+                status["online"] = True
+                with _router_status_lock:
+                    status["last_ok"] = _router_status.get(router_key, {}).get("last_ok")
+        except Exception:
+            pass
+
+    if online:
         try:
             version = mikrotik_api.get_version(router_key)
             status["version"] = version if version and version != "unknown" else None
@@ -138,8 +150,6 @@ def get_router_status_detail(router_key: str) -> dict:
             logger.debug(f"Failed to fetch hotspot stats in watchdog detail for {router_key}: {ex}")
             status["active_users"] = None
     else:
-        # إذا لم يكن هناك اتصال نشط، نكتفي بالإصدار المكيّش إن وُجد ولا نحاول جلب الإحصائيات الحية
-        # لتجنب تجميد البوت لمدة 90 ثانية إذا كان الراوتر غير متصل فعلياً.
         version = mikrotik_api.get_cached_version(router_key)
         status["version"] = version if version and version != "unknown" else None
 
