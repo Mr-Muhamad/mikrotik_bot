@@ -169,7 +169,6 @@ entry_point(CallbackQueryHandler, pattern=PATTERNS["hotspot_search"])(hotspot_se
 entry_point(CallbackQueryHandler, pattern=PATTERNS["hotspot_edit"])(hotspot_edit_start)
 entry_point(CallbackQueryHandler, pattern=PATTERNS["hotspot_cards"])(hotspot_cards_start)
 entry_point(CallbackQueryHandler, pattern=PATTERNS["userman_cards"])(userman_cards_start)
-entry_point(CallbackQueryHandler, pattern=PATTERNS["disc_router"])(discovered_router_selected)
 entry_point(
     CallbackQueryHandler,
     pattern=PATTERNS["pdf_options"],
@@ -357,10 +356,6 @@ state("WAITING_PDF_VALUE").message(filters.TEXT & ~filters.COMMAND)(pdf_settings
 # confirm delete flow
 state("WAITING_INPUT").callback(PATTERNS["confirm_yes_no"])(confirm_callback)
 state("WAITING_INPUT").message(filters.TEXT & ~filters.COMMAND)(confirm_reprompt)
-
-# router discovery flow
-state("WAITING_DISC_USERNAME").message(filters.TEXT & ~filters.COMMAND)(disc_enter_username)
-state("WAITING_DISC_PASSWORD").message(filters.TEXT & ~filters.COMMAND)(disc_enter_password)
 
 # backup schedule flow
 state("WAITING_SCHEDULE_TIME").message(filters.TEXT & ~filters.COMMAND)(schedule_set)

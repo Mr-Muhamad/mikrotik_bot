@@ -113,7 +113,7 @@ class TestAdminOnlyRateLimit:
         ctx = _ctx()
         await handler(u1, ctx)
         # Simulate window passing
-        _rate_limit_data[admin_id] -= RATE_LIMIT_WINDOW + 0.5
+        _rate_limit_data[(admin_id, "handler")] -= RATE_LIMIT_WINDOW + 0.5
         result = await handler(u2, ctx)
         assert result == "ok"
 

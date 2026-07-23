@@ -101,6 +101,40 @@ def _build_manual_add_handler() -> CH:
     )
 
 
+def _build_discovery_handler() -> CH:
+    """Build the separate router-discovery ConversationHandler.
+
+    Multi-step: select discovered router -> enter username -> enter password -> done.
+    Must be registered before standalone handlers so its state and /cancel take precedence.
+    """
+    from bot.handlers.routers import (
+        disc_enter_password,
+        disc_enter_username,
+        discovered_router_selected,
+    )
+
+    return CH(
+        entry_points=[
+            CallbackQueryHandler(discovered_router_selected, pattern=PATTERNS["disc_router"]),
+        ],
+        states={
+            constants.WAITING_DISC_USERNAME: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, disc_enter_username)
+            ],
+            constants.WAITING_DISC_PASSWORD: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, disc_enter_password)
+            ],
+        },
+        fallbacks=[
+            CommandHandler("cancel", cancel),
+            CallbackQueryHandler(cancel, pattern=PATTERNS["cancel_edit"]),
+            CallbackQueryHandler(go_back, pattern=PATTERNS["go_back"]),
+        ],
+        per_message=False,
+        conversation_timeout=300,
+    )
+
+
 def register_separate_conversation_handlers(application) -> None:
     """Register separate ConversationHandlers before standalone handlers.
 
@@ -111,3 +145,4 @@ def register_separate_conversation_handlers(application) -> None:
     """
     application.add_handler(_build_rename_handler())
     application.add_handler(_build_manual_add_handler())
+    application.add_handler(_build_discovery_handler())
