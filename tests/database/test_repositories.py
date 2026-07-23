@@ -55,10 +55,10 @@ class TestRoutersRepository:
         assert row["password"] == "topsecret"  # decrypted
         assert row["name_alias"] == "Edge"
         assert row["identity"] == "Unknown"
-        # duplicate IP raises IntegrityError
-        import sqlite3
+        # duplicate IP raises RouterAlreadyExistsError
+        from core.exceptions import RouterAlreadyExistsError
 
-        with pytest.raises(sqlite3.IntegrityError):
+        with pytest.raises(RouterAlreadyExistsError):
             routers.save_manual_router(ip="10.0.0.5", username="admin", password="x")
 
     def test_saved_routers_active_only_toggle(self):
