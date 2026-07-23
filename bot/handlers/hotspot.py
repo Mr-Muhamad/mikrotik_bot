@@ -84,10 +84,22 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = _summary_text(stats)
         reset_days = stats["reset_days"]
         if reset_days:
+            from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
             text += "\n\n" + HOTSPOT_STATS_PROMPT.format(days=", ".join(map(str, reset_days)))
+            # إنشاء أزرار تفاعلية للأيام المتاحة
+            day_buttons = [
+                InlineKeyboardButton(f"يوم {d}", callback_data=f"stats_day_{d}")
+                for d in reset_days
+            ]
+            # تقسيم الأيام في صفوف من 4 أزرار
+            grid = [day_buttons[i : i + 4] for i in range(0, len(day_buttons), 4)]
+            grid.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_hotspot")])
+            reply_kb = InlineKeyboardMarkup(grid)
+
             await query.edit_message_text(
                 text,
-                reply_markup=get_back_keyboard("menu_hotspot"),
+                reply_markup=reply_kb,
                 parse_mode="HTML",
             )
             return WAITING_STATS_DAY
@@ -112,21 +124,43 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle a day number typed by the user and show that day's reset list."""
     router_key = context.user_data["router_key"]
-    day_text = update.message.text.strip()
+    query = update.callback_query
+    if query:
+        await safe_answer_callback(query)
+        day_text = query.data.replace("stats_day_", "").strip()
+    else:
+        day_text = update.message.text.strip()
+
     try:
         day = int(day_text)
     except (ValueError, TypeError):
-        await update.message.reply_text(
-            HOTSPOT_STATS_DAY_INVALID,
-            reply_markup=get_back_keyboard("menu_hotspot"),
-        )
+        if query:
+            await safe_edit_or_send(
+                query,
+                context,
+                HOTSPOT_STATS_DAY_INVALID,
+                keyboard=get_back_keyboard("menu_hotspot"),
+            )
+        else:
+            await update.message.reply_text(
+                HOTSPOT_STATS_DAY_INVALID,
+                reply_markup=get_back_keyboard("menu_hotspot"),
+            )
         return WAITING_STATS_DAY
 
     if day < 1 or day > 31:
-        await update.message.reply_text(
-            HOTSPOT_STATS_DAY_INVALID,
-            reply_markup=get_back_keyboard("menu_hotspot"),
-        )
+        if query:
+            await safe_edit_or_send(
+                query,
+                context,
+                HOTSPOT_STATS_DAY_INVALID,
+                keyboard=get_back_keyboard("menu_hotspot"),
+            )
+        else:
+            await update.message.reply_text(
+                HOTSPOT_STATS_DAY_INVALID,
+                reply_markup=get_back_keyboard("menu_hotspot"),
+            )
         return WAITING_STATS_DAY
 
     try:
@@ -143,19 +177,37 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
                 day=day,
                 days=", ".join(map(str, stats["reset_days"])),
             )
+            if query:
+                await safe_edit_or_send(
+                    query,
+                    context,
+                    text,
+                    keyboard=get_back_keyboard("menu_hotspot"),
+                    parse_mode="HTML",
+                )
+            else:
+                await update.message.reply_text(
+                    text,
+                    reply_markup=get_back_keyboard("menu_hotspot"),
+                    parse_mode="HTML",
+                )
+            return WAITING_STATS_DAY
+
+        text = _summary_text(stats) + "\n\n" + _reset_block_text(stats)
+        if query:
+            await safe_edit_or_send(
+                query,
+                context,
+                text,
+                keyboard=get_back_keyboard("menu_hotspot"),
+                parse_mode="HTML",
+            )
+        else:
             await update.message.reply_text(
                 text,
                 reply_markup=get_back_keyboard("menu_hotspot"),
                 parse_mode="HTML",
             )
-            return WAITING_STATS_DAY
-
-        text = _summary_text(stats) + "\n\n" + _reset_block_text(stats)
-        await update.message.reply_text(
-            text,
-            reply_markup=get_back_keyboard("menu_hotspot"),
-            parse_mode="HTML",
-        )
         return WAITING_STATS_DAY
     except Exception as e:
         await send_error(

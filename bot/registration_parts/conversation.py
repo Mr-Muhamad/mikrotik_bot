@@ -364,7 +364,8 @@ state("WAITING_SCHEDULE_TIME").message(filters.TEXT & ~filters.COMMAND)(schedule
 
 state("WAITING_USAGE_QUERY").message(filters.TEXT & ~filters.COMMAND)(usage_query)
 
-# hotspot stats day text input
+# hotspot stats day text & button input
 from bot.handlers.hotspot import hotspot_stats_day_input  # noqa: E402
 
+state("WAITING_STATS_DAY").callback(PATTERNS["stats_day"])(hotspot_stats_day_input)
 state("WAITING_STATS_DAY").message(filters.TEXT & ~filters.COMMAND)(hotspot_stats_day_input)

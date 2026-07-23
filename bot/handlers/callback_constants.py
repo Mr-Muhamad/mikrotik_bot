@@ -446,4 +446,5 @@ PATTERNS: dict[str, str] = {
     "op_list_routers": r"^op_list:\d+$",
     "set_timeout": r"^set_timeout:\d+$",
     "cancel_timeout": r"^cancel_timeout$",
+    "stats_day": r"^stats_day_\d+$",
 }
