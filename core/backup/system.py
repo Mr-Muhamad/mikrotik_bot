@@ -92,7 +92,7 @@ class SystemBackupService:
                 )
             logger.info(f"Full backup completed for {router_name}")
             return result
-        except (LibRouterosError, ConnectionError, OSError) as e:
+        except Exception as e:
             logger.error(f"Full backup failed for {router_name}: {e}")
             if os.path.isdir(backup_dir):
                 try:
