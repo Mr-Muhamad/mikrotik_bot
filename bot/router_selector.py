@@ -389,8 +389,8 @@ def navigation_guard(func):
     return wrapper
 
 
-def requires_router_check(command: str | None, pattern: str | None) -> bool:
-    """Classify a registered handler from its kwargs.
+def requires_router_check(command: str | None, pattern: str | None, func: Any = None) -> bool:
+    """Classify a registered handler from its kwargs and target function.
 
     Returns True when the handler is OPERATIONAL and must be guarded
     (i.e. it is NOT a router-management screen). Pure string-based decision
@@ -399,7 +399,14 @@ def requires_router_check(command: str | None, pattern: str | None) -> bool:
     Args:
         command: the CommandHandler command string, or None.
         pattern: the CallbackQueryHandler regex string, or None.
+        func: the target callback function to check for exemptions.
     """
+    if func is not None:
+        func_name = getattr(func, "__name__", "")
+        # Exempt router discovery/add text handlers
+        if func_name.startswith("disc_") or func_name.startswith("manual_add_"):
+            return False
+
     if command is not None:
         return command not in ROUTER_MGMT_COMMANDS
     if pattern is not None:

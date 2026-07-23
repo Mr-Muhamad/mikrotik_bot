@@ -238,7 +238,7 @@ def _build_handler(entry: _RegistryEntry) -> Any:
     command = entry["kwargs"].get("command")
     pattern = entry["kwargs"].get("pattern")
     navigation_guard, requires_router_check = _load_guard()
-    if requires_router_check(command, pattern):
+    if requires_router_check(command, pattern, func):
         func = navigation_guard(func)
     wrapped = bind_request_id_from_update(func)
     return entry["cls"](callback=wrapped, **entry["kwargs"])
