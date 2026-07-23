@@ -143,11 +143,13 @@ def require_role(min_role: str):
 
             from database.models import get_admin_role
 
-            role = "super_admin" if user_id in ADMIN_IDS else (get_admin_role(user_id) or "admin")
-            if user_id not in ADMIN_IDS and not role:
+            db_role = get_admin_role(user_id)
+            if user_id not in ADMIN_IDS and db_role is None:
                 logger.warning(f"UNAUTHORIZED ACCESS: user_id={user_id}, function={func.__name__}")
                 await _send_reply(update, ADMIN_ONLY_MSG)
                 return
+
+            role = "super_admin" if user_id in ADMIN_IDS else (db_role or "admin")
 
             if ROLE_LEVELS.get(role, 0) < min_level:
                 logger.warning(
