@@ -139,11 +139,12 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
             return WAITING_STATS_DAY
 
         if day not in stats["reset_days"]:
+            text = _summary_text(stats) + "\n\n" + HOTSPOT_STATS_DAY_NOT_FOUND.format(
+                day=day,
+                days=", ".join(map(str, stats["reset_days"])),
+            )
             await update.message.reply_text(
-                HOTSPOT_STATS_DAY_NOT_FOUND.format(
-                    day=day,
-                    days=", ".join(map(str, stats["reset_days"])),
-                ),
+                text,
                 reply_markup=get_back_keyboard("menu_hotspot"),
                 parse_mode="HTML",
             )
