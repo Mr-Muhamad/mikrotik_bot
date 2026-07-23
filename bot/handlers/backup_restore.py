@@ -181,7 +181,7 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
     if not tar_files:
         text = USERMAN_RESTORE_NO_BACKUPS
         await send_step(update, context, text, get_back_keyboard("menu_backup"))
-        return
+        return ConversationHandler.END
 
     context.user_data["userman_restore_list"] = tar_files
     nav_set(context, "menu_backup")
@@ -224,7 +224,7 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
 
     if not router_key:
         await query.edit_message_text(ROUTER_NO_CREDENTIALS)
-        return
+        return ConversationHandler.END
 
     try:
         tar_path = resolve_userman_backup_file(tar_filename)
@@ -236,7 +236,7 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
 
     if not os.path.isfile(tar_path):
         await query.edit_message_text(USERMAN_RESTORE_FAILED.format(error=BACKUP_RESTORE_NOT_FOUND))
-        return
+        return ConversationHandler.END
 
     await query.edit_message_text(USERMAN_RESTORE_IN_PROGRESS)
 

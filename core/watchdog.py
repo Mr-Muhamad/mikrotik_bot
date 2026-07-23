@@ -72,7 +72,8 @@ def check_router_health(router_key: str) -> dict:
             s = socket.create_connection(("8.8.8.8", 53), timeout=2.0)
             s.close()
             latency_ms = round((time.monotonic() - start_time) * 1000, 1)
-        except Exception:
+        except OSError as ex:
+            logger.debug(f"ISP ping check failed: {ex}")
             isp_ok = False
 
         return {
@@ -127,12 +128,14 @@ def get_router_status_detail(router_key: str) -> dict:
         try:
             version = mikrotik_api.get_version(router_key)
             status["version"] = version if version and version != "unknown" else None
-        except Exception:
+        except (LibRouterosError, ConnectionError, OSError) as ex:
+            logger.debug(f"Failed to fetch version in watchdog detail for {router_key}: {ex}")
             status["version"] = None
         try:
             hotspot_stats = stats_manager.get_hotspot_stats(router_key)
             status["active_users"] = hotspot_stats.get("active_users") if hotspot_stats else None
-        except Exception:
+        except (LibRouterosError, ConnectionError, OSError) as ex:
+            logger.debug(f"Failed to fetch hotspot stats in watchdog detail for {router_key}: {ex}")
             status["active_users"] = None
     else:
         # إذا لم يكن هناك اتصال نشط، نكتفي بالإصدار المكيّش إن وُجد ولا نحاول جلب الإحصائيات الحية
