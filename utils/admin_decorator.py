@@ -131,11 +131,12 @@ def admin_only(func):
                     pass
             return
 
+        res = await func(update, context)
+
         from database.repositories.user_sessions import update_activity
 
         update_activity(user_id)
-
-        return await func(update, context)
+        return res
 
     return wrapper
 

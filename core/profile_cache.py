@@ -8,6 +8,8 @@ import threading
 import time
 from typing import Any
 
+from collections import OrderedDict
+
 logger = logging.getLogger(__name__)
 
 # عمر الكاش: 5 دقائق
@@ -24,7 +26,7 @@ class ProfileCache:
         self._ttl = ttl
         self._max_size = max_size
         self._lock = threading.Lock()
-        self._store: dict[str, tuple[float, list[str]]] = {}
+        self._store: OrderedDict[str, tuple[float, list[str]]] = OrderedDict()
 
     def get(self, router_key: str) -> list[str] | None:
         """جلب البروفايلات من الكاش. يُرجع None عند انتهاء الصلاحية أو عدم وجود."""
@@ -37,14 +39,16 @@ class ProfileCache:
                 # تنظيف دوري
                 self._store.pop(router_key, None)
                 return None
+            self._store.move_to_end(router_key)
             return list(names)  # نسخة للحماية من التعديل
 
     def set(self, router_key: str, names: list[str]) -> None:
         """تخزين البروفايلات في الكاش."""
         with self._lock:
-            if router_key not in self._store and len(self._store) >= self._max_size:
-                oldest = min(self._store, key=lambda k: self._store[k][0])
-                del self._store[oldest]
+            if router_key in self._store:
+                self._store.move_to_end(router_key)
+            elif len(self._store) >= self._max_size:
+                self._store.popitem(last=False)
             self._store[router_key] = (time.time(), list(names))
 
     def invalidate(self, router_key: str) -> None:
