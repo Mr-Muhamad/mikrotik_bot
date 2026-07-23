@@ -38,64 +38,94 @@ async def roles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @admin_only
-@require_role("admin")
+@require_role("super_admin")
 async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Owner/Admin sets the role of another admin: /role <id> <role>."""
-    parts = (update.message.text or "").split()
-    if len(parts) < 3:
-        await update.message.reply_text(ROLE_SET_USAGE)
-        return
+    """Super Admin assigns a role to an admin: /role <id> <role> or by forwarding a message from the user."""
+    target: int | None = None
+    new_role: str = ""
+    msg = update.message
 
-    try:
-        target = int(parts[1])
-    except ValueError:
-        await update.message.reply_text("معرّف غير صالح.")
-        return
+    forward_user = getattr(msg, "forward_from", None)
+    if msg and forward_user:
+        target = forward_user.id
+        parts = (msg.text or "").split()
+        if len(parts) >= 2:
+            new_role = parts[1].strip()
+    elif msg and msg.text:
+        parts = msg.text.split()
+        if len(parts) >= 3:
+            try:
+                target = int(parts[1])
+                new_role = parts[2].strip()
+            except ValueError:
+                pass
 
-    new_role = parts[2].lower()
+    if not target or not new_role:
+        if msg:
+            await msg.reply_text(
+                ROLE_SET_USAGE + "\n💡 أو يمكنك تحويل (Forward) رسالة المستخدم مع ملحق اسم الصلاحية (مثال: /role operator)."
+            )
+        return
     if new_role not in ROLE_LEVELS:
-        await update.message.reply_text(ROLE_SET_INVALID)
+        if msg:
+            await msg.reply_text(ROLE_SET_INVALID)
         return
 
     if target not in ADMIN_IDS:
-        await update.message.reply_text(ROLE_SET_NOT_ADMIN)
+        if msg:
+            await msg.reply_text(ROLE_SET_NOT_ADMIN)
         return
 
-    actor = update.effective_user.id
+    actor = update.effective_user.id if update.effective_user else 0
     if target == actor and new_role != "admin":
-        await update.message.reply_text(ROLE_SET_SELF_DEMOTE)
+        if msg:
+            await msg.reply_text(ROLE_SET_SELF_DEMOTE)
         return
 
     set_admin_role(target, new_role, actor)
     log_action(
         "role_change",
-        update.effective_user.username or "",
+        (update.effective_user.username if update.effective_user else "") or "",
         "",
         actor,
     )
     label = ROLE_LABELS.get(new_role, new_role)
-    await update.message.reply_text(ROLE_SET_DONE.format(label=label, admin_id=target))
+    if msg:
+        await msg.reply_text(ROLE_SET_DONE.format(label=label, admin_id=target))
+
+
+role_command = role_set_command
 
 
 @admin_only
 @require_role("super_admin")
 async def add_customer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Super Admin adds a new customer: /add_customer <id>."""
-    parts = (update.message.text or "").split()
-    if len(parts) < 2:
-        await update.message.reply_text(CUSTOMER_ADD_USAGE)
+    """Super Admin adds a new customer: /add_customer <id> or by forwarding a message from the user."""
+    target: int | None = None
+    msg = update.message
+
+    forward_user = getattr(msg, "forward_from", None)
+    if msg and forward_user:
+        target = forward_user.id
+    elif msg and msg.text:
+        parts = msg.text.split()
+        if len(parts) >= 2:
+            try:
+                target = int(parts[1])
+            except ValueError:
+                pass
+
+    if not target or not msg:
+        if msg:
+            await msg.reply_text(
+                CUSTOMER_ADD_USAGE + "\n💡 أو يمكنك ببساطة إعادة توجيه (Forward) أي رسالة من المستخدم للبوت."
+            )
         return
 
-    try:
-        target = int(parts[1])
-    except ValueError:
-        await update.message.reply_text("معرّف غير صالح.")
-        return
-
-    actor = update.effective_user.id
+    actor = update.effective_user.id if update.effective_user else 0
     set_admin_role(target, "customer", actor)
-    log_action("add_customer", update.effective_user.username or "", "", actor)
-    await update.message.reply_text(CUSTOMER_ADD_SUCCESS.format(customer_id=target))
+    log_action("add_customer", (update.effective_user.username if update.effective_user else "") or "", "", actor)
+    await msg.reply_text(CUSTOMER_ADD_SUCCESS.format(customer_id=target))
 
 
 @admin_only
