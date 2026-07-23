@@ -124,19 +124,7 @@ def get_router_status_detail(router_key: str) -> dict:
     status["version"] = None
     status["active_users"] = None
 
-    if not online:
-        # Check if we can perform a fast check or if router version/data exists in DB
-        try:
-            res = check_router_health(router_key)
-            if res.get("online"):
-                online = True
-                status["online"] = True
-                with _router_status_lock:
-                    status["last_ok"] = _router_status.get(router_key, {}).get("last_ok")
-        except Exception:
-            pass
-
-    if online:
+    if has_active:
         try:
             version = mikrotik_api.get_version(router_key)
             status["version"] = version if version and version != "unknown" else None
