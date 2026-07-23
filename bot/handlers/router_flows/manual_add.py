@@ -1,5 +1,4 @@
 import logging
-import sqlite3
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -31,6 +30,7 @@ from bot.messages import (
 )
 from bot.router_selector import cleanup_state, nav_set
 from config import DEFAULT_API_PORT
+from core.exceptions import RouterAlreadyExistsError
 from core.mikrotik_api import mikrotik_api
 from database.models import (
     log_action,
@@ -179,7 +179,7 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     try:
         router_id = await run_blocking(save_manual_router, ip, port, user, pw, alias, user_id)
-    except sqlite3.IntegrityError:
+    except RouterAlreadyExistsError:
         await query.edit_message_text(
             MANUAL_ADD_DUPLICATE.format(ip, ip), reply_markup=get_router_keyboard()
         )

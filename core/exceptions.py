@@ -22,3 +22,7 @@ class RouterConnectionError(MikrotikBotError):
 
 class RouterCommandError(MikrotikBotError):
     """نجح الاتصال لكن الأمر فشل (unknown parameter، no such command، إلخ)."""
+
+
+class RouterAlreadyExistsError(MikrotikBotError):
+    """الراوتر موجود بالفعل بنفس عنوان الـ IP."""

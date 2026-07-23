@@ -83,21 +83,27 @@ def save_discovered_router(
 def save_manual_router(ip, port=DEFAULT_API_PORT, username="", password="", alias="", owner_id=0):
     """Insert a manually-entered router.
 
-    Encrypts the password before storage. Raises ``sqlite3.IntegrityError``
+    Encrypts the password before storage. Raises ``RouterAlreadyExistsError``
     if ``ip_address`` already exists (the column is UNIQUE).
     """
+    import sqlite3
+
+    from core.exceptions import RouterAlreadyExistsError
     from database.models import encrypt_password, get_db
 
     with get_db() as conn:
         cursor = conn.cursor()
         encrypted_password = encrypt_password(password)
-        cursor.execute(
-            """INSERT INTO discovered_routers
-                   (ip_address, identity, port, username, password, name_alias, is_active, owner_id)
-               VALUES (?, 'Unknown', ?, ?, ?, ?, 1, ?)""",
-            (ip, port, username, encrypted_password, alias, owner_id),
-        )
-        return cursor.lastrowid
+        try:
+            cursor.execute(
+                """INSERT INTO discovered_routers
+                       (ip_address, identity, port, username, password, name_alias, is_active, owner_id)
+                   VALUES (?, 'Unknown', ?, ?, ?, ?, 1, ?)""",
+                (ip, port, username, encrypted_password, alias, owner_id),
+            )
+            return cursor.lastrowid
+        except sqlite3.IntegrityError as e:
+            raise RouterAlreadyExistsError(f"Router IP {ip} already exists") from e
 
 
 def get_saved_routers(active_only=True, decrypt: bool = False, owner_id: int | None = None):
