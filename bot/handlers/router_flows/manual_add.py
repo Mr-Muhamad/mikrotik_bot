@@ -14,7 +14,7 @@ from bot.handlers.constants import (
     WAITING_MANUAL_PORT,
     WAITING_MANUAL_USER,
 )
-from bot.keyboards import get_router_keyboard
+from bot.keyboards import get_main_keyboard, get_router_keyboard
 from bot.messages import (
     CANCELLED,
     MANUAL_ADD_ALIAS_PROMPT,
@@ -28,8 +28,8 @@ from bot.messages import (
     MANUAL_ADD_SAVED,
     MANUAL_ADD_USER_PROMPT,
 )
-from bot.router_selector import cleanup_state, nav_set
-from config import DEFAULT_API_PORT
+from bot.router_selector import cleanup_state, nav_set, set_selected_router
+from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.exceptions import RouterAlreadyExistsError
 from core.mikrotik_api import mikrotik_api
 from database.models import (
@@ -199,9 +199,11 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
             if identity and identity != "Unknown":
                 await run_blocking(update_router_identity, router_id, identity)
             display = identity or ip
+            router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
+            set_selected_router(query.from_user.id, router_key)
             await run_blocking(log_action, "add_router_manual", ip, display, query.from_user.id)
             await query.edit_message_text(
-                MANUAL_ADD_SAVED.format(display, ip), reply_markup=get_router_keyboard()
+                MANUAL_ADD_SAVED.format(display, ip), reply_markup=get_main_keyboard()
             )
         else:
             await run_blocking(log_action, "add_router_manual", ip, "offline", query.from_user.id)
