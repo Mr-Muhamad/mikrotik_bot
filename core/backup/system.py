@@ -4,8 +4,6 @@ import shutil
 import threading
 from datetime import UTC, datetime
 
-from librouteros.exceptions import LibRouterosError
-
 from core.backup import files as backup_files
 from core.backup.files import (
     cleanup_old_backups,

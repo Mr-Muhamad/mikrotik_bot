@@ -1,8 +1,8 @@
 """Tests for utils.error_response benign-error handling and chat_cleaner safe edits."""
 
+import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import datetime
 import pytest
 from telegram import Chat, Message
 from telegram.error import BadRequest
@@ -32,7 +32,7 @@ def _callback_update(chat_id: int = 1, edit_raises=None):
         query.edit_message_text = AsyncMock(
             return_value=Message(
                 message_id=61,
-                date=datetime.datetime.now(datetime.timezone.utc),
+                date=datetime.datetime.now(datetime.UTC),
                 chat=Chat(id=chat_id, type="private"),
             )
         )
@@ -103,7 +103,7 @@ class TestSafeEditsBenign:
         query.edit_message_text = AsyncMock(
             return_value=Message(
                 message_id=70,
-                date=datetime.datetime.now(datetime.timezone.utc),
+                date=datetime.datetime.now(datetime.UTC),
                 chat=Chat(id=1, type="private"),
             )
         )

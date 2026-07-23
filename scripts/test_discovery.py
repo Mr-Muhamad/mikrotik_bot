@@ -6,15 +6,15 @@ Run with: py -3.12 scripts/test_discovery.py
 
 import asyncio
 import logging
-import sys
 import os
+import sys
 
 # Add project root to sys.path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from core.network_probe import MNDPListenerProbe, ARPTableProbe, PortScanProbe, merge_probe_results
+from core.network_probe import ARPTableProbe, MNDPListenerProbe, PortScanProbe, merge_probe_results
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)

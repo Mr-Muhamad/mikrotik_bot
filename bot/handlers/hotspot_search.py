@@ -1,6 +1,5 @@
-from typing import Any
-
 import logging
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -204,6 +203,7 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[dict[str
 
 
 from utils.pagination import Paginator
+
 
 def _format_search_results_text(paginator: Paginator) -> str:
     if not paginator.items:

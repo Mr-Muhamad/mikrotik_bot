@@ -461,7 +461,7 @@ class HotspotManager:
                     continue
                 limit_bytes = int(u.get("limit-bytes-total", 0) or 0)
                 bytes_used = int(u.get("bytes-out", 0) or 0) + int(u.get("bytes-in", 0) or 0)
-                
+
                 limit_up_sec = _parse_uptime_seconds(str(u.get("limit-uptime", "")))
                 uptime_sec = _parse_uptime_seconds(str(u.get("uptime", "")))
 

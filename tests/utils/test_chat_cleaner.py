@@ -1,8 +1,8 @@
 """Tests for utils.chat_cleaner — message tracking, cleanup, and truncation."""
 
+import datetime
 from unittest.mock import AsyncMock, MagicMock
 
-import datetime
 import pytest
 from telegram import Chat, Message
 
@@ -52,7 +52,7 @@ def _update(text: str = "/clean", callback_data: str | None = None):
         update.callback_query.edit_message_text = AsyncMock(
             return_value=Message(
                 message_id=61,
-                date=datetime.datetime.now(datetime.timezone.utc),
+                date=datetime.datetime.now(datetime.UTC),
                 chat=Chat(id=1, type="private"),
             )
         )

@@ -1,10 +1,11 @@
 import asyncio
 import logging
+from collections.abc import Generator, Sequence
 from datetime import UTC
-from typing import Any, Generator, Sequence, TypedDict, cast
+from typing import Any, TypedDict, cast
 
 from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
-from telegram.ext import CallbackContext, ExtBot, Job, JobQueue
+from telegram.ext import CallbackContext, ExtBot, Job
 
 logger = logging.getLogger(__name__)
 

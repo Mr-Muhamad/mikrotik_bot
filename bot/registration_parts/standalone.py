@@ -95,7 +95,7 @@ from bot.handlers.routers import (
     saved_router_selected,
     saved_routers_list,
 )
-from bot.handlers.settings import pdf_group_layout, pdf_group_misc, pdf_group_text
+from bot.handlers.settings import pdf_group_layout, pdf_group_misc
 from bot.handlers.stats import stats_hotspot, stats_userman
 from bot.handlers.timeout import cmd_timeout, handle_timeout_selection
 from bot.handlers.usage import usage_start

@@ -12,7 +12,6 @@ from __future__ import annotations
 
 from typing import Any, Protocol, runtime_checkable
 
-
 # RouterOS API responses are loosely typed dicts; use this alias
 # instead of bare ``list[dict]`` so pyright strict mode can infer
 # ``dict[str, Any]`` for keys/values and avoid ``Unknown`` cascades.
