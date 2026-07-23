@@ -46,15 +46,17 @@ def _summary_text(stats: dict) -> str:
 
 
 def _reset_block_text(stats: dict) -> str:
-    reset_list = (
-        "\n".join(
-            [
-                f"  • {html.escape(comment)} - {html.escape(limit)}"
-                for comment, limit in stats["reset_list"]
-            ]
-        )
-        or "  لا يوجد"
-    )
+    formatted_items = []
+    for item in stats["reset_list"]:
+        if len(item) == 3:
+            name, comment, limit = item
+            display = f"{name} ({comment})" if comment and comment != name else name
+        else:
+            comment, limit = item
+            display = comment
+        formatted_items.append(f"  • {html.escape(display)} - {html.escape(limit)}")
+
+    reset_list = "\n".join(formatted_items) or "  لا يوجد"
     return HOTSPOT_STATS_RESET_BLOCK.format(
         selected_day=stats["selected_day"],
         reset_count=len(stats["reset_list"]),

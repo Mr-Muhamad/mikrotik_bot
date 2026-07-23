@@ -66,7 +66,7 @@ def get_hotspot_stats(api, router_key: str, day: int | None = None) -> dict | No
             "50 GB": 0,
             "أخرى": 0,
         }
-        resets_by_day: dict[int, list[tuple[str, str]]] = {}
+        resets_by_day: dict[int, list[tuple[str, str, str]]] = {}
 
         for user in users:
             is_disabled = str(user.get("disabled", "false")).lower() == "true"
@@ -107,13 +107,13 @@ def get_hotspot_stats(api, router_key: str, day: int | None = None) -> dict | No
                 reset_day = parse_reset_day(user.get("comment", ""))
                 if reset_day is not None:
                     limit = format_bytes(user.get("limit-bytes-total", ""))
-                    resets_by_day.setdefault(reset_day, []).append(
-                        (str(user.get("comment", "")), limit)
-                    )
+                    uname = str(user.get("name", "—"))
+                    comment = str(user.get("comment", "") or uname)
+                    resets_by_day.setdefault(reset_day, []).append((uname, comment, limit))
 
         reset_days = sorted(resets_by_day.keys(), reverse=True)
         if day is None:
-            reset_list: list[tuple[str, str]] = []
+            reset_list: list[tuple[str, str, str]] = []
             selected_day = None
         else:
             reset_list = resets_by_day.get(day, [])
