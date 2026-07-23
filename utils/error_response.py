@@ -16,6 +16,7 @@ CATEGORY_CONNECTION = "connection"
 CATEGORY_AUTH = "auth"
 CATEGORY_TIMEOUT = "timeout"
 CATEGORY_NOT_FOUND = "not_found"
+CATEGORY_STORAGE = "storage"
 CATEGORY_GENERAL = "general"
 
 ERROR_MESSAGES: dict[str, str] = {
@@ -23,6 +24,7 @@ ERROR_MESSAGES: dict[str, str] = {
     CATEGORY_AUTH: "❌ فشل تسجيل الدخول إلى الروتر. تحقق من اسم المستخدم وكلمة المرور.",
     CATEGORY_TIMEOUT: "⏱️ لم يستجب الروتر خلال المهلة المحددة. حاول مرة أخرى لاحقاً.",
     CATEGORY_NOT_FOUND: "🔍 الروتر غير موجود. تأكد من اختيار روتر صحيح أو استخدم /start لإعادة الاكتشاف.",  # noqa: E501
+    CATEGORY_STORAGE: "💾 مساحة التخزين على سيرفر البوت غير كافية أو يتعذر كتابة الملفات المحلية.",
     CATEGORY_GENERAL: "❌ حدث خطأ غير متوقع. حاول مرة أخرى أو استخدم /start.",
 }
 
@@ -99,6 +101,8 @@ def classify_error(error: Exception) -> str:
         msg = str(error).lower()
         if "timeout" in msg:
             return CATEGORY_TIMEOUT
+        if any(kw in msg for kw in ("space", "disk full", "nospc", "permission denied")):
+            return CATEGORY_STORAGE
         return CATEGORY_CONNECTION
     if isinstance(error, ValueError):
         msg = str(error).lower()
@@ -108,9 +112,11 @@ def classify_error(error: Exception) -> str:
 
 
 def format_error_message(error: Exception, router_key: str | None = None) -> str:
+    from utils.logging_setup import get_request_id
+
     category = classify_error(error)
     msg = ERROR_MESSAGES[category]
-    if category == CATEGORY_GENERAL:
+    if category in (CATEGORY_GENERAL, CATEGORY_STORAGE):
         # تنظيف النص من أي أسرار قبل عرضه للمستخدم
         short = _sanitize_error_text(str(error)[:200])
         if short:
@@ -118,6 +124,10 @@ def format_error_message(error: Exception, router_key: str | None = None) -> str
     # إضافة معرف الروتر إذا كان متاحاً
     if router_key:
         msg += f"\n🆔 {router_key}"
+
+    req_id = get_request_id()
+    if req_id and req_id != "-":
+        msg += f"\n🔍 مرجع البلاغ: <code>#{req_id}</code>"
     return msg
 
 
