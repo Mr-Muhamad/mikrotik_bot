@@ -43,6 +43,7 @@ from bot.router_selector import (
 )
 from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only
+from utils.pagination import Paginator
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import (
@@ -187,10 +188,11 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[dict[str
             users = []
     except Exception:
         return []
-    user_map = {}
-    for u in users:
-        key = str(u.get("name") or "").lower()
-        user_map[key] = u
+    return _enrich_hosts(hosts, users)
+
+
+def _enrich_hosts(hosts: list[dict[str, Any]], users: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    user_map = {u.get("name", "").lower(): u for u in users if u.get("name")}
     for h in hosts:
         uname = str(h.get("user") or "").lower()
         if uname in user_map:
@@ -200,9 +202,6 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[dict[str
             h["_comment"] = u.get("comment", "")
             h["_disabled"] = u.get("disabled", "false")
     return hosts
-
-
-from utils.pagination import Paginator
 
 
 def _format_search_results_text(paginator: Paginator) -> str:

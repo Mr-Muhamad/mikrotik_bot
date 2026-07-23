@@ -122,62 +122,60 @@ async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE
     return WAITING_PDF_VALUE
 
 
+def _apply_pdf_option_update(option: str, value: str) -> str | None:
+    """Apply PDF setting update for a given option and value."""
+    if option == "margins":
+        parts = list(map(float, value.split()))
+        if len(parts) != 4:
+            return PDF_SEND_4_VALUES
+        pdf_settings.update(
+            margin_top=parts[0],
+            margin_bottom=parts[1],
+            margin_left=parts[2],
+            margin_right=parts[3],
+        )
+    elif option == "spacing":
+        parts = list(map(float, value.split()))
+        if len(parts) != 2:
+            return PDF_SEND_2_VALUES
+        pdf_settings.update(spacing_x=parts[0], spacing_y=parts[1])
+    elif option == "cards_per_row":
+        pdf_settings.update(cards_per_row=int(value))
+    elif option == "cards_per_page":
+        pdf_settings.update(cards_per_page=int(value))
+    elif option == "brand_name":
+        pdf_settings.update(brand_name=value.strip())
+    elif option == "hotspot_dns":
+        pdf_settings.update(hotspot_dns=value.strip())
+    elif option == "show_qr":
+        show = 1 if value.strip() == "1" else 0
+        pdf_settings.update(show_qr=show)
+    elif option == "footer":
+        pdf_settings.update(footer_text=value.strip())
+    elif option == "label_spacing":
+        parts = list(map(float, value.split()))
+        if len(parts) != 2:
+            return PDF_SEND_2_VALUES
+        pdf_settings.update(label_spacing_single=parts[0], label_spacing_dual=parts[1])
+    elif option == "value_font_size":
+        parts = list(map(int, value.split()))
+        if len(parts) == 2 and all(8 <= p <= 16 for p in parts):
+            pdf_settings.update(value_max_font_single=parts[0], value_max_font_dual=parts[1])
+        else:
+            return PDF_SEND_2_VALUES
+    return None
+
+
 @admin_only
 async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
     option = context.user_data.get("pdf_option")
     value = update.message.text.strip()
 
     try:
-        if option == "margins":
-            parts = list(map(float, value.split()))
-            if len(parts) == 4:
-                pdf_settings.update(
-                    margin_top=parts[0],
-                    margin_bottom=parts[1],
-                    margin_left=parts[2],
-                    margin_right=parts[3],
-                )
-            else:
-                await send_step(update, context, PDF_SEND_4_VALUES)
-                return WAITING_PDF_VALUE
-        elif option == "spacing":
-            parts = list(map(float, value.split()))
-            if len(parts) == 2:
-                pdf_settings.update(spacing_x=parts[0], spacing_y=parts[1])
-            else:
-                await send_step(update, context, PDF_SEND_2_VALUES)
-                return WAITING_PDF_VALUE
-        elif option == "cards_per_row":
-            pdf_settings.update(cards_per_row=int(value))
-        elif option == "cards_per_page":
-            pdf_settings.update(cards_per_page=int(value))
-        elif option == "brand_name":
-            pdf_settings.update(brand_name=value.strip())
-        elif option == "hotspot_dns":
-            pdf_settings.update(hotspot_dns=value.strip())
-        elif option == "show_qr":
-            show = 1 if value.strip() == "1" else 0
-            pdf_settings.update(show_qr=show)
-        elif option == "footer":
-            pdf_settings.update(footer_text=value.strip())
-        elif option == "label_spacing":
-            parts = list(map(float, value.split()))
-            if len(parts) == 2:
-                pdf_settings.update(label_spacing_single=parts[0], label_spacing_dual=parts[1])
-            else:
-                await send_step(update, context, PDF_SEND_2_VALUES)
-                return WAITING_PDF_VALUE
-        elif option == "value_font_size":
-            try:
-                parts = list(map(int, value.split()))
-            except ValueError:
-                await send_step(update, context, PDF_SEND_2_VALUES)
-                return WAITING_PDF_VALUE
-            if len(parts) == 2 and all(8 <= p <= 16 for p in parts):
-                pdf_settings.update(value_max_font_single=parts[0], value_max_font_dual=parts[1])
-            else:
-                await send_step(update, context, PDF_SEND_2_VALUES)
-                return WAITING_PDF_VALUE
+        err_msg = _apply_pdf_option_update(str(option), value)
+        if err_msg:
+            await send_step(update, context, err_msg)
+            return WAITING_PDF_VALUE
 
         await reply_final(update, context, PDF_SETTINGS_UPDATED)
         await context.bot.send_message(
