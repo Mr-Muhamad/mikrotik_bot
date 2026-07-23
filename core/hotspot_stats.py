@@ -143,12 +143,13 @@ def get_hotspot_stats(api, router_key: str, day: int | None = None) -> dict | No
                 else:
                     categories["أخرى"] += 1
 
-            reset_day = parse_reset_day(user.get("comment", ""))
-            if reset_day is not None:
-                limit = format_bytes(user.get("limit-bytes-total", ""))
-                uname = str(user.get("name", "—"))
-                comment = str(user.get("comment", "") or uname)
-                resets_by_day.setdefault(reset_day, []).append((uname, comment, limit))
+            if not is_disabled:
+                reset_day = parse_reset_day(user.get("comment", ""))
+                if reset_day is not None:
+                    limit = format_bytes(user.get("limit-bytes-total", ""))
+                    uname = str(user.get("name", "—"))
+                    comment = str(user.get("comment", "") or uname)
+                    resets_by_day.setdefault(reset_day, []).append((uname, comment, limit))
 
         reset_days = sorted(resets_by_day.keys(), reverse=True)
         if day is None:
