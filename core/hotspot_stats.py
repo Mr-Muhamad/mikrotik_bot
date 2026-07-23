@@ -18,28 +18,68 @@ logger = logging.getLogger(__name__)
 
 _GB = 1_000_000_000
 
-_DATE_RE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
+_DATE_RE = re.compile(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})|(\d{1,2})[-/](\d{1,2})[-/](\d{4})")
+_DAY_SLASH_RE = re.compile(r"(\d{1,2})[/](\d{1,2})")
 
 
 def parse_reset_day(comment: str) -> int | None:
     """Extract the reset day (1-31) from a hotspot user comment.
 
-    Supports the current ``PREFIX_YYYY-MM-DD_HH:MM`` batch format as well as
-    the legacy ``.../DD`` format. Returns ``None`` when no day is found.
+    Supports:
+    - YYYY-MM-DD or YYYY/MM/DD -> group(3)
+    - DD-MM-YYYY or DD/MM/YYYY -> group(4)
+    - DD/MM or MM/DD -> group(1) or group(2)
+    - Legacy /DD
+    - Plain day number (1-31) inside comment
     """
-    comment = str(comment or "")
+    comment = str(comment or "").strip()
+    if not comment:
+        return None
+
     match = _DATE_RE.search(comment)
     if match:
         try:
-            return int(match.group(3))
+            if match.group(3):
+                val = int(match.group(3))
+                if 1 <= val <= 31:
+                    return val
+            if match.group(4):
+                val = int(match.group(4))
+                if 1 <= val <= 31:
+                    return val
         except (ValueError, TypeError):
-            return None
+            pass
+
+    match_slash = _DAY_SLASH_RE.search(comment)
+    if match_slash:
+        try:
+            val1 = int(match_slash.group(1))
+            val2 = int(match_slash.group(2))
+            if 1 <= val1 <= 31:
+                return val1
+            elif 1 <= val2 <= 31:
+                return val2
+        except (ValueError, TypeError):
+            pass
+
     if "/" in comment:
         try:
-            return int(comment.split("/")[-1])
+            val = int(comment.split("/")[-1])
+            if 1 <= val <= 31:
+                return val
         except (ValueError, TypeError):
-            return None
+            pass
+
+    # Try extracting standalone day number 1-31
+    digits = re.findall(r"\b([1-9]|[12]\d|3[01])\b", comment)
+    if digits:
+        try:
+            return int(digits[0])
+        except (ValueError, TypeError):
+            pass
+
     return None
+
 
 
 def get_hotspot_stats(api, router_key: str, day: int | None = None) -> dict | None:
