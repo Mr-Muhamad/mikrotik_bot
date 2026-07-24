@@ -13,6 +13,7 @@ and this re-export shim can be removed.
 """
 
 import logging
+import warnings
 import os
 import re
 import sqlite3
@@ -123,6 +124,8 @@ def create_indexes() -> None:
 
 
 def migrate_passwords():
+    """Deprecated: column is handled by Alembic initial migration."""
+    warnings.warn("migrate_passwords() is deprecated", DeprecationWarning, stacklevel=1)
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT id, password FROM discovered_routers WHERE password != ''")
@@ -145,6 +148,8 @@ def migrate_passwords():
 
 
 def migrate_add_name_alias():
+    """Deprecated: columns are handled by Alembic initial migration."""
+    warnings.warn("migrate_add_name_alias() is deprecated", DeprecationWarning, stacklevel=1)
     with get_db() as conn:
         cursor = conn.cursor()
         _add_column_if_missing(cursor, "discovered_routers", "name_alias TEXT DEFAULT ''")
@@ -156,6 +161,8 @@ def migrate_add_name_alias():
 
 
 def migrate_backup_schedule_columns():
+    """Deprecated: columns are handled by Alembic initial migration."""
+    warnings.warn("migrate_backup_schedule_columns() is deprecated", DeprecationWarning, stacklevel=1)
     with get_db() as conn:
         cursor = conn.cursor()
         for col_def in (
@@ -167,6 +174,8 @@ def migrate_backup_schedule_columns():
 
 
 def migrate_pdf_settings_columns():
+    """Deprecated: columns are handled by Alembic initial migration."""
+    warnings.warn("migrate_pdf_settings_columns() is deprecated", DeprecationWarning, stacklevel=1)
     with get_db() as conn:
         cursor = conn.cursor()
         for col_def in (
@@ -183,6 +192,8 @@ def migrate_pdf_settings_columns():
 
 
 def migrate_card_batches_columns():
+    """Deprecated: columns are handled by Alembic initial migration."""
+    warnings.warn("migrate_card_batches_columns() is deprecated", DeprecationWarning, stacklevel=1)
     with get_db() as conn:
         cursor = conn.cursor()
         # Older databases created card_batches without created_by; add it idempotently.
@@ -221,11 +232,10 @@ def init_db():
         os.chdir(old_cwd)
 
     seed_admin_roles(ADMIN_IDS)
-    migrate_passwords()
-    migrate_add_name_alias()
-    migrate_backup_schedule_columns()
-    migrate_pdf_settings_columns()
-    migrate_card_batches_columns()
+    # Column additions (passwords, name_alias, backup_schedule, pdf_settings,
+    # card_batches) are fully handled by the Alembic initial migration.
+    # The migrate_*() functions below are retained as deprecated idempotent
+    # helpers for any database created before Alembic was introduced.
 
 
 # ─── Re-export stats_snapshots functions ──────────────────────────────

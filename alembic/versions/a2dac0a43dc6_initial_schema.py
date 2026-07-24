@@ -1,8 +1,6 @@
 """Initial schema migration for MikroTik Telegram Bot.
 
-Creates the core tables required by the application. Column additions
-performed later by ``database.models.migrate_*`` helpers are intentionally
-kept out of this baseline to avoid losing data on existing installations.
+Creates all core tables and columns required by the application.
 """
 
 from alembic import op
