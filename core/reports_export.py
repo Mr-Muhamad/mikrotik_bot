@@ -45,8 +45,6 @@ def generate_hotspot_users_csv(router_key: str) -> str:
     )
 
     for u in users:
-        if not isinstance(u, dict):
-            continue
         username = str(u.get("name", ""))
         comment = str(u.get("comment", ""))
         clean_name, renewal_day = parse_renewal_day_from_comment(comment)

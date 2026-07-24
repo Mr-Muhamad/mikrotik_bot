@@ -37,7 +37,7 @@ def sanitize_router_name(name: str) -> str:
 
 
 def is_safe_filename(filename: str) -> bool:
-    if not isinstance(filename, str) or not filename:
+    if not filename:
         return False
     if "\x00" in filename or ".." in filename:
         return False

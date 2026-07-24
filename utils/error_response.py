@@ -7,7 +7,7 @@ from telegram import Message, Update
 from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
-from utils.chat_cleaner import _track_msg
+from utils.chat_cleaner import track_msg
 from utils.tg_helpers import get_query_chat_id, get_query_message
 
 logger = logging.getLogger(__name__)
@@ -67,6 +67,9 @@ def _sanitize_error_text(raw: str) -> str:
         sanitized = pattern.sub(rf"\1{_SANITIZED_PLACEHOLDER}", sanitized)
     return sanitized
 
+
+# Public alias — external modules should import this instead of the private form.
+sanitize_error_text = _sanitize_error_text
 
 # رسائل خطأ Telegram الحميدة: تحدث أثناء الاستخدام الطبيعي لتعديل الرسائل
 # (المحتوى لم يتغير أو الرسالة محذوفة) ولا تستدعي إشعاراً للمستخدم أو سجلاً على مستوى الخطأ.
@@ -161,8 +164,8 @@ async def _dispatch_message(
             msg = await context.bot.send_message(
                 chat_id=target_id, text=text, reply_markup=reply_markup
             )
-        if msg is not None and isinstance(msg, Message):
-            _track_msg(context, target_id, msg.message_id)
+        if isinstance(msg, Message):
+            track_msg(context, target_id, msg.message_id)
     except Exception as send_err:
         if is_benign_telegram_error(send_err):
             logger.debug(

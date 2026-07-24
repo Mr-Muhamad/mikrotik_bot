@@ -131,7 +131,7 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
     user_id = get_hotspot_edit_session(context.user_data).user_id
     router_key = get_selected_router(query.from_user.id)
 
-    if not router_key or user_data is None or not user_id:
+    if not router_key or not user_data or not user_id:
         await query.edit_message_text(USER_NOT_SELECTED)
         cleanup_state(query.from_user.id, context.user_data)
         return ConversationHandler.END

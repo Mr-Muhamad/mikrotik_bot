@@ -2,7 +2,7 @@ import logging
 import os
 from datetime import datetime
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.handlers.handler_utils import make_back_step
@@ -296,7 +296,11 @@ async def hotspot_cards_skip_bytes(update: Update, context: ContextTypes.DEFAULT
     return await _create_cards(update, context, query=query)
 
 
-async def _create_cards(update, context, query=None):
+async def _create_cards(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    query: CallbackQuery | None = None,
+):
     router_key = get_selected_router(update.effective_user.id)
     if not router_key:
         await reply_final(update, context, "❌ لم يتم اختيار روتر.", get_hotspot_keyboard())

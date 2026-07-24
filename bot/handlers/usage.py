@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -82,7 +83,7 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def _show_usage_report(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, user: dict, router_key: str
+    update: Update, context: ContextTypes.DEFAULT_TYPE, user: dict[str, Any], router_key: str
 ):
     name = user.get("name", "—")
     disabled = str(user.get("disabled", "false")).lower() == "true"

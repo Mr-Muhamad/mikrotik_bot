@@ -1,11 +1,12 @@
 import logging
+from typing import Any
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
 from database.models import get_pdf_settings
-from pdf.card_renderer import CardRenderer, _setup_arabic_support
+from pdf.card_renderer import CardRenderer, setup_arabic_support
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +15,9 @@ class PDFRenderer:
     """Generates PDF files with card layouts for printing."""
 
     def __init__(self):
-        self.font_name = _setup_arabic_support()
+        self.font_name = setup_arabic_support()
 
-    def generate_cards_pdf(self, cards, output_path):
+    def generate_cards_pdf(self, cards: list[dict[str, Any]], output_path: str):
         """Generate a PDF with all cards arranged in a grid layout."""
         settings = get_pdf_settings()
 

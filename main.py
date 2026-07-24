@@ -4,6 +4,8 @@ import logging
 import signal
 import sys
 
+from typing import Any
+
 from telegram.ext import (
     Application,
     JobQueue,
@@ -28,7 +30,7 @@ configure_logging(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def post_init(app: Application):
+async def post_init(app: Application[Any, Any, Any, Any, Any, Any]):
     await set_bot_commands(app)
     # استعادة حالة الـ watchdog من DB قبل بدء الجدولة
     from core.watchdog import load_status_from_db
@@ -39,10 +41,10 @@ async def post_init(app: Application):
         logger.info("Backup schedule restored from database")
         existing = app.job_queue.get_jobs_by_name("router_watchdog")
         if not existing:
-            from bot.handlers.watchdog import _check_all_routers
+            from bot.handlers.watchdog import check_all_routers
 
             app.job_queue.run_repeating(
-                _check_all_routers,
+                check_all_routers,
                 interval=WATCHDOG_INTERVAL,
                 first=WATCHDOG_FIRST_DELAY,
                 name="router_watchdog",
@@ -100,7 +102,7 @@ def main():
         # Signal handlers for graceful shutdown
         shutdown_event = asyncio.Event()
 
-        def signal_handler(signum, frame):
+        def signal_handler(signum: int, frame: Any) -> None:
             logger.info(f"Received signal {signum}, initiating graceful shutdown...")
             shutdown_event.set()
 

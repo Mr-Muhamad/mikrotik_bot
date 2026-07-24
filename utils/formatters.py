@@ -57,7 +57,7 @@ def parse_bytes(raw: str) -> str:
 
 
 @lru_cache(maxsize=256)
-def format_bytes(bytes_val: str) -> str:
+def format_bytes(bytes_val: str | None) -> str:
     """Format a byte count into a human-readable string with appropriate units.
 
     Results are cached for frequently used values.

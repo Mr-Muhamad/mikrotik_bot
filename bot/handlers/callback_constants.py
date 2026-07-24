@@ -188,7 +188,7 @@ def batch_regen(batch_id: str) -> str:
     return f"batch_regen:{batch_id}"
 
 
-def batch_page(page: str) -> str:
+def batch_page(page: int | str) -> str:
     return f"batch_page:{page}"
 
 

@@ -13,13 +13,13 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 # Shared helpers kept in ``common`` to avoid a circular import between
 # ``menus`` and ``commands_basic`` (both depend on these primitives).
-from bot.handlers.common import _get_router_part
+from bot.handlers.common import get_router_part as _get_router_part
 from bot.handlers.constants import (
     WAITING_CARD_PROFILE,
     WAITING_CARD_TYPE,
     WAITING_DELETE_SELECT,
 )
-from bot.handlers.menus import _resolve_nav_target
+from bot.handlers.menus import resolve_nav_target as _resolve_nav_target
 from bot.handlers.router_system import get_router_system_part as _get_router_system_part
 from bot.keyboards import get_main_keyboard, get_router_keyboard
 from bot.messages import (
@@ -73,9 +73,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     router_key = get_selected_router(user_id)
     if router_key:
         cleanup_state(user_id, context.user_data)
-        from bot.router_selector import _fast_reachability_check
+        from bot.router_selector import fast_reachability_check
 
-        if await _fast_reachability_check(router_key):
+        if await fast_reachability_check(router_key):
             router_part = await _get_router_part(router_key)
             system_part = await _get_router_system_part(router_key)
             text = MAIN_MENU.format(
@@ -243,9 +243,9 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if ADMIN_IDS and ADMIN_IDS[0]:
                 admin_id = ADMIN_IDS[0]
-                from utils.error_response import _sanitize_error_text
+                from utils.error_response import sanitize_error_text
 
-                clean_text = _sanitize_error_text(str(error)[:300])
+                clean_text = sanitize_error_text(str(error)[:300])
                 await context.bot.send_message(
                     chat_id=admin_id,
                     text=f"⚠️ <b>تنبيه نظام:</b> حدث خطأ غير متوقع في مهمة خلفية:\n<code>{clean_text}</code>",

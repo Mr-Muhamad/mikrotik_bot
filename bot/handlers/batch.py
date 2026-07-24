@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Any
 import os
 
 from telegram import Update
@@ -40,7 +41,7 @@ from utils.formatters import format_bytes
 logger = logging.getLogger(__name__)
 
 
-def _batch_label(batch: dict) -> str:
+def _batch_label(batch: dict[str, Any]) -> str:
     btype = "هوت سبوت" if batch.get("batch_type") == "hotspot" else "User Manager"
     return f"#{batch['id']} • {batch['name']} • {btype} • {batch.get('count', 0)} كارت"
 
@@ -126,7 +127,7 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-def _format_batch_text(batch: dict) -> str:
+def _format_batch_text(batch: dict[str, Any]) -> str:
     cards = batch.get("cards", [])
     total_bytes = 0
     for c in cards:
@@ -205,7 +206,7 @@ async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer("❌ فشل توليد PDF", show_alert=True)
 
 
-def _dump(cards):
+def _dump(cards: list[dict[str, Any]]):
     """Re-serialize a list of card dicts to JSON for deserialize_cards."""
     return json.dumps(cards, ensure_ascii=False)
 

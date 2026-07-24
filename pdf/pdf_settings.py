@@ -1,3 +1,4 @@
+from typing import Any
 from database.models import get_pdf_settings, update_pdf_settings
 
 _NUMERIC_VALIDATORS = {
@@ -23,7 +24,7 @@ class PDFSettings:
     def get_settings(self):
         return get_pdf_settings()
 
-    def update(self, **kwargs):
+    def update(self, **kwargs: Any) -> dict[str, Any]:
         for key, value in kwargs.items():
             if key in _NUMERIC_VALIDATORS:
                 lo, hi = _NUMERIC_VALIDATORS[key]

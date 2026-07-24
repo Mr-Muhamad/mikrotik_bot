@@ -1,6 +1,7 @@
 import ftplib
 import logging
 import os
+from typing import Any
 
 from core.backup.files import get_ftp_port
 from core.mikrotik_api import mikrotik_api
@@ -21,7 +22,7 @@ def _warn_plaintext_ftp() -> None:
         )
 
 
-def get_router_ftp_info(router_key: str, ftp_port: int) -> dict | None:
+def get_router_ftp_info(router_key: str, ftp_port: int) -> dict[str, Any] | None:
     try:
         info = mikrotik_api.get_router_info(router_key)
         return {

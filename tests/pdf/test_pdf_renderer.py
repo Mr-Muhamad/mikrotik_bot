@@ -14,7 +14,7 @@ class TestPDFRenderer:
         ]
 
     def test_init_sets_font(self):
-        with patch("pdf.pdf_renderer._setup_arabic_support", return_value="ArabicFont"):
+        with patch("pdf.pdf_renderer.setup_arabic_support", return_value="ArabicFont"):
             r = PDFRenderer()
         assert r.font_name == "ArabicFont"
 

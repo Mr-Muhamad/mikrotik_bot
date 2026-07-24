@@ -5,13 +5,14 @@ stays separate from firewall address-list manipulation.
 """
 
 import logging
+from typing import Any
 
 from librouteros.exceptions import LibRouterosError
 
 logger = logging.getLogger(__name__)
 
 
-def block_mac(api, router_key: str, mac: str, comment: str = "blocked by bot") -> bool:
+def block_mac(api: Any, router_key: str, mac: str, comment: str = "blocked by bot") -> bool:
     """يضيف MAC إلى address-list باسم hotspot_blocked في /ip/firewall/address-list.
 
     يُعيد True عند النجاح وFalse عند الفشل.
@@ -44,7 +45,7 @@ def block_mac(api, router_key: str, mac: str, comment: str = "blocked by bot") -
 
 
 
-def unblock_mac(api, router_key: str, mac: str) -> bool:
+def unblock_mac(api: Any, router_key: str, mac: str) -> bool:
     """يحذف MAC من address-list=hotspot_blocked.
 
     يُعيد True عند النجاح وFalse عند الفشل أو عدم الوجود.
@@ -73,7 +74,7 @@ def unblock_mac(api, router_key: str, mac: str) -> bool:
         return False
 
 
-def get_blocked_macs(api, router_key: str) -> list[dict]:
+def get_blocked_macs(api: Any, router_key: str) -> list[dict[str, Any]]:
     """يُعيد قائمة MACs في address-list=hotspot_blocked.
 
     يُعيد قائمة فارغة عند الفشل.

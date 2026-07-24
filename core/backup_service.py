@@ -1,3 +1,5 @@
+from typing import Any
+
 from config import BACKUP_DIR
 from core.backup.files import (
     BACKUP_FILE_EXTENSIONS,
@@ -23,17 +25,17 @@ class BackupService:
         self._system_service = system_service or SystemBackupService()
         self._userman_service = userman_service or UserManagerBackupService()
 
-    def full_backup(self, router_key: str) -> dict:
+    def full_backup(self, router_key: str) -> dict[str, Any]:
         return self._system_service.full_backup(router_key, backup_root=BACKUP_DIR)
 
-    def userman_backup(self, router_key: str) -> dict:
+    def userman_backup(self, router_key: str) -> dict[str, Any]:
         return self._userman_service.userman_backup(router_key, backup_root=BACKUP_DIR)
 
-    def userman_restore(self, router_key: str, tar_path: str) -> dict:
+    def userman_restore(self, router_key: str, tar_path: str) -> dict[str, Any]:
         return self._userman_service.userman_restore(router_key, tar_path, backup_root=BACKUP_DIR)
 
     @staticmethod
-    def list_local_userman_backups() -> list[dict]:
+    def list_local_userman_backups() -> list[dict[str, Any]]:
         return UserManagerBackupService.list_local_userman_backups(backup_root=BACKUP_DIR)
 
 

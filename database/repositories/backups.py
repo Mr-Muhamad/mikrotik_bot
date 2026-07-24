@@ -7,6 +7,7 @@ god-object ``database.models``.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 # عدد سجلات النسخ المحتفظ بها لكل راوتر قبل الحذف التلقائي (retention).
 BACKUP_JOBS_RETENTION_PER_ROUTER = 50
@@ -18,7 +19,7 @@ def _utc_now():
     return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)
 
 
-def get_backup_schedule() -> dict:
+def get_backup_schedule() -> dict[str, Any]:
     from database.models import get_db
 
     with get_db() as conn:
@@ -88,7 +89,7 @@ def record_backup_result(
     return job_id if job_id is not None else 0
 
 
-def _prune_backup_jobs(cursor, router_key: str) -> None:
+def _prune_backup_jobs(cursor: Any, router_key: str) -> None:
     cursor.execute("SELECT COUNT(*) FROM backup_jobs WHERE router_key = ?", (router_key,))
     count = cursor.fetchone()[0]
     if count > BACKUP_JOBS_RETENTION_PER_ROUTER:
@@ -101,7 +102,7 @@ def _prune_backup_jobs(cursor, router_key: str) -> None:
         )
 
 
-def get_last_backup(router_key: str) -> dict | None:
+def get_last_backup(router_key: str) -> dict[str, Any] | None:
     """Return the most recent backup record for a router, or None."""
     from database.models import get_db
 
@@ -118,7 +119,7 @@ def get_last_backup(router_key: str) -> dict | None:
         return dict(row) if row else None
 
 
-def get_recent_backups(limit: int = 20) -> list[dict]:
+def get_recent_backups(limit: int = 20) -> list[dict[str, Any]]:
     """Return the most recent backup records across all routers."""
     from database.models import get_db
 

@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Any
 
-from telegram import Update
+from telegram import CallbackQuery, Update
 from telegram.ext import ContextTypes
 
 from bot.messages import (
@@ -171,7 +171,7 @@ async def watchdog_refresh(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def _reply(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-    query: object,
+    query: CallbackQuery | None,
     text: str,
 ) -> None:
     """Send or edit in place depending on whether triggered from a callback."""

@@ -34,7 +34,9 @@ all standalone handlers.
 from typing import Any
 
 import bot.handlers.constants as constants  # noqa: F401 — passed to build_application
-from bot.registration_parts.separate_handlers import (
+import bot.registration_parts.conversation  # noqa: F401 — side-effect import populates CH registry  # pyright: ignore[reportUnusedImport]
+import bot.registration_parts.standalone  # noqa: F401 — side-effect import populates standalone registry  # pyright: ignore[reportUnusedImport]
+from bot.registration_parts.separate_handlers import (  # noqa: E501
     register_separate_conversation_handlers,
 )
 from utils.handler_registry import build_application

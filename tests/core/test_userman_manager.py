@@ -118,7 +118,7 @@ class TestUserManagerCreateCards:
         assert add_call.args[1] == "tool/user-manager/user/add"
         assert add_call.kwargs["name"] == "u1"
         assert add_call.kwargs["password"] == "p1"
-        assert add_call.kwargs["shared-users"] == 1
+        assert add_call.kwargs["shared-users"] == "1"
         assert "profile" not in add_call.kwargs
         # profile is attached via the dedicated v6 activation command
         activate_call = calls[1]

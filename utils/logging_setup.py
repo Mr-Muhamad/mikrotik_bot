@@ -38,7 +38,7 @@ def new_request_id() -> str:
     return uuid4().hex[:12]
 
 
-def _json_serializer(obj):
+def _json_serializer(obj: object) -> str:
     if isinstance(obj, (datetime := __import__("datetime"))):
         return datetime.isoformat(obj)
     raise TypeError(f"Type {type(obj).__name__} not JSON serializable")
@@ -47,10 +47,10 @@ def _json_serializer(obj):
 class JsonFormatter(logging.Formatter):
     """Formatter that outputs structured JSON logs for ELK/Loki/Grafana."""
 
-    def __init__(self, fmt=None, datefmt=None):
+    def __init__(self, fmt: str | None = None, datefmt: str | None = None) -> None:
         super().__init__(fmt, datefmt)
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         log_entry = {
             "timestamp": self.formatTime(record, self.datefmt),
             "level": record.levelname,

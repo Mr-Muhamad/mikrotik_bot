@@ -52,8 +52,12 @@ def get_db():
         conn.close()
 
 
-def _now_utc():
+def _now_utc() -> str:
     return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)
+
+
+# Public alias for use in other repository modules.
+now_utc = _now_utc
 
 
 _VALID_IDENTIFIER_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
@@ -69,14 +73,14 @@ def _validate_column_name(column_name: str) -> None:
         raise ValueError(f"Invalid column name: {column_name!r}")
 
 
-def _column_exists(cursor, table_name: str, column_name: str) -> bool:
+def _column_exists(cursor: sqlite3.Cursor, table_name: str, column_name: str) -> bool:
     _validate_table_name(table_name)
     _validate_column_name(column_name)
     cursor.execute(f"PRAGMA table_info({table_name})")
     return any(row["name"] == column_name for row in cursor.fetchall())
 
 
-def _add_column_if_missing(cursor, table_name: str, column_def: str) -> None:
+def _add_column_if_missing(cursor: sqlite3.Cursor, table_name: str, column_def: str) -> None:
     _validate_table_name(table_name)
     column_name = column_def.split()[0]
     _validate_column_name(column_name)
@@ -86,7 +90,7 @@ def _add_column_if_missing(cursor, table_name: str, column_def: str) -> None:
     logger.info(f"Added {table_name} column: {column_def}")
 
 
-def _create_indexes():
+def create_indexes() -> None:
     with get_db() as conn:
         cursor = conn.cursor()
         indexes = [

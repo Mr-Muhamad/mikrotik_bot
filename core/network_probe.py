@@ -20,6 +20,7 @@ import socket
 import struct
 import subprocess
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
@@ -204,7 +205,7 @@ class ARPTableProbe:
     Inject ``run_fn`` to override subprocess behavior in tests.
     """
 
-    def __init__(self, run_fn=subprocess.run, system: str | None = None) -> None:
+    def __init__(self, run_fn: Callable[..., Any] = subprocess.run, system: str | None = None) -> None:
         self._run = run_fn
         self._system = system or platform.system()
 
@@ -237,7 +238,7 @@ class PortScanProbe:
         ips: list[str],
         port: int = DEFAULT_API_PORT,
         timeout: float = 2.0,
-        open_connection=asyncio.open_connection,
+        open_connection: Callable[..., Any] = asyncio.open_connection,
     ) -> None:
         self._ips = list(ips)
         self._port = port
@@ -312,7 +313,7 @@ class MNDPListenerProbe:
     def __init__(
         self,
         timeout: float = 10.0,
-        socket_factory=None,
+        socket_factory: Callable[..., Any] | None = None,
     ) -> None:
         self._timeout = timeout
         self._socket_factory = socket_factory or socket.socket

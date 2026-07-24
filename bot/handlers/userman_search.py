@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -71,7 +72,7 @@ logger = logging.getLogger(__name__)
 MAX_SEARCH_RESULTS = 50
 
 
-def _format_userman_search_results(paginator):
+def _format_userman_search_results(paginator: Any) -> str:
     if not paginator.items:
         return NO_RESULTS
     lines = []
@@ -90,7 +91,7 @@ def _format_userman_search_results(paginator):
     return header + ":\n\n" + "\n".join(lines)
 
 
-def _format_userman_detail(user):
+def _format_userman_detail(user: dict[str, Any]) -> str:
     name = user.get("name") or user.get("username") or UNKNOWN_NAME
     raw_pwd = user.get("password") or "—"
     pwd = (
@@ -265,9 +266,9 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_userman_detail_keyboard(is_disabled),
         )
     except Exception as e:
-        from utils.error_response import _sanitize_error_text
+        from utils.error_response import sanitize_error_text
 
-        sanitized_err = _sanitize_error_text(str(e))
+        sanitized_err = sanitize_error_text(str(e))
         kb = (
             get_userman_detail_keyboard(str(h.get("disabled", "false")).lower() == "true")
             if "h" in locals() and h
@@ -373,7 +374,7 @@ async def userman_search_add_profile_selected(update: Update, context: ContextTy
         linked, err = await run_blocking(
             userman_manager.add_profile_to_user, router_key, username, profile
         )
-    except Exception as e:
+    except Exception:
         linked, err = False, "حدث خطأ غير متوقع"
 
     if linked:

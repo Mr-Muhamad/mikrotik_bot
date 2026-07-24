@@ -1,4 +1,4 @@
-"""Pagination utility for user lists and other paginated content."""
+from typing import Any
 
 PAGE_SIZE = 10
 
@@ -6,7 +6,7 @@ PAGE_SIZE = 10
 class Paginator:
     """يقسم القائمة إلى صفحات مع أزرار التنقييم."""
 
-    def __init__(self, items: list, page: int = 0, page_size: int = PAGE_SIZE):
+    def __init__(self, items: list[Any], page: int = 0, page_size: int = PAGE_SIZE):
         self.items = items
         self.page = max(0, page)
         self.page_size = page_size
@@ -15,7 +15,7 @@ class Paginator:
             self.page = max(0, self.total_pages - 1)
 
     @property
-    def current_items(self) -> list:
+    def current_items(self) -> list[Any]:
         start = self.page * self.page_size
         return self.items[start : start + self.page_size]
 

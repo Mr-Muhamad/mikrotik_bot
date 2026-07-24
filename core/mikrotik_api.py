@@ -100,10 +100,10 @@ class MikrotikAPI:
     def close(self) -> None:
         self._pool.close_all()
 
-    def get_metrics(self) -> dict:
+    def get_metrics(self) -> dict[str, Any]:
         return self._pool.get_metrics()
 
-    def get_router_info(self, router_key: str) -> dict:
+    def get_router_info(self, router_key: str) -> dict[str, Any]:
         return self._pool.get_router_info(router_key)
 
     def has_active_connection(self, router_key: str) -> bool:
@@ -162,7 +162,7 @@ class MikrotikAPI:
     #  Low-level building blocks
     # ──────────────────────────────────────────────────────────────
 
-    def _call_command(self, api, command: str, **kwargs: object) -> RouterOSResponse:
+    def _call_command(self, api: Any, command: str, **kwargs: object) -> RouterOSResponse:
         """ينفذ أمر MikroTik واحد على اتصال موجود (بدون retry)."""
         parts = command.split("/")
         cmd = parts.pop()

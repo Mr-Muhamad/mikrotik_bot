@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -45,7 +46,7 @@ from utils.error_response import send_error
 logger = logging.getLogger(__name__)
 
 
-def _build_router_status_text(routers: list[dict]) -> str:
+def _build_router_status_text(routers: list[dict[str, Any]]) -> str:
     lines = []
     for r in routers:
         identity = r.get("identity", "Unknown")
@@ -230,7 +231,7 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
         updated = 0
         for r in routers:
             try:
-                success, version, identity = await run_blocking(
+                success, _, _ = await run_blocking(
                     mikrotik_api.test_connection,
                     r["ip_address"],
                     r.get("username", ""),

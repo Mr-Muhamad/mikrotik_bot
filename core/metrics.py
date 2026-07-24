@@ -13,6 +13,7 @@ Metrics include:
 import logging
 import time
 from collections import defaultdict
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def get_uptime() -> float:
     return time.time() - _bot_start_time
 
 
-def get_metrics_text(pool_metrics: dict | None = None) -> str:
+def get_metrics_text(pool_metrics: dict[str, Any] | None = None) -> str:
     """Generate Prometheus metrics in text format."""
     if pool_metrics is None:
         pool_metrics = {}

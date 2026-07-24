@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import logging
 from datetime import date, timedelta
+from typing import Any
 
 from database.models import get_db
 
 logger = logging.getLogger(__name__)
 
 
-def save_snapshot(router_key: str, data: dict) -> None:
+def save_snapshot(router_key: str, data: dict[str, Any]) -> None:
     """حفظ snapshot يومي لإحصائيات راوتر.
 
     data: dict يحتوي على active_users, total_users, bytes_in, bytes_out (اختياري)
@@ -42,7 +43,7 @@ def save_snapshot(router_key: str, data: dict) -> None:
         logger.warning(f"Failed to save snapshot for {router_key}: {e}")
 
 
-def get_yesterday_snapshot(router_key: str) -> dict | None:
+def get_yesterday_snapshot(router_key: str) -> dict[str, Any] | None:
     """استرداد snapshot أمس للراوتر المحدد. يُعيد None إن لم يوجد."""
 
     yesterday = (date.today() - timedelta(days=1)).isoformat()
@@ -60,7 +61,7 @@ def get_yesterday_snapshot(router_key: str) -> dict | None:
         return None
 
 
-def get_week_snapshots(router_key: str) -> list[dict]:
+def get_week_snapshots(router_key: str) -> list[dict[str, Any]]:
     """استرداد snapshots آخر 7 أيام للراوتر، مرتبة من الأقدم للأحدث."""
 
     week_ago = (date.today() - timedelta(days=7)).isoformat()

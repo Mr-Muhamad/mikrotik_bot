@@ -10,7 +10,7 @@ shared ``_show_menu`` helper kept in ``bot.handlers.common``.
 
 import logging
 
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -219,7 +219,7 @@ async def end_conversation_to_reports(update: Update, context: ContextTypes.DEFA
 # ─── NAV RESOLUTION ─────────────────────────────────────────
 
 
-NAV_TARGETS: dict[str, Callable[..., None]] = {
+NAV_TARGETS: dict[str, Callable[..., Coroutine[object, object, None]]] = {
     "main_menu": internal_main_menu,
     "menu_hotspot": internal_hotspot_menu,
     "menu_userman": internal_userman_menu,
@@ -244,7 +244,7 @@ async def end_conversation(
     return ConversationHandler.END
 
 
-def resolve_nav_target(target: str) -> Callable[..., None]:
+def resolve_nav_target(target: str) -> Callable[..., Coroutine[object, object, None]]:
     handler = NAV_TARGETS.get(target)
     if handler is not None:
         return handler

@@ -11,9 +11,9 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import cast
+from typing import Any, cast
 
-from telegram import CallbackQuery, Message, Update
+from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
 from telegram.ext import ContextTypes
 
 from bot.keyboards import get_router_keyboard
@@ -88,7 +88,7 @@ async def parse_router_id(
     query: CallbackQuery | None,
     prefix: str,
     *,
-    error_markup=None,
+    error_markup: InlineKeyboardMarkup | None = None,
 ) -> int | None:
     """استخرج معرّف الراوتر الصحيح من بيانات الـ callback.
 
@@ -114,7 +114,7 @@ async def parse_router_id(
         return None
 
 
-def make_back_step(message: str, keyboard_fn: Callable, next_state: int):
+def make_back_step(message: str, keyboard_fn: Callable[..., Any], next_state: int):
     """Factory لدوال "الرجوع" البسيطة المتكررة.
 
     تُنشئ دالة async تستقبل (update, context)، تجيب على الـ callback query،

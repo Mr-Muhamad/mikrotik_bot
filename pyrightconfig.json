@@ -9,7 +9,7 @@
     "alembic"
   ],
   "pythonVersion": "3.12",
-  "typeCheckingMode": "standard",
+  "typeCheckingMode": "strict",
   "extraPaths": [
     "C:/Users/Administrator/AppData/Local/Programs/Python/Python312/Lib/site-packages"
   ],

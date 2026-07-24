@@ -79,6 +79,9 @@ def _track_msg(
     _stats["messages_tracked"] += 1
 
 
+track_msg = _track_msg
+
+
 async def clean_chat_messages(
     context: _CleanerContext,
     chat_id: int,
@@ -273,8 +276,8 @@ async def safe_edit_or_send(
     message = query.message
     if message is None:
         return None
-    chat_id = cast(int, getattr(message, "chat_id", None))
-    if chat_id is None:
+    chat_id = cast(int | None, getattr(message, "chat_id", None))
+    if not chat_id:
         return None
     try:
         edited: Message | bool = await query.edit_message_text(

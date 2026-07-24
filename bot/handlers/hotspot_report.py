@@ -3,6 +3,7 @@ import io
 import logging
 import os
 import tempfile
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -13,15 +14,15 @@ from bot.router_selector import cleanup_state, nav_set
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_api import mikrotik_api
 from core.stats import stats_manager
-from utils.error_response import send_error
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
+from utils.error_response import send_error
 
 logger = logging.getLogger(__name__)
 
 
-def build_csv(report: dict) -> str:
+def build_csv(report: dict[str, Any]) -> str:
     """Build a UTF-8-sig CSV string from a usage report's rows."""
     output = io.StringIO()
     writer = csv.writer(output)

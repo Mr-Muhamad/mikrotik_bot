@@ -6,8 +6,10 @@ Usage:
         logger.info("doing work")  # record will carry request_id
 """
 
+from collections.abc import Callable
 from contextlib import contextmanager
 from functools import wraps
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -15,13 +17,13 @@ from telegram.ext import ContextTypes
 from utils.logging_setup import bind_request_id
 
 
-def bind_request_id_from_update(func):
+def bind_request_id_from_update(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorator that sets the request_id ContextVar to update.update_id
     for the duration of the wrapped coroutine.
     """
 
     @wraps(func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args, **kwargs):
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args: Any, **kwargs: Any) -> Any:
         rid = str(getattr(update, "update_id", None) or "-")
         with bind_request_id(rid):
             return await func(update, context, *args, **kwargs)
