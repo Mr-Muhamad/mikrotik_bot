@@ -92,7 +92,12 @@ def _format_userman_search_results(paginator):
 
 def _format_userman_detail(user):
     name = user.get("name") or user.get("username") or UNKNOWN_NAME
-    pwd = user.get("password") or "—"
+    raw_pwd = user.get("password") or "—"
+    pwd = (
+        raw_pwd
+        if raw_pwd == "—"
+        else (raw_pwd[:2] + "••••" if len(raw_pwd) > 2 else "••••")
+    )
     profile = user.get("profile") or "—"
     is_disabled = str(user.get("disabled", "false")).lower() == "true"
     status = USERMAN_SEARCH_STATUS_OFF if is_disabled else USERMAN_SEARCH_STATUS_ON
@@ -243,11 +248,14 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
             msg = USERMAN_SEARCH_DELETED.format(username=username)
             hosts.pop(idx)
             context.user_data.pop("kick_um_idx", None)
+            from utils.pagination import Paginator
+
+            paginator = Paginator(hosts, page=0)
             await edit_clean(
                 query,
                 context,
-                msg + "\n\n" + _format_userman_search_results(hosts),
-                get_search_results_keyboard(hosts, is_userman=True),
+                msg + "\n\n" + _format_userman_search_results(paginator),
+                get_search_results_keyboard(paginator, is_userman=True),
             )
             return WAITING_USERMAN_SEARCH
 
@@ -257,11 +265,19 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_userman_detail_keyboard(is_disabled),
         )
     except Exception as e:
+        from utils.error_response import _sanitize_error_text
+
+        sanitized_err = _sanitize_error_text(str(e))
+        kb = (
+            get_userman_detail_keyboard(str(h.get("disabled", "false")).lower() == "true")
+            if "h" in locals() and h
+            else get_cancel_keyboard()
+        )
         await safe_edit_plain(
             query,
             context,
-            USERMAN_SEARCH_ERROR.format(e=e),
-            get_userman_detail_keyboard(str(h.get("disabled", "false")).lower() == "true"),
+            USERMAN_SEARCH_ERROR.format(e=sanitized_err),
+            kb,
         )
 
     return WAITING_USERMAN_SEARCH

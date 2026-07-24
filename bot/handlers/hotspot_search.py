@@ -440,15 +440,27 @@ async def show_blocked_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
             query, context, NO_ROUTER_SELECTED, reply_markup=get_router_keyboard()
         )
         return ConversationHandler.END
-    blocked = await run_blocking(hotspot_manager.get_blocked_macs, router_key)
-    if not blocked:
-        await safe_edit_plain(
-            query,
+    try:
+        blocked = await run_blocking(hotspot_manager.get_blocked_macs, router_key)
+        if not blocked:
+            await safe_edit_plain(
+                query,
+                context,
+                BLOCKED_LIST_EMPTY,
+                reply_markup=get_blocked_macs_keyboard([]),
+            )
+        else:
+            text = BLOCKED_LIST_HEADER.format(count=len(blocked))
+            await safe_edit_plain(query, context, text, reply_markup=get_blocked_macs_keyboard(blocked))
+    except Exception as e:
+        await send_error(
+            update,
             context,
-            BLOCKED_LIST_EMPTY,
-            reply_markup=get_blocked_macs_keyboard([]),
+            e,
+            router_key=router_key,
+            log_extra="show_blocked_list",
+            reply_markup=get_hotspot_keyboard(),
         )
-    else:
-        text = BLOCKED_LIST_HEADER.format(count=len(blocked))
-        await safe_edit_plain(query, context, text, reply_markup=get_blocked_macs_keyboard(blocked))
+        cleanup_state(query.from_user.id, context.user_data)
+        return ConversationHandler.END
     return WAITING_HOTSPOT_SEARCH

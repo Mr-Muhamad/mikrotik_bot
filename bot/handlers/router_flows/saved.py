@@ -196,6 +196,7 @@ async def delete_router_confirm(update: Update, context: ContextTypes.DEFAULT_TY
     )
 
 
+@require_role("admin")
 @admin_only
 async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)

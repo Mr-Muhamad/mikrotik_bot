@@ -27,14 +27,27 @@ CUSTOMER_REMOVE_SUCCESS = "✅ تم إزالة العميل {customer_id} بنج
 @require_role("admin")
 async def roles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """List the current role of every registered admin."""
+    query = update.callback_query
+    if query:
+        from utils.callback_utils import safe_answer_callback
+        from utils.chat_cleaner import safe_edit_or_send
+
+        await safe_answer_callback(query)
+
     rows = list_admin_roles()
     lines = ["👥 أدوار المشرفين:\n"]
     for row in rows:
         label = ROLE_LABELS.get(row["role"], row["role"])
         lines.append(f"• {row['admin_id']}: {label}")
     lines.append("\nلتغيير الدور: " + ROLE_SET_USAGE)
-    if update.message:
-        await update.message.reply_text("\n".join(lines))
+    text = "\n".join(lines)
+
+    if query:
+        from bot.keyboards import get_main_keyboard
+
+        await safe_edit_or_send(query, context, text, keyboard=get_main_keyboard())
+    elif update.message:
+        await update.message.reply_text(text)
 
 
 @admin_only

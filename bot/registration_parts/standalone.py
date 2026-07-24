@@ -135,6 +135,7 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["set_timeout"])(handle_timeout
 standalone(CallbackQueryHandler, pattern=PATTERNS["cancel_timeout"])(handle_timeout_selection)
 
 standalone(CallbackQueryHandler, pattern=PATTERNS["select_router"])(start)
+standalone(CallbackQueryHandler, pattern=PATTERNS["roles_back"])(roles_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["main_menu"])(main_menu)
 standalone(CallbackQueryHandler, pattern=PATTERNS["menu_hotspot"])(hotspot_menu)
 standalone(CallbackQueryHandler, pattern=PATTERNS["menu_userman"])(userman_menu)

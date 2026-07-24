@@ -5,7 +5,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.handlers.constants import WAITING_STATS_DAY
-from bot.keyboards import get_back_keyboard, get_hotspot_keyboard
+from bot.keyboards import get_back_keyboard, get_hotspot_keyboard, get_router_keyboard
 from bot.messages import (
     HOTSPOT_STATS,
     HOTSPOT_STATS_DAY_INVALID,
@@ -13,13 +13,14 @@ from bot.messages import (
     HOTSPOT_STATS_NO_RESET,
     HOTSPOT_STATS_PROMPT,
     HOTSPOT_STATS_RESET_BLOCK,
+    NO_ROUTER_SELECTED,
 )
-from bot.router_selector import cleanup_state, nav_set
+from bot.router_selector import cleanup_state, get_selected_router, nav_set
 from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
-from utils.chat_cleaner import safe_edit_or_send
+from utils.chat_cleaner import reply_final, safe_edit_or_send
 from utils.error_response import send_error
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,14 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await safe_answer_callback(query)
     cleanup_state(update.effective_user.id, context.user_data)
     nav_set(context, "menu_hotspot")
-    router_key = context.user_data["router_key"]
+    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    if not router_key:
+        if query:
+            await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())
+        elif update.effective_message:
+            await update.effective_message.reply_text(NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+        return ConversationHandler.END
+
     try:
         stats = await run_blocking(hotspot_manager.get_hotspot_stats, router_key)
         if not stats:
@@ -80,7 +88,7 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "❌ خطأ في جلب إحصائيات Hotspot",
                 reply_markup=get_hotspot_keyboard(),
             )
-            return
+            return ConversationHandler.END
 
         text = _summary_text(stats)
         reset_days = stats["reset_days"]
@@ -119,12 +127,21 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             log_extra="hotspot_stats",
             reply_markup=get_hotspot_keyboard(),
         )
+        return
 
 
 @admin_only
 async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle a day number typed by the user and show that day's reset list."""
-    router_key = context.user_data["router_key"]
+    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    if not router_key:
+        query = update.callback_query
+        if query:
+            await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())
+        elif update.effective_message:
+            await update.effective_message.reply_text(NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+        return ConversationHandler.END
+
     query = update.callback_query
     if query:
         await safe_answer_callback(query)
@@ -217,6 +234,7 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
             log_extra="hotspot_stats_day_input",
             reply_markup=get_back_keyboard("menu_hotspot"),
         )
+        return ConversationHandler.END
 
 
 __all__ = ["hotspot_stats", "hotspot_stats_day_input"]

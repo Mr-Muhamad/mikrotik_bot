@@ -117,9 +117,6 @@ def get_hotspot_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton("🎫 توليد كروت", callback_data="hotspot_cards"),
             InlineKeyboardButton("📊 إحصائيات", callback_data="hotspot_stats"),
         ],
-        [
-            InlineKeyboardButton("🧹 تنظيف المنتهية", callback_data="hotspot_purge_expired"),
-        ],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]
     return InlineKeyboardMarkup(keyboard)

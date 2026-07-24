@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from telegram import Update
@@ -209,8 +210,17 @@ async def _check_all_routers(context: ContextTypes.DEFAULT_TYPE):
 
 async def _notify_admins(context: ContextTypes.DEFAULT_TYPE, text: str):
     """Send a notification to all configured admins."""
+    from telegram.error import RetryAfter
+
     for admin_id in ADMIN_IDS:
         try:
             await context.bot.send_message(admin_id, text, parse_mode="HTML")
+        except RetryAfter as e:
+            logger.warning(f"Rate limited by Telegram, waiting {e.retry_after}s for admin {admin_id}")
+            await asyncio.sleep(e.retry_after)
+            try:
+                await context.bot.send_message(admin_id, text, parse_mode="HTML")
+            except Exception as retry_err:
+                logger.error(f"Failed to notify admin {admin_id} after RetryAfter: {retry_err}")
         except Exception as e:
             logger.warning(f"Failed to notify admin {admin_id}: {e}")

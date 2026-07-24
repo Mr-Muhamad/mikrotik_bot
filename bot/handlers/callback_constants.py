@@ -344,6 +344,7 @@ PATTERNS: dict[str, str] = {
     "hotspot_cards": r"^hotspot_cards$",
     "userman_cards": r"^userman_cards$",
     "search_back": r"^search_back$",
+    "roles_back": r"^roles_back$",
     "go_back": r"^go_back$",
     "add_back_to_username": r"^add_back_to_username$",
     "skip_password": r"^skip_password$",
@@ -379,7 +380,7 @@ PATTERNS: dict[str, str] = {
     "uptime_type": r"^(uptime_hours|uptime_days|skip_uptime)$",
     "hs_card_type": r"^hs_card_type[123]$",
     "card_type": r"^card_type[123]$",
-    "edit_field": r"^edit_field_(name|password|profile|bytes|uptime|comment|toggle_disabled)$",
+    "edit_field": r"^edit_field_(name|password|profile|bytes|uptime|comment|toggle_disabled|renewal_day)$",
     "pdf_options": (
         r"^pdf_(brand_name|hotspot_dns|show_qr|margins|spacing|"
         r"cards_per_row|cards_per_page|footer|label_spacing|value_font_size)$"
