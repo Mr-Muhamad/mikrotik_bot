@@ -59,6 +59,12 @@ class MikrotikAPIMock:
         """Mock health check — always returns healthy."""
         return True, ""
 
+    def upload_file_to_router(self, router_key: str, local_path: str, remote_name: str) -> bool:
+        return True
+
+    def download_file_from_router(self, router_key: str, remote_name: str, local_dir: str) -> bool:
+        return True
+
     # --- internal routing ---
 
     def _route_command(self, command: str, kwargs: dict) -> list[dict]:

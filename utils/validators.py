@@ -1,6 +1,21 @@
 import ipaddress
+import re
 
 from utils.formatters import parse_bytes
+
+
+def sanitize_comment(comment: str, max_length: int = 200) -> str:
+    """Sanitize a MikroTik comment to prevent injection and encoding issues.
+
+    Strips control characters, newlines, and limits length. Safe for both
+    v6 and v7 RouterOS API.
+    """
+    if not comment:
+        return ""
+    cleaned = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", comment)
+    cleaned = cleaned.replace("\n", " ").replace("\r", "").replace("\t", " ")
+    cleaned = re.sub(r" +", " ", cleaned).strip()
+    return cleaned[:max_length]
 
 
 def validate_bytes_input(raw: str) -> str:

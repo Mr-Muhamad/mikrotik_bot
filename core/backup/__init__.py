@@ -1,7 +1,6 @@
 from core.backup.files import (
     BACKUP_DIR,
     BACKUP_FILE_EXTENSIONS,
-    FTP_PORT,
     MAX_LOCAL_BACKUPS,
     MAX_ROUTER_BACKUPS,
     USERMAN_BACKUP_PREFIX,
@@ -15,7 +14,6 @@ from core.backup.userman import UserManagerBackupService
 __all__ = [
     "BACKUP_DIR",
     "BACKUP_FILE_EXTENSIONS",
-    "FTP_PORT",
     "MAX_LOCAL_BACKUPS",
     "MAX_ROUTER_BACKUPS",
     "USERMAN_BACKUP_PREFIX",

@@ -13,6 +13,7 @@ from bot.router_selector import cleanup_state, nav_set
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_api import mikrotik_api
 from core.stats import stats_manager
+from utils.error_response import send_error
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
@@ -69,7 +70,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         router_name = await run_blocking(mikrotik_api.get_router_name, router_key)
     except Exception as e:
         logger.error(f"Report generation failed: {e}")
-        await send_step(update, context, f"❌ فشل إنشاء التقرير: {str(e)[:120]}")
+        await send_error(update, context, e, router_key=router_key, log_extra="report_gen")
         return
 
     context.user_data["report"] = report

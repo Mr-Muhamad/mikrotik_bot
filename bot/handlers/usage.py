@@ -34,6 +34,7 @@ from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
+from utils.error_response import send_error
 from utils.formatters import format_bytes
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         users = await run_blocking(hotspot_manager.search_users, router_key, search_term)
     except Exception as e:
         logger.error(f"Usage search failed: {e}")
-        await send_step(update, context, ERROR_OCCURRED.format(str(e)[:100]))
+        await send_error(update, context, e, router_key=router_key, log_extra="usage_search")
         return ConversationHandler.END
 
     if not users:

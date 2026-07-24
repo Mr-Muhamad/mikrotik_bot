@@ -1,7 +1,6 @@
 from config import BACKUP_DIR
 from core.backup.files import (
     BACKUP_FILE_EXTENSIONS,
-    FTP_PORT,
     MAX_LOCAL_BACKUPS,
     MAX_ROUTER_BACKUPS,
     USERMAN_BACKUP_PREFIX,
@@ -48,7 +47,6 @@ backup_restore = BackupRestore()
 __all__ = [
     "BACKUP_DIR",
     "BACKUP_FILE_EXTENSIONS",
-    "FTP_PORT",
     "MAX_LOCAL_BACKUPS",
     "MAX_ROUTER_BACKUPS",
     "USERMAN_BACKUP_PREFIX",

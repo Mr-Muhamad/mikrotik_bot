@@ -9,7 +9,6 @@ from core.backup.files import (
     cleanup_router_files,
     sanitize_router_name,
 )
-from core.backup.ftp import download_files_via_ftp, upload_file_via_ftp
 from core.mikrotik_api import mikrotik_api
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,9 @@ class UserManagerBackupService:
                 **{"name": umb_filename, "overwrite": "yes"},
             )
 
-            downloaded = download_files_via_ftp(router_key, userman_dir, [umb_filename])
+            downloaded = []
+            if mikrotik_api.download_file_from_router(router_key, umb_filename, userman_dir):
+                downloaded.append(umb_filename)
             cleanup_router_files(router_key, f"{file_prefix}_")
             cleanup_old_files(userman_dir, file_prefix)
 
@@ -49,7 +50,7 @@ class UserManagerBackupService:
             if not downloaded:
                 result["warning"] = "تم إنشاء الملف على الراوتر لكن فشل التحميل المحلي"
                 logger.warning(
-                    f"User Manager backup created on router but FTP download failed for {router_key}"  # noqa: E501
+                    f"User Manager backup created on router but HTTP download failed for {router_key}"  # noqa: E501
                 )
             logger.info(f"User Manager backup completed for {router_name}: {umb_filename}")
             return result
@@ -73,9 +74,9 @@ class UserManagerBackupService:
         filename = os.path.basename(umb_path)
 
         try:
-            success = upload_file_via_ftp(router_key, umb_path, filename)
+            success = mikrotik_api.upload_file_to_router(router_key, umb_path, filename)
             if not success:
-                return {"success": False, "message": "فشل رفع ملف الاستعادة عبر FTP"}
+                return {"success": False, "message": "فشل رفع ملف الاستعادة عبر HTTP"}
 
             base_path = mikrotik_api.get_userman_base_path(router_key)
             mikrotik_api.execute_long(

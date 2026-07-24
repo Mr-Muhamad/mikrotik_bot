@@ -1,5 +1,6 @@
 import contextlib
 import logging
+import os
 import re
 import threading
 import time
@@ -8,7 +9,7 @@ from typing import Any
 from librouteros import connect
 from librouteros.exceptions import LibRouterosError
 
-from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
+from config import DEFAULT_API_PORT, FILE_SERVER_PORT, FILE_SERVER_SECRET, ROUTER_KEY_PREFIX
 from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
 from core.mikrotik_client import MikrotikClient, RouterOSResponse
 from database.models import get_router_by_id, get_router_display_name
@@ -368,6 +369,103 @@ class MikrotikAPI:
         sanitized = self._sanitize_connect_detail(msg)
         base = f"❌ تعذّر الاتصال بـ {ip}:{port}"
         return (base + (f": {sanitized}" if sanitized else ".")) + ssl_hint
+
+    # ──────────────────────────────────────────────────────────────
+    #  HTTP file transfer (replaces FTP)
+    # ──────────────────────────────────────────────────────────────
+
+    def _get_bot_host_for_router(self, router_key: str) -> str:
+        """Return the bot host IP that the router can reach (from the bot's perspective)."""
+        # In most setups the bot and router are on the same management network.
+        # The user should set BOT_HOST in .env if the bot is behind NAT.
+        from config import BOT_HOST
+
+        return BOT_HOST
+
+    def upload_file_to_router(self, router_key: str, local_path: str, remote_name: str) -> bool:
+        """Serve a local file via HTTP and have the router fetch it.
+
+        Uses: ``/tool/fetch url="http://BOT:PORT/files/NAME" dst-path="NAME"``
+        """
+        from core.backup.file_server import prepare_serve_file, cleanup_serve_file
+
+        bot_host = self._get_bot_host_for_router(router_key)
+        if not bot_host:
+            logger.error("BOT_HOST not configured — cannot upload file to router")
+            return False
+
+        try:
+            serve_name = prepare_serve_file(local_path, remote_name)
+        except Exception as e:
+            logger.error(f"Failed to stage file for upload: {e}")
+            return False
+
+        url = f"http://{bot_host}:{FILE_SERVER_PORT}/files/{serve_name}"
+        try:
+            self.execute_long(
+                router_key,
+                "tool/fetch",
+                **{
+                    "url": url,
+                    "dst-path": remote_name,
+                    "http-header-field": f"Authorization: Bearer {FILE_SERVER_SECRET}",
+                },
+            )
+            logger.info(f"Router fetched {remote_name} from {url}")
+            return True
+        except Exception as e:
+            logger.error(f"Router failed to fetch {remote_name}: {e}")
+            return False
+        finally:
+            cleanup_serve_file(serve_name)
+
+    def download_file_from_router(self, router_key: str, remote_name: str, local_dir: str) -> bool:
+        """Tell the router to push a file to the bot via HTTP POST.
+
+        Uses: ``/tool/fetch upload=yes url="http://BOT:PORT/upload"``
+        """
+        bot_host = self._get_bot_host_for_router(router_key)
+        if not bot_host:
+            logger.error("BOT_HOST not configured — cannot receive file from router")
+            return False
+
+        url = f"http://{bot_host}:{FILE_SERVER_PORT}/upload"
+        try:
+            self.execute_long(
+                router_key,
+                "tool/fetch",
+                **{
+                    "url": url,
+                    "src-path": remote_name,
+                    "upload": "yes",
+                    "http-header-field": (
+                        f"Authorization: Bearer {FILE_SERVER_SECRET}, "
+                        f"X-Filename: {remote_name}, "
+                        f"X-Router-Key: {router_key}"
+                    ),
+                },
+            )
+            logger.info(f"Router pushed {remote_name} to {url}")
+
+            # The file arrives at BACKUP_DIR/uploads/<router_key>/<filename>
+            upload_dir = os.path.join(
+                os.path.dirname(os.path.dirname(local_dir)),
+                "uploads",
+                router_key,
+            )
+            src = os.path.join(upload_dir, remote_name)
+            if os.path.isfile(src):
+                os.makedirs(local_dir, exist_ok=True)
+                dest = os.path.join(local_dir, remote_name)
+                import shutil
+
+                shutil.move(src, dest)
+                return True
+            logger.warning(f"File {remote_name} not found in upload dir after push")
+            return False
+        except Exception as e:
+            logger.error(f"Router failed to push {remote_name}: {e}")
+            return False
 
     def _probe_api_ssl(self, ip: str, username: str, password: str) -> str:
         """فحص استطلاعي لمنفذ 8729 (api-ssl) كسرّ تشخيصي فقط. لا يبدّل المسار الأساسي."""

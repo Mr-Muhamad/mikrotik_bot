@@ -65,6 +65,10 @@ def main():
     with single_instance(force=not force_lock):
         init_db()
 
+        from core.backup.file_server import start_file_server
+
+        start_file_server()
+
         application = (
             Application.builder()
             .token(BOT_TOKEN)
@@ -81,6 +85,9 @@ def main():
 
         def _cleanup_pool():
             try:
+                from core.backup.file_server import stop_file_server
+
+                stop_file_server()
                 mikrotik_api.close()
                 logger.info("Connection pool cleaned up")
             except Exception as e:
@@ -111,6 +118,9 @@ def main():
                 await shutdown_event.wait()
                 logger.info("Shutting down polling...")
             finally:
+                from core.backup.file_server import stop_file_server
+
+                stop_file_server()
                 await updater.stop()
                 await application.stop()
                 await application.shutdown()

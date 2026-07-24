@@ -7,6 +7,7 @@ from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient, RouterOSResponse
+from utils.validators import sanitize_comment
 
 _CARD_TYPE_MAP = {
     "type1": CardSystem.DIFFERENT_CREDENTIALS,
@@ -174,7 +175,7 @@ class UserManager:
         if password:
             add_params["password"] = password
         if comment:
-            add_params["comment"] = comment
+            add_params["comment"] = sanitize_comment(comment)
         if caller_id:
             add_params["caller-id"] = caller_id
         if not is_v7:

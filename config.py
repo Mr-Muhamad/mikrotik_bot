@@ -1,4 +1,5 @@
 import os
+import secrets
 import sys
 
 from cryptography.fernet import Fernet
@@ -41,6 +42,15 @@ BACKUP_DIR = os.path.join(os.path.dirname(__file__), "backups")
 
 DEFAULT_API_PORT = 8728
 ROUTER_KEY_PREFIX = "discovered_"
+
+# File transfer server settings (replaces plaintext FTP)
+FILE_SERVER_PORT = int(os.getenv("FILE_SERVER_PORT", "8729"))
+FILE_SERVER_SECRET = os.getenv("FILE_SERVER_SECRET", "")
+if not FILE_SERVER_SECRET:
+    # Auto-generate a random secret if not set — secure for single-host deployments
+    FILE_SERVER_SECRET = secrets.token_urlsafe(32)
+BOT_HOST = os.getenv("BOT_HOST", "")
+
 # إعدادات المراقبة الدورية (بالثواني)
 WATCHDOG_INTERVAL = 300
 WATCHDOG_FIRST_DELAY = 1

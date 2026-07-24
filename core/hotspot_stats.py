@@ -133,8 +133,10 @@ def get_hotspot_stats(api, router_key: str, day: int | None = None) -> dict | No
                         elif 30 <= limit_gb < 40:
                             categories["30 GB"] += 1
                         elif 40 <= limit_gb < 50:
+                            categories["40 GB"] += 1
+                        elif 50 <= limit_gb < 60:
                             categories["50 GB"] += 1
-                        elif limit_gb >= 50:
+                        elif limit_gb >= 60:
                             categories["50 GB"] += 1
                         else:
                             categories["أخرى"] += 1

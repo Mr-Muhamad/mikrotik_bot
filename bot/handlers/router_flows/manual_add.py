@@ -224,7 +224,7 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
         logger.warning(f"manual_add confirm test connection failed for {ip}: {e}")
         await run_blocking(log_action, "add_router_manual", ip, "offline", query.from_user.id)
         await query.edit_message_text(
-            MANUAL_ADD_CONN_FAILED.format(str(e)), reply_markup=get_router_keyboard()
+            MANUAL_ADD_CONN_FAILED.format("تعذّر الاتصال للتحقق"), reply_markup=get_router_keyboard()
         )
 
     cleanup_state(query.from_user.id, context.user_data)

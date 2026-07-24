@@ -11,6 +11,7 @@ from core.cache import TTLCache
 from core.card_models import CardData, CardSystem
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient, RouterOSResponse
+from utils.validators import sanitize_comment
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +140,7 @@ class HotspotManager:
         if uptime:
             params["limit-uptime"] = uptime
         if comment:
-            params["comment"] = comment
+            params["comment"] = sanitize_comment(comment)
 
         result = self._api.execute(router_key, "ip/hotspot/user/add", **params)
         self.invalidate_users_cache(router_key)
@@ -161,7 +162,10 @@ class HotspotManager:
         for key, value in kwargs.items():
             normalized = key.replace("_", "-")
             if normalized in allowed_fields and value is not None:
-                params[normalized] = value if isinstance(value, str) else str(value)
+                if normalized == "comment":
+                    params[normalized] = sanitize_comment(str(value))
+                else:
+                    params[normalized] = value if isinstance(value, str) else str(value)
 
         result = self._api.execute(router_key, "ip/hotspot/user/set", **params)
         self.invalidate_users_cache(router_key)

@@ -358,7 +358,7 @@ async def userman_search_add_profile_selected(update: Update, context: ContextTy
             userman_manager.add_profile_to_user, router_key, username, profile
         )
     except Exception as e:
-        linked, err = False, str(e)
+        linked, err = False, "حدث خطأ غير متوقع"
 
     if linked:
         msg = USERMAN_ADD_PROFILE_SUCCESS.format(profile=profile, username=username)

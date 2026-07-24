@@ -14,8 +14,6 @@ from core.mikrotik_api import mikrotik_api
 
 logger = logging.getLogger(__name__)
 
-from core.backup.ftp import download_files_via_ftp  # noqa: E402
-
 _BACKUP_LOCKS: dict[str, threading.RLock] = {}
 _BACKUP_LOCKS_GUARD = threading.Lock()
 
@@ -62,14 +60,13 @@ class SystemBackupService:
                 **{"file": f"{file_prefix}_export_{timestamp}"},
             )
 
-            downloaded = download_files_via_ftp(
-                router_key,
-                backup_dir,
-                [
-                    f"{file_prefix}_{timestamp}.backup",
-                    f"{file_prefix}_export_{timestamp}.rsc",
-                ],
-            )
+            downloaded = []
+            for fname in [
+                f"{file_prefix}_{timestamp}.backup",
+                f"{file_prefix}_export_{timestamp}.rsc",
+            ]:
+                if mikrotik_api.download_file_from_router(router_key, fname, backup_dir):
+                    downloaded.append(fname)
             cleanup_router_files(router_key, f"{file_prefix}_")
             cleanup_router_files(router_key, f"{file_prefix}_export_")
 

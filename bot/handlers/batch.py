@@ -33,6 +33,7 @@ from database.repositories.pdf_settings import get_pdf_settings
 from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
+from utils.callback_utils import is_duplicate_callback
 from utils.chat_cleaner import send_step
 from utils.formatters import format_bytes
 
@@ -68,7 +69,7 @@ async def _show_batches_page(update: Update, context: ContextTypes.DEFAULT_TYPE,
         batches = await run_blocking(list_card_batches, router_key, page_size, offset)
     except Exception as e:
         logger.error(f"Failed to list batches: {e}")
-        await send_step(update, context, f"❌ فشل جلب الدفعات: {str(e)[:120]}")
+        await send_step(update, context, "❌ فشل جلب الدفعات: خطأ غير متوقع")
         return
 
     if not batches and page == 0:
@@ -214,6 +215,8 @@ async def mark_batch_paid_handler(update: Update, context: ContextTypes.DEFAULT_
     """تغيير حالة الدفع لدفعة كروت (مدفوع/غير مدفوع/مرحّل)."""
     query = update.callback_query
     await query.answer()
+    if is_duplicate_callback(query.data, query.from_user.id):
+        return
     try:
         parts = query.data.split(":", 1)
         # query.data = mark_paid:5 | mark_unpaid:5 | mark_deferred:5

@@ -47,7 +47,7 @@ from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import edit_clean, reply_final, send_step
 from utils.error_response import send_error
 from utils.formatters import format_bytes, format_hotspot_user
-from utils.validators import validate_bytes_input, validate_username
+from utils.validators import validate_bytes_input, validate_password, validate_username
 
 from .constants import WAITING_EDIT_FIELD, WAITING_EDIT_VALUE
 from .hotspot_common import search_users_for_action
@@ -427,6 +427,11 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             if exists:
                 await reply_final(update, context, DUPLICATE_USER)
                 return WAITING_EDIT_VALUE
+    if api_field == "password":
+        valid, pwd_msg = validate_password(new_value)
+        if not valid:
+            await reply_final(update, context, f"❌ {pwd_msg}")
+            return WAITING_EDIT_VALUE
     if api_field == "limit-bytes-total":
         try:
             new_value = validate_bytes_input(new_value)

@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 MAX_LOCAL_BACKUPS = 10
 MAX_ROUTER_BACKUPS = 5
-FTP_PORT = 21
 BACKUP_FILE_EXTENSIONS = (".backup", ".rsc", ".tar", ".umb")
 USERMAN_BACKUP_PREFIX = "User_Manager_"
 
@@ -25,17 +24,6 @@ def parse_router_creation_time(raw: str | None) -> datetime:
         except ValueError:
             continue
     return datetime.min.replace(tzinfo=UTC)
-
-
-def get_ftp_port(router_key: str) -> int:
-    try:
-        services = mikrotik_api.execute(router_key, "ip/service/print")
-        for svc in services:
-            if svc.get("name", "").lower() == "ftp":
-                return int(svc.get("port", FTP_PORT))
-    except Exception as e:
-        logger.debug(f"Could not fetch FTP port for {router_key}: {e}")
-    return FTP_PORT
 
 
 def sanitize_router_name(name: str) -> str:
