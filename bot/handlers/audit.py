@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -48,7 +49,7 @@ SUBMENU_TITLES = {
 _FILTER_KEYS = ("router", "admin_id", "admin_label", "action", "since_days")
 
 
-def _empty_filters():
+def _empty_filters() -> dict[str, Any]:
     return {
         "router": None,
         "admin_id": None,
@@ -58,15 +59,11 @@ def _empty_filters():
     }
 
 
-def _get_filters(context: ContextTypes.DEFAULT_TYPE) -> dict:
+def _get_filters(context: ContextTypes.DEFAULT_TYPE) -> dict[str, Any]:
     return context.user_data.setdefault("logs_filters", _empty_filters())
 
 
-def _has_active_filters(filters: dict) -> bool:
-    return any(filters.get(k) for k in ("router", "admin_id", "action", "since_days"))
-
-
-def _build_db_filters(filters: dict) -> dict:
+def _build_db_filters(filters: dict[str, Any]) -> dict[str, Any]:
     db_filters = {
         "router": filters.get("router"),
         "admin_id": filters.get("admin_id"),
@@ -79,7 +76,7 @@ def _build_db_filters(filters: dict) -> dict:
     return db_filters
 
 
-def _format_filters_short(filters: dict) -> str:
+def _format_filters_short(filters: dict[str, Any]) -> str:
     parts = []
     if filters.get("router"):
         parts.append(f"🔍 {filters['router']}")

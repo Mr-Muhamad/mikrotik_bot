@@ -20,7 +20,9 @@ from utils.error_response import send_error
 logger = logging.getLogger(__name__)
 
 
-async def _show_stats(update, context, stat_type):
+async def _show_stats(
+    update: Update, context: ContextTypes.DEFAULT_TYPE, stat_type: str
+) -> None:
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = context.user_data["router_key"]

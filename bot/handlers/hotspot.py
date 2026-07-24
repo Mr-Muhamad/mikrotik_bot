@@ -1,5 +1,6 @@
 import html
 import logging
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -20,13 +21,13 @@ from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
-from utils.chat_cleaner import reply_final, safe_edit_or_send
+from utils.chat_cleaner import safe_edit_or_send
 from utils.error_response import send_error
 
 logger = logging.getLogger(__name__)
 
 
-def _categories_kwargs(stats: dict) -> dict:
+def _categories_kwargs(stats: dict[str, Any]) -> dict[str, str]:
     cats = stats["categories"]
     return {
         "cat_10": cats["10 GB"],
@@ -38,7 +39,7 @@ def _categories_kwargs(stats: dict) -> dict:
     }
 
 
-def _summary_text(stats: dict) -> str:
+def _summary_text(stats: dict[str, Any]) -> str:
     return HOTSPOT_STATS.format(
         total=stats["total"],
         active=stats["active"],
@@ -47,7 +48,7 @@ def _summary_text(stats: dict) -> str:
     )
 
 
-def _reset_block_text(stats: dict) -> str:
+def _reset_block_text(stats: dict[str, Any]) -> str:
     formatted_items = []
     for item in stats["reset_list"]:
         if len(item) == 3:

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -167,7 +168,12 @@ async def watchdog_refresh(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await watchdog_status(update, context)
 
 
-async def _reply(update, context, query, text: str):
+async def _reply(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    query: object,
+    text: str,
+) -> None:
     """Send or edit in place depending on whether triggered from a callback."""
     if query:
         await safe_edit_or_send(query, context, text)
@@ -183,7 +189,7 @@ async def _check_all_routers(context: ContextTypes.DEFAULT_TYPE):
     if not routers:
         return
 
-    async def _check_single(r: dict):
+    async def _check_single(r: dict[str, Any]) -> None:
         if not r.get("username"):
             return
 
@@ -233,3 +239,7 @@ async def _notify_admins(context: ContextTypes.DEFAULT_TYPE, text: str):
                 logger.error(f"Failed to notify admin {admin_id} after RetryAfter: {retry_err}")
         except Exception as e:
             logger.warning(f"Failed to notify admin {admin_id}: {e}")
+
+
+# Public alias — external callers (e.g. main.py) should use this name.
+check_all_routers = _check_all_routers

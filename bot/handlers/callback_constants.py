@@ -144,119 +144,119 @@ CALLBACKS: dict[str, str] = {
 # ── Dynamic token builders (prefix + variable) ────────────────
 
 
-def connect_router(router_id):
+def connect_router(router_id: str) -> str:
     return f"connect_router_{router_id}"
 
 
-def delete_router(router_id):
+def delete_router(router_id: str) -> str:
     return f"delete_router_{router_id}"
 
 
-def reboot_router(router_id):
+def reboot_router(router_id: str) -> str:
     return f"reboot_router_{router_id}"
 
 
-def rename_router(router_id):
+def rename_router(router_id: str) -> str:
     return f"rename_router_{router_id}"
 
 
-def reboot_confirm(router_key):
+def reboot_confirm(router_key: str) -> str:
     return f"reboot_yes_{router_key}"
 
 
-def delete_confirm(router_id, yes: bool):
+def delete_confirm(router_id: str, yes: bool) -> str:
     return f"confirm_delete_router_{'yes' if yes else 'no'}_{router_id}"
 
 
-def saved_router(router_id):
+def saved_router(router_id: str) -> str:
     return f"saved_router_{router_id}"
 
 
-def discovered_router(ip_address):
+def discovered_router(ip_address: str) -> str:
     return f"disc_router_{ip_address}"
 
 
-def backup_download(backup_type, index):
+def backup_download(backup_type: str, index: str) -> str:
     return f"backup_dl:{backup_type}:{index}"
 
 
-def batch_select(batch_id):
+def batch_select(batch_id: str) -> str:
     return f"batch_sel:{batch_id}"
 
 
-def batch_regen(batch_id):
+def batch_regen(batch_id: str) -> str:
     return f"batch_regen:{batch_id}"
 
 
-def batch_page(page):
+def batch_page(page: str) -> str:
     return f"batch_page:{page}"
 
 
-def userman_search_page(page):
+def userman_search_page(page: str) -> str:
     return f"um_search_pg_{page}"
 
 
-def hotspot_search_page(page):
+def hotspot_search_page(page: str) -> str:
     return f"hs_search_pg_{page}"
 
 
-def restore(index):
+def restore(index: str) -> str:
     return f"restore:{index}"
 
 
-def userman_restore_tar(index):
+def userman_restore_tar(index: str) -> str:
     return f"userman_restore_tar:{index}"
 
 
-def userman_restore_exec():
+def userman_restore_exec() -> str:
     return "userman_restore_exec"
 
 
-def confirm_restore():
+def confirm_restore() -> str:
     return "confirm_restore"
 
 
-def logs_page(page):
+def logs_page(page: str) -> str:
     return f"logs_page_{page}"
 
 
-def logs_set(suffix, index):
+def logs_set(suffix: str, index: str) -> str:
     return f"logs_set_{suffix}_{index}"
 
 
-def page_user(prefix, page):
+def page_user(prefix: str, page: str) -> str:
     return f"page_{prefix}_{page}"
 
 
-def host_select(index):
+def host_select(index: str) -> str:
     return f"host_sel_{index}"
 
 
-def user_action(prefix, user_id):
+def user_action(prefix: str, user_id: str) -> str:
     return f"{prefix}_{user_id}"
 
 
-def add_profile(index):
+def add_profile(index: str) -> str:
     return f"add_profile_{index}"
 
 
-def delete_user_star(target):
+def delete_user_star(target: str) -> str:
     return f"delete_user_*{target}"
 
 
-def edit_user_star(target):
+def edit_user_star(target: str) -> str:
     return f"edit_user_*{target}"
 
 
-def edit_profile(index):
+def edit_profile(index: str) -> str:
     return f"edit_profile_{index}"
 
 
-def hs_card_profile(index):
+def hs_card_profile(index: str) -> str:
     return f"hs_card_profile_{index}"
 
 
-def card_profile(index):
+def card_profile(index: str) -> str:
     return f"card_profile_{index}"
 
 

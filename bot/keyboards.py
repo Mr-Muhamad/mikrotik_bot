@@ -325,8 +325,7 @@ def get_profile_keyboard(
     """Return a keyboard listing profiles; callback_data uses index (prefix_0, prefix_1, …)."""
     keyboard: _KeyboardLayout = []
     for index, profile in enumerate(profiles):
-        name: str = profile if isinstance(profile, str) else str(profile.get("name", "unknown"))
-        keyboard.append([InlineKeyboardButton(name, callback_data=f"{prefix}_{index}")])
+        keyboard.append([InlineKeyboardButton(profile, callback_data=f"{prefix}_{index}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data=back_callback)])
     keyboard.append([InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")])
     return InlineKeyboardMarkup(keyboard)
@@ -374,7 +373,7 @@ def get_saved_routers_keyboard(
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_router_action_keyboard(router_id) -> InlineKeyboardMarkup:
+def get_router_action_keyboard(router_id: int) -> InlineKeyboardMarkup:
     """Return the action keyboard for a saved router (connect, reboot, rename, delete)."""
     keyboard = [
         [
@@ -390,7 +389,7 @@ def get_router_action_keyboard(router_id) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_delete_router_confirm_keyboard(router_id) -> InlineKeyboardMarkup:
+def get_delete_router_confirm_keyboard(router_id: int) -> InlineKeyboardMarkup:
     """Return a confirmation keyboard for deleting a saved router."""
     keyboard = [
         [
@@ -415,7 +414,7 @@ def get_schedule_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_reboot_keyboard(router_key) -> InlineKeyboardMarkup:
+def get_reboot_keyboard(router_key: str) -> InlineKeyboardMarkup:
     """Return a confirmation keyboard for rebooting a router."""
     keyboard = [
         [
@@ -426,7 +425,7 @@ def get_reboot_keyboard(router_key) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def _user_button_label(user: dict) -> str:
+def _user_button_label(user: dict[str, Any]) -> str:
     name = str(user.get("name", "N/A"))
     comment = str(user.get("comment", ""))
     label = f"{name} ({comment})" if comment else name
@@ -497,12 +496,12 @@ def get_paginated_user_keyboard(
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_edit_user_keyboard(users) -> InlineKeyboardMarkup:
+def get_edit_user_keyboard(users: list[dict[str, Any]]) -> InlineKeyboardMarkup:
     """Return a keyboard listing hotspot users for selection to edit."""
     return get_user_selection_keyboard(users, "edit_user", "menu_hotspot")
 
 
-def get_delete_user_keyboard(users) -> InlineKeyboardMarkup:
+def get_delete_user_keyboard(users: list[dict[str, Any]]) -> InlineKeyboardMarkup:
     """Return a keyboard listing hotspot users for selection to delete."""
     return get_user_selection_keyboard(users, "delete_user", "menu_hotspot")
 
@@ -535,7 +534,7 @@ def get_edit_field_keyboard(is_disabled: bool = False) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_back_keyboard(callback_data) -> InlineKeyboardMarkup:
+def get_back_keyboard(callback_data: str) -> InlineKeyboardMarkup:
     """Return a keyboard with a back button and home button."""
     keyboard = [
         [InlineKeyboardButton("🔙 رجوع", callback_data=callback_data)],
@@ -553,7 +552,7 @@ def get_nav_back_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_skip_keyboard(skip_callback, back_callback) -> InlineKeyboardMarkup:
+def get_skip_keyboard(skip_callback: str, back_callback: str) -> InlineKeyboardMarkup:
     """Return a keyboard with skip and back buttons."""
     keyboard = [
         [
@@ -616,7 +615,7 @@ def get_search_results_keyboard(
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_host_detail_keyboard(is_disabled=False, mac: str = "") -> InlineKeyboardMarkup:
+def get_host_detail_keyboard(is_disabled: bool = False, mac: str = "") -> InlineKeyboardMarkup:
     """Return the host detail keyboard with kick, block, and toggle options."""
     from bot.handlers.callback_constants import block_mac_cb
 
@@ -651,7 +650,7 @@ def get_blocked_macs_keyboard(
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_userman_detail_keyboard(is_disabled=False) -> InlineKeyboardMarkup:
+def get_userman_detail_keyboard(is_disabled: bool = False) -> InlineKeyboardMarkup:
     """Return the User Manager detail keyboard with management options."""
     toggle_text = "🟢 تفعيل المستخدم" if is_disabled else "🔴 تعطيل المستخدم"
     keyboard = [

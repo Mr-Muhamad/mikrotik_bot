@@ -10,12 +10,14 @@ shared ``_show_menu`` helper kept in ``bot.handlers.common``.
 
 import logging
 
+from collections.abc import Callable
+
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 # Shared helpers kept in ``common`` to avoid a circular import between
 # ``menus`` and ``commands_basic`` (both depend on these primitives).
-from bot.handlers.common import _get_router_part, _show_menu
+from bot.handlers.common import get_router_part, show_menu
 from bot.handlers.router_system import get_router_system_part as _get_router_system_part
 from bot.handlers.routers import saved_routers_list as sr
 from bot.keyboards import (
@@ -50,45 +52,44 @@ logger = logging.getLogger(__name__)
 # These are used by cancel/go_back handlers to avoid rate limiter conflicts.
 
 
-async def _internal_hotspot_menu(update, context):
-    await _show_menu(update, context, HOTSPOT_MENU, get_hotspot_keyboard)
+async def internal_hotspot_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await show_menu(update, context, HOTSPOT_MENU, get_hotspot_keyboard)
 
 
-async def _internal_userman_menu(update, context):
-    await _show_menu(update, context, USERMAN_MENU, get_userman_keyboard)
+async def internal_userman_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await show_menu(update, context, USERMAN_MENU, get_userman_keyboard)
 
 
-async def _internal_stats_menu(update, context):
-    await _show_menu(update, context, STATS_MENU, get_stats_keyboard)
+async def internal_stats_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await show_menu(update, context, STATS_MENU, get_stats_keyboard)
 
 
-async def _internal_backup_menu(update, context):
-    await _show_menu(update, context, BACKUP_MENU, get_backup_keyboard)
+async def internal_backup_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await show_menu(update, context, BACKUP_MENU, get_backup_keyboard)
 
 
-async def _internal_routers_menu(update, context):
-    await _show_menu(update, context, ROUTERS_MENU, get_routers_keyboard)
+async def internal_routers_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await show_menu(update, context, ROUTERS_MENU, get_routers_keyboard)
 
 
-async def _internal_reports_menu(update, context):
-    await _show_menu(update, context, REPORTS_MENU, get_reports_keyboard)
+async def internal_reports_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await show_menu(update, context, REPORTS_MENU, get_reports_keyboard)
 
 
-async def _internal_pdf_settings_menu(update, context):
+async def internal_pdf_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await safe_answer_callback(query)
     await safe_edit_or_send(query, context, PDF_SETTINGS_MENU, get_pdf_settings_keyboard())
 
 
-async def _internal_main_menu(update, context):
-    """Internal main_menu without @admin_only — safe for go_back/end_conversation."""
+async def internal_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if query:
         await safe_answer_callback(query)
     user_id = update.effective_user.id
     router_key = get_selected_router(user_id)
     admin_name = update.effective_user.full_name
-    router_part = await _get_router_part(router_key)
+    router_part = await get_router_part(router_key)
     system_part = await _get_router_system_part(router_key)
     text = MAIN_MENU.format(admin_name=admin_name, router_part=router_part, system_part=system_part)
     if query:
@@ -109,7 +110,7 @@ async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     router_key = get_selected_router(user_id)
     admin_name = update.effective_user.full_name
-    router_part = await _get_router_part(router_key)
+    router_part = await get_router_part(router_key)
     system_part = await _get_router_system_part(router_key)
     text = MAIN_MENU.format(admin_name=admin_name, router_part=router_part, system_part=system_part)
 
@@ -123,17 +124,17 @@ async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def hotspot_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _show_menu(update, context, HOTSPOT_MENU, get_hotspot_keyboard)
+    await show_menu(update, context, HOTSPOT_MENU, get_hotspot_keyboard)
 
 
 @admin_only
 async def userman_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _show_menu(update, context, USERMAN_MENU, get_userman_keyboard)
+    await show_menu(update, context, USERMAN_MENU, get_userman_keyboard)
 
 
 @admin_only
 async def stats_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await _show_menu(update, context, STATS_MENU, get_stats_keyboard)
+    await show_menu(update, context, STATS_MENU, get_stats_keyboard)
 
 
 @admin_only
@@ -164,13 +165,12 @@ async def pdf_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 async def routers_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show the router management submenu (discover / saved / manual add)."""
-    await _show_menu(update, context, ROUTERS_MENU, get_routers_keyboard)
+    await show_menu(update, context, ROUTERS_MENU, get_routers_keyboard)
 
 
 @admin_only
 async def reports_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Show the reports submenu (usage / sales / batches / audit log)."""
-    await _show_menu(update, context, REPORTS_MENU, get_reports_keyboard)
+    await show_menu(update, context, REPORTS_MENU, get_reports_keyboard)
 
 
 # ─── CONVERSATION MANAGEMENT ────────────────────────────────
@@ -178,60 +178,64 @@ async def reports_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def menu_userman_from_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await _end_conversation(update, context, "menu_userman")
+    return await end_conversation(update, context, "menu_userman")
 
 
 @admin_only
 async def end_conversation_to_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await _end_conversation(update, context, "main_menu")
+    return await end_conversation(update, context, "main_menu")
 
 
 @admin_only
 async def end_conversation_to_hotspot(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await _end_conversation(update, context, "menu_hotspot")
+    return await end_conversation(update, context, "menu_hotspot")
 
 
 @admin_only
 async def end_conversation_to_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await _end_conversation(update, context, "menu_stats")
+    return await end_conversation(update, context, "menu_stats")
 
 
 @admin_only
 async def end_conversation_to_backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await _end_conversation(update, context, "menu_backup")
+    return await end_conversation(update, context, "menu_backup")
 
 
 @admin_only
 async def end_conversation_to_pdf_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await _end_conversation(update, context, "menu_pdf_settings")
+    return await end_conversation(update, context, "menu_pdf_settings")
 
 
 @admin_only
 async def end_conversation_to_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await _end_conversation(update, context, "menu_routers")
+    return await end_conversation(update, context, "menu_routers")
 
 
 @admin_only
 async def end_conversation_to_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    return await _end_conversation(update, context, "menu_reports")
+    return await end_conversation(update, context, "menu_reports")
 
 
 # ─── NAV RESOLUTION ─────────────────────────────────────────
 
 
-NAV_TARGETS = {
-    "main_menu": _internal_main_menu,
-    "menu_hotspot": _internal_hotspot_menu,
-    "menu_userman": _internal_userman_menu,
-    "menu_stats": _internal_stats_menu,
-    "menu_backup": _internal_backup_menu,
-    "menu_pdf_settings": _internal_pdf_settings_menu,
-    "menu_routers": _internal_routers_menu,
-    "menu_reports": _internal_reports_menu,
+NAV_TARGETS: dict[str, Callable[..., None]] = {
+    "main_menu": internal_main_menu,
+    "menu_hotspot": internal_hotspot_menu,
+    "menu_userman": internal_userman_menu,
+    "menu_stats": internal_stats_menu,
+    "menu_backup": internal_backup_menu,
+    "menu_pdf_settings": internal_pdf_settings_menu,
+    "menu_routers": internal_routers_menu,
+    "menu_reports": internal_reports_menu,
 }
 
 
-async def _end_conversation(update, context, target="main_menu"):
+async def end_conversation(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    target: str = "main_menu",
+) -> int:
     query = update.callback_query
     await safe_answer_callback(query)
     cleanup_state(query.from_user.id, context.user_data)
@@ -240,14 +244,13 @@ async def _end_conversation(update, context, target="main_menu"):
     return ConversationHandler.END
 
 
-def _resolve_nav_target(target: str):
-    """Resolve a navigation target by name."""
+def resolve_nav_target(target: str) -> Callable[..., None]:
     handler = NAV_TARGETS.get(target)
     if handler is not None:
         return handler
     if target == "saved_routers":
         return sr
-    return _internal_main_menu
+    return internal_main_menu
 
 
 @admin_only
@@ -255,6 +258,6 @@ async def go_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
     target = nav_get(context)
-    handler = _resolve_nav_target(target)
+    handler = resolve_nav_target(target)
     await handler(update, context)
     return ConversationHandler.END
