@@ -6,7 +6,6 @@ from telegram.ext import ContextTypes, ConversationHandler
 from bot.handlers.constants import WAITING_USAGE_QUERY
 from bot.keyboards import get_back_keyboard
 from bot.messages import (
-    ERROR_OCCURRED,
     NO_ROUTER_SELECTED,
     USAGE_BYTES_IN,
     USAGE_BYTES_OUT,
