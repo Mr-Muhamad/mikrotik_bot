@@ -138,7 +138,7 @@ async def report_export_excel(update: Update, context: ContextTypes.DEFAULT_TYPE
         excel_bytes = await run_blocking(build_usage_excel_report, report)
         filename = f"hotspot_report_{report.get('router_key', 'router')}.xlsx"
 
-        chat_id = update.effective_chat.id if update.effective_chat else (query.message.chat.id if query and query.message else None)
+        chat_id = update.effective_chat.id if update.effective_chat else None
         if chat_id:
             await context.bot.send_document(
                 chat_id=chat_id,

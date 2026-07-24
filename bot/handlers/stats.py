@@ -99,9 +99,10 @@ async def stats_chart_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         chart_title = f"مخطط نشاط المستخدمين ({router_name})"
         img_bytes = await run_blocking(generate_trend_chart, snapshots, chart_title)
 
-        if query and query.message:
+        chat_id = update.effective_chat.id if update.effective_chat else None
+        if chat_id:
             await context.bot.send_photo(
-                chat_id=query.message.chat_id,
+                chat_id=chat_id,
                 photo=img_bytes,
                 caption="📈 الرسم البياني المصور لحركة نشاط وتدفق الشبكة للأسبوع الحالي",
                 reply_markup=get_stats_keyboard(),

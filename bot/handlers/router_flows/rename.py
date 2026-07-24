@@ -30,7 +30,7 @@ from utils.chat_cleaner import reply_final, send_step
 async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
-    if is_duplicate_callback(query):
+    if is_duplicate_callback(query.data if query else None):
         return ConversationHandler.END
     cleanup_state(query.from_user.id, context.user_data)
     nav_set(context, "saved_routers")

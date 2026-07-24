@@ -15,6 +15,11 @@ BACKUP_FILE_EXTENSIONS = (".backup", ".rsc", ".tar", ".umb")
 USERMAN_BACKUP_PREFIX = "User_Manager_"
 
 
+def get_ftp_port(router_key: str = "") -> int:
+    """Return default FTP port (21)."""
+    return 21
+
+
 def parse_router_creation_time(raw: str | None) -> datetime:
     if not raw:
         return datetime.min.replace(tzinfo=UTC)

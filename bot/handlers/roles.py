@@ -4,6 +4,8 @@ from telegram.ext import ContextTypes
 from config import ADMIN_IDS
 from database.models import list_admin_roles, log_action, set_admin_role
 from utils.admin_decorator import ROLE_LABELS, ROLE_LEVELS, admin_only, require_role
+from utils.callback_utils import safe_answer_callback
+from utils.chat_cleaner import safe_edit_or_send
 
 ROLE_SET_USAGE = "الاستخدام: /role <id> <admin|operator|viewer>"
 ROLE_SET_INVALID = "الدور غير صالح. استخدم أحد القيم: admin, operator, viewer"
@@ -27,9 +29,6 @@ CUSTOMER_REMOVE_SUCCESS = "✅ تم إزالة العميل {customer_id} بنج
 @require_role("admin")
 async def roles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """List the current role of every registered admin."""
-    from utils.callback_utils import safe_answer_callback
-    from utils.chat_cleaner import safe_edit_or_send
-
     query = update.callback_query
     if query:
         await safe_answer_callback(query)

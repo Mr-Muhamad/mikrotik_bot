@@ -46,6 +46,14 @@ class MikrotikClient(Protocol):
 
     def has_active_connection(self, router_key: str) -> bool: ...
 
+    def download_file_from_router(
+        self, router_key: str, remote_name: str, local_dir: str
+    ) -> bool: ...
+
+    def upload_file_to_router(
+        self, router_key: str, local_path: str, remote_name: str
+    ) -> bool: ...
+
     # ── Cache invalidation ─────────────────────────────────────
     def invalidate_router_name(self, router_key: str) -> None: ...
 

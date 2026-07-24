@@ -28,8 +28,8 @@ _server_thread: threading.Thread | None = None
 class _FileRequestHandler(BaseHTTPRequestHandler):
     """Handle POST /upload (receive from router) and GET /files/<name> (serve to router)."""
 
-    def log_message(self, fmt: str, *args: object) -> None:
-        logger.debug(f"FileServer: {fmt % args}")
+    def log_message(self, format: str, *args: object) -> None:
+        logger.debug(f"FileServer: {format % args}")
 
     # ── Authentication ───────────────────────────────────────
     def _check_auth(self) -> bool:
