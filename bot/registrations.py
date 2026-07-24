@@ -31,21 +31,16 @@ separate CHs precede the standalone ``cancel``; main CH is added after
 all standalone handlers.
 """
 
-import bot.handlers.constants as constants
-from bot.registration_parts import conversation as _conversation  # noqa: F401
+from typing import Any
 
-# Importing these modules has the side-effect of populating the handler
-# registry. Order matters: standalone must be populated before the main
-# conversation's entry_points/states/fallbacks so decorator execution
-# order is preserved.
-from bot.registration_parts import standalone as _standalone  # noqa: F401
+import bot.handlers.constants as constants  # noqa: F401 — passed to build_application
 from bot.registration_parts.separate_handlers import (
     register_separate_conversation_handlers,
 )
 from utils.handler_registry import build_application
 
 
-def build_all(application):
+def build_all(application: Any) -> None:
     """Build all handlers from registry and add to application.
 
     Registration order is critical:

@@ -6,6 +6,8 @@
 
 import logging
 
+from telegram.ext import ContextTypes
+
 from bot.profile_callbacks import cache_profile_names
 from core.hotspot_manager import hotspot_manager
 from core.profile_cache import profile_cache
@@ -57,7 +59,7 @@ async def fetch_profiles(
     for entry in raw:
         if isinstance(entry, str):
             names.append(entry)
-        elif isinstance(entry, dict):
+        elif hasattr(entry, "get"):
             name = entry.get("name", "")
             if name:
                 names.append(str(name))
@@ -68,7 +70,7 @@ async def fetch_profiles(
 
 
 async def fetch_and_cache_profiles(
-    context,
+    context: ContextTypes.DEFAULT_TYPE,
     router_key: str | None,
     source: str = PROFILE_SOURCE_HOTSPOT,
 ) -> list[str]:

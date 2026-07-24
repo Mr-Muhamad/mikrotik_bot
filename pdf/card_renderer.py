@@ -19,19 +19,19 @@ CARD_SEPARATOR_LINE_WIDTH = 0.2
 
 FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts")
 
-_ARABIC_FONT: str | None = None
-_ARABIC_RESHAPER: Any = None
-_BIDI_DISPLAY: Any = None
+_arabic_font: str | None = None
+_arabic_reshaper: Any = None
+_bidi_display: Any = None
 _INIT_LOCK = threading.Lock()
 
 
 def _setup_arabic_support() -> str:
     """Initialize Arabic text reshaping and bidirectional support."""
-    global _ARABIC_FONT, _ARABIC_RESHAPER, _BIDI_DISPLAY
+    global _arabic_font, _arabic_reshaper, _bidi_display
 
     with _INIT_LOCK:
-        if _ARABIC_FONT is not None:
-            return _ARABIC_FONT
+        if _arabic_font is not None:
+            return _arabic_font
 
         font_files = [
             ("HacenBeirut", "Hacen Beirut Heading.ttf"),
@@ -44,37 +44,41 @@ def _setup_arabic_support() -> str:
             if os.path.exists(font_path):
                 try:
                     pdfmetrics.registerFont(TTFont(font_name, font_path))
-                    _ARABIC_FONT = font_name
+                    _arabic_font = font_name
                     logger.info(f"Loaded Arabic font: {font_name}")
                     break
                 except Exception as e:
                     logger.warning(f"Failed to load font {font_file}: {e}")
 
-        if _ARABIC_FONT is None:
-            _ARABIC_FONT = "Helvetica"
+        if _arabic_font is None:
+            _arabic_font = "Helvetica"
             logger.warning("No Arabic font found, using Helvetica")
 
         try:
             from arabic_reshaper import ArabicReshaper
             from bidi.algorithm import get_display
 
-            _ARABIC_RESHAPER = ArabicReshaper(configuration={"delete_harakat": False})
-            _BIDI_DISPLAY = get_display
+            _arabic_reshaper = ArabicReshaper(configuration={"delete_harakat": False})
+            _bidi_display = get_display
         except ImportError:
             logger.warning("arabic_reshaper or python-bidi not installed")
 
-    return _ARABIC_FONT
+    return _arabic_font
+
+
+# Expose a public alias for external modules — avoids importing a private name.
+setup_arabic_support = _setup_arabic_support
 
 
 def _arabic_text(text: Any) -> str:
     """Reshape and reorder Arabic text for correct PDF rendering."""
     if not text:
         return ""
-    if _ARABIC_RESHAPER is None or _BIDI_DISPLAY is None:
+    if _arabic_reshaper is None or _bidi_display is None:
         return str(text)
     try:
-        reshaped = _ARABIC_RESHAPER.reshape(str(text))
-        result = _BIDI_DISPLAY(reshaped)
+        reshaped = _arabic_reshaper.reshape(str(text))
+        result = _bidi_display(reshaped)
         return cast(str, result)
     except Exception as e:
         logger.debug(f"Arabic text reshaping failed, using raw text: {e}")
@@ -177,11 +181,9 @@ class CardRenderer:
         self, c: Canvas, x: float, y: float, width: float, height: float, card: dict[str, Any]
     ) -> None:
         """Draw username and password fields with dynamic font sizing."""
-        username = str(card.get("username", "") if isinstance(card, dict) else card.username)
-        password = str(card.get("password", "") if isinstance(card, dict) else card.password)
-        show_password = (
-            card.get("show_password", False) if isinstance(card, dict) else card.show_password
-        )
+        username = str(card.get("username", ""))
+        password = str(card.get("password", ""))
+        show_password = card.get("show_password", False)
 
         data_top = y + height - 10.5 * mm
         footer_line_y = y + 5 * mm
@@ -227,7 +229,7 @@ class CardRenderer:
 
     def _draw_qr(self, c: Canvas, x: float, y: float, width: float, height: float, card: dict[str, Any]) -> None:
         """Draw QR code for hotspot login."""
-        username = str(card.get("username", "") if isinstance(card, dict) else card.username)
+        username = str(card.get("username", ""))
 
         if not username:
             return

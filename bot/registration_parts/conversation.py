@@ -11,7 +11,8 @@ AFTER ``bot.registration_parts.standalone`` so standalone decorators
 run first.
 """
 
-from telegram.ext import CallbackQueryHandler, CommandHandler, filters
+from telegram import Update
+from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, filters
 
 from bot.handlers.backup import schedule_enable, schedule_menu_from_conversation, schedule_set
 from bot.handlers.batch import share_card_send, share_card_start
@@ -110,11 +111,6 @@ from bot.handlers.menus import (
     go_back,
     menu_userman_from_conversation,
 )
-from bot.handlers.routers import (
-    disc_enter_password,
-    disc_enter_username,
-    discovered_router_selected,
-)
 from bot.handlers.settings import pdf_settings_option, pdf_settings_value
 from bot.handlers.usage import usage_query, usage_start
 from bot.handlers.userman import (
@@ -209,7 +205,7 @@ fallback(CommandHandler, command="usage")(usage_start)
 
 # Catch-all fallback for stale callbacks from old messages.
 # Must be LAST fallback so it only fires when no other handler matches.
-async def _unhandled_callback_handler(update, context):
+async def _unhandled_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if query:
         from utils.callback_utils import safe_answer_callback

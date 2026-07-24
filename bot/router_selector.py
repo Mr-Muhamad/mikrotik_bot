@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import UTC
 from functools import wraps
 from typing import Any
@@ -98,18 +99,18 @@ ROUTER_MGMT_PATTERN_NAMES = frozenset(
 
 # Resolved regex strings (from PATTERNS) for the exempt callback names.
 # Built lazily to avoid importing callback_constants at module import time.
-_ROUTER_MGMT_PATTERN_REGEXES = None
+_router_mgmt_pattern_regexes: frozenset[str] | None = None
 
 
-def _router_mgmt_regexes():
-    global _ROUTER_MGMT_PATTERN_REGEXES
-    if _ROUTER_MGMT_PATTERN_REGEXES is None:
+def _router_mgmt_regexes() -> frozenset[str]:
+    global _router_mgmt_pattern_regexes
+    if _router_mgmt_pattern_regexes is None:
         from bot.handlers.callback_constants import PATTERNS
 
-        _ROUTER_MGMT_PATTERN_REGEXES = frozenset(
+        _router_mgmt_pattern_regexes = frozenset(
             PATTERNS[name] for name in ROUTER_MGMT_PATTERN_NAMES
         )
-    return _ROUTER_MGMT_PATTERN_REGEXES
+    return _router_mgmt_pattern_regexes
 
 
 PRESERVED_USER_DATA_KEYS = {
@@ -166,7 +167,7 @@ CONVERSATION_USER_DATA_KEYS = (
 )
 
 
-def get_user_routers(user_id: int) -> list[dict]:
+def get_user_routers(user_id: int) -> list[dict[str, Any]]:
     """Return the list of routers this user is allowed to manage.
 
     - للـ Super Admin (ADMIN_IDS): كل الروترات النشطة.
@@ -183,7 +184,7 @@ def get_user_routers(user_id: int) -> list[dict]:
     return get_saved_routers(active_only=True, owner_id=user_id)
 
 
-def get_selected_router(user_id):
+def get_selected_router(user_id: int) -> str | None:
     """Return the currently selected router key for a user, or None if expired/not set."""
     session = get_user_session(user_id)
     if not session:
@@ -193,14 +194,18 @@ def get_selected_router(user_id):
     if not selected_router:
         return None
 
+    router_key = str(selected_router)
+
     # Check session timeout
     from datetime import datetime
 
     from database.models import UTC_TIMESTAMP_FORMAT
     from database.repositories.user_sessions import clear_router_session
 
-    last_activity_str = session.get("last_activity")
-    timeout_mins = session.get("session_timeout", 15) or 15
+    last_activity_raw: Any = session.get("last_activity")
+    last_activity_str: str = str(last_activity_raw) if last_activity_raw else ""
+    timeout_raw: Any = session.get("session_timeout")
+    timeout_mins: float = float(timeout_raw) if timeout_raw else 15.0
 
     # Only enforce if timeout_mins is > 0. If timeout_mins <= 0, it means no timeout.
     if last_activity_str and timeout_mins > 0:
@@ -221,35 +226,35 @@ def get_selected_router(user_id):
         except Exception as e:
             logger.warning(f"Failed to parse last_activity for user {user_id}: {e}")
 
-    return selected_router
+    return router_key
 
 
-def set_selected_router(user_id, router_key):
+def set_selected_router(user_id: int, router_key: str) -> None:
     """Set the selected router key for a user in the database."""
     save_user_session(user_id, selected_router=router_key)
 
 
-def set_current_action(user_id, action, data=None):
+def set_current_action(user_id: int, action: str, data: Any = None) -> None:
     """Set the current in-progress action and optional data for a user."""
     save_user_session(user_id, current_action=action, action_data=data)
 
 
-def clear_action(user_id):
+def clear_action(user_id: int) -> None:
     """Clear the current action for a user while preserving selected router."""
     save_user_session(user_id, current_action=None, action_data=None)
 
 
-def clear_router(user_id):
+def clear_router(user_id: int) -> None:
     """Clear all session state for a user (router selection and current action)."""
     save_user_session(user_id, selected_router="", current_action=None, action_data=None)
 
 
-def nav_set(context, back_to):
+def nav_set(context: ContextTypes.DEFAULT_TYPE, back_to: str) -> None:
     """Set the navigation back target in user_data for the current conversation."""
     context.user_data["nav_back"] = back_to
 
 
-def nav_get(context):
+def nav_get(context: ContextTypes.DEFAULT_TYPE) -> str:
     """Return the current navigation back target, defaulting to main_menu."""
     return context.user_data.get("nav_back", "main_menu")
 
@@ -293,7 +298,7 @@ async def _fast_reachability_check(router_key: str) -> bool:
         ip = router_cfg["ip_address"]
         port = router_cfg["port"]
 
-        reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=1.0)
+        _reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=1.0)
         writer.close()
         await writer.wait_closed()
         _REACHABILITY_CACHE[router_key] = (True, now)
@@ -304,7 +309,7 @@ async def _fast_reachability_check(router_key: str) -> bool:
         return False
 
 
-def require_router(func):
+def require_router(func: Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[Any]]) -> Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[Any]]:
     """Ensure a router is selected before running a handler.
 
     Lives in the bot (presentation) layer because it depends on presentation
@@ -346,7 +351,7 @@ def require_router(func):
     return wrapper
 
 
-def navigation_guard(func):
+def navigation_guard(func: Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[Any]]) -> Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[Any]]:
     """Central navigation guard: enforce an active router session.
 
     Wraps any handler and, when no router is selected, shows the router
@@ -413,3 +418,7 @@ def requires_router_check(command: str | None, pattern: str | None, func: Any = 
         return pattern not in _router_mgmt_regexes()
     # MessageHandler / other: treat as operational (guarded).
     return True
+
+
+# Public alias — external callers should use this name.
+fast_reachability_check = _fast_reachability_check
