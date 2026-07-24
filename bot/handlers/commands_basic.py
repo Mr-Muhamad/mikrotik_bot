@@ -237,6 +237,23 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         except Exception as e:
             logger.debug(f"Failed to send error message: {e}")
+    elif error:
+        try:
+            from config import ADMIN_IDS
+
+            if ADMIN_IDS and ADMIN_IDS[0]:
+                admin_id = ADMIN_IDS[0]
+                from utils.error_response import _sanitize_error_text
+
+                clean_text = _sanitize_error_text(str(error)[:300])
+                await context.bot.send_message(
+                    chat_id=admin_id,
+                    text=f"⚠️ <b>تنبيه نظام:</b> حدث خطأ غير متوقع في مهمة خلفية:\n<code>{clean_text}</code>",
+                    parse_mode="HTML",
+                )
+        except Exception as send_admin_err:
+            logger.debug(f"Failed to notify admin of background error: {send_admin_err}")
+
     if update and update.effective_user:
         clear_action(update.effective_user.id)
         cleanup_state(update.effective_user.id, context.user_data)

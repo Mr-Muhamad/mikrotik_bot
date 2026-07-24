@@ -112,6 +112,9 @@ async def search_users_for_action(update, context, action):
 
 async def execute_add_user(context, user_id, router_key, comment):
     session = get_hotspot_add_session(context.user_data)
+    if not session.username:
+        return False, "اسم المستخدم مطلوب"
+
     try:
         await run_blocking(
             hotspot_manager.add_user,
@@ -136,7 +139,11 @@ async def execute_add_user(context, user_id, router_key, comment):
         if "already have user" in str(e):
             context.user_data.pop("hotspot_add_session", None)
             return False, "duplicate"
-        return False, str(e)
+        from utils.error_response import _sanitize_error_text
+
+        sanitized_err = _sanitize_error_text(str(e))
+        return False, sanitized_err
+
 
 
 async def handle_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):

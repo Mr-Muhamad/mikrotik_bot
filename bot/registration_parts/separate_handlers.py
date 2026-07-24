@@ -20,7 +20,7 @@ from telegram.ext import (
 
 import bot.handlers.constants as constants
 from bot.handlers.callback_constants import PATTERNS
-from bot.handlers.commands_basic import cancel
+from bot.handlers.commands_basic import cancel, start
 from bot.handlers.menus import go_back
 from bot.handlers.routers import (
     manual_add_alias,
@@ -51,6 +51,7 @@ def _build_rename_handler() -> CH:
         },
         fallbacks=[
             CommandHandler("cancel", cancel),
+            CommandHandler("start", start),
             CallbackQueryHandler(cancel, pattern=PATTERNS["cancel_edit"]),
             CallbackQueryHandler(go_back, pattern=PATTERNS["go_back"]),
         ],
@@ -93,6 +94,7 @@ def _build_manual_add_handler() -> CH:
         },
         fallbacks=[
             CommandHandler("cancel", cancel),
+            CommandHandler("start", start),
             CallbackQueryHandler(cancel, pattern=PATTERNS["cancel_edit"]),
             CallbackQueryHandler(go_back, pattern=PATTERNS["go_back"]),
         ],
@@ -127,6 +129,7 @@ def _build_discovery_handler() -> CH:
         },
         fallbacks=[
             CommandHandler("cancel", cancel),
+            CommandHandler("start", start),
             CallbackQueryHandler(cancel, pattern=PATTERNS["cancel_edit"]),
             CallbackQueryHandler(go_back, pattern=PATTERNS["go_back"]),
         ],

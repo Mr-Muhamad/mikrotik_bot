@@ -436,7 +436,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         try:
             new_value = validate_bytes_input(new_value)
         except ValueError as e:
-            await reply_final(update, context, str(e))
+            await reply_final(update, context, f"❌ {e}")
             return WAITING_EDIT_VALUE
 
     user_data = get_hotspot_edit_session(context.user_data).user_data

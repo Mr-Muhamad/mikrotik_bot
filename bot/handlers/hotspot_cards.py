@@ -280,7 +280,7 @@ async def hotspot_cards_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE
         await send_step(
             update,
             context,
-            str(e),
+            f"❌ {e}",
             get_skip_keyboard("hs_skip_bytes", "hs_back_to_uptime"),
         )
         return WAITING_HOTSPOT_CARD_BYTES
