@@ -216,8 +216,17 @@ async def _notify_admins(context: ContextTypes.DEFAULT_TYPE, text: str):
         try:
             await context.bot.send_message(admin_id, text, parse_mode="HTML")
         except RetryAfter as e:
-            logger.warning(f"Rate limited by Telegram, waiting {e.retry_after}s for admin {admin_id}")
-            await asyncio.sleep(e.retry_after)
+            from datetime import timedelta
+
+            delay = (
+                float(e.retry_after.total_seconds())
+                if isinstance(e.retry_after, timedelta)
+                else float(e.retry_after)
+            )
+            logger.warning(
+                f"Rate limited by Telegram, waiting {delay}s for admin {admin_id}"
+            )
+            await asyncio.sleep(delay)
             try:
                 await context.bot.send_message(admin_id, text, parse_mode="HTML")
             except Exception as retry_err:
