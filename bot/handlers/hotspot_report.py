@@ -117,4 +117,38 @@ async def report_export_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
             pass
 
 
-__all__ = ["report_command", "report_export_csv", "build_csv"]
+@admin_only
+async def report_export_excel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Export and send formatted Excel (.xlsx) report to Telegram user."""
+    query = update.callback_query
+    if query:
+        await query.answer()
+    report = context.user_data.get("report")
+    if not report:
+        if query:
+            await query.edit_message_text(
+                "⚠️ لا يوجد تقرير محمّل. شغّل أمر /report أولاً.",
+                reply_markup=get_report_keyboard(),
+            )
+        return
+
+    try:
+        from core.reports_excel import build_usage_excel_report
+
+        excel_bytes = await run_blocking(build_usage_excel_report, report)
+        filename = f"hotspot_report_{report.get('router_key', 'router')}.xlsx"
+
+        chat_id = update.effective_chat.id if update.effective_chat else (query.message.chat.id if query and query.message else None)
+        if chat_id:
+            await context.bot.send_document(
+                chat_id=chat_id,
+                document=excel_bytes,
+                filename=filename,
+                caption="📊 تقرير استخدام الشبكة المنسق (.xlsx)",
+            )
+    except Exception as e:
+        logger.error(f"Excel export failed: {e}")
+        await send_error(update, context, e, log_extra="report_export_excel", reply_markup=get_report_keyboard())
+
+
+__all__ = ["report_command", "report_export_csv", "report_export_excel", "build_csv"]

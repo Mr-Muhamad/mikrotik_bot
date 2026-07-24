@@ -70,3 +70,24 @@ async def test_report_export_csv_without_report_prompts():
 
     update.callback_query.edit_message_text.assert_called_once()
     update.callback_query.answer.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_report_export_excel_sends_document():
+    update = MagicMock()
+    update.effective_user = MagicMock()
+    update.effective_user.id = 724730774
+    update.callback_query = _make_query()
+    update.effective_chat = MagicMock()
+    update.effective_chat.id = 99
+    ctx = MagicMock()
+    ctx.user_data = {"report": _report()}
+    ctx.bot = MagicMock()
+    ctx.bot.send_document = AsyncMock()
+
+    with patch("bot.handlers.hotspot_report.run_blocking", new=AsyncMock(return_value=b"PKfakeexcelbytes")):
+        await report_module.report_export_excel(update, ctx)
+
+    ctx.bot.send_document.assert_called_once()
+    filename = ctx.bot.send_document.call_args.kwargs.get("filename")
+    assert filename == "hotspot_report_discovered_1.xlsx"

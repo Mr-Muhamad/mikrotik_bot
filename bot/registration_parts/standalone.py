@@ -59,7 +59,7 @@ from bot.handlers.hotspot_cards import hotspot_cards_start
 from bot.handlers.hotspot_common import handle_page_callback
 from bot.handlers.hotspot_delete import hotspot_delete_start
 from bot.handlers.hotspot_edit import hotspot_edit_start
-from bot.handlers.hotspot_report import report_command, report_export_csv
+from bot.handlers.hotspot_report import report_command, report_export_csv, report_export_excel
 from bot.handlers.hotspot_search import (
     hotspot_search_start,
     unblock_mac_handler,
@@ -194,6 +194,7 @@ standalone(CommandHandler, command="add_customer")(add_customer_command)
 standalone(CommandHandler, command="remove_customer")(remove_customer_command)
 standalone(CommandHandler, command="report")(report_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["report_csv"])(report_export_csv)
+standalone(CallbackQueryHandler, pattern=PATTERNS["report_excel"])(report_export_excel)
 standalone(CallbackQueryHandler, pattern=PATTERNS["report_refresh"])(report_command)
 standalone(CommandHandler, command="batches")(batches_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batch_sel"])(batch_select)

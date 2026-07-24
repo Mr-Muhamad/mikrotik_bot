@@ -156,7 +156,10 @@ def get_stats_keyboard() -> InlineKeyboardMarkup:
 def get_report_keyboard() -> InlineKeyboardMarkup:
     """Return the Hotspot usage report keyboard with export and refresh options."""
     keyboard = [
-        [InlineKeyboardButton("📄 ملف إكسيل (CSV)", callback_data="report_csv")],
+        [
+            InlineKeyboardButton("📊 ملف إكسيل منسق (.xlsx)", callback_data="report_excel"),
+            InlineKeyboardButton("📄 نص مجرد (CSV)", callback_data="report_csv"),
+        ],
         [InlineKeyboardButton("🔄 تحديث بيانات", callback_data="report_refresh")],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]

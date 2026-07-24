@@ -336,6 +336,7 @@ PATTERNS: dict[str, str] = {
     "watchdog_status": r"^watchdog_status$",
     "watchdog_refresh": r"^watchdog_refresh$",
     "report_csv": r"^report_csv$",
+    "report_excel": r"^report_excel$",
     "report_refresh": r"^report_refresh$",
     "batches_refresh": r"^batches_refresh$",
     "hotspot_add": r"^hotspot_add$",
