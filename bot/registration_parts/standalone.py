@@ -209,8 +209,6 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["logs_menu"])(logs_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["usage_start"])(usage_start)
 # حظر MAC — standalone لأن unblock قد يأتي من خارج conversation
 standalone(CallbackQueryHandler, pattern=PATTERNS["unblock_mac"])(unblock_mac_handler)
-# Tenant Isolation — إسناد الروترات للمشغلين
-standalone(CommandHandler, command="assign_router")(assign_router_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["reports_menu"])(reports_menu)
 standalone(CommandHandler, command="reports")(reports_menu)
 standalone(CallbackQueryHandler, pattern=PATTERNS["op_assign_router"])(op_assign_router_callback)

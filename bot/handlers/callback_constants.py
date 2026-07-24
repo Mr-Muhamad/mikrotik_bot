@@ -402,7 +402,7 @@ PATTERNS: dict[str, str] = {
     "pdf_group_layout": r"^pdf_group_layout$",
     "pdf_group_misc": r"^pdf_group_misc$",
     "reboot_router": r"^reboot_router_\d+$",
-    "rename_router": r"^rename_router_",
+    "rename_router": r"^rename_router_\d+$",
     "page_user": r"^page_(edit|delete)_user_\d+$",
     "logs_page": r"^logs_page_\d+$",
     "logs_set": r"^logs_set_(router|admin|action|time)_\d+$",
