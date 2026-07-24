@@ -39,7 +39,8 @@ def _probe_path(router_key: str, path: str) -> bool:
     try:
         mikrotik_api.execute(router_key, path)
         return True
-    except Exception:
+    except Exception as e:
+        logger.debug(f"Probe failed for {path} on {router_key}: {e}")
         return False
 
 
@@ -72,5 +73,6 @@ def detect_router_system(router_key: str | None) -> str:
             result = SYSTEM_UNKNOWN
         cache_set(router_key, result)
         return result
-    except Exception:
+    except Exception as e:
+        logger.warning(f"detect_router_system failed for {router_key}: {e}")
         return SYSTEM_UNKNOWN

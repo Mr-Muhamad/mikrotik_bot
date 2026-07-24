@@ -17,6 +17,7 @@ from database.models import get_router_by_id, get_router_display_name
 logger = logging.getLogger(__name__)
 
 _MIN_INTERVAL = 0.1  # 100ms بين الأوامر لنفس الراوتر
+_RETRY_DELAYS = (1.0, 2.0)  # تأخير exponential backoff بين المحاولات
 
 # أخطاء نهائية: إعادة المحاولة لن تفيدين لأن السبب في أمر الراوتر نفسه وليس في الاتصال
 NON_RETRYABLE_ERRORS = {"unknown parameter", "no such command"}
@@ -184,31 +185,36 @@ class MikrotikAPI:
     def _execute_with_retry(
         self, router_key: str, command: str, timeout: int, **kwargs: object
     ) -> RouterOSResponse:
-        """القالب الأساسي: throttle → تنفيذ → retry عند الخطأ القابل للإصلاح."""
+        """القالب الأساسي: throttle → تنفيذ → retry مع exponential backoff."""
         self._throttle(router_key)
-        try:
-            with self._connection_ctx(router_key, timeout=timeout) as api:
-                self._debug_log("_execute_with_retry", command, kwargs)
-                return self._call_command(api, command, **kwargs)
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            if command == "system/reboot":
-                logger.info(f"Reboot command sent - connection may be lost: {e}")
-                return []
-            if any(pat in str(e) for pat in NON_RETRYABLE_ERRORS):
-                logger.debug(f"Non-retryable error for {command} on {router_key}: {e}")
-                raise
-
-            logger.warning(
-                f"Error executing {command} on {router_key}: {e}, retrying with fresh connection..."
-            )
+        last_exc: Exception | None = None
+        for attempt in range(1 + len(_RETRY_DELAYS)):
             try:
+                force = attempt > 0
+                if force:
+                    delay = _RETRY_DELAYS[attempt - 1]
+                    logger.warning(
+                        f"Retry {attempt}/{len(_RETRY_DELAYS)} for {command} on {router_key} "
+                        f"(waiting {delay}s)..."
+                    )
+                    time.sleep(delay)
                 with self._connection_ctx(
-                    router_key, timeout=timeout, force_reconnect=True
-                ) as new_api:
-                    return self._call_command(new_api, command, **kwargs)
-            except (LibRouterosError, ConnectionError, OSError) as e2:
-                logger.error(f"Retry failed for {command} on {router_key}: {e2}")
-                raise
+                    router_key, timeout=timeout, force_reconnect=force
+                ) as api:
+                    self._debug_log("_execute_with_retry", command, kwargs)
+                    return self._call_command(api, command, **kwargs)
+            except (LibRouterosError, ConnectionError, OSError) as e:
+                if command == "system/reboot":
+                    logger.info(f"Reboot command sent - connection may be lost: {e}")
+                    return []
+                if any(pat in str(e) for pat in NON_RETRYABLE_ERRORS):
+                    logger.debug(f"Non-retryable error for {command} on {router_key}: {e}")
+                    raise
+                last_exc = e
+                if attempt == len(_RETRY_DELAYS):
+                    logger.error(f"All {1 + len(_RETRY_DELAYS)} attempts failed for {command} on {router_key}: {e}")
+                    raise
+        raise last_exc  # type: ignore[misc]
 
     # ──────────────────────────────────────────────────────────────
     #  Public API — thin wrappers
@@ -480,13 +486,14 @@ class MikrotikAPI:
             )
             try:
                 probe.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Error closing api-ssl probe for {ip}: {e}")
             return (
                 "\n\n💡 لاحظت أن منفذ 8729 (api-ssl) مفتوح على الراوتر. البوت يستخدم حالياً "
                 "8728 (api النصّي) حسب إعدادات الأمان. إن رغبت باستخدام SSL راجع المسؤول."
             )
-        except Exception:
+        except Exception as e:
+            logger.debug(f"api-ssl probe failed for {ip}: {e}")
             return ""
 
 
