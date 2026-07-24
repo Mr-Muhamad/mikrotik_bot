@@ -7,10 +7,12 @@ re-exports these repositories at import time).
 
 from __future__ import annotations
 
+from typing import Any
+
 from datetime import UTC
 
 
-def _logs_where_clauses(filters):
+def _logs_where_clauses(filters: dict[str, Any] | None) -> tuple[list[str], list[Any]]:
     """Build SQL WHERE clauses and params for log filtering.
 
     Supported filter keys (all optional):
@@ -58,7 +60,7 @@ def log_action(action: str, username: str, router_name: str, admin_id: int) -> N
         )
 
 
-def get_logs(limit=20, offset=0, filters=None):
+def get_logs(limit: int = 20, offset: int = 0, filters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     from database.models import get_db
 
     clauses, params = _logs_where_clauses(filters)
@@ -73,7 +75,7 @@ def get_logs(limit=20, offset=0, filters=None):
         return [dict(row) for row in cursor.fetchall()]
 
 
-def get_logs_count(filters=None):
+def get_logs_count(filters: dict[str, Any] | None = None) -> int:
     from database.models import get_db
 
     clauses, params = _logs_where_clauses(filters)

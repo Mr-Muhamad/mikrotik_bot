@@ -7,7 +7,7 @@ Isolated from the former god-object ``database.models``.
 from __future__ import annotations
 
 
-def get_user_session(user_id):
+def get_user_session(user_id: int) -> dict[str, object] | None:
     from database.models import get_db
 
     with get_db() as conn:
@@ -19,7 +19,7 @@ def get_user_session(user_id):
         return None
 
 
-def save_user_session(user_id, selected_router=None, current_action=None, action_data=None):
+def save_user_session(user_id: int, selected_router: str | None = None, current_action: str | None = None, action_data: str | None = None) -> None:
     from database.models import get_db
 
     with get_db() as conn:

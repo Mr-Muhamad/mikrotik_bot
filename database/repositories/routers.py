@@ -8,31 +8,32 @@ encryption, and metadata helpers. Isolated from the former god-object
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from config import DEFAULT_API_PORT
 
 
-def _utc_now():
+def _utc_now() -> str:
     from database.models import UTC_TIMESTAMP_FORMAT
 
     return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)
 
 
 def save_discovered_router(
-    ip,
-    mac="",
-    identity="Unknown",
-    version="",
-    board="",
-    software_id="",
-    platform="MikroTik",
-    uptime="",
-    port=DEFAULT_API_PORT,
-    username="",
-    password="",
-    last_seen="",
-    owner_id=0,
-):
+    ip: str,
+    mac: str = "",
+    identity: str = "Unknown",
+    version: str = "",
+    board: str = "",
+    software_id: str = "",
+    platform: str = "MikroTik",
+    uptime: str = "",
+    port: int = DEFAULT_API_PORT,
+    username: str = "",
+    password: str = "",
+    last_seen: str = "",
+    owner_id: int = 0,
+) -> int | None:
     from database.models import encrypt_password, get_db
 
     with get_db() as conn:
@@ -80,7 +81,7 @@ def save_discovered_router(
         return router_id
 
 
-def save_manual_router(ip, port=DEFAULT_API_PORT, username="", password="", alias="", owner_id=0):
+def save_manual_router(ip: str, port: int = DEFAULT_API_PORT, username: str = "", password: str = "", alias: str = "", owner_id: int = 0) -> int | None:
     """Insert a manually-entered router.
 
     Encrypts the password before storage. Raises ``RouterAlreadyExistsError``
@@ -106,7 +107,7 @@ def save_manual_router(ip, port=DEFAULT_API_PORT, username="", password="", alia
             raise RouterAlreadyExistsError(f"Router IP {ip} already exists") from e
 
 
-def get_saved_routers(active_only=True, decrypt: bool = False, owner_id: int | None = None):
+def get_saved_routers(active_only: bool = True, decrypt: bool = False, owner_id: int | None = None) -> list[dict[str, Any]]:
     """جلب الروترات المحفوظة من قاعدة البيانات.
 
     Args:
@@ -148,7 +149,7 @@ def get_saved_routers(active_only=True, decrypt: bool = False, owner_id: int | N
         return result
 
 
-def get_router_by_id(router_id, decrypt=True):
+def get_router_by_id(router_id: int, decrypt: bool = True) -> dict[str, Any] | None:
     from database.models import decrypt_password, get_db
 
     with get_db() as conn:
@@ -163,7 +164,7 @@ def get_router_by_id(router_id, decrypt=True):
         return None
 
 
-def get_router_by_ip(ip_address):
+def get_router_by_ip(ip_address: str) -> dict[str, Any] | None:
     from database.models import decrypt_password, get_db
 
     with get_db() as conn:
@@ -177,7 +178,7 @@ def get_router_by_ip(ip_address):
         return None
 
 
-def update_router_credentials(router_id, username, password):
+def update_router_credentials(router_id: int, username: str, password: str) -> None:
     from database.models import encrypt_password, get_db
 
     with get_db() as conn:
@@ -189,7 +190,7 @@ def update_router_credentials(router_id, username, password):
         )
 
 
-def update_router_last_seen(router_id):
+def update_router_last_seen(router_id: int) -> None:
     from database.models import get_db
 
     with get_db() as conn:
@@ -200,7 +201,7 @@ def update_router_last_seen(router_id):
         )
 
 
-def update_router_identity(router_id, identity):
+def update_router_identity(router_id: int, identity: str) -> None:
     """Update the identity (name) of a router in the database."""
     from database.models import get_db
 
@@ -212,7 +213,7 @@ def update_router_identity(router_id, identity):
         )
 
 
-def delete_router(router_id):
+def delete_router(router_id: int) -> None:
     from database.models import get_db
 
     with get_db() as conn:
@@ -220,7 +221,7 @@ def delete_router(router_id):
         cursor.execute("DELETE FROM discovered_routers WHERE id = ?", (router_id,))
 
 
-def update_router_alias(router_id, alias):
+def update_router_alias(router_id: int, alias: str) -> None:
     from database.models import get_db
 
     with get_db() as conn:
@@ -231,7 +232,7 @@ def update_router_alias(router_id, alias):
         )
 
 
-def get_router_display_name(router):
+def get_router_display_name(router: dict[str, Any]) -> str:
     alias = router.get("name_alias", "") or ""
     if alias:
         return alias

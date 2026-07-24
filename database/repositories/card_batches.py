@@ -7,12 +7,14 @@ payloads. Isolated from the former god-object ``database.models``.
 from __future__ import annotations
 
 import json
+from typing import Any
+
 from datetime import UTC
 
 from utils.crypto import decrypt_data, encrypt_data
 
 
-def _now_utc():
+def now_utc() -> str:
     from datetime import datetime
 
     from database.models import UTC_TIMESTAMP_FORMAT
@@ -21,15 +23,15 @@ def _now_utc():
 
 
 def save_card_batch(
-    router_key,
-    name,
-    batch_type,
-    profile="",
-    comment_prefix="",
-    cards=None,
-    created_by=None,
+    router_key: str,
+    name: str,
+    batch_type: str,
+    profile: str = "",
+    comment_prefix: str = "",
+    cards: list[Any] | None = None,
+    created_by: int | None = None,
     unit_price: float = 0.0,
-):
+) -> int | None:
     """Persist a generated card batch with optional unit price calculation.
 
     ``cards`` is a JSON-serializable list (list of dicts or CardData). The payload
@@ -69,14 +71,14 @@ def save_card_batch(
                 count,
                 encrypted,
                 created_by,
-                _now_utc(),
+                now_utc(),
                 total_price,
             ),
         )
         return cursor.lastrowid
 
 
-def list_card_batches(router_key=None, limit=20, offset=0):
+def list_card_batches(router_key: str | None = None, limit: int = 20, offset: int = 0) -> list[dict[str, Any]]:
     """Return batch rows (without the encrypted payload) ordered by created_at desc."""
     from database.models import get_db
 
@@ -97,7 +99,7 @@ def list_card_batches(router_key=None, limit=20, offset=0):
         return [dict(row) for row in cursor.fetchall()]
 
 
-def get_card_batches_count(router_key=None):
+def get_card_batches_count(router_key: str | None = None) -> int:
     """Return the total number of card batches for the given router (or all)."""
     from database.models import get_db
 
@@ -113,7 +115,7 @@ def get_card_batches_count(router_key=None):
         return row["c"] if row else 0
 
 
-def _decode_batch_cards(cards_json):
+def _decode_batch_cards(cards_json: str) -> list[Any]:
     """Decrypt and parse a stored batch payload into a list of card dicts."""
     if not cards_json:
         return []
@@ -130,7 +132,7 @@ def _decode_batch_cards(cards_json):
     return raw if isinstance(raw, list) else []
 
 
-def get_card_batch(batch_id):
+def get_card_batch(batch_id: int) -> dict[str, Any] | None:
     """Return a single batch row including decrypted ``cards`` (list of dicts)."""
     from database.models import get_db
 
@@ -150,7 +152,7 @@ def get_card_batch(batch_id):
         return data
 
 
-def delete_card_batch(batch_id):
+def delete_card_batch(batch_id: int) -> int:
     """Delete a stored batch by id. Returns number of deleted rows."""
     from database.models import get_db
 
@@ -168,12 +170,12 @@ def update_batch_payment(
     status: 'paid' | 'unpaid' | 'deferred'
     يُعيد True عند النجاح.
     """
-    from database.models import _now_utc, get_db
+    from database.models import now_utc, get_db
 
     valid_statuses = ("paid", "unpaid", "deferred")
     if status not in valid_statuses:
         return False
-    sold_at = _now_utc() if status == "paid" else None
+    sold_at = now_utc() if status == "paid" else None
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -185,7 +187,7 @@ def update_batch_payment(
         return cursor.rowcount > 0
 
 
-def get_sales_summary(days: int = 7) -> dict:
+def get_sales_summary(days: int = 7) -> dict[str, Any]:
     """ملخص المبيعات خلال الـ `days` الماضية.
 
     يُعيد: total_batches, paid_count, total_revenue, unpaid_count, deferred_count

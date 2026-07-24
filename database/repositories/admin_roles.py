@@ -8,9 +8,9 @@ avoid an import cycle (models re-exports these repositories at import time).
 from __future__ import annotations
 
 
-def ensure_admin_role(admin_id, default_role="admin", changed_by=None):
+def ensure_admin_role(admin_id: int, default_role: str = "admin", changed_by: int | None = None) -> None:
     """Insert a role row for an admin if none exists yet (idempotent)."""
-    from database.models import VALID_ROLES, _now_utc, get_db
+    from database.models import VALID_ROLES, now_utc, get_db
 
     if default_role not in VALID_ROLES:
         raise ValueError(f"invalid role: {default_role}")
@@ -18,17 +18,17 @@ def ensure_admin_role(admin_id, default_role="admin", changed_by=None):
         cursor = conn.cursor()
         cursor.execute(
             "INSERT OR IGNORE INTO admin_roles (admin_id, role, changed_by, changed_at) VALUES (?, ?, ?, ?)",  # noqa: E501
-            (admin_id, default_role, changed_by, _now_utc()),
+            (admin_id, default_role, changed_by, now_utc()),
         )
 
 
-def seed_admin_roles(admin_ids, default_role="admin"):
+def seed_admin_roles(admin_ids: list[int], default_role: str = "admin") -> None:
     """Ensure every configured admin has a role row (default full access)."""
     for admin_id in admin_ids:
         ensure_admin_role(admin_id, default_role)
 
 
-def get_admin_role(admin_id):
+def get_admin_role(admin_id: int) -> str | None:
     """Return the role string for an admin, or None if not recorded."""
     from database.models import get_db
 
@@ -39,9 +39,9 @@ def get_admin_role(admin_id):
         return row["role"] if row else None
 
 
-def set_admin_role(admin_id, role, changed_by=None):
+def set_admin_role(admin_id: int, role: str, changed_by: int | None = None) -> None:
     """Set (insert or update) the role for an admin."""
-    from database.models import VALID_ROLES, _now_utc, get_db
+    from database.models import VALID_ROLES, now_utc, get_db
 
     if role not in VALID_ROLES:
         raise ValueError(f"invalid role: {role}")
@@ -52,7 +52,7 @@ def set_admin_role(admin_id, role, changed_by=None):
             "VALUES (?, ?, ?, ?) "
             "ON CONFLICT(admin_id) DO UPDATE SET "
             "role = excluded.role, changed_by = excluded.changed_by, changed_at = excluded.changed_at",  # noqa: E501
-            (admin_id, role, changed_by, _now_utc()),
+            (admin_id, role, changed_by, now_utc()),
         )
 
 
@@ -68,7 +68,7 @@ def list_admin_roles():
         return cursor.fetchall()
 
 
-def delete_admin_role(admin_id):
+def delete_admin_role(admin_id: int) -> None:
     """Delete a role for an admin."""
     from database.models import get_db
 
