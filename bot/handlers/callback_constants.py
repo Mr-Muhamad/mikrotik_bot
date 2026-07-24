@@ -319,6 +319,7 @@ PATTERNS: dict[str, str] = {
     "userman_profiles": r"^userman_profiles$",
     "stats_hotspot": r"^stats_hotspot$",
     "stats_userman": r"^stats_userman$",
+    "stats_chart": r"^stats_chart$",
     "backup_full": r"^backup_full$",
     "backup_userman": r"^backup_userman$",
     "backup_restore": r"^backup_restore$",

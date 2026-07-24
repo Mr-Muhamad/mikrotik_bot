@@ -96,7 +96,7 @@ from bot.handlers.routers import (
     saved_routers_list,
 )
 from bot.handlers.settings import pdf_group_layout, pdf_group_misc
-from bot.handlers.stats import stats_hotspot, stats_userman
+from bot.handlers.stats import stats_chart_callback, stats_hotspot, stats_userman
 from bot.handlers.timeout import cmd_timeout, handle_timeout_selection
 from bot.handlers.usage import usage_start
 from bot.handlers.userman import userman_cards_start, userman_list, userman_profiles
@@ -151,6 +151,7 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["userman_list"])(userman_list)
 standalone(CallbackQueryHandler, pattern=PATTERNS["userman_profiles"])(userman_profiles)
 standalone(CallbackQueryHandler, pattern=PATTERNS["stats_hotspot"])(stats_hotspot)
 standalone(CallbackQueryHandler, pattern=PATTERNS["stats_userman"])(stats_userman)
+standalone(CallbackQueryHandler, pattern=PATTERNS["stats_chart"])(stats_chart_callback)
 standalone(CallbackQueryHandler, pattern=PATTERNS["backup_full"])(backup_full)
 standalone(CallbackQueryHandler, pattern=PATTERNS["backup_userman"])(backup_userman)
 standalone(CallbackQueryHandler, pattern=PATTERNS["backup_dl"])(backup_download_file)

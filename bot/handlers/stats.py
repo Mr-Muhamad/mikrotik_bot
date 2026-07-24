@@ -72,3 +72,46 @@ async def stats_hotspot(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 async def stats_userman(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _show_stats(update, context, "userman")
+
+
+@admin_only
+async def stats_chart_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Generate and send visual trend chart PNG to the user."""
+    query = update.callback_query
+    await safe_answer_callback(query)
+    from bot.keyboards import get_router_keyboard
+    from bot.messages import NO_ROUTER_SELECTED
+    from bot.router_selector import get_selected_router
+    from utils.chat_cleaner import safe_edit_or_send
+
+    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    if not router_key:
+        if query:
+            await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())
+        return
+
+    try:
+        from core.chart_generator import generate_trend_chart
+        from database.repositories.stats_snapshots import get_week_snapshots
+
+        snapshots = await run_blocking(get_week_snapshots, router_key)
+        router_name = await run_blocking(mikrotik_api.get_router_name, router_key)
+        chart_title = f"مخطط نشاط المستخدمين ({router_name})"
+        img_bytes = await run_blocking(generate_trend_chart, snapshots, chart_title)
+
+        if query and query.message:
+            await context.bot.send_photo(
+                chat_id=query.message.chat_id,
+                photo=img_bytes,
+                caption="📈 الرسم البياني المصور لحركة نشاط وتدفق الشبكة للأسبوع الحالي",
+                reply_markup=get_stats_keyboard(),
+            )
+    except Exception as e:
+        await send_error(
+            update,
+            context,
+            e,
+            router_key=router_key,
+            log_extra="stats_chart_callback",
+            reply_markup=get_stats_keyboard(),
+        )

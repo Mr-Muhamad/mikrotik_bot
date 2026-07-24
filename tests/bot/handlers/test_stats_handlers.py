@@ -153,3 +153,18 @@ class TestStatsUserman:
         text = call_kwargs.get("text", "")
         assert "discovered_1" in text
         assert "⏱" in text
+
+    @pytest.mark.asyncio
+    async def test_stats_chart_callback_success(self):
+        ctx = MagicMock()
+        ctx.user_data = {"router_key": "discovered_1"}
+        update = _query_update()
+
+        with patch(
+            "bot.handlers.stats.run_blocking",
+            new=AsyncMock(side_effect=[[], "Router1", b"\x89PNGfakechartbytes"]),
+        ):
+            await stats_module.stats_chart_callback(update, ctx)
+        ctx.bot.send_photo.assert_called_once()
+        kwargs = ctx.bot.send_photo.call_args.kwargs
+        assert kwargs["photo"] == b"\x89PNGfakechartbytes"

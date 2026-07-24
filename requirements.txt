@@ -4,6 +4,7 @@ librouteros>=3.3.0                      # MikroTik RouterOS API
 python-dotenv>=1.0.0                    # تحميل ملف .env
 cryptography>=41.0                      # تشفير كلمات المرور (Fernet)
 psutil>=5.9.0                           # مراقبة أداء السيرفر (CPU/RAM)
+matplotlib>=3.7.0                       # توليد الرسوم البيانية المصورة
 
 # ── PDF & QR ─────────────────────────────────────────────────────────────────
 reportlab>=4.0                          # توليد ملفات PDF

@@ -145,6 +145,9 @@ def get_stats_keyboard() -> InlineKeyboardMarkup:
             InlineKeyboardButton("📡 ملخص سريع", callback_data="stats_hotspot"),
             InlineKeyboardButton("🎫 User Manager", callback_data="stats_userman"),
         ],
+        [
+            InlineKeyboardButton("📈 رسم بياني مصور", callback_data="stats_chart"),
+        ],
         [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]
     return InlineKeyboardMarkup(keyboard)
