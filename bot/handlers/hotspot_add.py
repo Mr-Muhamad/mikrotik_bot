@@ -70,6 +70,7 @@ logger = logging.getLogger(__name__)
 @admin_only
 async def hotspot_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cleanup_state(update.effective_user.id, context.user_data)
+    context.args = []
     query = update.callback_query
     if query:
         await safe_answer_callback(query)

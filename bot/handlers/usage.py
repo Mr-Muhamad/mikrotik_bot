@@ -48,7 +48,7 @@ async def usage_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
     cleanup_state(update.effective_user.id, context.user_data)
     nav_set(context, "menu_hotspot")
-    router_key = get_selected_router(update.effective_user.id)
+    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
     if not router_key:
         await send_step(update, context, NO_ROUTER_SELECTED)
         return ConversationHandler.END

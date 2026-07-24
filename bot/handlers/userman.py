@@ -13,6 +13,7 @@ from bot.keyboards import (
     get_card_payment_keyboard,
     get_card_type_keyboard,
     get_profile_keyboard,
+    get_router_keyboard,
     get_skip_keyboard,
     get_userman_keyboard,
 )
@@ -29,6 +30,7 @@ from bot.messages import (
     MAX_CARDS_EXCEEDED,
     NO_PROFILES,
     NO_PROFILES_AVAILABLE,
+    NO_ROUTER_SELECTED,
     PAYMENT_PAID,
     PAYMENT_UNPAID,
     PDF_FILE_CAPTION,
@@ -52,7 +54,7 @@ from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
-from utils.chat_cleaner import edit_clean, send_and_track, send_step, track_message
+from utils.chat_cleaner import edit_clean, safe_edit_or_send, send_and_track, send_step, track_message
 from utils.error_response import send_error
 from utils.formatters import format_user_list
 from utils.validators import validate_positive_int
@@ -371,7 +373,13 @@ userman_back_to_prefix = make_back_step(
 async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
-    router_key = context.user_data["router_key"]
+    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    if not router_key:
+        if query:
+            await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())
+        elif update.effective_message:
+            await update.effective_message.reply_text(NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+        return
 
     try:
         users = await run_blocking(userman_manager.list_users, router_key)
@@ -395,7 +403,13 @@ async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def userman_profiles(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
-    router_key = context.user_data["router_key"]
+    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    if not router_key:
+        if query:
+            await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())
+        elif update.effective_message:
+            await update.effective_message.reply_text(NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+        return
 
     try:
         profiles = await run_blocking(profile_sync.get_userman_profiles, router_key)

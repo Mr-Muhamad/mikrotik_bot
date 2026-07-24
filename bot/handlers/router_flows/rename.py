@@ -21,7 +21,7 @@ from database.models import (
 )
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
-from utils.callback_utils import safe_answer_callback
+from utils.callback_utils import is_duplicate_callback, safe_answer_callback
 from utils.chat_cleaner import reply_final, send_step
 
 
@@ -30,6 +30,8 @@ from utils.chat_cleaner import reply_final, send_step
 async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
+    if is_duplicate_callback(query):
+        return ConversationHandler.END
     cleanup_state(query.from_user.id, context.user_data)
     nav_set(context, "saved_routers")
     try:
