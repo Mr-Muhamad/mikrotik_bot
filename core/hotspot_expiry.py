@@ -7,7 +7,9 @@ handle and returns a plain list of dicts.
 
 import logging
 import re
+from typing import Any
 
+from core.mikrotik_client import MikrotikClient
 from librouteros.exceptions import LibRouterosError
 
 logger = logging.getLogger(__name__)
@@ -31,7 +33,7 @@ def _parse_uptime_to_seconds(raw: str) -> int:
         return 0
 
 
-def get_expiring_users(api, router_key: str, days: int = 3) -> list[dict]:
+def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> list[dict[str, Any]]:
     """إعادة قائمة المستخدمين الذين ستنتهي صلاحيتهم خلال `days` أيام.
 
     يعتمد على `limit-uptime` في RouterOS:
@@ -44,7 +46,7 @@ def get_expiring_users(api, router_key: str, days: int = 3) -> list[dict]:
 
     يُعيد قائمة دوال بـ: name, profile, uptime_limit, remaining_days, uptime_used
     """
-    result: list[dict] = []
+    result: list[dict[str, Any]] = []
     try:
         users = api.execute(
             router_key,
@@ -60,16 +62,13 @@ def get_expiring_users(api, router_key: str, days: int = 3) -> list[dict]:
             )
             active_map: dict[str, int] = {}
             for sess in active_sessions:
-                if isinstance(sess, dict):
-                    uname = sess.get("user", "")
-                    uptime_secs = _parse_uptime_to_seconds(sess.get("uptime", ""))
-                    active_map[uname] = active_map.get(uname, 0) + uptime_secs
+                uname = sess.get("user", "")
+                uptime_secs = _parse_uptime_to_seconds(sess.get("uptime", ""))
+                active_map[uname] = active_map.get(uname, 0) + uptime_secs
         except Exception:
             active_map = {}
 
         for user in users:
-            if not isinstance(user, dict):
-                continue
             # تخطي المستخدمين المعطلين
             if str(user.get("disabled", "false")).lower() == "true":
                 continue
@@ -118,11 +117,11 @@ def parse_renewal_day_from_comment(comment: str) -> tuple[str, int | None]:
     return comment, None
 
 
-def get_custom_expiring_users(api, router_key: str, days_window: int = 3) -> list[dict]:
+def get_custom_expiring_users(api: MikrotikClient, router_key: str, days_window: int = 3) -> list[dict[str, Any]]:
     """إعادة قائمة المستخدمين الذين يقترب يوم تجديدهم المحدد في التعليق خلال `days_window` أيام."""
     import datetime
 
-    result: list[dict] = []
+    result: list[dict[str, Any]] = []
     try:
         users = api.execute(
             router_key,
@@ -132,8 +131,6 @@ def get_custom_expiring_users(api, router_key: str, days_window: int = 3) -> lis
         today = datetime.datetime.now().day
 
         for user in users:
-            if not isinstance(user, dict):
-                continue
             if str(user.get("disabled", "false")).lower() == "true":
                 continue
             comment = str(user.get("comment", ""))

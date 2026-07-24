@@ -77,15 +77,15 @@ class HotspotManager:
         # نجلب الأسماء فقط لتسريع التحقق من التكرار عند إنشاء الكروت
         users = self._api.execute(router_key, "ip/hotspot/user/print", **{".proplist": "name"})
         self._users_cache.set(router_key, users)
-        return cast(RouterOSResponse, users)
+        return users
 
     def invalidate_users_cache(self, router_key: str):
         self._users_cache.invalidate(router_key)
 
-    def _get_existing_usernames(self, router_key: str) -> set:
+    def _get_existing_usernames(self, router_key: str) -> set[str]:
         """Fetch all existing hotspot usernames from the router."""
         users = self._get_all_users_cached(router_key)
-        return {u.get("name", "") for u in users if isinstance(u, dict)}
+        return {u.get("name", "") for u in users}
 
     def user_exists(self, router_key: str, name: str) -> bool:
         """Return True if a hotspot user with the given name already exists on the router.
@@ -108,7 +108,7 @@ class HotspotManager:
             logger.error(f"Failed to check user existence for '{name}': {e}")
             return False
 
-    def _generate_unique_username(self, prefix: str, length: int, existing_names: set) -> str:
+    def _generate_unique_username(self, prefix: str, length: int, existing_names: set[str]) -> str:
         """Generate a unique username that doesn't exist on the router."""
         max_attempts = 100
         for _ in range(max_attempts):
@@ -245,7 +245,7 @@ class HotspotManager:
 
         return results
 
-    def search_hosts(self, router_key: str, search_term: str) -> list[dict]:
+    def search_hosts(self, router_key: str, search_term: str) -> list[dict[str, Any]]:
         """Search hotspot hosts by IP or MAC address with enriched host names from DHCP leases.
 
         Delegates to ``core.hotspot_search.search_hosts``.
@@ -294,17 +294,17 @@ class HotspotManager:
             if str(lease.get("mac-address", "")).lower() in macs
         }
 
-    def get_profiles(self, router_key: str) -> list[dict]:
+    def get_profiles(self, router_key: str) -> list[dict[str, Any]]:
         """Return list of hotspot user profiles from the router."""
         from typing import cast
 
         cached = self._profiles_cache.get(router_key)
         if cached is not None:
-            return cast(list[dict], cached)
+            return cast(list[dict[str, Any]], cached)
         try:
             results = self._api.execute(router_key, "ip/hotspot/user/profile/print")
             self._profiles_cache.set(router_key, results)
-            return cast(list[dict], results)
+            return results
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.error("Failed to fetch hotspot profiles: %s", e)
             return []
@@ -394,7 +394,7 @@ class HotspotManager:
 
         return parse_reset_day(comment)
 
-    def get_hotspot_stats(self, router_key: str, day: int | None = None) -> dict | None:
+    def get_hotspot_stats(self, router_key: str, day: int | None = None) -> dict[str, Any] | None:
         """Return hotspot statistics, optionally filtered to a single reset day.
 
         Delegates to ``core.hotspot_stats.get_hotspot_stats``.
@@ -403,7 +403,7 @@ class HotspotManager:
 
         return _build(self._api, router_key, day)
 
-    def build_usage_report(self, router_key: str, top_n: int = 15) -> dict:
+    def build_usage_report(self, router_key: str, top_n: int = 15) -> dict[str, Any]:
         """Build an exportable Hotspot usage report for a router.
 
         Delegates to ``core.hotspot_stats.build_usage_report``.
@@ -430,7 +430,7 @@ class HotspotManager:
 
         return _fn(self._api, router_key, mac)
 
-    def get_blocked_macs(self, router_key: str) -> list[dict]:
+    def get_blocked_macs(self, router_key: str) -> list[dict[str, Any]]:
         """يُعيد قائمة MACs في address-list=hotspot_blocked.
 
         Delegates to ``core.hotspot_blocking.get_blocked_macs``.
@@ -439,7 +439,7 @@ class HotspotManager:
 
         return _fn(self._api, router_key)
 
-    def get_expiring_users(self, router_key: str, days: int = 3) -> list[dict]:
+    def get_expiring_users(self, router_key: str, days: int = 3) -> list[dict[str, Any]]:
         """إعادة قائمة المستخدمين الذين ستنتهي صلاحيتهم خلال `days` أيام.
 
         Delegates to ``core.hotspot_expiry.get_expiring_users``.
@@ -458,8 +458,6 @@ class HotspotManager:
             )
             purged = 0
             for u in users:
-                if not isinstance(u, dict):
-                    continue
                 uid = u.get(".id")
                 if not uid:
                     continue

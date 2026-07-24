@@ -1,6 +1,7 @@
 import logging
 import threading
 from datetime import datetime
+from typing import Any
 
 from librouteros.exceptions import LibRouterosError
 
@@ -11,7 +12,7 @@ from database.repositories.router_health import get_all_latest_health, record_he
 logger = logging.getLogger(__name__)
 
 # الحالة المخزنة لكل راوتر: {router_key: {"last_ok": datetime, "last_fail": datetime, "alert_sent": bool}}  # noqa: E501
-_router_status: dict[str, dict] = {}
+_router_status: dict[str, dict[str, Any]] = {}
 # آخر حالة معروفة (online/offline) لتحديد تغيّر الحالة وإرسال التنبيه مرة واحدة
 _last_known_status: dict[str, bool] = {}
 _router_status_lock = threading.Lock()
@@ -38,13 +39,13 @@ def record_check_result(router_key: str, is_online: bool) -> str:
         return ALERT_NONE
 
 
-def check_router_health(router_key: str) -> dict:
+def check_router_health(router_key: str) -> dict[str, Any]:
     """Check if a router is reachable and monitor CPU/memory thresholds. Returns status dict."""
     try:
         res = mikrotik_api.execute(router_key, "system/resource/print")
         cpu_load = None
         free_mem = None
-        if res and isinstance(res, list) and len(res) > 0:
+        if res and len(res) > 0:
             info = res[0]
             try:
                 cpu_load = int(info.get("cpu-load", 0))
@@ -92,13 +93,13 @@ def check_router_health(router_key: str) -> dict:
         return {"online": False, "error": str(e)}
 
 
-def get_router_status(router_key: str) -> dict:
+def get_router_status(router_key: str) -> dict[str, Any]:
     """Get cached status for a router."""
     with _router_status_lock:
         return dict(_router_status.get(router_key, {}))
 
 
-def get_router_status_detail(router_key: str) -> dict:
+def get_router_status_detail(router_key: str) -> dict[str, Any]:
     """Return enriched cached status with best-effort version and active users.
 
     Hybrid Check (Option 2): If the router has an active connection in the pool,

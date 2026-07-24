@@ -9,7 +9,9 @@ the user-management class.
 
 import logging
 import re
+from typing import Any
 
+from core.mikrotik_client import MikrotikClient
 from librouteros.exceptions import LibRouterosError
 
 from utils.formatters import format_bytes, parse_bytes
@@ -82,7 +84,7 @@ def parse_reset_day(comment: str) -> int | None:
 
 
 
-def get_hotspot_stats(api, router_key: str, day: int | None = None) -> dict | None:
+def get_hotspot_stats(api: MikrotikClient, router_key: str, day: int | None = None) -> dict[str, Any] | None:
     """Return hotspot statistics, optionally filtered to a single reset day.
 
     When ``day`` is ``None`` the ``reset_list`` is empty and ``reset_days``
@@ -176,7 +178,7 @@ def get_hotspot_stats(api, router_key: str, day: int | None = None) -> dict | No
         return None
 
 
-def build_usage_report(api, router_key: str, top_n: int = 15) -> dict:
+def build_usage_report(api: MikrotikClient, router_key: str, top_n: int = 15) -> dict[str, Any]:
     """Build an exportable Hotspot usage report for a router.
 
     Fetches all hotspot users (long-running call) and classifies them into
@@ -189,15 +191,13 @@ def build_usage_report(api, router_key: str, top_n: int = 15) -> dict:
         **{".proplist": ".id,name,profile,disabled,bytes-in,bytes-out,limit-bytes-total,comment"},
     )
 
-    rows: list[dict] = []
+    rows: list[dict[str, Any]] = []
     total_bytes_all = 0
     active_count = 0
     disabled_count = 0
     with_limit_count = 0
 
     for u in users:
-        if not isinstance(u, dict):
-            continue
         name = u.get("name", "")
         profile = u.get("profile", "")
         is_disabled = str(u.get("disabled", "false")).lower() == "true"

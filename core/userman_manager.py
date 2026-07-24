@@ -2,6 +2,7 @@ import logging
 import secrets
 import string
 from datetime import datetime
+from typing import Any
 
 from core.cache import TTLCache
 from core.card_models import CardSystem
@@ -14,22 +15,6 @@ _CARD_TYPE_MAP = {
     "type2": CardSystem.SAME_CREDENTIALS,
     "type3": CardSystem.EMPTY_PASSWORD,
 }
-
-# Markers for field-level rejections from RouterOS (profile/password/etc.)
-# reused from the defensive restore logic in core/backup/userman.py.
-_FIELD_REJECT_MARKERS = (
-    "unknown parameter",
-    "unknown property",
-    "no such item",
-    "expected end",
-    "unknown command",
-)
-
-
-def _is_field_rejection(exc: Exception) -> bool:
-    msg = str(exc).lower()
-    return any(marker in msg for marker in _FIELD_REJECT_MARKERS)
-
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +46,7 @@ class UserManager:
             },
         )
         self._users_cache.set(router_key, users)
-        return cast(RouterOSResponse, users)
+        return users
 
     def invalidate_users_cache(self, router_key: str):
         self._users_cache.invalidate(router_key)
@@ -156,7 +141,7 @@ class UserManager:
         return cards
 
 
-    def _create_user(self, router_key, username, password, profile, comment="", caller_id=""):
+    def _create_user(self, router_key: str, username: str, password: str, profile: str, comment: str = "", caller_id: str = "") -> dict[str, Any]:
         """Create a User Manager user and attach the selected profile.
 
         The user is created WITHOUT the profile first so a rejected ``profile``
@@ -179,7 +164,7 @@ class UserManager:
         if caller_id:
             add_params["caller-id"] = caller_id
         if not is_v7:
-            add_params["shared-users"] = 1
+            add_params["shared-users"] = "1"
 
         # Create the account first, never bundling the profile into the add call.
         self._api.execute(router_key, f"{base_path}/user/add", **add_params)
@@ -204,7 +189,7 @@ class UserManager:
             "link_error": err,
         }
 
-    def _attach_v7_profile(self, router_key, base_path, username, profile):
+    def _attach_v7_profile(self, router_key: str, base_path: str, username: str, profile: str) -> tuple[bool, str | None]:
         """Link a profile to a v7 User Manager user via the ``user-profile`` table.
 
         RouterOS v7 stores the user<->profile link in a separate
@@ -228,7 +213,7 @@ class UserManager:
             return False, str(e)
         return self._verify_profile_link(router_key, base_path, username, profile)
 
-    def _attach_v6_profile(self, router_key, base_path, username, profile):
+    def _attach_v6_profile(self, router_key: str, base_path: str, username: str, profile: str) -> tuple[bool, str | None]:
         """Attach and activate a profile for a v6 User Manager user.
 
         RouterOS v6 links the profile via the dedicated
@@ -252,7 +237,7 @@ class UserManager:
             return False, str(e)
         return self._verify_profile_link(router_key, base_path, username, profile)
 
-    def _verify_profile_link(self, router_key, base_path, username, profile):
+    def _verify_profile_link(self, router_key: str, base_path: str, username: str, profile: str) -> tuple[bool, str | None]:
         """Read back the user<->profile link and confirm it was applied.
 
         RouterOS does not accept a query filter on ``user-profile/print``
@@ -354,7 +339,7 @@ class UserManager:
                 matches.append(entry)
         return matches
 
-    def get_user(self, router_key: str, username: str) -> dict | None:
+    def get_user(self, router_key: str, username: str) -> dict[str, Any] | None:
         """Return a single User Manager user dict by name, or None if not found."""
         uid = self._get_user_id(router_key, username)
         if not uid:
@@ -477,7 +462,7 @@ class UserManager:
         logger.info(f"Terminated User Manager session '{session_id}' on {router_key}")
         return result
 
-    def format_card(self, card: dict, index: int) -> str:
+    def format_card(self, card: dict[str, Any], index: int) -> str:
         """Format a card dict into a display string with index number."""
         lines = [
             f"🎫 كارت #{index + 1}",
