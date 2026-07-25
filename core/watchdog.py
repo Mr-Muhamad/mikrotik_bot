@@ -1,11 +1,11 @@
 import logging
 import threading
 from datetime import datetime
-from core.mikrotik_client import RouterOSRow
 
 from librouteros.exceptions import LibRouterosError
 
 from core.mikrotik_api import mikrotik_api
+from core.mikrotik_client import RouterOSRow
 from core.stats import stats_manager
 from database.repositories.router_health import get_all_latest_health, record_health
 

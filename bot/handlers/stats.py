@@ -20,9 +20,7 @@ from utils.error_response import send_error
 logger = logging.getLogger(__name__)
 
 
-async def _show_stats(
-    update: Update, context: ContextTypes.DEFAULT_TYPE, stat_type: str
-) -> None:
+async def _show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE, stat_type: str) -> None:
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = context.user_data["router_key"]
@@ -86,7 +84,9 @@ async def stats_chart_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     from bot.router_selector import get_selected_router
     from utils.chat_cleaner import safe_edit_or_send
 
-    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    router_key = get_selected_router(update.effective_user.id)
+    if not router_key:
+        router_key = context.user_data.get("router_key")
     if not router_key:
         if query:
             await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())

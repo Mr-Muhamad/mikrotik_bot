@@ -3,7 +3,6 @@ import io
 import logging
 import os
 import tempfile
-from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -13,6 +12,7 @@ from bot.keyboards import get_report_keyboard
 from bot.router_selector import cleanup_state, nav_set
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_api import mikrotik_api
+from core.mikrotik_client import RouterOSRow
 from core.stats import stats_manager
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
@@ -149,7 +149,13 @@ async def report_export_excel(update: Update, context: ContextTypes.DEFAULT_TYPE
             )
     except Exception as e:
         logger.error(f"Excel export failed: {e}")
-        await send_error(update, context, e, log_extra="report_export_excel", reply_markup=get_report_keyboard())
+        await send_error(
+            update,
+            context,
+            e,
+            log_extra="report_export_excel",
+            reply_markup=get_report_keyboard(),
+        )
 
 
 __all__ = ["report_command", "report_export_csv", "report_export_excel", "build_csv"]

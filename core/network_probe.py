@@ -23,10 +23,10 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from core.mikrotik_client import RouterOSRow
 from typing import Any, Protocol, runtime_checkable
 
 from config import DEFAULT_API_PORT
+from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +183,10 @@ class DiscoveredRouter:
     def display_line(self) -> str:
         """Return a formatted multi-line display string with status emoji."""
         status_emoji = "🟢" if self.version else "🌐"
-        name = self.identity if self.identity and self.identity != "Unknown" else f"راوتر MikroTik ({self.ip_address})"
+        if self.identity and self.identity != "Unknown":
+            name = self.identity
+        else:
+            name = f"راوتر MikroTik ({self.ip_address})"
         line = f"{status_emoji} {name}"
         if self.version:
             line += f" v{self.version}"
@@ -193,7 +196,6 @@ class DiscoveredRouter:
             line += f" | ⏱ {self.uptime}"
         line += f"\n   📍 {self.ip_address}:{self.port}"
         return line
-
 
 
 # ─── Concrete probes ───────────────────────────────────────────
@@ -206,7 +208,11 @@ class ARPTableProbe:
     Inject ``run_fn`` to override subprocess behavior in tests.
     """
 
-    def __init__(self, run_fn: Callable[..., Any] = subprocess.run, system: str | None = None) -> None:
+    def __init__(
+        self,
+        run_fn: Callable[..., Any] = subprocess.run,
+        system: str | None = None,
+    ) -> None:
         self._run = run_fn
         self._system = system or platform.system()
 
@@ -385,8 +391,14 @@ class MNDPListenerProbe:
         router = discovered[ip]
         router["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         for key in (
-            "mac", "identity", "version", "platform",
-            "board", "software_id", "uptime", "interface_name",
+            "mac",
+            "identity",
+            "version",
+            "platform",
+            "board",
+            "software_id",
+            "uptime",
+            "interface_name",
         ):
             if key in parts and parts[key]:
                 router[key] = parts[key]
@@ -436,8 +448,13 @@ class MNDPListenerProbe:
 
 
 _MNDP_ATTRS = (
-    "identity", "version", "board", "software_id",
-    "platform", "uptime", "interface_name",
+    "identity",
+    "version",
+    "board",
+    "software_id",
+    "platform",
+    "uptime",
+    "interface_name",
 )
 _MNDP_ATTRS_WITH_MAC = ("mac_address",) + _MNDP_ATTRS
 
@@ -522,4 +539,3 @@ def merge_probe_results(
     _merge_mndp_results(mndp_results, by_ip, now)
     _enrich_from_arp(arp_results, by_ip)
     return list(by_ip.values())
-

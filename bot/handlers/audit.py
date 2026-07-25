@@ -1,5 +1,4 @@
 from datetime import UTC, datetime, timedelta
-from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -23,6 +22,7 @@ from bot.messages import (
     NO_RESULTS,
 )
 from bot.router_selector import nav_set
+from core.mikrotik_client import RouterOSRow
 from database.models import (
     UTC_TIMESTAMP_FORMAT,
     get_distinct_log_actions,

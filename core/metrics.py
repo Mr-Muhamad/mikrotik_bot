@@ -13,6 +13,7 @@ Metrics include:
 import logging
 import time
 from collections import defaultdict
+
 from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)

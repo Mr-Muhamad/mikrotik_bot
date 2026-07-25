@@ -1,10 +1,10 @@
 import logging
-from core.mikrotik_client import RouterOSRow
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
+from core.mikrotik_client import RouterOSRow
 from database.models import get_pdf_settings
 from pdf.card_renderer import CardRenderer, setup_arabic_support
 

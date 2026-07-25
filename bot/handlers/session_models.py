@@ -11,6 +11,7 @@ class HotspotAddSession:
     comment: str = ""
     bytes_total: str = ""
 
+
 def get_hotspot_add_session(user_data: dict[str, object] | None) -> HotspotAddSession:
     if user_data is None:
         return HotspotAddSession()
@@ -24,6 +25,7 @@ class HotspotEditSession:
     user_id: str = ""
     user_data: dict[str, str] = field(default_factory=dict)
     current_field: str = ""
+
 
 def get_hotspot_edit_session(user_data: dict[str, object] | None) -> HotspotEditSession:
     if user_data is None:

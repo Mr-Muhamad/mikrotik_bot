@@ -8,9 +8,13 @@ avoid an import cycle (models re-exports these repositories at import time).
 from __future__ import annotations
 
 
-def ensure_admin_role(admin_id: int, default_role: str = "admin", changed_by: int | None = None) -> None:
+def ensure_admin_role(
+    admin_id: int,
+    default_role: str = "admin",
+    changed_by: int | None = None,
+) -> None:
     """Insert a role row for an admin if none exists yet (idempotent)."""
-    from database.models import VALID_ROLES, now_utc, get_db
+    from database.models import VALID_ROLES, get_db, now_utc
 
     if default_role not in VALID_ROLES:
         raise ValueError(f"invalid role: {default_role}")
@@ -41,7 +45,7 @@ def get_admin_role(admin_id: int) -> str | None:
 
 def set_admin_role(admin_id: int, role: str, changed_by: int | None = None) -> None:
     """Set (insert or update) the role for an admin."""
-    from database.models import VALID_ROLES, now_utc, get_db
+    from database.models import VALID_ROLES, get_db, now_utc
 
     if role not in VALID_ROLES:
         raise ValueError(f"invalid role: {role}")

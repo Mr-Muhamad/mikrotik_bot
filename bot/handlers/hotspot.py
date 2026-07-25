@@ -1,6 +1,5 @@
 import html
 import logging
-from core.mikrotik_client import RouterOSRow
 
 from telegram import InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -18,6 +17,7 @@ from bot.messages import (
 )
 from bot.router_selector import cleanup_state, get_selected_router, nav_set
 from core.hotspot_manager import hotspot_manager
+from core.mikrotik_client import RouterOSRow
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
@@ -90,12 +90,16 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await safe_answer_callback(query)
     cleanup_state(update.effective_user.id, context.user_data)
     nav_set(context, "menu_hotspot")
-    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    router_key = get_selected_router(update.effective_user.id)
+    if not router_key:
+        router_key = context.user_data.get("router_key")
     if not router_key:
         if query:
             await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())
         elif update.effective_message:
-            await update.effective_message.reply_text(NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+            await update.effective_message.reply_text(
+                NO_ROUTER_SELECTED, reply_markup=get_router_keyboard()
+            )
         return ConversationHandler.END
 
     try:
@@ -115,8 +119,7 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             text += "\n\n" + HOTSPOT_STATS_PROMPT.format(days=", ".join(map(str, reset_days)))
             # إنشاء أزرار تفاعلية للأيام المتاحة
             day_buttons = [
-                InlineKeyboardButton(f"يوم {d}", callback_data=f"stats_day_{d}")
-                for d in reset_days
+                InlineKeyboardButton(f"يوم {d}", callback_data=f"stats_day_{d}") for d in reset_days
             ]
             # تقسيم الأيام في صفوف من 4 أزرار
             grid = [day_buttons[i : i + 4] for i in range(0, len(day_buttons), 4)]
@@ -150,9 +153,16 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle a day number typed by the user and show that day's reset list."""
-    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    router_key = get_selected_router(update.effective_user.id)
     if not router_key:
-        await _reply_or_edit(update, context, NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+        router_key = context.user_data.get("router_key")
+    if not router_key:
+        await _reply_or_edit(
+            update,
+            context,
+            NO_ROUTER_SELECTED,
+            reply_markup=get_router_keyboard(),
+        )
         return ConversationHandler.END
 
     query = update.callback_query
@@ -165,32 +175,60 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
     try:
         day = int(day_text)
     except (ValueError, TypeError):
-        await _reply_or_edit(update, context, HOTSPOT_STATS_DAY_INVALID, reply_markup=get_back_keyboard("menu_hotspot"))
+        await _reply_or_edit(
+            update,
+            context,
+            HOTSPOT_STATS_DAY_INVALID,
+            reply_markup=get_back_keyboard("menu_hotspot"),
+        )
         return WAITING_STATS_DAY
 
     if day < 1 or day > 31:
-        await _reply_or_edit(update, context, HOTSPOT_STATS_DAY_INVALID, reply_markup=get_back_keyboard("menu_hotspot"))
+        await _reply_or_edit(
+            update,
+            context,
+            HOTSPOT_STATS_DAY_INVALID,
+            reply_markup=get_back_keyboard("menu_hotspot"),
+        )
         return WAITING_STATS_DAY
 
     try:
         stats = await run_blocking(hotspot_manager.get_hotspot_stats, router_key, day)
         if not stats:
             await _reply_or_edit(
-                update, context, "❌ خطأ في جلب إحصائيات Hotspot",
+                update,
+                context,
+                "❌ خطأ في جلب إحصائيات Hotspot",
                 reply_markup=get_back_keyboard("menu_hotspot"),
             )
             return WAITING_STATS_DAY
 
         if day not in stats["reset_days"]:
-            text = _summary_text(stats) + "\n\n" + HOTSPOT_STATS_DAY_NOT_FOUND.format(
-                day=day,
-                days=", ".join(map(str, stats["reset_days"])),
+            text = (
+                _summary_text(stats)
+                + "\n\n"
+                + HOTSPOT_STATS_DAY_NOT_FOUND.format(
+                    day=day,
+                    days=", ".join(map(str, stats["reset_days"])),
+                )
             )
-            await _reply_or_edit(update, context, text, parse_mode="HTML", reply_markup=get_back_keyboard("menu_hotspot"))
+            await _reply_or_edit(
+                update,
+                context,
+                text,
+                parse_mode="HTML",
+                reply_markup=get_back_keyboard("menu_hotspot"),
+            )
             return WAITING_STATS_DAY
 
         text = _summary_text(stats) + "\n\n" + _reset_block_text(stats)
-        await _reply_or_edit(update, context, text, parse_mode="HTML", reply_markup=get_back_keyboard("menu_hotspot"))
+        await _reply_or_edit(
+            update,
+            context,
+            text,
+            parse_mode="HTML",
+            reply_markup=get_back_keyboard("menu_hotspot"),
+        )
         return WAITING_STATS_DAY
     except Exception as e:
         await send_error(

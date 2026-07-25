@@ -1,7 +1,6 @@
 import logging
 import os
 from datetime import UTC, datetime
-from core.mikrotik_client import RouterOSRow
 
 from core.backup import files as backup_files
 from core.backup.files import (
@@ -11,6 +10,7 @@ from core.backup.files import (
     sanitize_router_name,
 )
 from core.mikrotik_api import mikrotik_api
+from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
 

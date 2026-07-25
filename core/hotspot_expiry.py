@@ -8,8 +8,9 @@ handle and returns a plain list of dicts.
 import logging
 import re
 
-from core.mikrotik_client import RouterOSRow, MikrotikClient
 from librouteros.exceptions import LibRouterosError
+
+from core.mikrotik_client import MikrotikClient, RouterOSRow
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +119,11 @@ def parse_renewal_day_from_comment(comment: str) -> tuple[str, int | None]:
     return comment, None
 
 
-def get_custom_expiring_users(api: MikrotikClient, router_key: str, days_window: int = 3) -> list[RouterOSRow]:
+def get_custom_expiring_users(
+    api: MikrotikClient,
+    router_key: str,
+    days_window: int = 3,
+) -> list[RouterOSRow]:
     """إعادة قائمة المستخدمين الذين يقترب يوم تجديدهم المحدد في التعليق خلال `days_window` أيام."""
     import datetime
 
@@ -139,7 +144,9 @@ def get_custom_expiring_users(api: MikrotikClient, router_key: str, days_window:
             if renewal_day is None:
                 continue
 
-            days_left = (renewal_day - today) if renewal_day >= today else (30 - today + renewal_day)
+            days_left = (
+                (renewal_day - today) if renewal_day >= today else (30 - today + renewal_day)
+            )
             if 0 <= days_left <= days_window:
                 result.append(
                     {

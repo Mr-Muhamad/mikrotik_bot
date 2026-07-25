@@ -171,7 +171,9 @@ async def _dispatch_message(
             # edit_message_text only accepts InlineKeyboardMarkup | None
             msg = await query.edit_message_text(
                 text=text,
-                reply_markup=reply_markup if isinstance(reply_markup, InlineKeyboardMarkup) else None,
+                reply_markup=(
+                    reply_markup if isinstance(reply_markup, InlineKeyboardMarkup) else None
+                ),
             )
         elif update and update.effective_message:
             msg = await update.effective_message.reply_text(text=text, reply_markup=reply_markup)

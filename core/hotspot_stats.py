@@ -10,9 +10,9 @@ the user-management class.
 import logging
 import re
 
-from core.mikrotik_client import RouterOSRow, MikrotikClient
 from librouteros.exceptions import LibRouterosError
 
+from core.mikrotik_client import MikrotikClient, RouterOSRow
 from utils.formatters import format_bytes, parse_bytes
 
 logger = logging.getLogger(__name__)
@@ -76,7 +76,6 @@ def parse_reset_day(comment: str) -> int | None:
     return None
 
 
-
 def _classify_limit_gb(limit_bytes: int) -> str:
     """Return the human-readable bucket for a limit in bytes."""
     gb = limit_bytes / _GB
@@ -105,9 +104,7 @@ def _categorize_user(
     if limit_raw and str(limit_raw) != "0":
         try:
             limit_str = str(limit_raw)
-            limit_bytes = (
-                int(parse_bytes(limit_str)) if not limit_str.isdigit() else int(limit_str)
-            )
+            limit_bytes = int(parse_bytes(limit_str)) if not limit_str.isdigit() else int(limit_str)
             categories[_classify_limit_gb(limit_bytes)] += 1
         except (ValueError, TypeError):
             categories["أخرى"] += 1
@@ -118,7 +115,11 @@ def _categorize_user(
     return True, reset_day
 
 
-def get_hotspot_stats(api: MikrotikClient, router_key: str, day: int | None = None) -> RouterOSRow | None:
+def get_hotspot_stats(
+    api: MikrotikClient,
+    router_key: str,
+    day: int | None = None,
+) -> RouterOSRow | None:
     """Return hotspot statistics, optionally filtered to a single reset day.
 
     When ``day`` is ``None`` the ``reset_list`` is empty and ``reset_days``

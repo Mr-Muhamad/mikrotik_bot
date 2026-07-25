@@ -69,7 +69,9 @@ def _check_rate_limit(user_id: int, func_name: str = "") -> bool:
 
     with _rate_limit_lock:
         if now - _last_cleanup > _RATE_LIMIT_CLEANUP_INTERVAL:
-            stale = [k for k, ts in list(_rate_limit_data.items()) if now - ts > _RATE_LIMIT_MAX_AGE]
+            stale = [
+                k for k, ts in list(_rate_limit_data.items()) if now - ts > _RATE_LIMIT_MAX_AGE
+            ]
             for k in stale:
                 del _rate_limit_data[k]
             _last_cleanup = now

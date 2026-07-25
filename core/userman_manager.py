@@ -6,7 +6,7 @@ from datetime import datetime
 from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
-from core.mikrotik_client import RouterOSRow, MikrotikClient, RouterOSResponse
+from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
 from utils.validators import sanitize_comment
 
 _CARD_TYPE_MAP = {
@@ -94,10 +94,9 @@ class UserManager:
             }
         except Exception as e:
             logger.warning(
-                f"Failed to fetch existing User Manager users for deduplication on {router_key}: {e}"
+                f"Failed to fetch existing User Manager users for deduplication on {router_key}: {e}"  # noqa: E501
             )
             existing = set()
-
 
         base_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
         batch_comment = f"{prefix}_{base_time}" if prefix else base_time
@@ -139,8 +138,15 @@ class UserManager:
         )
         return cards
 
-
-    def _create_user(self, router_key: str, username: str, password: str, profile: str, comment: str = "", caller_id: str = "") -> RouterOSRow:
+    def _create_user(
+        self,
+        router_key: str,
+        username: str,
+        password: str,
+        profile: str,
+        comment: str = "",
+        caller_id: str = "",
+    ) -> RouterOSRow:
         """Create a User Manager user and attach the selected profile.
 
         The user is created WITHOUT the profile first so a rejected ``profile``
@@ -188,7 +194,13 @@ class UserManager:
             "link_error": err,
         }
 
-    def _attach_v7_profile(self, router_key: str, base_path: str, username: str, profile: str) -> tuple[bool, str | None]:
+    def _attach_v7_profile(
+        self,
+        router_key: str,
+        base_path: str,
+        username: str,
+        profile: str,
+    ) -> tuple[bool, str | None]:
         """Link a profile to a v7 User Manager user via the ``user-profile`` table.
 
         RouterOS v7 stores the user<->profile link in a separate
@@ -212,7 +224,13 @@ class UserManager:
             return False, str(e)
         return self._verify_profile_link(router_key, base_path, username, profile)
 
-    def _attach_v6_profile(self, router_key: str, base_path: str, username: str, profile: str) -> tuple[bool, str | None]:
+    def _attach_v6_profile(
+        self,
+        router_key: str,
+        base_path: str,
+        username: str,
+        profile: str,
+    ) -> tuple[bool, str | None]:
         """Attach and activate a profile for a v6 User Manager user.
 
         RouterOS v6 links the profile via the dedicated
@@ -236,7 +254,13 @@ class UserManager:
             return False, str(e)
         return self._verify_profile_link(router_key, base_path, username, profile)
 
-    def _verify_profile_link(self, router_key: str, base_path: str, username: str, profile: str) -> tuple[bool, str | None]:
+    def _verify_profile_link(
+        self,
+        router_key: str,
+        base_path: str,
+        username: str,
+        profile: str,
+    ) -> tuple[bool, str | None]:
         """Read back the user<->profile link and confirm it was applied.
 
         RouterOS does not accept a query filter on ``user-profile/print``

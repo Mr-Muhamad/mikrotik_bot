@@ -3,7 +3,6 @@ import os
 import shutil
 import threading
 from datetime import UTC, datetime
-from core.mikrotik_client import RouterOSRow
 
 from core.backup import files as backup_files
 from core.backup.files import (
@@ -12,6 +11,7 @@ from core.backup.files import (
     sanitize_router_name,
 )
 from core.mikrotik_api import mikrotik_api
+from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,10 @@ class SystemBackupService:
         if not lock.acquire(blocking=False):
             return {
                 "success": False,
-                "message": "⚠️ توجد عملية نسخ احتياطي جارية حالياً لهذا الراوتر. الرجاء الانتظار حتى تكتمل.",
+                "message": (
+                    "⚠️ توجد عملية نسخ احتياطي جارية حالياً لهذا الراوتر."
+                    " الرجاء الانتظار حتى تكتمل."
+                ),
             }
 
         try:
@@ -47,7 +50,6 @@ class SystemBackupService:
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         backup_dir = os.path.join(backup_root, "system", f"{file_prefix}_{timestamp}")
         os.makedirs(backup_dir, exist_ok=True)
-
 
         try:
             mikrotik_api.execute_long(

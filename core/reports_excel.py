@@ -8,12 +8,13 @@ from __future__ import annotations
 
 import io
 import logging
-from core.mikrotik_client import RouterOSRow
 
 import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
+
+from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,7 @@ def _auto_fit_columns(ws: Worksheet) -> None:
         ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
 
 
-def build_usage_excel_report(
-    report: RouterOSRow, title: str = "تقرير استخدام الشبكة"
-) -> bytes:
+def build_usage_excel_report(report: RouterOSRow, title: str = "تقرير استخدام الشبكة") -> bytes:
     """Generate a formatted Excel (.xlsx) workbook bytes for hotspot usage report."""
     wb = openpyxl.Workbook()
     ws = wb.active

@@ -6,10 +6,10 @@ god-object ``database.models``.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
-from core.mikrotik_client import RouterOSRow
-
 import sqlite3
+from datetime import UTC, datetime
+
+from core.mikrotik_client import RouterOSRow
 
 # عدد سجلات النسخ المحتفظ بها لكل راوتر قبل الحذف التلقائي (retention).
 BACKUP_JOBS_RETENTION_PER_ROUTER = 50

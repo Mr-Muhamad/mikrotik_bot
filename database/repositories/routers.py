@@ -8,9 +8,9 @@ encryption, and metadata helpers. Isolated from the former god-object
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from core.mikrotik_client import RouterOSRow
 
 from config import DEFAULT_API_PORT
+from core.mikrotik_client import RouterOSRow
 
 
 def _utc_now() -> str:
@@ -81,7 +81,14 @@ def save_discovered_router(
         return router_id
 
 
-def save_manual_router(ip: str, port: int = DEFAULT_API_PORT, username: str = "", password: str = "", alias: str = "", owner_id: int = 0) -> int | None:
+def save_manual_router(
+    ip: str,
+    port: int = DEFAULT_API_PORT,
+    username: str = "",
+    password: str = "",
+    alias: str = "",
+    owner_id: int = 0,
+) -> int | None:
     """Insert a manually-entered router.
 
     Encrypts the password before storage. Raises ``RouterAlreadyExistsError``
@@ -98,7 +105,8 @@ def save_manual_router(ip: str, port: int = DEFAULT_API_PORT, username: str = ""
         try:
             cursor.execute(
                 """INSERT INTO discovered_routers
-                       (ip_address, identity, port, username, password, name_alias, is_active, owner_id)
+                       (ip_address, identity, port, username,
+                        password, name_alias, is_active, owner_id)
                    VALUES (?, 'Unknown', ?, ?, ?, ?, 1, ?)""",
                 (ip, port, username, encrypted_password, alias, owner_id),
             )
@@ -107,7 +115,11 @@ def save_manual_router(ip: str, port: int = DEFAULT_API_PORT, username: str = ""
             raise RouterAlreadyExistsError(f"Router IP {ip} already exists") from e
 
 
-def get_saved_routers(active_only: bool = True, decrypt: bool = False, owner_id: int | None = None) -> list[RouterOSRow]:
+def get_saved_routers(
+    active_only: bool = True,
+    decrypt: bool = False,
+    owner_id: int | None = None,
+) -> list[RouterOSRow]:
     """جلب الروترات المحفوظة من قاعدة البيانات.
 
     Args:

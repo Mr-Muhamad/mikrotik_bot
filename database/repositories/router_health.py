@@ -2,8 +2,8 @@
 
 import logging
 from datetime import UTC
-from core.mikrotik_client import RouterOSRow
 
+from core.mikrotik_client import RouterOSRow
 from database.models import get_db, now_utc
 
 logger = logging.getLogger(__name__)

@@ -61,7 +61,7 @@ def main():
             # Check if the comment has any text after 'ignore'
             match = IGNORE_PATTERN.search(line_text)
             if match:
-                after = line_text[match.end():].strip()
+                after = line_text[match.end() :].strip()
                 if after:
                     documented.append(key)
                 else:
@@ -74,7 +74,10 @@ def main():
         for file_path, line_no, line_text in errors:
             print(f"  {file_path}:{line_no}")
             print(f"    {line_text}\n")
-        print("Add a reason comment after '# type: ignore' (e.g., '# type: ignore[assignment]  # librouteros stubs')")
+        print(
+            "Add a reason comment after '# type: ignore'"
+            " (e.g., '# type: ignore[assignment]  # librouteros stubs')"
+        )
         sys.exit(1)
     else:
         print(f"OK: All {len(findings)} '# type: ignore' comments are documented.")

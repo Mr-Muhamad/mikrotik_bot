@@ -1,5 +1,6 @@
 import re
 from functools import lru_cache
+
 from core.mikrotik_client import RouterOSRow
 
 SUFFIX_MULTIPLIER = {"k": 1000, "m": 1000000, "g": 1000000000, "t": 1000000000000}

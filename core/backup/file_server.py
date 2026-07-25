@@ -11,7 +11,7 @@ import os
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-from config import BACKUP_DIR, FILE_SERVER_SECRET, FILE_SERVER_PORT
+from config import BACKUP_DIR, FILE_SERVER_PORT, FILE_SERVER_SECRET
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,7 @@ class _FileRequestHandler(BaseHTTPRequestHandler):
         if not self._check_auth():
             return
 
-        filename = self.path[len("/files/"):]
+        filename = self.path[len("/files/") :]
         if not filename or ".." in filename or "/" in filename or "\\" in filename:
             self.send_error(400, "Invalid filename")
             return

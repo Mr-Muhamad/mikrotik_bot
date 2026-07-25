@@ -1,5 +1,4 @@
 import logging
-from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -31,6 +30,7 @@ from bot.messages import (
 )
 from bot.router_selector import cleanup_state, get_selected_router, nav_set
 from core.hotspot_manager import hotspot_manager
+from core.mikrotik_client import RouterOSRow
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import send_step
@@ -49,7 +49,9 @@ async def usage_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
     cleanup_state(update.effective_user.id, context.user_data)
     nav_set(context, "menu_hotspot")
-    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    router_key = get_selected_router(update.effective_user.id)
+    if not router_key:
+        router_key = context.user_data.get("router_key")
     if not router_key:
         await send_step(update, context, NO_ROUTER_SELECTED)
         return ConversationHandler.END

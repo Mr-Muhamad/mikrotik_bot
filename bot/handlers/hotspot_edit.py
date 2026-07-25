@@ -412,7 +412,9 @@ async def _validate_edit_field(
                 exists = await run_blocking(hotspot_manager.user_exists, router_key, new_value)
             except Exception as e:
                 await send_error(
-                    update, context, e,
+                    update,
+                    context,
+                    e,
                     router_key=router_key,
                     log_extra="hotspot_edit_value:user_exists",
                     reply_markup=get_back_keyboard("edit_back_to_fields"),
@@ -473,7 +475,11 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if field == "renewal_day":
         transformed = _transform_renewal_day(new_value, user_data)
         if transformed is None:
-            await reply_final(update, context, "❌ يرجى إدخال رقم يوم صالح بين 1 و 31 (مثال: 15 أو 22)")
+            await reply_final(
+                update,
+                context,
+                "❌ يرجى إدخال رقم يوم صالح بين 1 و 31" " (مثال: 15 أو 22)",
+            )
             return WAITING_EDIT_VALUE
         new_value = transformed
 
@@ -498,7 +504,9 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return WAITING_EDIT_VALUE
     except Exception as e:
         await send_error(
-            update, context, e,
+            update,
+            context,
+            e,
             router_key=router_key,
             log_extra="hotspot_edit_value",
             reply_markup=get_back_keyboard("edit_back_to_fields"),

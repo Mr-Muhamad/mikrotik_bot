@@ -11,7 +11,7 @@ from librouteros.exceptions import LibRouterosError
 
 from config import DEFAULT_API_PORT, FILE_SERVER_PORT, FILE_SERVER_SECRET, ROUTER_KEY_PREFIX
 from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
-from core.mikrotik_client import RouterOSRow, MikrotikClient, RouterOSResponse
+from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
 from database.models import get_router_by_id, get_router_display_name
 
 logger = logging.getLogger(__name__)
@@ -212,7 +212,8 @@ class MikrotikAPI:
                     raise
                 last_exc = e
                 if attempt == len(_RETRY_DELAYS):
-                    logger.error(f"All {1 + len(_RETRY_DELAYS)} attempts failed for {command} on {router_key}: {e}")
+                    total = 1 + len(_RETRY_DELAYS)
+                    logger.error(f"All {total} attempts failed for {command} on {router_key}: {e}")
                     raise
         raise last_exc  # type: ignore[misc]
 
@@ -393,7 +394,7 @@ class MikrotikAPI:
 
         Uses: ``/tool/fetch url="http://BOT:PORT/files/NAME" dst-path="NAME"``
         """
-        from core.backup.file_server import prepare_serve_file, cleanup_serve_file
+        from core.backup.file_server import cleanup_serve_file, prepare_serve_file
 
         bot_host = self._get_bot_host_for_router(router_key)
         if not bot_host:

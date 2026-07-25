@@ -24,7 +24,12 @@ def bind_request_id_from_update(func: HandlerFunc) -> HandlerFunc:
     """
 
     @wraps(func)
-    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE, *args: object, **kwargs: object) -> object:
+    async def wrapper(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE,
+        *args: object,
+        **kwargs: object,
+    ) -> object:
         rid = str(getattr(update, "update_id", None) or "-")
         with bind_request_id(rid):
             return await func(update, context, *args, **kwargs)

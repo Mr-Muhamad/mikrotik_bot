@@ -9,13 +9,13 @@ live here so ``bot/registrations.py`` stays a thin wiring layer.
 """
 
 from telegram.ext import (
+    Application,
     CallbackQueryHandler,
     CommandHandler,
     MessageHandler,
     filters,
 )
 from telegram.ext import (
-    Application,
     ConversationHandler as CH,
 )
 

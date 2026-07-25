@@ -1,5 +1,4 @@
 import logging
-from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -42,8 +41,8 @@ from bot.router_selector import (
     set_current_action,
 )
 from core.hotspot_manager import hotspot_manager
+from core.mikrotik_client import RouterOSRow
 from utils.admin_decorator import admin_only
-from utils.pagination import Paginator
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import (
@@ -56,6 +55,7 @@ from utils.chat_cleaner import (
 )
 from utils.error_response import send_error
 from utils.formatters import format_bytes
+from utils.pagination import Paginator
 
 from .constants import WAITING_HOTSPOT_SEARCH
 
@@ -130,7 +130,10 @@ async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFA
     hosts = context.user_data.get("search_hosts")
     if hosts is None:
         await safe_edit_plain(
-            query, context, "⚠️ عذراً، انتهت صلاحية البحث. يرجى البحث مجدداً.", get_cancel_keyboard()
+            query,
+            context,
+            "⚠️ عذراً، انتهت صلاحية البحث. يرجى البحث مجدداً.",
+            get_cancel_keyboard(),
         )
         return WAITING_HOTSPOT_SEARCH
 
@@ -451,7 +454,12 @@ async def show_blocked_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         else:
             text = BLOCKED_LIST_HEADER.format(count=len(blocked))
-            await safe_edit_plain(query, context, text, reply_markup=get_blocked_macs_keyboard(blocked))
+            await safe_edit_plain(
+                query,
+                context,
+                text,
+                reply_markup=get_blocked_macs_keyboard(blocked),
+            )
     except Exception as e:
         await send_error(
             update,

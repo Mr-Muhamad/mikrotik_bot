@@ -3,13 +3,12 @@ from datetime import datetime, timedelta
 
 from telegram.ext import CallbackContext, JobQueue
 
+from core.mikrotik_client import RouterOSRow
 from utils.async_blocking import run_blocking
 
 logger = logging.getLogger(__name__)
 
 JOB_NAME = "scheduled_backup"
-
-from core.mikrotik_client import RouterOSRow
 
 
 class BackupScheduler:
@@ -33,9 +32,7 @@ class BackupScheduler:
             mikrotik_api.check_connection_health, router_key
         )
         if not is_healthy:
-            logger.warning(
-                f"Router {router_key} is not healthy ({health_msg}), skipping backup"
-            )
+            logger.warning(f"Router {router_key} is not healthy ({health_msg}), skipping backup")
             failed_routers.append(f"{r.get('identity', router_key)} (غير متصل)")
             return
 
@@ -44,7 +41,11 @@ class BackupScheduler:
             await run_blocking(backup_service.userman_backup, router_key)
             successful_routers.append(router_name)
             await run_blocking(
-                record_backup_result, router_key, "userman", True, "scheduled backup ok",
+                record_backup_result,
+                router_key,
+                "userman",
+                True,
+                "scheduled backup ok",
                 router_name=router_name,
             )
             logger.info(f"Scheduled backup done for {router_key}")
@@ -52,7 +53,11 @@ class BackupScheduler:
             logger.error(f"Scheduled backup failed for {router_key}: {e}")
             failed_routers.append(router_name)
             await run_blocking(
-                record_backup_result, router_key, "userman", False, str(e),
+                record_backup_result,
+                router_key,
+                "userman",
+                False,
+                str(e),
                 router_name=router_name,
             )
 
@@ -62,19 +67,32 @@ class BackupScheduler:
             logger.error(f"Scheduled full backup failed for {router_key}: {e}")
             failed_routers.append(f"{router_name} (باكوب كامل)")
             await run_blocking(
-                record_backup_result, router_key, "full", False, str(e),
+                record_backup_result,
+                router_key,
+                "full",
+                False,
+                str(e),
                 router_name=router_name,
             )
         else:
             success = full_result.get("success")
-            msg = full_result.get("message", "scheduled full backup failed") if not success else "scheduled full backup ok"
+            default_msg = "scheduled full backup failed"
+            msg = (
+                full_result.get("message", default_msg)
+                if not success
+                else "scheduled full backup ok"
+            )
             if not success:
                 logger.error(f"Scheduled full backup failed for {router_key}: {msg}")
                 failed_routers.append(f"{router_name} (باكوب كامل)")
             else:
                 logger.info(f"Scheduled full backup done for {router_key}")
             await run_blocking(
-                record_backup_result, router_key, "full", success, str(msg),
+                record_backup_result,
+                router_key,
+                "full",
+                success,
+                str(msg),
                 router_name=router_name,
             )
 
@@ -175,7 +193,13 @@ class BackupScheduler:
             except Exception as e:
                 logger.warning(f"Stats snapshot failed for {router_key}: {e}")
 
-    def start_daily(self, job_queue: JobQueue, hour: int = 3, minute: int = 0, persist: bool = True) -> None:  # type: ignore[reportMissingTypeArgument]
+    def start_daily(
+        self,
+        job_queue: JobQueue,  # type: ignore[reportMissingTypeArgument]
+        hour: int = 3,
+        minute: int = 0,
+        persist: bool = True,
+    ) -> None:
         self.stop(job_queue, persist=False)
         now = datetime.now()
         target_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)

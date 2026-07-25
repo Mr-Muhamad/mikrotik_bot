@@ -1,7 +1,7 @@
 import logging
 
 from core.mikrotik_api import mikrotik_api
-from core.mikrotik_client import RouterOSRow, MikrotikClient
+from core.mikrotik_client import MikrotikClient, RouterOSRow
 
 logger = logging.getLogger(__name__)
 

@@ -1,8 +1,7 @@
-from core.mikrotik_client import RouterOSRow
-from core.network_probe import DiscoveredRouter
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+from core.mikrotik_client import RouterOSRow
+from core.network_probe import DiscoveredRouter
 from database.models import get_router_display_name
 from utils.pagination import Paginator
 
@@ -195,7 +194,9 @@ def get_batches_keyboard(
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_batch_detail_keyboard(batch_id: int, payment_status: str = "unpaid") -> InlineKeyboardMarkup:
+def get_batch_detail_keyboard(
+    batch_id: int, payment_status: str = "unpaid"
+) -> InlineKeyboardMarkup:
     """Return the action keyboard for a single card batch with payment controls."""
     from bot.handlers.callback_constants import mark_payment_cb
 

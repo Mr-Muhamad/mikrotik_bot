@@ -19,7 +19,12 @@ def get_user_session(user_id: int) -> dict[str, object] | None:
         return None
 
 
-def save_user_session(user_id: int, selected_router: str | None = None, current_action: str | None = None, action_data: str | None = None) -> None:
+def save_user_session(
+    user_id: int,
+    selected_router: str | None = None,
+    current_action: str | None = None,
+    action_data: str | None = None,
+) -> None:
     from database.models import get_db
 
     with get_db() as conn:

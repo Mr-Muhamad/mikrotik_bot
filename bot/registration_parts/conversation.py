@@ -203,6 +203,7 @@ fallback(CallbackQueryHandler, pattern=PATTERNS["schedule_enable"])(schedule_ena
 fallback(CallbackQueryHandler, pattern=PATTERNS["go_back"])(go_back)
 fallback(CommandHandler, command="usage")(usage_start)
 
+
 # Catch-all fallback for stale callbacks from old messages.
 # Must be LAST fallback so it only fires when no other handler matches.
 async def _unhandled_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

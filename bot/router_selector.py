@@ -5,7 +5,6 @@ import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC
 from functools import wraps
-from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from telegram import Update
@@ -13,6 +12,7 @@ from telegram.ext import ContextTypes
 
 from bot.keyboards import get_router_keyboard
 from bot.messages import NO_ROUTER_SELECTED
+from core.mikrotik_client import RouterOSRow
 from database.models import get_user_session, save_user_session
 
 logger = logging.getLogger(__name__)
@@ -277,8 +277,12 @@ _REACHABILITY_CACHE_TTL = 30.0  # seconds
 
 
 async def _fast_reachability_check(router_key: str) -> bool:
-    """إجراء فحص سريع للاتصال بالراوتر (1 ثانية كحد أقصى) مع التخزين المؤقت (Cache) لمدة 30 ثانية."""
+    """
+    Perform a quick router reachability check (max 1 second)
+    with 30-second result caching.
+    """
     import time
+
     now = time.monotonic()
     if router_key in _REACHABILITY_CACHE:
         result, ts = _REACHABILITY_CACHE[router_key]
@@ -338,7 +342,10 @@ def require_router(func: Callable[..., Awaitable[object]]) -> Callable[..., Awai
 
         if not await _fast_reachability_check(router_key):
             keyboard = get_router_keyboard()
-            error_msg = "⚠️ الراوتر المحدد مطفأ أو لا يستجيب حالياً. يرجى اختيار راوتر آخر أو المحاولة لاحقاً."
+            error_msg = (
+                "⚠️ الراوتر المحدد مطفأ أو لا يستجيب حالياً. "
+                "يرجى اختيار راوتر آخر أو المحاولة لاحقاً."
+            )
             if update.callback_query:
                 await update.callback_query.answer(error_msg, show_alert=True)
                 await update.callback_query.edit_message_text(error_msg, reply_markup=keyboard)
@@ -381,7 +388,10 @@ def navigation_guard(func: Callable[..., Awaitable[object]]) -> Callable[..., Aw
 
         if not await _fast_reachability_check(router_key):
             keyboard = get_router_keyboard()
-            error_msg = "⚠️ الراوتر المحدد مطفأ أو لا يستجيب حالياً. يرجى اختيار راوتر آخر أو المحاولة لاحقاً."
+            error_msg = (
+                "⚠️ الراوتر المحدد مطفأ أو لا يستجيب حالياً. "
+                "يرجى اختيار راوتر آخر أو المحاولة لاحقاً."
+            )
             if update.callback_query:
                 await update.callback_query.answer(error_msg, show_alert=True)
                 await update.callback_query.edit_message_text(error_msg, reply_markup=keyboard)
@@ -395,7 +405,11 @@ def navigation_guard(func: Callable[..., Awaitable[object]]) -> Callable[..., Aw
     return wrapper
 
 
-def requires_router_check(command: str | None, pattern: str | None, func: Callable[..., object] | None = None) -> bool:
+def requires_router_check(
+    command: str | None,
+    pattern: str | None,
+    func: Callable[..., object] | None = None,
+) -> bool:
     """Classify a registered handler from its kwargs and target function.
 
     Returns True when the handler is OPERATIONAL and must be guarded

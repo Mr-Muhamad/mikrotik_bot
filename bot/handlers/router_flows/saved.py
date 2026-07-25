@@ -1,5 +1,4 @@
 import logging
-from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -28,6 +27,7 @@ from bot.messages import (
 from bot.router_selector import set_selected_router
 from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
+from core.mikrotik_client import RouterOSRow
 from core.watchdog import check_router_health
 from database.models import (
     delete_router,

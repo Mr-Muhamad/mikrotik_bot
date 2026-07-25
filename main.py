@@ -3,7 +3,6 @@ import atexit
 import logging
 import signal
 import sys
-
 from types import FrameType
 
 from telegram.ext import (

@@ -10,15 +10,15 @@ This module deliberately imports nothing from ``core`` to stay cycle-free.
 
 from __future__ import annotations
 
-from typing import Any, Protocol, TypeAlias, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 # RouterOS API responses are loosely typed dicts; use these aliases
 # instead of bare ``dict``/``list[dict]`` so pyright strict mode can
 # infer proper key/value types and avoid ``Unknown`` cascades.
-RouterOSRow: TypeAlias = dict[str, Any]
+type RouterOSRow = dict[str, Any]
 """A single row returned by the RouterOS API."""
 
-RouterOSResponse: TypeAlias = list[RouterOSRow]
+type RouterOSResponse = list[RouterOSRow]
 """A list of rows returned by the RouterOS API."""
 
 
@@ -54,9 +54,7 @@ class MikrotikClient(Protocol):
         self, router_key: str, remote_name: str, local_dir: str
     ) -> bool: ...
 
-    def upload_file_to_router(
-        self, router_key: str, local_path: str, remote_name: str
-    ) -> bool: ...
+    def upload_file_to_router(self, router_key: str, local_path: str, remote_name: str) -> bool: ...
 
     # ── Cache invalidation ─────────────────────────────────────
     def invalidate_router_name(self, router_key: str) -> None: ...

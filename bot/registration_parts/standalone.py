@@ -217,6 +217,3 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["op_revoke_router"])(op_revoke
 # PDF settings standalone callbacks
 standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_layout"])(pdf_group_layout)
 standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_misc"])(pdf_group_misc)
-
-
-

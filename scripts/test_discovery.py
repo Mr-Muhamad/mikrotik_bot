@@ -19,6 +19,7 @@ from core.network_probe import ARPTableProbe, MNDPListenerProbe, PortScanProbe, 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
+
 async def run_real_discovery_test():
     print("=" * 60)
     print("🔍 بدء الاختبار الحقيقي لوظائف الاستكشاف (Neighbors & Probe Test)")
@@ -31,7 +32,11 @@ async def run_real_discovery_test():
         mndp_results = await mndp_probe.discover()
         print(f"✅ نتيجة MNDP: تم اكتشاف {len(mndp_results)} راوتر عبر البث الشبكي.")
         for item in mndp_results:
-            print(f"   • IP: {item.get('ip')} | Identity: {item.get('identity')} | Board: {item.get('board')} | Version: {item.get('version')}")
+            ip = item.get("ip")
+            identity = item.get("identity")
+            board = item.get("board")
+            version = item.get("version")
+            print(f"   • IP: {ip} | Identity: {identity} | Board: {board} | Version: {version}")
     except PermissionError:
         print("⚠️ فشل MNDP: يتطلب تشغيل السكربت كـ Administrator لفتح منفذ UDP Raw Socket.")
     except Exception as e:
@@ -52,10 +57,10 @@ async def run_real_discovery_test():
     print(f"\n🔌 [3/3] فحص منفذ API (8728) لـ {len(candidate_ips)} جهاز مرشح...")
     port_probe = PortScanProbe(ips=candidate_ips, port=8728, timeout=1.5)
     port_results = await port_probe.discover()
-    print(f"✅ نتيجة فحص API Port 8728: تم تأكيد {len(port_results)} راوتر MikroTik يستجيب على منفذ 8728.")
+    count = len(port_results)
+    print(f"✅ نتيجة فحص API Port 8728: تم تأكيد {count} راوتر MikroTik يستجيب على منفذ 8728.")
     for item in port_results:
         print(f"   • IP: {item.get('ip')} | Port 8728: 🟢 OPEN")
-
 
     # Summary
     all_routers = merge_probe_results(arp_results, port_results, mndp_results)
@@ -64,6 +69,7 @@ async def run_real_discovery_test():
     for r in all_routers:
         print(f"   • {r.display_line()}")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     asyncio.run(run_real_discovery_test())

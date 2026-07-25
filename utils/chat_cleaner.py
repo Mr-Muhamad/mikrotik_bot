@@ -2,11 +2,12 @@ import asyncio
 import logging
 from collections.abc import Generator, Sequence
 from datetime import UTC
-from core.mikrotik_client import RouterOSRow
 from typing import TypedDict, cast
 
 from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
 from telegram.ext import CallbackContext, ExtBot, JobQueue
+
+from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,7 @@ CHAT_MSGS_TTL_SECONDS = 2 * 3600
 
 # Max messages per single delete_messages call (Bot API limit is 100)
 DELETE_MESSAGES_CHUNK = 100
+
 
 # إحصائيات الأداء (للمراقبة)
 class _Stats(TypedDict):
@@ -145,9 +147,7 @@ async def _delete_message_ids(
             return 0
 
     try:
-        result = await context.bot.delete_messages(
-            chat_id=chat_id, message_ids=message_ids
-        )
+        result = await context.bot.delete_messages(chat_id=chat_id, message_ids=message_ids)
         if result is True:
             return len(message_ids)
     except Exception as e:

@@ -16,8 +16,8 @@ Requirements:
 
 import logging
 from collections.abc import Awaitable, Callable
-from core.mikrotik_client import RouterOSRow
 
+from core.mikrotik_client import RouterOSRow
 from core.network_probe import DiscoveredRouter, MNDPListenerProbe
 
 logger = logging.getLogger(__name__)
@@ -87,4 +87,3 @@ async def discover_routers(
 
     logger.info(f"Multi-strategy discovery finished: {len(routers)} routers found")
     return routers
-

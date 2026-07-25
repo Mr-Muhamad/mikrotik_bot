@@ -6,9 +6,9 @@
 import logging
 import threading
 import time
-from core.mikrotik_client import RouterOSRow
-
 from collections import OrderedDict
+
+from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
 

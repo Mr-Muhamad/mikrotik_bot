@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -41,6 +40,7 @@ from core.backup_service import (
     backup_service,
     resolve_userman_backup_file,
 )
+from core.mikrotik_client import RouterOSRow
 from database.models import log_action
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
@@ -128,7 +128,6 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
         return ConversationHandler.END
 
     await query.edit_message_text(BACKUP_RESTORE_IN_PROGRESS.format(name=backup_name))
-
 
     try:
         result = await run_blocking(backup_restore.restore_backup, router_key, backup_name)
@@ -258,7 +257,11 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
     try:
         result = await run_blocking(backup_service.userman_restore, router_key, tar_path)
         await run_blocking(
-            log_action, "userman_restore", tar_filename, router_key, get_from_user_id(query),
+            log_action,
+            "userman_restore",
+            tar_filename,
+            router_key,
+            get_from_user_id(query),
         )
 
         if result["success"] and not result.get("errors"):
@@ -274,6 +277,10 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
             )
     except Exception as e:
         await send_error(
-            update, context, e, router_key=router_key, log_extra="userman_restore_execute",
+            update,
+            context,
+            e,
+            router_key=router_key,
+            log_extra="userman_restore_execute",
         )
     return ConversationHandler.END

@@ -19,6 +19,7 @@ OP_ASSIGN_SUCCESS = "✅ تم إسناد الراوتر #{router_id} للمشغ�
 OP_REVOKE_SUCCESS = "✅ تم سحب الراوتر #{router_id} من المشغّل {operator_id}"
 OP_NO_ROUTERS_FOR_OP = "⚠️ لا توجد روترات مخصصة لك. تواصل مع المسؤول."
 
+
 def _parse_role_target(msg: Message) -> tuple[int | None, str]:
     """Extract (target_id, new_role) from a message or forwarded message."""
     forward_user = getattr(msg, "forward_from", None)
@@ -70,7 +71,10 @@ async def roles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 @require_role("super_admin")
 async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Super Admin assigns a role to an admin: /role <id> <role> or by forwarding a message from the user."""
+    """Super Admin assigns a role to an admin.
+
+    Usage: /role <id> <role> or forward a message from the user.
+    """
     msg = update.message
     if not msg:
         return
@@ -79,7 +83,8 @@ async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not target or not new_role:
         if msg:
             await msg.reply_text(
-                ROLE_SET_USAGE + "\n💡 أو يمكنك تحويل (Forward) رسالة المستخدم مع ملحق اسم الصلاحية (مثال: /role operator)."
+                ROLE_SET_USAGE + "\n💡 أو يمكنك تحويل (Forward) رسالة"
+                " المستخدم مع ملحق اسم الصلاحية (مثال: /role operator)."
             )
         return
     if new_role not in ROLE_LEVELS:
@@ -115,7 +120,10 @@ role_command = role_set_command
 @admin_only
 @require_role("super_admin")
 async def add_customer_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Super Admin adds a new customer: /add_customer <id> or by forwarding a message from the user."""
+    """Super Admin adds a new customer.
+
+    Usage: /add_customer <id> or forward a message from the user.
+    """
     target: int | None = None
     msg = update.message
 
@@ -133,13 +141,15 @@ async def add_customer_command(update: Update, context: ContextTypes.DEFAULT_TYP
     if not target or not msg:
         if msg:
             await msg.reply_text(
-                CUSTOMER_ADD_USAGE + "\n💡 أو يمكنك ببساطة إعادة توجيه (Forward) أي رسالة من المستخدم للبوت."
+                CUSTOMER_ADD_USAGE + "\n💡 أو يمكنك ببساطة إعادة"
+                " توجيه (Forward) أي رسالة من المستخدم للبوت."
             )
         return
 
     actor = update.effective_user.id if update.effective_user else 0
     set_admin_role(target, "customer", actor)
-    log_action("add_customer", (update.effective_user.username if update.effective_user else "") or "", "", actor)
+    username = (update.effective_user.username if update.effective_user else "") or ""
+    log_action("add_customer", username, "", actor)
     await msg.reply_text(CUSTOMER_ADD_SUCCESS.format(customer_id=target))
 
 

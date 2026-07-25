@@ -8,9 +8,10 @@ from __future__ import annotations
 
 import io
 import logging
-from core.mikrotik_client import RouterOSRow
 
 import matplotlib
+
+from core.mikrotik_client import RouterOSRow
 
 # Set non-interactive backend before pyplot import
 matplotlib.use("Agg")
@@ -93,7 +94,7 @@ def generate_trend_chart(
 
     # Legends & Layout
     lines = line1 + line2
-    labels = [str(l.get_label()) for l in lines]
+    labels = [str(line.get_label()) for line in lines]
     leg = ax1.legend(
         lines,
         labels,

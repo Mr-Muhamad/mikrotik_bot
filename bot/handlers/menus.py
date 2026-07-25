@@ -9,7 +9,6 @@ shared ``_show_menu`` helper kept in ``bot.handlers.common``.
 """
 
 import logging
-
 from collections.abc import Awaitable, Callable
 
 from telegram import Update

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from core.mikrotik_client import RouterOSRow
 
 from telegram import CallbackQuery, Update
 from telegram.ext import ContextTypes
@@ -26,6 +25,7 @@ from bot.messages import (
     WATCHDOG_VERSION,
 )
 from config import ADMIN_IDS, ROUTER_KEY_PREFIX, WATCHDOG_FIRST_DELAY, WATCHDOG_INTERVAL
+from core.mikrotik_client import RouterOSRow
 from core.watchdog import (
     ALERT_RECOVERED,
     ALERT_WENT_OFFLINE,
@@ -229,9 +229,7 @@ async def _notify_admins(context: ContextTypes.DEFAULT_TYPE, text: str):
                 if isinstance(e.retry_after, timedelta)
                 else float(e.retry_after)
             )
-            logger.warning(
-                f"Rate limited by Telegram, waiting {delay}s for admin {admin_id}"
-            )
+            logger.warning(f"Rate limited by Telegram, waiting {delay}s for admin {admin_id}")
             await asyncio.sleep(delay)
             try:
                 await context.bot.send_message(admin_id, text, parse_mode="HTML")

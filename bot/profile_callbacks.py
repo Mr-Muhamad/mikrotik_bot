@@ -7,7 +7,11 @@ def cache_profile_names(context: ContextTypes.DEFAULT_TYPE, profile_names: list[
     context.user_data[PROFILE_NAMES_KEY] = list(profile_names)
 
 
-def resolve_profile_from_callback(context: ContextTypes.DEFAULT_TYPE, callback_data: str | None, prefix: str) -> str | None:
+def resolve_profile_from_callback(
+    context: ContextTypes.DEFAULT_TYPE,
+    callback_data: str | None,
+    prefix: str,
+) -> str | None:
     if not callback_data:
         return None
     suffix = callback_data[len(prefix) :]

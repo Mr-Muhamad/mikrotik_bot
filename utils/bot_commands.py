@@ -1,12 +1,12 @@
 import asyncio
 import logging
+
 from telegram import (
     BotCommand,
     BotCommandScopeAllGroupChats,
     BotCommandScopeAllPrivateChats,
 )
 from telegram.ext import Application
-
 
 logger = logging.getLogger(__name__)
 

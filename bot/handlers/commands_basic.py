@@ -248,7 +248,10 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 clean_text = sanitize_error_text(str(error)[:300])
                 await context.bot.send_message(
                     chat_id=admin_id,
-                    text=f"⚠️ <b>تنبيه نظام:</b> حدث خطأ غير متوقع في مهمة خلفية:\n<code>{clean_text}</code>",
+                    text=(
+                        f"⚠️ <b>تنبيه نظام:</b> حدث خطأ غير متوقع"
+                        f" في مهمة خلفية:\n<code>{clean_text}</code>"
+                    ),
                     parse_mode="HTML",
                 )
         except Exception as send_admin_err:

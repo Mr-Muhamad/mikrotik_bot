@@ -24,9 +24,9 @@ def get_user_data(context: ContextTypes.DEFAULT_TYPE) -> dict[str, Any]:
     user_data is always initialised by python-telegram-bot before any
     handler is called — it is safe to assert here.
     """
-    assert context.user_data is not None, (
-        "context.user_data is always set inside a registered handler"
-    )
+    assert (
+        context.user_data is not None
+    ), "context.user_data is always set inside a registered handler"
     return context.user_data
 
 
@@ -46,9 +46,9 @@ def get_message_text(update: Update) -> str:
     MessageHandler only fires when a text message is present.
     """
     assert update.message is not None, "update.message is always set inside a MessageHandler"
-    assert update.message.text is not None, (
-        "update.message.text is always set for text MessageHandlers"
-    )
+    assert (
+        update.message.text is not None
+    ), "update.message.text is always set for text MessageHandlers"
     return update.message.text.strip()
 
 
@@ -66,17 +66,17 @@ def get_effective_user_id(update: Update) -> int:
 
     effective_user is always set for messages and callback queries.
     """
-    assert update.effective_user is not None, (
-        "update.effective_user is always set for user-originated updates"
-    )
+    assert (
+        update.effective_user is not None
+    ), "update.effective_user is always set for user-originated updates"
     return update.effective_user.id
 
 
 def get_chat_id(update: Update) -> int:
     """Return update.effective_chat.id, guaranteed non-None."""
-    assert update.effective_chat is not None, (
-        "update.effective_chat is always set for user-originated updates"
-    )
+    assert (
+        update.effective_chat is not None
+    ), "update.effective_chat is always set for user-originated updates"
     return update.effective_chat.id
 
 
@@ -85,9 +85,9 @@ def get_from_user_id(query: CallbackQuery) -> int:
 
     from_user is always set on CallbackQuery objects received by the bot.
     """
-    assert query.from_user is not None, (
-        "query.from_user is always set on incoming CallbackQuery objects"
-    )
+    assert (
+        query.from_user is not None
+    ), "query.from_user is always set on incoming CallbackQuery objects"
     return query.from_user.id
 
 

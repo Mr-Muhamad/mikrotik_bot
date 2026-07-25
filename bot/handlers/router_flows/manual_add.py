@@ -98,15 +98,24 @@ async def manual_add_ip(update: Update, context: ContextTypes.DEFAULT_TYPE):
             MANUAL_ADD_DUPLICATE.format(raw, existing.get("identity", raw)),
         )
         return WAITING_MANUAL_IP
-    _cancel_kb = InlineKeyboardMarkup([[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]])
+    _cancel_kb = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]]
+    )
     context.user_data["manual_ip"] = raw
-    await send_step(update, context, MANUAL_ADD_PORT_PROMPT.format(DEFAULT_API_PORT), keyboard=_cancel_kb)
+    await send_step(
+        update,
+        context,
+        MANUAL_ADD_PORT_PROMPT.format(DEFAULT_API_PORT),
+        keyboard=_cancel_kb,
+    )
     return WAITING_MANUAL_PORT
 
 
 @admin_only
 async def manual_add_port(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    _cancel_kb = InlineKeyboardMarkup([[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]])
+    _cancel_kb = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]]
+    )
     raw = update.message.text.strip()
     if raw == "":
         port = DEFAULT_API_PORT
@@ -123,7 +132,9 @@ async def manual_add_port(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def manual_add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    _cancel_kb = InlineKeyboardMarkup([[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]])
+    _cancel_kb = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]]
+    )
     raw = update.message.text.strip()
     ok, msg = validate_username(raw)
     if not ok:
@@ -136,7 +147,9 @@ async def manual_add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def manual_add_pass(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    _cancel_kb = InlineKeyboardMarkup([[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]])
+    _cancel_kb = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]]
+    )
     raw = update.message.text.strip()
     ok, msg = validate_password(raw)
     if not ok:
@@ -224,7 +237,8 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
         logger.warning(f"manual_add confirm test connection failed for {ip}: {e}")
         await run_blocking(log_action, "add_router_manual", ip, "offline", query.from_user.id)
         await query.edit_message_text(
-            MANUAL_ADD_CONN_FAILED.format("تعذّر الاتصال للتحقق"), reply_markup=get_router_keyboard()
+            MANUAL_ADD_CONN_FAILED.format("تعذّر الاتصال للتحقق"),
+            reply_markup=get_router_keyboard(),
         )
 
     cleanup_state(query.from_user.id, context.user_data)

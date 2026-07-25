@@ -2,7 +2,6 @@ import logging
 import queue
 import threading
 import time
-from core.mikrotik_client import RouterOSRow
 
 from librouteros import connect
 from librouteros.api import Api
@@ -11,6 +10,7 @@ from librouteros.exceptions import LibRouterosError
 from config import ROUTER_KEY_PREFIX
 from core.cache import TTLCache
 from core.exceptions import RouterNotFoundError
+from core.mikrotik_client import RouterOSRow
 from database.models import get_router_by_id
 
 logger = logging.getLogger(__name__)

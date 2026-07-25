@@ -1,6 +1,5 @@
 import json
 import logging
-from core.mikrotik_client import RouterOSRow
 import os
 
 from telegram import Update
@@ -24,6 +23,7 @@ from bot.messages import (
 )
 from bot.router_selector import cleanup_state, nav_set
 from core.card_models import deserialize_cards
+from core.mikrotik_client import RouterOSRow
 from database.models import (
     get_card_batch,
     get_sales_summary,
@@ -116,7 +116,9 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if not batch:
-        await query.edit_message_text("⚠️ الدفعة غير موجودة.", reply_markup=get_batches_keyboard([]))
+        await query.edit_message_text(
+            "⚠️ الدفعة غير موجودة.", reply_markup=get_batches_keyboard([])
+        )
         return
 
     await query.edit_message_text(

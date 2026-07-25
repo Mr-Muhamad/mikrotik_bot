@@ -1,5 +1,3 @@
-from core.mikrotik_client import RouterOSRow
-
 from config import BACKUP_DIR
 from core.backup.files import (
     BACKUP_FILE_EXTENSIONS,
@@ -14,6 +12,7 @@ from core.backup.files import (
 from core.backup.restore import BackupRestore
 from core.backup.system import SystemBackupService
 from core.backup.userman import UserManagerBackupService
+from core.mikrotik_client import RouterOSRow
 
 
 class BackupService:

@@ -6,10 +6,10 @@ Generates structured CSV files for export in Telegram.
 import csv
 import io
 import logging
-from core.mikrotik_client import RouterOSRow
 
 from core.hotspot_expiry import parse_renewal_day_from_comment
 from core.mikrotik_api import mikrotik_api
+from core.mikrotik_client import RouterOSRow
 from utils.formatters import format_bytes
 
 logger = logging.getLogger(__name__)
@@ -22,7 +22,10 @@ def generate_hotspot_users_csv(router_key: str) -> str:
             router_key,
             "ip/hotspot/user/print",
             **{
-                ".proplist": ".id,name,profile,limit-bytes-total,bytes-out,bytes-in,limit-uptime,uptime,comment,disabled"
+                ".proplist": (
+                    ".id,name,profile,limit-bytes-total,bytes-out,bytes-in,"
+                    "limit-uptime,uptime,comment,disabled"
+                )
             },
         )
     except Exception as e:

@@ -5,14 +5,20 @@ stays separate from firewall address-list manipulation.
 """
 
 import logging
-from core.mikrotik_client import MikrotikClient, RouterOSRow
 
 from librouteros.exceptions import LibRouterosError
+
+from core.mikrotik_client import MikrotikClient, RouterOSRow
 
 logger = logging.getLogger(__name__)
 
 
-def block_mac(api: MikrotikClient, router_key: str, mac: str, comment: str = "blocked by bot") -> bool:
+def block_mac(
+    api: MikrotikClient,
+    router_key: str,
+    mac: str,
+    comment: str = "blocked by bot",
+) -> bool:
     """يضيف MAC إلى address-list باسم hotspot_blocked في /ip/firewall/address-list.
 
     يُعيد True عند النجاح وFalse عند الفشل.
@@ -42,7 +48,6 @@ def block_mac(api: MikrotikClient, router_key: str, mac: str, comment: str = "bl
     except (LibRouterosError, ConnectionError, OSError) as e:
         logger.error(f"Failed to block MAC {mac} on {router_key}: {e}")
         return False
-
 
 
 def unblock_mac(api: MikrotikClient, router_key: str, mac: str) -> bool:

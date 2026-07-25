@@ -1,8 +1,9 @@
 import logging
-from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
+
+from core.mikrotik_client import RouterOSRow
 
 __all__ = [
     "userman_search_start",
@@ -95,11 +96,7 @@ def _format_userman_search_results(paginator: Paginator) -> str:
 def _format_userman_detail(user: RouterOSRow) -> str:
     name = user.get("name") or user.get("username") or UNKNOWN_NAME
     raw_pwd = user.get("password") or "—"
-    pwd = (
-        raw_pwd
-        if raw_pwd == "—"
-        else (raw_pwd[:2] + "••••" if len(raw_pwd) > 2 else "••••")
-    )
+    pwd = raw_pwd if raw_pwd == "—" else (raw_pwd[:2] + "••••" if len(raw_pwd) > 2 else "••••")
     profile = user.get("profile") or "—"
     is_disabled = str(user.get("disabled", "false")).lower() == "true"
     status = USERMAN_SEARCH_STATUS_OFF if is_disabled else USERMAN_SEARCH_STATUS_ON
@@ -161,7 +158,10 @@ async def userman_search_page_handler(update: Update, context: ContextTypes.DEFA
     hosts = context.user_data.get("search_um_hosts")
     if hosts is None:
         await safe_edit_plain(
-            query, context, "⚠️ عذراً، انتهت صلاحية البحث. يرجى البحث مجدداً.", get_cancel_keyboard()
+            query,
+            context,
+            "⚠️ عذراً، انتهت صلاحية البحث. يرجى البحث مجدداً.",
+            get_cancel_keyboard(),
         )
         return WAITING_USERMAN_SEARCH
 
@@ -195,7 +195,11 @@ async def userman_search_select(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def _execute_um_action(
-    action: str, h: RouterOSRow, router_key: str, hosts: list[RouterOSRow], idx: int,
+    action: str,
+    h: RouterOSRow,
+    router_key: str,
+    hosts: list[RouterOSRow],
+    idx: int,
     context: ContextTypes.DEFAULT_TYPE,
 ) -> str:
     """Execute a userman action (kick, reset, toggle, delete) and return result message."""
@@ -245,7 +249,10 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
     router_key = get_selected_router(update.effective_user.id)
     if idx is None or not hosts or not router_key:
         await safe_edit_plain(
-            query, context, USERMAN_SEARCH_SESSION_EXPIRED, get_cancel_keyboard(),
+            query,
+            context,
+            USERMAN_SEARCH_SESSION_EXPIRED,
+            get_cancel_keyboard(),
         )
         cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
@@ -258,7 +265,8 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
         if action == "um_delete":
             paginator = Paginator(hosts, page=0)
             await edit_clean(
-                query, context,
+                query,
+                context,
                 msg + "\n\n" + _format_userman_search_results(paginator),
                 get_search_results_keyboard(paginator, is_userman=True),
             )
@@ -279,7 +287,10 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
             else get_cancel_keyboard()
         )
         await safe_edit_plain(
-            query, context, USERMAN_SEARCH_ERROR.format(e=sanitized_err), kb,
+            query,
+            context,
+            USERMAN_SEARCH_ERROR.format(e=sanitized_err),
+            kb,
         )
 
     return WAITING_USERMAN_SEARCH

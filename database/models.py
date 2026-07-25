@@ -13,10 +13,10 @@ and this re-export shim can be removed.
 """
 
 import logging
-import warnings
 import os
 import re
 import sqlite3
+import warnings
 from contextlib import contextmanager
 from datetime import UTC, datetime
 
@@ -162,7 +162,11 @@ def migrate_add_name_alias():
 
 def migrate_backup_schedule_columns():
     """Deprecated: columns are handled by Alembic initial migration."""
-    warnings.warn("migrate_backup_schedule_columns() is deprecated", DeprecationWarning, stacklevel=1)
+    warnings.warn(
+        "migrate_backup_schedule_columns() is deprecated",
+        DeprecationWarning,
+        stacklevel=1,
+    )
     with get_db() as conn:
         cursor = conn.cursor()
         for col_def in (

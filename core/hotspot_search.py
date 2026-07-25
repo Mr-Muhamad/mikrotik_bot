@@ -9,7 +9,7 @@ and return plain dicts/lists, keeping the search/kick responsibility here.
 import logging
 import re
 
-from core.mikrotik_client import RouterOSRow, MikrotikClient, RouterOSResponse
+from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,9 @@ def kick_host(api: MikrotikClient, router_key: str, mac_or_ip: str) -> tuple[boo
 
 
 def _find_active_sessions(
-    api: MikrotikClient, router_key: str, target: str,
+    api: MikrotikClient,
+    router_key: str,
+    target: str,
 ) -> tuple[RouterOSResponse, set[str]]:
     """Find active hotspot sessions for *target* and kick them.
 
@@ -132,7 +134,8 @@ def _find_active_sessions(
     active_proplist = ".id,user,mac-address"
     try:
         active_sessions = api.execute(
-            router_key, "ip/hotspot/active/print",
+            router_key,
+            "ip/hotspot/active/print",
             **{"?user": target, ".proplist": active_proplist},
         )
     except Exception:
@@ -151,34 +154,39 @@ def _find_active_sessions(
 
 
 def _find_matched_hosts(
-    api: MikrotikClient, router_key: str, target: str,
-    is_mac_target: bool, macs_to_kick: set[str],
+    api: MikrotikClient,
+    router_key: str,
+    target: str,
+    is_mac_target: bool,
+    macs_to_kick: set[str],
 ) -> RouterOSResponse:
     """Find host entries matching *target* or any of *macs_to_kick*."""
     host_proplist = ".id,mac-address,address,user"
     try:
         if is_mac_target:
             return api.execute(
-                router_key, "ip/hotspot/host/print",
+                router_key,
+                "ip/hotspot/host/print",
                 **{"?mac-address": target, ".proplist": host_proplist},
             )
         matched_hosts: RouterOSResponse = api.execute(
-            router_key, "ip/hotspot/host/print",
+            router_key,
+            "ip/hotspot/host/print",
             **{"?user": target, ".proplist": host_proplist},
         )
         for mac in macs_to_kick:
             mac_hosts = api.execute(
-                router_key, "ip/hotspot/host/print",
+                router_key,
+                "ip/hotspot/host/print",
                 **{"?mac-address": mac, ".proplist": host_proplist},
             )
             matched_hosts.extend(mac_hosts)
         return matched_hosts
     except Exception:
-        all_hosts = api.execute(
-            router_key, "ip/hotspot/host/print", **{".proplist": host_proplist}
-        )
+        all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": host_proplist})
         return [
-            h for h in all_hosts
+            h
+            for h in all_hosts
             if (
                 str(h.get("user", "")).lower() == target
                 or str(h.get("mac-address", "")).lower() in macs_to_kick

@@ -382,7 +382,9 @@ PATTERNS: dict[str, str] = {
     "uptime_type": r"^(uptime_hours|uptime_days|skip_uptime)$",
     "hs_card_type": r"^hs_card_type[123]$",
     "card_type": r"^card_type[123]$",
-    "edit_field": r"^edit_field_(name|password|profile|bytes|uptime|comment|toggle_disabled|renewal_day)$",
+    "edit_field": (
+        r"^edit_field_(name|password|profile|bytes|uptime|" r"comment|toggle_disabled|renewal_day)$"
+    ),
     "pdf_options": (
         r"^pdf_(brand_name|hotspot_dns|show_qr|margins|spacing|"
         r"cards_per_row|cards_per_page|footer|label_spacing|value_font_size)$"

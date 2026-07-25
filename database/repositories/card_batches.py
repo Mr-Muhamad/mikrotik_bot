@@ -7,11 +7,10 @@ payloads. Isolated from the former god-object ``database.models``.
 from __future__ import annotations
 
 import json
-from core.mikrotik_client import RouterOSRow
+from datetime import UTC
 from typing import Any
 
-from datetime import UTC
-
+from core.mikrotik_client import RouterOSRow
 from utils.crypto import decrypt_data, encrypt_data
 
 
@@ -79,7 +78,11 @@ def save_card_batch(
         return cursor.lastrowid
 
 
-def list_card_batches(router_key: str | None = None, limit: int = 20, offset: int = 0) -> list[RouterOSRow]:
+def list_card_batches(
+    router_key: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> list[RouterOSRow]:
     """Return batch rows (without the encrypted payload) ordered by created_at desc."""
     from database.models import get_db
 
@@ -171,7 +174,7 @@ def update_batch_payment(
     status: 'paid' | 'unpaid' | 'deferred'
     يُعيد True عند النجاح.
     """
-    from database.models import now_utc, get_db
+    from database.models import get_db, now_utc
 
     valid_statuses = ("paid", "unpaid", "deferred")
     if status not in valid_statuses:

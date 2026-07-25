@@ -9,7 +9,7 @@ from librouteros.exceptions import LibRouterosError
 from core.cache import TTLCache
 from core.card_models import CardData, CardSystem
 from core.mikrotik_api import mikrotik_api
-from core.mikrotik_client import RouterOSRow, MikrotikClient, RouterOSResponse
+from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
 from utils.validators import sanitize_comment
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,6 @@ def _parse_uptime_seconds(val: str) -> int:
 
 
 class HotspotManager:
-
     """Manages MikroTik Hotspot users, hosts, profiles, and session kick operations."""
 
     def __init__(self, api: MikrotikClient | None = None):
@@ -309,8 +308,15 @@ class HotspotManager:
             return []
 
     def _prepare_card_users(
-        self, count: int, length: int, card_system: CardSystem, profile: str,
-        prefix: str, limit_uptime: str, limit_bytes: str, batch_comment: str,
+        self,
+        count: int,
+        length: int,
+        card_system: CardSystem,
+        profile: str,
+        prefix: str,
+        limit_uptime: str,
+        limit_bytes: str,
+        batch_comment: str,
         existing_names: set[str],
     ) -> list[tuple[CardData, dict[str, str]]]:
         """Generate unique credentials and build API params for card users."""
@@ -328,12 +334,18 @@ class HotspotManager:
                     password = ""
 
                 card_item = CardData(
-                    username=username, password=password, card_number=i,
-                    profile=profile, limit_uptime=limit_uptime,
-                    limit_bytes=limit_bytes, comment=batch_comment,
+                    username=username,
+                    password=password,
+                    card_number=i,
+                    profile=profile,
+                    limit_uptime=limit_uptime,
+                    limit_bytes=limit_bytes,
+                    comment=batch_comment,
                 )
                 user_params: dict[str, str] = {
-                    "name": username, "profile": profile, "comment": batch_comment,
+                    "name": username,
+                    "profile": profile,
+                    "comment": batch_comment,
                 }
                 if password:
                     user_params["password"] = password
@@ -366,8 +378,15 @@ class HotspotManager:
 
         existing_names = self._get_existing_usernames(router_key)
         prepared_users = self._prepare_card_users(
-            count, length, card_system, profile, prefix,
-            limit_uptime, limit_bytes, batch_comment, existing_names,
+            count,
+            length,
+            card_system,
+            profile,
+            prefix,
+            limit_uptime,
+            limit_bytes,
+            batch_comment,
+            existing_names,
         )
 
         chunk_size = 50
@@ -383,7 +402,6 @@ class HotspotManager:
         self.invalidate_users_cache(router_key)
         logger.info(f"Created {len(cards)}/{count} hotspot cards on {router_key} in batch")
         return cards
-
 
     def _parse_reset_day(self, comment: str) -> int | None:
         """Extract the reset day (1-31) from a hotspot user comment.
@@ -449,7 +467,9 @@ class HotspotManager:
         return _fn(self._api, router_key, days)
 
     def purge_expired_users(self, router_key: str) -> int:
-        """حذف المستخدمين المنتهية صلاحيتهم أو المستنفدين لبياناتهم دفعة واحدة وتحديد العدد المحذوف."""
+        """
+        Delete expired or exhausted users in bulk and return the count.
+        """
         try:
             users = self._api.execute(
                 router_key,

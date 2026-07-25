@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 from datetime import date, timedelta
-from core.mikrotik_client import RouterOSRow
 
+from core.mikrotik_client import RouterOSRow
 from database.models import get_db
 
 logger = logging.getLogger(__name__)

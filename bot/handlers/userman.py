@@ -54,7 +54,13 @@ from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
-from utils.chat_cleaner import edit_clean, safe_edit_or_send, send_and_track, send_step, track_message
+from utils.chat_cleaner import (
+    edit_clean,
+    safe_edit_or_send,
+    send_and_track,
+    send_step,
+    track_message,
+)
 from utils.error_response import send_error
 from utils.formatters import format_user_list
 from utils.validators import validate_positive_int
@@ -155,7 +161,6 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if count > 500:
         await send_step(update, context, MAX_CARDS_EXCEEDED)
         return WAITING_CARD_COUNT
-
 
     router_key = get_selected_router(update.effective_user.id)
     chat_id = update.effective_chat.id
@@ -373,12 +378,16 @@ userman_back_to_prefix = make_back_step(
 async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
-    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    router_key = get_selected_router(update.effective_user.id)
+    if not router_key:
+        router_key = context.user_data.get("router_key")
     if not router_key:
         if query:
             await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())
         elif update.effective_message:
-            await update.effective_message.reply_text(NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+            await update.effective_message.reply_text(
+                NO_ROUTER_SELECTED, reply_markup=get_router_keyboard()
+            )
         return
 
     try:
@@ -403,12 +412,16 @@ async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def userman_profiles(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
-    router_key = get_selected_router(update.effective_user.id) or context.user_data.get("router_key")
+    router_key = get_selected_router(update.effective_user.id)
+    if not router_key:
+        router_key = context.user_data.get("router_key")
     if not router_key:
         if query:
             await safe_edit_or_send(query, context, NO_ROUTER_SELECTED, get_router_keyboard())
         elif update.effective_message:
-            await update.effective_message.reply_text(NO_ROUTER_SELECTED, reply_markup=get_router_keyboard())
+            await update.effective_message.reply_text(
+                NO_ROUTER_SELECTED, reply_markup=get_router_keyboard()
+            )
         return
 
     try:

@@ -1,8 +1,8 @@
 import os
 import tempfile
 import time
-from core.mikrotik_client import RouterOSRow
 
+from core.mikrotik_client import RouterOSRow
 from pdf.pdf_renderer import pdf_renderer
 
 

@@ -104,9 +104,7 @@ def _add_console_handler(root: logging.Logger, level: int) -> None:
     console = logging.StreamHandler(sys.stdout)
     console.setLevel(level)
     console.setFormatter(
-        logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] - %(message)s"
-        )
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] - %(message)s")
     )
     console.addFilter(RequestIdFilter())
     root.addHandler(console)

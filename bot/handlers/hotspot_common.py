@@ -152,7 +152,6 @@ async def execute_add_user(
         return False, sanitized_err
 
 
-
 async def handle_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """معالجة أزرار التنقييم (page_edit_N / page_delete_N)."""
     query = update.callback_query

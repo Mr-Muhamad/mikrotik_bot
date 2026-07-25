@@ -3,8 +3,6 @@ import logging
 import os
 import threading
 from dataclasses import asdict
-from core.card_models import CardData
-from core.mikrotik_client import RouterOSRow
 from typing import Any, cast
 from urllib.parse import quote
 
@@ -14,6 +12,9 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
+
+from core.card_models import CardData
+from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
 
@@ -191,7 +192,13 @@ class CardRenderer:
         return min_font
 
     def _draw_credentials(
-        self, c: Canvas, x: float, y: float, width: float, height: float, card: RouterOSRow | CardData
+        self,
+        c: Canvas,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        card: RouterOSRow | CardData,
     ) -> None:
         """Draw username and password fields with dynamic font sizing."""
         card = _normalize_card(card)
@@ -241,7 +248,15 @@ class CardRenderer:
             c.setFont("Helvetica-Bold", fs)
             c.drawString(value_x, v_middle - 3.8 * mm, password)
 
-    def _draw_qr(self, c: Canvas, x: float, y: float, width: float, height: float, card: RouterOSRow | CardData) -> None:
+    def _draw_qr(
+        self,
+        c: Canvas,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+        card: RouterOSRow | CardData,
+    ) -> None:
         """Draw QR code for hotspot login."""
         card = _normalize_card(card)
         username = str(card.get("username", ""))
@@ -261,7 +276,14 @@ class CardRenderer:
         buf.seek(0)
         c.drawImage(ImageReader(buf), qr_x, qr_y, width=qr_size, height=qr_size)
 
-    def _draw_footer(self, c: Canvas, x: float, y: float, width: float, card: RouterOSRow | CardData | None = None) -> None:
+    def _draw_footer(
+        self,
+        c: Canvas,
+        x: float,
+        y: float,
+        width: float,
+        card: RouterOSRow | CardData | None = None,
+    ) -> None:
         """Draw footer line and footer text."""
         footer_line_y = y + 5 * mm
         c.setLineWidth(CARD_BORDER_LINE_WIDTH)
