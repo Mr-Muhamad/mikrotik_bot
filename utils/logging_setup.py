@@ -129,6 +129,15 @@ def _add_file_handler(root: logging.Logger) -> None:
     root.addHandler(file_handler)
 
 
+def _ensure_request_id_filter(root: logging.Logger) -> None:
+    """Ensure ``RequestIdFilter`` is present on the root logger and every handler."""
+    if not any(isinstance(f, RequestIdFilter) for f in root.filters):
+        root.addFilter(RequestIdFilter())
+    for handler in root.handlers:
+        if not any(isinstance(f, RequestIdFilter) for f in handler.filters):
+            handler.addFilter(RequestIdFilter())
+
+
 def configure_logging(level: int = LOG_LEVEL) -> None:
     """Configure logging with console and rotating file handlers.
 
@@ -136,29 +145,20 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
     Adds RequestIdFilter to root logger and all handlers.
     """
     _ensure_utf8_streams()
-
     root = logging.getLogger()
+    _ensure_request_id_filter(root)
 
-    has_root_filter = any(isinstance(f, RequestIdFilter) for f in root.filters)
     has_console = any(
         isinstance(h, logging.StreamHandler) and h.stream is sys.stdout for h in root.handlers
     )
     has_file = any(isinstance(h, logging.handlers.RotatingFileHandler) for h in root.handlers)
 
-    # Inject RequestIdFilter into any handler that lacks it
-    for handler in root.handlers:
-        if not any(isinstance(f, RequestIdFilter) for f in handler.filters):
-            handler.addFilter(RequestIdFilter())
-
-    if has_root_filter and has_console and has_file:
+    if has_console and has_file:
         for handler in root.handlers:
             if isinstance(handler, logging.StreamHandler) and handler.stream is sys.stdout:
                 if handler.level != level:
                     handler.setLevel(level)
         return
-
-    if not has_root_filter:
-        root.addFilter(RequestIdFilter())
 
     if root.level == logging.NOTSET:
         root.setLevel(logging.DEBUG)

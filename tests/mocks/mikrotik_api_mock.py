@@ -1,5 +1,7 @@
 """Complete mock for MikrotikAPI — no real RouterOS connections."""
 
+from typing import Any
+
 from tests.fixtures.hotspot_users import (
     SAMPLE_DHCP_LEASES,
     SAMPLE_HOTSPOT_HOSTS,
@@ -68,36 +70,32 @@ class MikrotikAPIMock:
     # --- internal routing ---
 
     def _route_command(self, command: str, kwargs: dict) -> list[dict]:
-        if command == "ip/hotspot/user/print":
-            return self._filter_users(kwargs)
-        if command == "ip/hotspot/user/add":
-            entry = dict(kwargs)
-            if ".id" not in entry:
-                entry[".id"] = f"*{self._next_user_id}"
-                self._next_user_id += 1
-            self._users.append(entry)
-            return [dict(entry)]
-        if command == "ip/hotspot/user/set":
-            return self._apply_update(kwargs)
-        if command == "ip/hotspot/user/remove":
-            return self._remove_user(kwargs)
-        if command == "ip/hotspot/user/reset-counters":
+        handlers: dict[str, Any] = {
+            "ip/hotspot/user/print": self._filter_users,
+            "ip/hotspot/user/add": self._add_user,
+            "ip/hotspot/user/set": self._apply_update,
+            "ip/hotspot/user/remove": self._remove_user,
+            "ip/hotspot/user/reset-counters": lambda _: [],
+            "ip/hotspot/user/profile/print": lambda _: self._profiles,
+            "ip/hotspot/host/print": lambda _: self._hosts,
+            "ip/hotspot/host/remove": self._remove_host,
+            "ip/hotspot/active/print": lambda _: [],
+            "ip/dhcp-server/lease/print": lambda _: self._leases,
+            "system/resource/print": lambda _: [{"version": self._version}],
+            "system/identity/print": lambda _: [{"name": "TestRouter"}],
+        }
+        handler = handlers.get(command)
+        if handler is None:
             return []
-        if command == "ip/hotspot/user/profile/print":
-            return self._profiles
-        if command == "ip/hotspot/host/print":
-            return self._hosts
-        if command == "ip/hotspot/host/remove":
-            return self._remove_host(kwargs)
-        if command == "ip/hotspot/active/print":
-            return []
-        if command == "ip/dhcp-server/lease/print":
-            return self._leases
-        if command == "system/resource/print":
-            return [{"version": self._version}]
-        if command == "system/identity/print":
-            return [{"name": "TestRouter"}]
-        return []
+        return handler(kwargs)
+
+    def _add_user(self, kwargs: dict) -> list[dict]:
+        entry = dict(kwargs)
+        if ".id" not in entry:
+            entry[".id"] = f"*{self._next_user_id}"
+            self._next_user_id += 1
+        self._users.append(entry)
+        return [dict(entry)]
 
     def _filter_users(self, kwargs: dict) -> list[dict]:
         if not kwargs:

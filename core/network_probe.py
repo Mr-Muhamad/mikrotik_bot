@@ -327,85 +327,88 @@ class MNDPListenerProbe:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._discover_sync)
 
+    def _setup_socket(self) -> socket.socket:
+        """Create, configure, and bind the MNDP UDP socket."""
+        sock = self._socket_factory(
+            socket.AF_INET,
+            socket.SOCK_DGRAM,
+            socket.IPPROTO_UDP,
+        )
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        so_reuse_port = getattr(socket, "SO_REUSEPORT", None)
+        if so_reuse_port is not None:
+            try:
+                sock.setsockopt(socket.SOL_SOCKET, so_reuse_port, 1)
+            except OSError:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        else:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.bind(("", MNDP_PORT))
+        sock.settimeout(1.0)
+        return sock
+
+    def _send_broadcast(self, sock: socket.socket, last_send: float) -> float:
+        """Send an MNDP broadcast packet if the send interval has elapsed.
+
+        Returns the updated ``last_send`` timestamp.
+        """
+        now = time.time()
+        if now - last_send >= self.SEND_INTERVAL:
+            try:
+                sock.sendto(MNDP_DISCOVERY_PAYLOAD, ("255.255.255.255", MNDP_PORT))
+                last_send = now
+                logger.debug("MNDP refresh packet sent")
+            except OSError as send_err:
+                logger.error(f"Failed to send MNDP refresh: {send_err}")
+        return last_send
+
+    def _process_packet(
+        self,
+        data: bytes,
+        ip: str,
+        local_ips: set[str],
+        discovered: dict[str, dict[str, Any]],
+    ) -> None:
+        """Process a single received MNDP packet and update ``discovered``."""
+        if ip in local_ips:
+            return
+        parts = decode_mndp_packet(data)
+        if "identity" not in parts and "board" not in parts:
+            return
+        if ip not in discovered:
+            discovered[ip] = {
+                "ip": ip,
+                "source": "mndp",
+                "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        router = discovered[ip]
+        router["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        for key in (
+            "mac", "identity", "version", "platform",
+            "board", "software_id", "uptime", "interface_name",
+        ):
+            if key in parts and parts[key]:
+                router[key] = parts[key]
+        if "ipv4" in parts and parts["ipv4"]:
+            router["ip"] = parts["ipv4"]
+
     def _discover_sync(self) -> list[dict[str, Any]]:
         """Single-socket send+listen cycle (runs in executor thread)."""
-
         discovered: dict[str, dict[str, Any]] = {}
         local_ips = _get_local_ips()
         sock = None
 
         try:
-            sock = self._socket_factory(
-                socket.AF_INET,
-                socket.SOCK_DGRAM,
-                socket.IPPROTO_UDP,
-            )
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            # SO_REUSEADDR is required on Windows; SO_REUSEPORT on POSIX
-            # so we can coexist with WinBox or another MNDP listener.
-            so_reuse_port = getattr(socket, "SO_REUSEPORT", None)
-            if so_reuse_port is not None:
-                try:
-                    sock.setsockopt(socket.SOL_SOCKET, so_reuse_port, 1)
-                except OSError:
-                    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            else:
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.bind(("", MNDP_PORT))
-            sock.settimeout(1.0)
-
+            sock = self._setup_socket()
             start_time = time.time()
             last_send = 0.0
             logger.info(f"MNDP single-socket discovery started (timeout: {self._timeout}s)")
 
             while time.time() - start_time <= self._timeout:
-                now = time.time()
-
-                # Send a refresh broadcast every SEND_INTERVAL seconds.
-                # The first one goes out immediately.
-                if now - last_send >= self.SEND_INTERVAL:
-                    try:
-                        sock.sendto(MNDP_DISCOVERY_PAYLOAD, ("255.255.255.255", MNDP_PORT))
-                        last_send = now
-                        logger.debug("MNDP refresh packet sent")
-                    except OSError as send_err:
-                        logger.error(f"Failed to send MNDP refresh: {send_err}")
-
-                # Receive with 1-second timeout so we can re-send periodically.
+                last_send = self._send_broadcast(sock, last_send)
                 try:
                     data, addr = sock.recvfrom(65535)
-                    ip = addr[0]
-
-                    # Self-echo filter: ignore packets from our own IPs.
-                    if ip in local_ips:
-                        continue
-
-                    parts = decode_mndp_packet(data)
-                    if "identity" not in parts and "board" not in parts:
-                        continue
-
-                    if ip not in discovered:
-                        discovered[ip] = {
-                            "ip": ip,
-                            "source": "mndp",
-                            "last_seen": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        }
-                    router = discovered[ip]
-                    router["last_seen"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    for key in (
-                        "mac",
-                        "identity",
-                        "version",
-                        "platform",
-                        "board",
-                        "software_id",
-                        "uptime",
-                        "interface_name",
-                    ):
-                        if key in parts and parts[key]:
-                            router[key] = parts[key]
-                    if "ipv4" in parts and parts["ipv4"]:
-                        router["ip"] = parts["ipv4"]
+                    self._process_packet(data, addr[0], local_ips, discovered)
                 except TimeoutError:
                     continue
                 except OSError as e:
@@ -431,6 +434,75 @@ class MNDPListenerProbe:
 # ─── Orchestrator helper ───────────────────────────────────────
 
 
+_MNDP_ATTRS = (
+    "identity", "version", "board", "software_id",
+    "platform", "uptime", "interface_name",
+)
+_MNDP_ATTRS_WITH_MAC = ("mac_address",) + _MNDP_ATTRS
+
+
+def _merge_port_results(
+    port_results: list[dict[str, Any]],
+    now: str,
+) -> dict[str, DiscoveredRouter]:
+    """Index verified routers (open API port 8728) by IP."""
+    by_ip: dict[str, DiscoveredRouter] = {}
+    for entry in port_results:
+        ip = entry["ip"]
+        by_ip[ip] = DiscoveredRouter(
+            ip_address=ip,
+            mac_address=entry.get("mac", ""),
+            source="port_check",
+            last_seen=now,
+        )
+    return by_ip
+
+
+def _merge_mndp_results(
+    mndp_results: list[dict[str, Any]],
+    by_ip: dict[str, DiscoveredRouter],
+    now: str,
+) -> None:
+    """Add or enrich entries with MNDP discovery data (richest metadata)."""
+    for entry in mndp_results:
+        ip = entry.get("ipv4") or entry.get("ip", "")
+        if not ip:
+            continue
+        if ip in by_ip:
+            existing = by_ip[ip]
+            existing.source = f"mndp+{existing.source}" if "port" in existing.source else "mndp"
+            existing.last_seen = entry.get("last_seen", existing.last_seen)
+            for attr in _MNDP_ATTRS:
+                val = entry.get(attr, "")
+                if val and (not getattr(existing, attr) or getattr(existing, attr) == "Unknown"):
+                    setattr(existing, attr, val)
+        else:
+            router = DiscoveredRouter(
+                ip_address=ip,
+                source="mndp",
+                last_seen=entry.get("last_seen", now),
+            )
+            for attr in _MNDP_ATTRS_WITH_MAC:
+                key = attr if attr != "mac_address" else "mac"
+                if entry.get(key):
+                    setattr(router, attr, entry[key])
+            by_ip[ip] = router
+
+
+def _enrich_from_arp(
+    arp_results: list[dict[str, Any]],
+    by_ip: dict[str, DiscoveredRouter],
+) -> None:
+    """Enrich MAC addresses from ARP table ONLY for confirmed routers."""
+    for entry in arp_results:
+        ip = entry.get("ip")
+        if ip and ip in by_ip:
+            if not by_ip[ip].mac_address and entry.get("mac"):
+                by_ip[ip].mac_address = entry["mac"]
+            if "mndp" not in by_ip[ip].source:
+                by_ip[ip].source = "arp+port"
+
+
 def merge_probe_results(
     arp_results: list[dict[str, Any]],
     port_results: list[dict[str, Any]],
@@ -444,69 +516,9 @@ def merge_probe_results(
     3. ARP table: Used ONLY to enrich MAC addresses for verified routers. Plain ARP
        entries without open API port (8728) or MNDP response are ignored (non-router LAN devices).
     """
-    by_ip: dict[str, DiscoveredRouter] = {}
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    # 1. Add verified routers with open API port (8728)
-    for entry in port_results:
-        ip = entry["ip"]
-        by_ip[ip] = DiscoveredRouter(
-            ip_address=ip,
-            mac_address=entry.get("mac", ""),
-            source="port_check",
-            last_seen=now,
-        )
-
-    # 2. Add or enrich with MNDP discovery (richest metadata)
-    for entry in mndp_results:
-        ip = entry.get("ipv4") or entry.get("ip", "")
-        if not ip:
-            continue
-        if ip in by_ip:
-            existing = by_ip[ip]
-            existing.source = f"mndp+{existing.source}" if "port" in existing.source else "mndp"
-            existing.last_seen = entry.get("last_seen", existing.last_seen)
-            for attr in (
-                "identity",
-                "version",
-                "board",
-                "software_id",
-                "platform",
-                "uptime",
-                "interface_name",
-            ):
-                val = entry.get(attr, "")
-                if val and (not getattr(existing, attr) or getattr(existing, attr) == "Unknown"):
-                    setattr(existing, attr, val)
-        else:
-            router = DiscoveredRouter(
-                ip_address=ip,
-                source="mndp",
-                last_seen=entry.get("last_seen", now),
-            )
-            for attr in (
-                "mac_address",
-                "identity",
-                "version",
-                "board",
-                "software_id",
-                "platform",
-                "uptime",
-                "interface_name",
-            ):
-                key = attr if attr != "mac_address" else "mac"
-                if entry.get(key):
-                    setattr(router, attr, entry[key])
-            by_ip[ip] = router
-
-    # 3. Enrich MAC addresses from ARP table ONLY for confirmed routers
-    for entry in arp_results:
-        ip = entry.get("ip")
-        if ip and ip in by_ip:
-            if not by_ip[ip].mac_address and entry.get("mac"):
-                by_ip[ip].mac_address = entry["mac"]
-            if "mndp" not in by_ip[ip].source:
-                by_ip[ip].source = "arp+port"
-
+    by_ip = _merge_port_results(port_results, now)
+    _merge_mndp_results(mndp_results, by_ip, now)
+    _enrich_from_arp(arp_results, by_ip)
     return list(by_ip.values())
 
