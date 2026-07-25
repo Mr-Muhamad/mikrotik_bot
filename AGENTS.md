@@ -50,9 +50,15 @@ python main.py
 
 يجب تعبئة القيم التالية في `.env` قبل التشغيل:
 
-- `BOT_TOKEN`: توكن Telegram Bot.
-- `ADMIN_IDS`: معرفات مشرفي Telegram مفصولة بفواصل.
-- `ENCRYPTION_KEY`: مفتاح Fernet صالح ومطلوب فعلياً. `config.py` يوقف التشغيل إذا كان المفتاح مفقوداً أو قصيراً.
+| المتغير | مطلوب | الوصف |
+|---------|-------|-------|
+| `BOT_TOKEN` | نعم | توكن Telegram Bot. |
+| `ADMIN_IDS` | نعم | معرفات مشرفي Telegram مفصولة بفواصل. |
+| `ENCRYPTION_KEY` | نعم | مفتاح Fernet صالح. `config.py` يوقف التشغيل إذا كان مفقوداً أو قصيراً. |
+| `BOT_HOST` | يُنصح به | عنوان IP للخادم الذي يستخدمه الراوتر للاتصال بالخادم (مطلوب للنسخ الاحتياطي والاستعادة). |
+| `FILE_SERVER_SECRET` | اختياري | توكن Bearer لخادم نقل الملفات. يُولّد تلقائياً إذا لم يُعَرَّف. |
+| `FILE_SERVER_PORT` | اختياري | منفذ خادم نقل الملفات (الافتراضي: 8729). |
+| `SCHEDULE_FULL_BACKUP` | اختياري | عند `true`، النسخ الاحتياطي اليومي يشمل نسخة كاملة. الافتراضي: `false`. **تنبيه:** يُرسل كلمة مرور الراوتر نصاً عبر FTP. شغّل فقط في شبكة إدارة معزولة. |
 
 ## بنية المشروع الحالية
 
@@ -265,6 +271,50 @@ mikrotik_bot/
 - كاش الإصدار (`router_versions`) له صلاحية 24 ساعة؛ بعد ترقية RouterOS أو إعادة تسمية الراوتر نادِ `mikrotik_api.invalidate_version(router_key)` لإبطال الكاش وإعادة اختيار المسار الصحيح. المرجع الكامل في `docs/routeros-v6-v7-compatibility.md`.
 - استخدم `execute_long()` للعمليات الثقيلة مثل backup أو جلب قوائم كبيرة.
 
+## إعدادات الاتصال ومهلة النسخ الاحتياطي
+
+### Connection Pool (`core/connection_pool.py`)
+
+| الإعداد | القيمة | الوصف |
+|---------|--------|-------|
+| `MAX_CONNECTIONS_PER_ROUTER` | 3 | عدد الاتصالات المتزامنة لكل راوتر |
+| `CONNECT_TIMEOUT` | 10 ثوانٍ | مهلة إنشاء الاتصال |
+| `API_TIMEOUT` | 30 ثانية | مهلة عامة لأوامر API |
+| `LONG_TIMEOUT` | 120 ثانية | مهلة للعمليات الثقيلة (backup، قوائم كبيرة) |
+| `MAX_RETRIES` | 2 | عدد محاولات إعادة الاتصال |
+| `RETRY_DELAY` | 1 ثانية | تأخير بين المحاولات |
+
+### Rate Limits (`utils/admin_decorator.py`)
+
+| العملية | الحد الزمني |
+|---------|-----------|
+| reboot | 10 ثوانٍ |
+| backup | 30 ثانية |
+| restore | 60 ثانية |
+| delete | 5 ثوانٍ |
+| add | ثانيتان |
+| edit | ثانيتان |
+| أخرى | ثانية واحدة |
+
+### Backup Schedule
+
+| الإعداد | القيمة | الوصف |
+|---------|--------|-------|
+| `BACKUP_HOUR` | 3 | ساعة التشغيل الافتراضية (03:00) |
+| `BACKUP_MINUTE` | 0 | دقيقة التشغيل |
+| `BACKUP_JOBS_RETENTION_PER_ROUTER` | 50 | سجلات النسخ المحتفظ بها لكل راوتر |
+| `MAX_LOCAL_BACKUPS` | 10 | نسخ محلية قصوى |
+| `MAX_ROUTER_BACKUPS` | 5 | نسخ احتياطية قصوى على الراوتر |
+
+### File Server (`core/backup/file_server.py`)
+
+| الإعداد | القيمة | الوصف |
+|---------|--------|-------|
+| `FILE_SERVER_PORT` | 8729 | منفذ HTTP لنقل الملفات |
+| `FILE_SERVER_SECRET` | (يُولّد تلقائياً) | توكن Bearer للمصادقة |
+| `_MAX_UPLOAD_BYTES` | 100 MB | حجم الرفع الأقصى |
+| `_ALLOWED_EXTENSIONS` | .backup, .rsc, .umb, .tar | الامتدادات المسموحة |
+
 ## قواعد الأمان
 
 - `BOT_TOKEN`, `ADMIN_IDS`, و`ENCRYPTION_KEY` مطلوبة في `config.py`.
@@ -274,6 +324,29 @@ mikrotik_bot/
 - `decrypt_password()` (معرّفة في `utils/crypto.py` وتُعاد تصديرها عبر `database/models.py`) يعيد نصاً فارغاً عند فشل الفك ولا تعيد ciphertext.
 - استخدم `is_duplicate_callback()` في callbacks التي قد تؤدي إلى عمليات خطرة أو مزدوجة مثل reboot وbackup.
 - لا ترفع `.env`, `mikrotik_bot.db`, `logs/`, `venv/`, أو محتويات `backups/` إلى Git (مستثناة في `.gitignore`).
+- المجموعات (group chats) تُتجاهل صامتاً في `admin_decorator.py:111,163`. البوت يعمل فقط في المحادثات الفردية.
+
+
+## قواعد البيانات
+
+- قاعدة البيانات: SQLite عبر `database/models.py` مع Alembic للترحيل.
+- لا تقم بإنشاء جداول مباشرة في الكود؛ استخدم `alembic/` لإنشاء الترحيلات.
+- الـ CRUD يُنفَّذ في `database/repositories/` بدوال مخصصة لكل جدول.
+
+| الجدول | الوصف |
+|--------|-------|
+| `discovered_routers` | الروترات المكتشفة يدوياً أو تلقائياً (IP، MAC، اسم مستخدم، كلمة مرور مشفرة، حالة النشاط، والمالك) |
+| `user_sessions` | جلسات مستخدمي التيليجرام والراوتر المختار لكل منهم ومهلة الخمول |
+| `logs` | سجل التدقيق (Audit Log) لتوثيق جميع العمليات على الروترات |
+| `admin_roles` | إدارة أدوار المشرفين (admin / operator / viewer) وصلاحياتهم |
+| `card_batches` | دفعات كروت Hotspot المُنشأة مع بيانات المبيعات والملف بصيغة JSON |
+| `pdf_settings` | الإعدادات الوحيدة (Singleton) لتخصيص شكل PDF الكروت |
+| `backup_settings` | الإعدادات الوحيدة (Singleton) لجدولة النسخ الاحتياطي التلقائي |
+| `backup_jobs` | تسجيل مهام النسخ الاحتياطي المنجزة لكل راوتر مع حالتها |
+| `router_health_log` | سجل صحة الروترات (متصل/معطّل) مع الوقت ورسائل الخطأ |
+| `stats_snapshots` | لقطات الإحصائيات اليومية لكل راوتر |
+| `tracked_messages` | تتبع رسائل البوت لتنظيفها تلقائياً عند انتهاء صلاحيتها |
+| `operator_router_permissions` | ربط المشغّلين بالروترات المسموح لهم بالوصول إليها |
 
 ## Quality Gates
 
@@ -283,9 +356,9 @@ mikrotik_bot/
 - **Ruff:** صفر أخطاء Style أو Bugs.
 - **Black:** الكود منسق بالكامل عبر `black`.
 - **Pytest:** كل الاختبارات ناجحة بنسبة 100%.
-- **Coverage:** لا تقل عن النسبة المطلوبة.
+- **Coverage:** لا تقل عن 90%.
 - **Architecture:** لا توجد Circular Imports، ولا خرق لطبقات المشروع.
-- **Type Safety:** لا يوجد `Any` غير مبرر، ولا تجاهل للأخطاء بـ `# type: ignore` إلا مع تعليق يوضح السبب.
+- **Type Safety:** لا يوجد `Any` غير مبرر، ولا تجاهل للأخطاء بـ `# type: ignore` إلا مع تعليق يوضح السبب. يُتحقق عبر `py -3.12 scripts/check_type_ignore.py` و`pyright`.
 - **Security:** لا توجد أسرار (Secrets) داخل الكود، ولا استدعاءات غير آمنة.
 - **Performance:** لا توجد عمليات مكلفة داخل حلقات متكررة دون داعٍ.
 
@@ -294,6 +367,14 @@ mikrotik_bot/
 - **فشل الاختبارات حاط حظر كامل (Hard Blocking):** لا يُسمح بدمج أي كود أو التزام (Commit) إذا كان هناك اختبار واحد فاشل في `pytest` أو خطأ واحد في `pyright`.
 - **التحقق التلقائي من الأزرار والـ Callbacks:** يُلزم تشغيل `scripts/validate_handlers.py` فور أي تغيير في ملفات `callback_constants.py` أو `keyboards.py` لمنع ظاهرة تجمد الأزرار قبل التدمير.
 - **عزل التراجعات (Zero Regression Tolerance):** عند إصلاح أي استثناء شبكي، يجب عدم خرق التغطية القائمة أو تغيير سلوك الـ Mocks المعتمدة في مجلد `tests/`.
+
+## CI/CD وعملية الإصدار
+
+- **الbranch الرئيسي:** `main` هو branch الإنتاج.
+- **التحقق قبل الدمج:** يجب أن تمر جميع أوامر Quality Gates المذكورة أعلاه.
+- **ال版本:** يُستخدم \`semantic versioning\` عبر Git tags.
+- **النشر:** يدوياً عبر سحب `main` على الخادم وإعادة تشغيل البوت.
+- **النسخ الاحتياطي قبل التحديث:** يُنصح بعمل نسخة احتياطية يدوية قبل أي تحديث كبير.
 
 قبل تشغيل `python main.py` (أو `py -3.12 main.py`) أو دمج أي تعديل، يُنصح بتنفيذ الأوامر التالية كحد أدنى:
 
@@ -321,3 +402,5 @@ py -3.12 -m pytest -q
 - عند تعديل رسائل المستخدم، ضع النصوص في `bot/messages.py` لا داخل handlers إلا إذا كان النص داخلياً ومؤقتاً.
 - إعدادات الـ logging تتم حصراً في `main.py` قبل `configure_logging()`؛ لا تضف `logging.basicConfig` جديد أو `setLevel` لمكتبات غير مزعجة.
 - لا يوجد `HEALTH_CHECK_PORT` أو `aiohttp` في المشروع بعد الآن؛ تمت إزالة health check server بالكامل.
+- `WATCHDOG_FIRST_DELAY` معرّف في `config.py:50` ويُستخدم في `bot/handlers/watchdog.py:67` كمهلة أولى للـ Job. لا تستخدم `first=10` مضمّناً.
+- هناك 8 استخدامات إنتاجية لـ `# type: ignore` في الكود: `core/mikrotik_client.py:12`, `core/connection_pool.py:56,57`, `core/backup/file_server.py:164`, `core/backup/ftp.py:26,102`, `core/backup/userman.py:21,55`. جميعها مبررة ومعلّمة.

@@ -25,7 +25,7 @@ from bot.messages import (
     WATCHDOG_STOPPED,
     WATCHDOG_VERSION,
 )
-from config import ADMIN_IDS, ROUTER_KEY_PREFIX, WATCHDOG_INTERVAL
+from config import ADMIN_IDS, ROUTER_KEY_PREFIX, WATCHDOG_FIRST_DELAY, WATCHDOG_INTERVAL
 from core.watchdog import (
     ALERT_RECOVERED,
     ALERT_WENT_OFFLINE,
@@ -64,7 +64,7 @@ async def watchdog_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     job_queue.run_repeating(
         _check_all_routers,
         interval=WATCHDOG_INTERVAL,
-        first=10,
+        first=WATCHDOG_FIRST_DELAY,
         name=JOB_NAME,
         job_kwargs={"max_instances": 1},
     )
