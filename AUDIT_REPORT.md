@@ -244,13 +244,13 @@ Registration is layered to ensure correct dispatch precedence:
 
 | Directory | Files | Coverage |
 |-----------|-------|----------|
-| `tests/core/` | 14 files | MikrotikAPI, ConnectionPool, HotspotManager, Watchdog, Backup, Stats, NetworkScanner |
-| `tests/database/` | 6 files | models, repositories, card_batches, operator_permissions |
-| `tests/bot/` | ~5 files | handlers, keyboards |
+| `tests/core/` | 22 files | MikrotikAPI, ConnectionPool, HotspotManager, Watchdog, Backup, Stats, NetworkScanner |
+| `tests/database/` | 8 files | models, repositories, card_batches, operator_permissions |
+| `tests/bot/` | 20+ files | handlers, keyboards |
 | `tests/utils/` | 11 files | crypto, validators, formatters, admin_decorator, callback_utils, error_response |
 | `tests/test_*.py` | 6 files | validators, crypto, formatters, registration_order |
 
-**Total test files:** ~42
+**Total test files:** ~67
 
 ---
 

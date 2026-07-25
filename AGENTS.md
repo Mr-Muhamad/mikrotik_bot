@@ -71,22 +71,41 @@ mikrotik_bot/
 │   ├── error_response.py      # تصنيف الأخطاء وتعقيم الرسائل
 │   ├── formatters.py          # parse_bytes, format_bytes, sanitize_api_response
 │   ├── logging_setup.py       # request_id logging
+│   ├── pagination.py          # أدوات الترقيم (pagination) للقوائم
+│   ├── request_id.py          # تتبع request_id عبر ContextVar
 │   ├── singleton_lock.py      # منع تشغيل أكثر من نسخة بوت
+│   ├── tg_helpers.py          # دوال مساعدة لـ Telegram
 │   └── validators.py          # التحقق من المدخلات
 ├── bot/
-│   ├── registrations.py       # التسجيل المركزي للأوامر، callbacks، states، fallbacks (المسار الفعلي: bot/registrations.py)
+│   ├── __init__.py            # حزمة bot
+│   ├── registrations.py       # التسجيل المركزي للأوامر، callbacks، states، fallbacks
+│   ├── registration_parts/    # أقسام التسجيل المنفصلة
+│   │   ├── conversation.py    # تسجيل ConversationHandler
+│   │   ├── separate_handlers.py # تسجيل المعالجات المستقلة
+│   │   └── standalone.py      # تسجيل الأوامر المستقلة
 │   ├── handlers/
+│   │   ├── __init__.py        # تصدير المعالجات
+│   │   ├── batch.py           # /batches دفعات الكروت
+│   │   ├── commands_basic.py  # /cancel, /clean, /metrics, /sync, معالج الخطأ
 │   │   ├── common.py          # /start, /help, /clean, /metrics, /sync والقوائم
+│   │   ├── handler_utils.py   # دوال مساعدة مشتركة
+│   │   ├── menus.py           # go_back للتنقل بين القوائم
+│   │   ├── roles.py           # /roles إدارة أدوار المشرفين
 │   │   ├── routers.py         # واجهة توافق لتدفقات إدارة الروترات
-│   │   ├── router_flows/      # discover, saved, rename, reboot flows
+│   │   ├── router_system.py   # عمليات النظام على الروترات
+│   │   ├── session_models.py  # نماذج dataclass لحالة المحادثة
+│   │   ├── timeout.py         # /timeout إدارة مهلة الجلسة
 │   │   ├── hotspot_add.py     # إضافة مستخدم Hotspot
 │   │   ├── hotspot_edit.py    # تعديل مستخدم Hotspot
 │   │   ├── hotspot_delete.py  # حذف مستخدم Hotspot
 │   │   ├── hotspot_search.py  # بحث وطرد hosts
 │   │   ├── hotspot_cards.py   # إنشاء كروت Hotspot PDF
+│   │   ├── hotspot_common.py  # دوال pagination المشتركة لـ Hotspot
 │   │   ├── hotspot_flow_utils.py # أدوات مساعدة مشتركة محدودة لتدفقات Hotspot
+│   │   ├── hotspot_report.py  # تقرير Hotspot وتصدير CSV
 │   │   ├── hotspot.py         # إحصائيات Hotspot التفصيلية
 │   │   ├── userman.py         # User Manager cards/list/profiles
+│   │   ├── userman_search.py  # بحث User Manager
 │   │   ├── backup.py          # النسخ اليدوي والجدولة والتحميل
 │   │   ├── backup_restore.py  # استعادة system وUser Manager backups
 │   │   ├── stats.py           # إحصائيات Hotspot/User Manager العامة
@@ -97,19 +116,38 @@ mikrotik_bot/
 │   │   ├── states.py          # WaitingState enum
 │   │   ├── callback_constants.py # ثوابت/بناة callback_data وأنماط PATTERNS (المصدر الوحيد للـ tokens)
 │   │   └── constants.py       # WAITING_* constants
+│   │   └── router_flows/
+│   │       ├── __init__.py    # إعادة تصدير تدفقات الروترات
+│   │       ├── discovery.py   # اكتشاف الروترات
+│   │       ├── manual_add.py  # إضافة روتر يدوياً مع التحقق
+│   │       ├── reboot.py      # إعادة تشغيل الراوتر
+│   │       ├── rename.py      # إعادة تسمية الراوتر
+│   │       └── saved.py       # الروترات المحفوظة
 │   ├── helpers/profiles.py    # جلب وتخزين أسماء البروفايلات مؤقتاً
 │   ├── keyboards.py           # كل InlineKeyboard builders
 │   ├── messages.py            # النصوص العربية للمستخدم
 │   ├── profile_callbacks.py   # callback index cache للبروفايلات
 │   └── router_selector.py     # الراوتر المختار وحالة التنقل لكل مستخدم
 ├── core/
+│   ├── __init__.py            # حزمة core
 │   ├── mikrotik_api.py        # واجهة تنفيذ لأوامر RouterOS مع retry/throttle
+│   ├── mikrotik_client.py     # MikroTik client wrapper
 │   ├── connection_pool.py     # connection pool وtimeouts وmetrics
+│   ├── cache.py               # TTLCache عام (dict-based مع threading.Lock)
+│   ├── exceptions.py          # فئات الاستثناءات المخصصة
+│   ├── metrics.py             # جمع مقاييس النظام (CPU/RAM)
 │   ├── hotspot_manager.py     # Hotspot CRUD/search/kick/cards
+│   ├── hotspot_blocking.py    # حظر/فك حظر MAC عبر address-list
+│   ├── hotspot_expiry.py      # كشف المستخدمين المنتهيين
+│   ├── hotspot_search.py      # بحث المضيفين وإثراء DHCP leases وطرد
+│   ├── hotspot_stats.py       # إحصائيات Hotspot مع تصفية يوم إعادة الضبط
 │   ├── userman_manager.py     # User Manager cards/list
 │   ├── backup_service.py      # واجهة توافق لخدمات backup/restore
 │   ├── backup/
+│   │   ├── __init__.py        # حزمة backup
 │   │   ├── files.py           # أدوات آمنة للمسارات والتنظيف والتحقق
+│   │   ├── file_server.py     # خادم ملفات لتخزين النسخ الاحتياطية
+│   │   ├── ftp.py             # رفع/تحميل عبر FTP
 │   │   ├── system.py          # منطق system backup
 │   │   ├── userman.py         # منطق User Manager backup/restore
 │   │   └── restore.py         # استعادة system backups المحلية
@@ -118,11 +156,36 @@ mikrotik_bot/
 │   ├── network_scanner.py     # discovery orchestrator
 │   ├── profile_cache.py       # TTL cache للبروفايلات
 │   ├── profile_sync.py        # جلب User Manager profiles
+│   ├── messages_expiry.py     # إدارة انتهاء صلاحية الرسائل
+│   ├── card_models.py         # نماذج بيانات الكروت
+│   ├── chart_generator.py     # إنشاء الرسوم البيانية للتقارير
+│   ├── reports_excel.py       # إنشاء تقارير Excel
+│   ├── reports_export.py      # وظائف التصدير
+│   ├── router_info.py         # مساعدات معلومات الروتر
 │   ├── stats.py               # إحصائيات عامة
 │   ├── router_key.py          # helper لمفاتيح discovered routers
 │   └── watchdog.py            # health status in-memory
-├── database/models.py         # SQLite schema, CRUD, migrations خفيفة
+├── database/
+│   ├── __init__.py            # حزمة database
+│   ├── models.py              # SQLite schema, CRUD, migrations خفيفة
+│   └── repositories/          # مستودعات البيانات (CRUD)
+│       ├── admin_roles.py     # إدارة أدوار المشرفين
+│       ├── audit_logs.py      # سجلات التدقيق والتنظيف
+│       ├── backups.py         # مهام وإعدادات النسخ الاحتياطي
+│       ├── card_batches.py    # دفعات الكروت وملخص المبيعات
+│       ├── chat_messages.py   # الرسائل المتعقبة
+│       ├── operator_permissions.py # أذونات المشغّل
+│       ├── pdf_settings.py    # إعدادات PDF (قائمة بيضاء للأعمدة)
+│       ├── routers.py         # الروترات المكتشفة CRUD
+│       ├── router_health.py   # سجل صحة الروترات
+│       ├── stats_snapshots.py # لقطات الإحصائيات
+│       └── user_sessions.py   # جلسات المستخدمين وتتبع النشاط
 ├── pdf/                       # PDF generation باستخدام reportlab وqrcode ودعم العربية
+│   ├── __init__.py            # حزمة pdf
+│   ├── card_generator.py      # منطق إنشاء الكروت
+│   ├── card_renderer.py       # عرض الكروت
+│   ├── pdf_renderer.py        # عرض PDF
+│   └── pdf_settings.py        # إعدادات PDF
 ├── scripts/                   # validate_handlers, snapshot_release, logging audit helper
 └── tests/                     # pytest tests للوحدات والتكامل
 ```
@@ -170,6 +233,13 @@ mikrotik_bot/
 - `/watchdog` - حالة مراقبة الروترات.
 - `/watchdog_start` - بدء مراقبة الروترات.
 - `/cancel` - إلغاء المحادثة الحالية.
+- `/reports` - التقارير.
+- `/report` - تقرير المبيعات.
+- `/roles` - إدارة أدوار المشرفين.
+- `/batches` - دفعات الكروت.
+- `/sales` - المبيعات.
+- `/add_customer` - إضافة عميل.
+- `/remove_customer` - إزالة عميل.
 
 ## إضافة أمر جديد
 
@@ -182,7 +252,7 @@ mikrotik_bot/
 5. تحديث `HELP` في `bot/messages.py` إذا كان الأمر موجهاً للمستخدم.
 6. تشغيل `python scripts/validate_handlers.py` بعد التعديل.
 
-ملاحظة: لا تضف تسجيل المعالجات مباشرة إلى `main.py` إلا إذا كان هناك سبب معماري واضح. المسار الحالي هو `utils/registrations.py`.
+ملاحظة: لا تضف تسجيل المعالجات مباشرة إلى `main.py` إلا إذا كان هناك سبب معماري واضح. المسار الحالي هو `bot/registrations.py`.
 
 ## قواعد مهمة في MikroTik API
 
