@@ -7,6 +7,7 @@ payloads. Isolated from the former god-object ``database.models``.
 from __future__ import annotations
 
 import json
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from datetime import UTC
@@ -78,7 +79,7 @@ def save_card_batch(
         return cursor.lastrowid
 
 
-def list_card_batches(router_key: str | None = None, limit: int = 20, offset: int = 0) -> list[dict[str, Any]]:
+def list_card_batches(router_key: str | None = None, limit: int = 20, offset: int = 0) -> list[RouterOSRow]:
     """Return batch rows (without the encrypted payload) ordered by created_at desc."""
     from database.models import get_db
 
@@ -132,7 +133,7 @@ def _decode_batch_cards(cards_json: str) -> list[Any]:
     return raw if isinstance(raw, list) else []
 
 
-def get_card_batch(batch_id: int) -> dict[str, Any] | None:
+def get_card_batch(batch_id: int) -> RouterOSRow | None:
     """Return a single batch row including decrypted ``cards`` (list of dicts)."""
     from database.models import get_db
 
@@ -187,7 +188,7 @@ def update_batch_payment(
         return cursor.rowcount > 0
 
 
-def get_sales_summary(days: int = 7) -> dict[str, Any]:
+def get_sales_summary(days: int = 7) -> RouterOSRow:
     """ملخص المبيعات خلال الـ `days` الماضية.
 
     يُعيد: total_batches, paid_count, total_revenue, unpaid_count, deferred_count

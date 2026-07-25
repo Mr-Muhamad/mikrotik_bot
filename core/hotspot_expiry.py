@@ -7,9 +7,8 @@ handle and returns a plain list of dicts.
 
 import logging
 import re
-from typing import Any
 
-from core.mikrotik_client import MikrotikClient
+from core.mikrotik_client import RouterOSRow, MikrotikClient
 from librouteros.exceptions import LibRouterosError
 
 logger = logging.getLogger(__name__)
@@ -34,7 +33,7 @@ def _parse_uptime_to_seconds(raw: str) -> int:
         return 0
 
 
-def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> list[dict[str, Any]]:
+def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> list[RouterOSRow]:
     """إعادة قائمة المستخدمين الذين ستنتهي صلاحيتهم خلال `days` أيام.
 
     يعتمد على `limit-uptime` في RouterOS:
@@ -47,7 +46,7 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
 
     يُعيد قائمة دوال بـ: name, profile, uptime_limit, remaining_days, uptime_used
     """
-    result: list[dict[str, Any]] = []
+    result: list[RouterOSRow] = []
     try:
         users = api.execute(
             router_key,
@@ -119,11 +118,11 @@ def parse_renewal_day_from_comment(comment: str) -> tuple[str, int | None]:
     return comment, None
 
 
-def get_custom_expiring_users(api: MikrotikClient, router_key: str, days_window: int = 3) -> list[dict[str, Any]]:
+def get_custom_expiring_users(api: MikrotikClient, router_key: str, days_window: int = 3) -> list[RouterOSRow]:
     """إعادة قائمة المستخدمين الذين يقترب يوم تجديدهم المحدد في التعليق خلال `days_window` أيام."""
     import datetime
 
-    result: list[dict[str, Any]] = []
+    result: list[RouterOSRow] = []
     try:
         users = api.execute(
             router_key,

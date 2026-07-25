@@ -10,14 +10,14 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Files with documented type: ignore (whitelist)
 # Each entry: (file, line_number, reason)
 KNOWN_IGNORES = [
-    ("core/mikrotik_client.py", 12, "librouteros stubs incomplete"),
-    ("core/connection_pool.py", 56, "librouteros connection type"),
-    ("core/connection_pool.py", 57, "librouteros connection type"),
-    ("core/backup/file_server.py", 164, "aiohttp handler signature"),
-    ("core/backup/ftp.py", 26, "ftplib type stubs incomplete"),
-    ("core/backup/ftp.py", 102, "ftplib type stubs incomplete"),
-    ("core/backup/userman.py", 21, "librouteros API return type"),
-    ("core/backup/userman.py", 55, "librouteros API return type"),
+    ("core/connection_pool.py", 101, "LibRouterosError base class catch"),
+    ("core/mikrotik_api.py", 217, "LibRouterosError base class catch"),
+    ("bot/handlers/backup.py", 82, "job_data JSON keys are strings at runtime"),
+    ("bot/handlers/backup.py", 83, "job_data JSON keys are strings at runtime"),
+    ("bot/handlers/settings.py", 181, "dynamic handler dispatch"),
+    ("utils/error_response.py", 122, "dynamic classifier dispatch"),
+    ("scripts/e2e_smoke.py", 86, "test mock override"),
+    ("scripts/e2e_smoke.py", 96, "test mock override"),
 ]
 
 IGNORE_PATTERN = re.compile(r"#\s*type:\s*ignore")

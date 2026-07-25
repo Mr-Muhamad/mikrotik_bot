@@ -3,6 +3,7 @@ import logging
 import os
 import threading
 from dataclasses import asdict
+from core.mikrotik_client import RouterOSRow
 from typing import Any, cast
 from urllib.parse import quote
 
@@ -86,11 +87,11 @@ def _arabic_text(text: Any) -> str:
         return str(text)
 
 
-def _normalize_card(card: dict[str, Any] | Any) -> dict[str, Any]:
+def _normalize_card(card: RouterOSRow | Any) -> RouterOSRow:
     """Convert a card (CardData or dict) into a plain dict for rendering."""
     if isinstance(card, dict):
         return card
-    d: dict[str, Any] = asdict(card)
+    d: RouterOSRow = asdict(card)
     d["show_password"] = card.show_password
     return d
 
@@ -127,11 +128,11 @@ class CardRenderer:
         y: float,
         width: float,
         height: float,
-        card: dict[str, Any] | Any,
+        card: RouterOSRow | Any,
         index: int,
     ) -> None:
         """Draw a single card at the given coordinates."""
-        card_dict: dict[str, Any] = _normalize_card(card)
+        card_dict: RouterOSRow = _normalize_card(card)
         canvas_obj.saveState()
 
         self._draw_border(canvas_obj, x, y, width, height)
@@ -189,7 +190,7 @@ class CardRenderer:
         return min_font
 
     def _draw_credentials(
-        self, c: Canvas, x: float, y: float, width: float, height: float, card: dict[str, Any] | Any
+        self, c: Canvas, x: float, y: float, width: float, height: float, card: RouterOSRow | Any
     ) -> None:
         """Draw username and password fields with dynamic font sizing."""
         card = _normalize_card(card)
@@ -239,7 +240,7 @@ class CardRenderer:
             c.setFont("Helvetica-Bold", fs)
             c.drawString(value_x, v_middle - 3.8 * mm, password)
 
-    def _draw_qr(self, c: Canvas, x: float, y: float, width: float, height: float, card: dict[str, Any] | Any) -> None:
+    def _draw_qr(self, c: Canvas, x: float, y: float, width: float, height: float, card: RouterOSRow | Any) -> None:
         """Draw QR code for hotspot login."""
         card = _normalize_card(card)
         username = str(card.get("username", ""))
@@ -259,7 +260,7 @@ class CardRenderer:
         buf.seek(0)
         c.drawImage(ImageReader(buf), qr_x, qr_y, width=qr_size, height=qr_size)
 
-    def _draw_footer(self, c: Canvas, x: float, y: float, width: float, card: dict[str, Any] | Any | None = None) -> None:
+    def _draw_footer(self, c: Canvas, x: float, y: float, width: float, card: RouterOSRow | Any | None = None) -> None:
         """Draw footer line and footer text."""
         footer_line_y = y + 5 * mm
         c.setLineWidth(CARD_BORDER_LINE_WIDTH)

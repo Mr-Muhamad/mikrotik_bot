@@ -1,13 +1,13 @@
 import os
 import tempfile
 import time
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from pdf.pdf_renderer import pdf_renderer
 
 
 class CardGenerator:
-    def generate_pdf(self, cards: list[dict[str, Any]], output_dir: str | None = None) -> str:
+    def generate_pdf(self, cards: list[RouterOSRow], output_dir: str | None = None) -> str:
         if output_dir is None:
             output_dir = tempfile.gettempdir()
 

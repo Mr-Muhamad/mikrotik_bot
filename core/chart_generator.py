@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import io
 import logging
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 import matplotlib
 
@@ -47,7 +47,7 @@ def _configure_dark_style(fig: plt.Figure, ax: plt.Axes) -> None:
 
 
 def generate_trend_chart(
-    snapshots: list[dict[str, Any]], title: str = "نشاط المستخدمين (آخر 7 أيام)"
+    snapshots: list[RouterOSRow], title: str = "نشاط المستخدمين (آخر 7 أيام)"
 ) -> bytes:
     """Generate a PNG trend chart stream for active users and byte usage over time."""
     if not snapshots:
@@ -114,7 +114,7 @@ def generate_trend_chart(
 
 
 def generate_sales_chart(
-    batches: list[dict[str, Any]], title: str = "توزيع مبيعات الكروت حسب الباقة"
+    batches: list[RouterOSRow], title: str = "توزيع مبيعات الكروت حسب الباقة"
 ) -> bytes:
     """Generate a PNG bar chart stream for card batch sales by profile."""
     if not batches:

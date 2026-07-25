@@ -1,5 +1,6 @@
 import html
 import logging
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from telegram import InlineKeyboardMarkup, Update
@@ -46,7 +47,7 @@ async def _reply_or_edit(
         await update.message.reply_text(text, **kwargs)
 
 
-def _categories_kwargs(stats: dict[str, Any]) -> dict[str, str]:
+def _categories_kwargs(stats: RouterOSRow) -> dict[str, str]:
     cats = stats["categories"]
     return {
         "cat_10": cats["10 GB"],
@@ -58,7 +59,7 @@ def _categories_kwargs(stats: dict[str, Any]) -> dict[str, str]:
     }
 
 
-def _summary_text(stats: dict[str, Any]) -> str:
+def _summary_text(stats: RouterOSRow) -> str:
     return HOTSPOT_STATS.format(
         total=stats["total"],
         active=stats["active"],
@@ -67,7 +68,7 @@ def _summary_text(stats: dict[str, Any]) -> str:
     )
 
 
-def _reset_block_text(stats: dict[str, Any]) -> str:
+def _reset_block_text(stats: RouterOSRow) -> str:
     formatted_items = []
     for item in stats["reset_list"]:
         if len(item) == 3:

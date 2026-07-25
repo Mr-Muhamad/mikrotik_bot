@@ -5,6 +5,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC
 from functools import wraps
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from telegram import Update
@@ -167,7 +168,7 @@ CONVERSATION_USER_DATA_KEYS = (
 )
 
 
-def get_user_routers(user_id: int) -> list[dict[str, Any]]:
+def get_user_routers(user_id: int) -> list[RouterOSRow]:
     """Return the list of routers this user is allowed to manage.
 
     - للـ Super Admin (ADMIN_IDS): كل الروترات النشطة.

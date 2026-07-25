@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from telegram import CallbackQuery, Update
 from telegram.ext import ContextTypes
@@ -189,7 +189,7 @@ async def _check_all_routers(context: ContextTypes.DEFAULT_TYPE):
     if not routers:
         return
 
-    async def _check_single(r: dict[str, Any]) -> None:
+    async def _check_single(r: RouterOSRow) -> None:
         if not r.get("username"):
             return
 

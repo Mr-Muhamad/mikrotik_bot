@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -46,7 +46,7 @@ from utils.error_response import send_error
 logger = logging.getLogger(__name__)
 
 
-def _build_router_status_text(routers: list[dict[str, Any]]) -> str:
+def _build_router_status_text(routers: list[RouterOSRow]) -> str:
     lines = []
     for r in routers:
         identity = r.get("identity", "Unknown")

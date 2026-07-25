@@ -2,7 +2,7 @@
 
 import logging
 from datetime import UTC
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from database.models import get_db, now_utc
 
@@ -25,7 +25,7 @@ def record_health(router_key: str, status: str, error_msg: str = "") -> None:
         logger.warning(f"Failed to record health for {router_key}: {e}")
 
 
-def get_latest_health(router_key: str) -> dict[str, Any] | None:
+def get_latest_health(router_key: str) -> RouterOSRow | None:
     """استرداد آخر نتيجة فحص للراوتر. يُعيد None إن لم تُوجد سجلات."""
     try:
         with get_db() as conn:
@@ -43,7 +43,7 @@ def get_latest_health(router_key: str) -> dict[str, Any] | None:
         return None
 
 
-def get_all_latest_health() -> dict[str, dict[str, Any]]:
+def get_all_latest_health() -> dict[str, RouterOSRow]:
     """استرداد آخر نتيجة فحص لكل الراوترات.
 
     يُعيد dict مفاتيحه router_key وقيمه dicts من أعمدة الجدول.
@@ -62,7 +62,7 @@ def get_all_latest_health() -> dict[str, dict[str, Any]]:
         return {}
 
 
-def get_health_history(router_key: str, limit: int = 10) -> list[dict[str, Any]]:
+def get_health_history(router_key: str, limit: int = 10) -> list[RouterOSRow]:
     """استرداد آخر N نتيجة فحص لراوتر معين (مرتبة من الأحدث للأقدم)."""
     try:
         with get_db() as conn:

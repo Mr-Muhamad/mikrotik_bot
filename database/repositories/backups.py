@@ -7,6 +7,7 @@ god-object ``database.models``.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 # عدد سجلات النسخ المحتفظ بها لكل راوتر قبل الحذف التلقائي (retention).
@@ -19,7 +20,7 @@ def _utc_now():
     return datetime.now(UTC).strftime(UTC_TIMESTAMP_FORMAT)
 
 
-def get_backup_schedule() -> dict[str, Any]:
+def get_backup_schedule() -> RouterOSRow:
     from database.models import get_db
 
     with get_db() as conn:
@@ -102,7 +103,7 @@ def _prune_backup_jobs(cursor: Any, router_key: str) -> None:
         )
 
 
-def get_last_backup(router_key: str) -> dict[str, Any] | None:
+def get_last_backup(router_key: str) -> RouterOSRow | None:
     """Return the most recent backup record for a router, or None."""
     from database.models import get_db
 
@@ -119,7 +120,7 @@ def get_last_backup(router_key: str) -> dict[str, Any] | None:
         return dict(row) if row else None
 
 
-def get_recent_backups(limit: int = 20) -> list[dict[str, Any]]:
+def get_recent_backups(limit: int = 20) -> list[RouterOSRow]:
     """Return the most recent backup records across all routers."""
     from database.models import get_db
 

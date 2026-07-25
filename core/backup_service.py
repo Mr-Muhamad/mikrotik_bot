@@ -1,4 +1,4 @@
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from config import BACKUP_DIR
 from core.backup.files import (
@@ -25,17 +25,17 @@ class BackupService:
         self._system_service = system_service or SystemBackupService()
         self._userman_service = userman_service or UserManagerBackupService()
 
-    def full_backup(self, router_key: str) -> dict[str, Any]:
+    def full_backup(self, router_key: str) -> RouterOSRow:
         return self._system_service.full_backup(router_key, backup_root=BACKUP_DIR)
 
-    def userman_backup(self, router_key: str) -> dict[str, Any]:
+    def userman_backup(self, router_key: str) -> RouterOSRow:
         return self._userman_service.userman_backup(router_key, backup_root=BACKUP_DIR)
 
-    def userman_restore(self, router_key: str, tar_path: str) -> dict[str, Any]:
+    def userman_restore(self, router_key: str, tar_path: str) -> RouterOSRow:
         return self._userman_service.userman_restore(router_key, tar_path, backup_root=BACKUP_DIR)
 
     @staticmethod
-    def list_local_userman_backups() -> list[dict[str, Any]]:
+    def list_local_userman_backups() -> list[RouterOSRow]:
         return UserManagerBackupService.list_local_userman_backups(backup_root=BACKUP_DIR)
 
 

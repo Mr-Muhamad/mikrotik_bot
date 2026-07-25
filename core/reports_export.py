@@ -6,7 +6,7 @@ Generates structured CSV files for export in Telegram.
 import csv
 import io
 import logging
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from core.hotspot_expiry import parse_renewal_day_from_comment
 from core.mikrotik_api import mikrotik_api
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def generate_hotspot_users_csv(router_key: str) -> str:
     """Generate CSV text containing all hotspot users on a router."""
     try:
-        users: list[dict[str, Any]] = mikrotik_api.execute_long(
+        users: list[RouterOSRow] = mikrotik_api.execute_long(
             router_key,
             "ip/hotspot/user/print",
             **{

@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -17,7 +17,7 @@ class PDFRenderer:
     def __init__(self):
         self.font_name = setup_arabic_support()
 
-    def generate_cards_pdf(self, cards: list[dict[str, Any]], output_path: str):
+    def generate_cards_pdf(self, cards: list[RouterOSRow], output_path: str):
         """Generate a PDF with all cards arranged in a grid layout."""
         settings = get_pdf_settings()
 

@@ -3,7 +3,7 @@ import io
 import logging
 import os
 import tempfile
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -22,7 +22,7 @@ from utils.error_response import send_error
 logger = logging.getLogger(__name__)
 
 
-def build_csv(report: dict[str, Any]) -> str:
+def build_csv(report: RouterOSRow) -> str:
     """Build a UTF-8-sig CSV string from a usage report's rows."""
     output = io.StringIO()
     writer = csv.writer(output)

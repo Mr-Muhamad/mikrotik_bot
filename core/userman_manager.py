@@ -2,12 +2,11 @@ import logging
 import secrets
 import string
 from datetime import datetime
-from typing import Any
 
 from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
-from core.mikrotik_client import MikrotikClient, RouterOSResponse
+from core.mikrotik_client import RouterOSRow, MikrotikClient, RouterOSResponse
 from utils.validators import sanitize_comment
 
 _CARD_TYPE_MAP = {
@@ -141,7 +140,7 @@ class UserManager:
         return cards
 
 
-    def _create_user(self, router_key: str, username: str, password: str, profile: str, comment: str = "", caller_id: str = "") -> dict[str, Any]:
+    def _create_user(self, router_key: str, username: str, password: str, profile: str, comment: str = "", caller_id: str = "") -> RouterOSRow:
         """Create a User Manager user and attach the selected profile.
 
         The user is created WITHOUT the profile first so a rejected ``profile``
@@ -339,7 +338,7 @@ class UserManager:
                 matches.append(entry)
         return matches
 
-    def get_user(self, router_key: str, username: str) -> dict[str, Any] | None:
+    def get_user(self, router_key: str, username: str) -> RouterOSRow | None:
         """Return a single User Manager user dict by name, or None if not found."""
         uid = self._get_user_id(router_key, username)
         if not uid:
@@ -462,7 +461,7 @@ class UserManager:
         logger.info(f"Terminated User Manager session '{session_id}' on {router_key}")
         return result
 
-    def format_card(self, card: dict[str, Any], index: int) -> str:
+    def format_card(self, card: RouterOSRow, index: int) -> str:
         """Format a card dict into a display string with index number."""
         lines = [
             f"🎫 كارت #{index + 1}",

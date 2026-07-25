@@ -8,15 +8,14 @@ and return plain dicts/lists, keeping the search/kick responsibility here.
 
 import logging
 import re
-from typing import Any
 
-from core.mikrotik_client import MikrotikClient, RouterOSResponse
+from core.mikrotik_client import RouterOSRow, MikrotikClient, RouterOSResponse
 
 logger = logging.getLogger(__name__)
 
 
 # DHCP leases returned by RouterOS are loosely typed dicts.
-LeaseDict = dict[str, Any]
+LeaseDict = RouterOSRow
 
 
 def get_leases_by_mac(api: MikrotikClient, router_key: str, macs: set[str]) -> dict[str, LeaseDict]:

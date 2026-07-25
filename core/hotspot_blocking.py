@@ -5,6 +5,7 @@ stays separate from firewall address-list manipulation.
 """
 
 import logging
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from librouteros.exceptions import LibRouterosError
@@ -74,7 +75,7 @@ def unblock_mac(api: Any, router_key: str, mac: str) -> bool:
         return False
 
 
-def get_blocked_macs(api: Any, router_key: str) -> list[dict[str, Any]]:
+def get_blocked_macs(api: Any, router_key: str) -> list[RouterOSRow]:
     """يُعيد قائمة MACs في address-list=hotspot_blocked.
 
     يُعيد قائمة فارغة عند الفشل.

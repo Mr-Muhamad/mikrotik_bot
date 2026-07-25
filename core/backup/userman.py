@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import UTC, datetime
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from core.backup import files as backup_files
 from core.backup.files import (
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class UserManagerBackupService:
-    def userman_backup(self, router_key: str, backup_root: str | None = None) -> dict[str, Any]:
+    def userman_backup(self, router_key: str, backup_root: str | None = None) -> RouterOSRow:
         backup_root = backup_root or backup_files.BACKUP_DIR
         router_name = mikrotik_api.get_router_name(router_key)
         file_prefix = f"{USERMAN_BACKUP_PREFIX}{sanitize_router_name(router_name)}"
@@ -66,7 +66,7 @@ class UserManagerBackupService:
 
     def userman_restore(
         self, router_key: str, umb_path: str, backup_root: str | None = None
-    ) -> dict[str, Any]:
+    ) -> RouterOSRow:
         router_name = mikrotik_api.get_router_name(router_key)
 
         if not os.path.isfile(umb_path):
@@ -95,7 +95,7 @@ class UserManagerBackupService:
             return {"success": False, "message": f"فشل الاستعادة: {str(e)}"}
 
     @staticmethod
-    def list_local_userman_backups(backup_root: str | None = None) -> list[dict[str, Any]]:
+    def list_local_userman_backups(backup_root: str | None = None) -> list[RouterOSRow]:
         backup_root = backup_root or backup_files.BACKUP_DIR
         userman_dir = os.path.join(backup_root, "userman")
         if not os.path.isdir(userman_dir):

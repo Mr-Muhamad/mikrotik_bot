@@ -2,7 +2,7 @@ import logging
 import queue
 import threading
 import time
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from librouteros import connect
 from librouteros.api import Api
@@ -47,7 +47,7 @@ class ConnectionPool:
         self.failed_connections = 0
         self.cache_hits = 0
 
-    def get_router_info(self, router_key: str) -> dict[str, Any]:
+    def get_router_info(self, router_key: str) -> RouterOSRow:
         if router_key.startswith(ROUTER_KEY_PREFIX):
             db_id = router_key.replace(ROUTER_KEY_PREFIX, "")
             router_cfg = get_router_by_id(int(db_id))
@@ -64,7 +64,7 @@ class ConnectionPool:
             f"Router '{router_key}' not configured. Please discover and select a router first."
         )
 
-    def _connect(self, router_info: dict[str, Any], timeout: int | None = None) -> Api:
+    def _connect(self, router_info: RouterOSRow, timeout: int | None = None) -> Api:
         timeout = timeout or CONNECT_TIMEOUT
         api = connect(
             username=router_info["user"],
@@ -76,7 +76,7 @@ class ConnectionPool:
         )
         return api
 
-    def _connect_with_retry(self, router_info: dict[str, Any], timeout: int | None = None) -> Api:
+    def _connect_with_retry(self, router_info: RouterOSRow, timeout: int | None = None) -> Api:
         last_error: LibRouterosError | None = None
         for attempt in range(1 + MAX_RETRIES):
             with self._lock:
@@ -241,7 +241,7 @@ class ConnectionPool:
         with self._lock:
             self.router_versions.invalidate(router_key)
 
-    def get_metrics(self) -> dict[str, Any]:
+    def get_metrics(self) -> RouterOSRow:
         with self._lock:
             active = sum(self.active_counts.values())
             idle = sum(q.qsize() for q in self.pools.values())

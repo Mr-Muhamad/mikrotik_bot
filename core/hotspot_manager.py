@@ -3,14 +3,13 @@ import re
 import secrets
 import string
 from datetime import datetime
-from typing import Any
 
 from librouteros.exceptions import LibRouterosError
 
 from core.cache import TTLCache
 from core.card_models import CardData, CardSystem
 from core.mikrotik_api import mikrotik_api
-from core.mikrotik_client import MikrotikClient, RouterOSResponse
+from core.mikrotik_client import RouterOSRow, MikrotikClient, RouterOSResponse
 from utils.validators import sanitize_comment
 
 logger = logging.getLogger(__name__)
@@ -245,7 +244,7 @@ class HotspotManager:
 
         return results
 
-    def search_hosts(self, router_key: str, search_term: str) -> list[dict[str, Any]]:
+    def search_hosts(self, router_key: str, search_term: str) -> list[RouterOSRow]:
         """Search hotspot hosts by IP or MAC address with enriched host names from DHCP leases.
 
         Delegates to ``core.hotspot_search.search_hosts``.
@@ -277,7 +276,7 @@ class HotspotManager:
         all_users = self._get_all_users_cached(router_key)
         return all_users[:limit] if all_users else []
 
-    def get_user(self, router_key: str, user_id: str) -> dict[str, Any] | None:
+    def get_user(self, router_key: str, user_id: str) -> RouterOSRow | None:
         """Return a single hotspot user dict by its .id, or None if not found."""
         all_users = self._get_all_users_cached(router_key)
         for user in all_users:
@@ -285,7 +284,7 @@ class HotspotManager:
                 return user
         return None
 
-    def _get_leases_by_mac(self, router_key: str, macs: set[str]) -> dict[str, dict[str, Any]]:
+    def _get_leases_by_mac(self, router_key: str, macs: set[str]) -> dict[str, RouterOSRow]:
         """Fetch DHCP leases and return a dict keyed by lower-case MAC address."""
         leases = self._api.execute(router_key, "ip/dhcp-server/lease/print")
         return {
@@ -294,13 +293,13 @@ class HotspotManager:
             if str(lease.get("mac-address", "")).lower() in macs
         }
 
-    def get_profiles(self, router_key: str) -> list[dict[str, Any]]:
+    def get_profiles(self, router_key: str) -> list[RouterOSRow]:
         """Return list of hotspot user profiles from the router."""
         from typing import cast
 
         cached = self._profiles_cache.get(router_key)
         if cached is not None:
-            return cast(list[dict[str, Any]], cached)
+            return cast(list[RouterOSRow], cached)
         try:
             results = self._api.execute(router_key, "ip/hotspot/user/profile/print")
             self._profiles_cache.set(router_key, results)
@@ -395,7 +394,7 @@ class HotspotManager:
 
         return parse_reset_day(comment)
 
-    def get_hotspot_stats(self, router_key: str, day: int | None = None) -> dict[str, Any] | None:
+    def get_hotspot_stats(self, router_key: str, day: int | None = None) -> RouterOSRow | None:
         """Return hotspot statistics, optionally filtered to a single reset day.
 
         Delegates to ``core.hotspot_stats.get_hotspot_stats``.
@@ -404,7 +403,7 @@ class HotspotManager:
 
         return _build(self._api, router_key, day)
 
-    def build_usage_report(self, router_key: str, top_n: int = 15) -> dict[str, Any]:
+    def build_usage_report(self, router_key: str, top_n: int = 15) -> RouterOSRow:
         """Build an exportable Hotspot usage report for a router.
 
         Delegates to ``core.hotspot_stats.build_usage_report``.
@@ -431,7 +430,7 @@ class HotspotManager:
 
         return _fn(self._api, router_key, mac)
 
-    def get_blocked_macs(self, router_key: str) -> list[dict[str, Any]]:
+    def get_blocked_macs(self, router_key: str) -> list[RouterOSRow]:
         """يُعيد قائمة MACs في address-list=hotspot_blocked.
 
         Delegates to ``core.hotspot_blocking.get_blocked_macs``.
@@ -440,7 +439,7 @@ class HotspotManager:
 
         return _fn(self._api, router_key)
 
-    def get_expiring_users(self, router_key: str, days: int = 3) -> list[dict[str, Any]]:
+    def get_expiring_users(self, router_key: str, days: int = 3) -> list[RouterOSRow]:
         """إعادة قائمة المستخدمين الذين ستنتهي صلاحيتهم خلال `days` أيام.
 
         Delegates to ``core.hotspot_expiry.get_expiring_users``.

@@ -23,6 +23,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
+from core.mikrotik_client import RouterOSRow
 from typing import Any, Protocol, runtime_checkable
 
 from config import DEFAULT_API_PORT
@@ -143,7 +144,7 @@ class NetworkProbe(Protocol):
     The scanner orchestrator awaits the result if it's a coroutine.
     """
 
-    def discover(self) -> list[dict[str, Any]]: ...
+    def discover(self) -> list[RouterOSRow]: ...
 
 
 # ─── DiscoveredRouter dataclass (moved from network_scanner) ───
@@ -209,7 +210,7 @@ class ARPTableProbe:
         self._run = run_fn
         self._system = system or platform.system()
 
-    def discover(self) -> list[dict[str, Any]]:
+    def discover(self) -> list[RouterOSRow]:
         """Return ``[{ip, mac, source}]`` for each dynamic ARP entry."""
         try:
             if self._system == "Windows":
@@ -245,7 +246,7 @@ class PortScanProbe:
         self._timeout = timeout
         self._open_connection = open_connection
 
-    async def discover(self) -> list[dict[str, Any]]:
+    async def discover(self) -> list[RouterOSRow]:
         """Return ``[{ip, port, source}]`` for IPs that accept TCP connections."""
         if not self._ips:
             return []
@@ -318,7 +319,7 @@ class MNDPListenerProbe:
         self._timeout = timeout
         self._socket_factory = socket_factory or socket.socket
 
-    async def discover(self) -> list[dict[str, Any]]:
+    async def discover(self) -> list[RouterOSRow]:
         """Return ``[{ip, source, last_seen, ...attributes}]`` for each MNDP reply.
 
         Raises:
@@ -367,7 +368,7 @@ class MNDPListenerProbe:
         data: bytes,
         ip: str,
         local_ips: set[str],
-        discovered: dict[str, dict[str, Any]],
+        discovered: dict[str, RouterOSRow],
     ) -> None:
         """Process a single received MNDP packet and update ``discovered``."""
         if ip in local_ips:
@@ -392,9 +393,9 @@ class MNDPListenerProbe:
         if "ipv4" in parts and parts["ipv4"]:
             router["ip"] = parts["ipv4"]
 
-    def _discover_sync(self) -> list[dict[str, Any]]:
+    def _discover_sync(self) -> list[RouterOSRow]:
         """Single-socket send+listen cycle (runs in executor thread)."""
-        discovered: dict[str, dict[str, Any]] = {}
+        discovered: dict[str, RouterOSRow] = {}
         local_ips = _get_local_ips()
         sock = None
 
@@ -442,7 +443,7 @@ _MNDP_ATTRS_WITH_MAC = ("mac_address",) + _MNDP_ATTRS
 
 
 def _merge_port_results(
-    port_results: list[dict[str, Any]],
+    port_results: list[RouterOSRow],
     now: str,
 ) -> dict[str, DiscoveredRouter]:
     """Index verified routers (open API port 8728) by IP."""
@@ -459,7 +460,7 @@ def _merge_port_results(
 
 
 def _merge_mndp_results(
-    mndp_results: list[dict[str, Any]],
+    mndp_results: list[RouterOSRow],
     by_ip: dict[str, DiscoveredRouter],
     now: str,
 ) -> None:
@@ -490,7 +491,7 @@ def _merge_mndp_results(
 
 
 def _enrich_from_arp(
-    arp_results: list[dict[str, Any]],
+    arp_results: list[RouterOSRow],
     by_ip: dict[str, DiscoveredRouter],
 ) -> None:
     """Enrich MAC addresses from ARP table ONLY for confirmed routers."""
@@ -504,9 +505,9 @@ def _enrich_from_arp(
 
 
 def merge_probe_results(
-    arp_results: list[dict[str, Any]],
-    port_results: list[dict[str, Any]],
-    mndp_results: list[dict[str, Any]],
+    arp_results: list[RouterOSRow],
+    port_results: list[RouterOSRow],
+    mndp_results: list[RouterOSRow],
 ) -> list[DiscoveredRouter]:
     """Merge candidate dicts from the three probes into a deduplicated list of routers.
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -212,7 +212,7 @@ async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_T
     await edit_clean(query, context, text, keyboard)
 
 
-def _format_restore_summary(result: dict[str, Any]) -> str:
+def _format_restore_summary(result: RouterOSRow) -> str:
     """Build a human-readable summary from a userman restore result."""
     parts = []
     if result.get("profiles_restored"):

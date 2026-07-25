@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import logging
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 import openpyxl
@@ -50,7 +51,7 @@ def _auto_fit_columns(ws: Any) -> None:
 
 
 def build_usage_excel_report(
-    report: dict[str, Any], title: str = "تقرير استخدام الشبكة"
+    report: RouterOSRow, title: str = "تقرير استخدام الشبكة"
 ) -> bytes:
     """Generate a formatted Excel (.xlsx) workbook bytes for hotspot usage report."""
     wb = openpyxl.Workbook()
@@ -124,7 +125,7 @@ def build_usage_excel_report(
 
 
 def build_sales_excel_report(
-    batches: list[dict[str, Any]], title: str = "تقرير مبيعات الكروت"
+    batches: list[RouterOSRow], title: str = "تقرير مبيعات الكروت"
 ) -> bytes:
     """Generate a formatted Excel (.xlsx) workbook bytes for card batch sales."""
     wb = openpyxl.Workbook()

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from telegram import Update
@@ -49,7 +50,7 @@ SUBMENU_TITLES = {
 _FILTER_KEYS = ("router", "admin_id", "admin_label", "action", "since_days")
 
 
-def _empty_filters() -> dict[str, Any]:
+def _empty_filters() -> RouterOSRow:
     return {
         "router": None,
         "admin_id": None,
@@ -59,7 +60,7 @@ def _empty_filters() -> dict[str, Any]:
     }
 
 
-def _get_filters(context: ContextTypes.DEFAULT_TYPE) -> dict[str, Any]:
+def _get_filters(context: ContextTypes.DEFAULT_TYPE) -> RouterOSRow:
     return context.user_data.setdefault("logs_filters", _empty_filters())
 
 

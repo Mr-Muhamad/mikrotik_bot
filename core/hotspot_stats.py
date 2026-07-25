@@ -9,9 +9,8 @@ the user-management class.
 
 import logging
 import re
-from typing import Any
 
-from core.mikrotik_client import MikrotikClient
+from core.mikrotik_client import RouterOSRow, MikrotikClient
 from librouteros.exceptions import LibRouterosError
 
 from utils.formatters import format_bytes, parse_bytes
@@ -90,7 +89,7 @@ def _classify_limit_gb(limit_bytes: int) -> str:
 
 
 def _categorize_user(
-    user: dict[str, Any],
+    user: RouterOSRow,
     categories: dict[str, int],
 ) -> tuple[bool, int | None]:
     """Classify one user into ``categories``.
@@ -119,7 +118,7 @@ def _categorize_user(
     return True, reset_day
 
 
-def get_hotspot_stats(api: MikrotikClient, router_key: str, day: int | None = None) -> dict[str, Any] | None:
+def get_hotspot_stats(api: MikrotikClient, router_key: str, day: int | None = None) -> RouterOSRow | None:
     """Return hotspot statistics, optionally filtered to a single reset day.
 
     When ``day`` is ``None`` the ``reset_list`` is empty and ``reset_days``
@@ -167,7 +166,7 @@ def get_hotspot_stats(api: MikrotikClient, router_key: str, day: int | None = No
         return None
 
 
-def build_usage_report(api: MikrotikClient, router_key: str, top_n: int = 15) -> dict[str, Any]:
+def build_usage_report(api: MikrotikClient, router_key: str, top_n: int = 15) -> RouterOSRow:
     """Build an exportable Hotspot usage report for a router.
 
     Fetches all hotspot users (long-running call) and classifies them into
@@ -180,7 +179,7 @@ def build_usage_report(api: MikrotikClient, router_key: str, top_n: int = 15) ->
         **{".proplist": ".id,name,profile,disabled,bytes-in,bytes-out,limit-bytes-total,comment"},
     )
 
-    rows: list[dict[str, Any]] = []
+    rows: list[RouterOSRow] = []
     total_bytes_all = 0
     active_count = 0
     disabled_count = 0

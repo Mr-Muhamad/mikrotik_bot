@@ -10,12 +10,16 @@ This module deliberately imports nothing from ``core`` to stay cycle-free.
 
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import Any, Protocol, TypeAlias, runtime_checkable
 
-# RouterOS API responses are loosely typed dicts; use this alias
-# instead of bare ``list[dict]`` so pyright strict mode can infer
-# ``dict[str, Any]`` for keys/values and avoid ``Unknown`` cascades.
-RouterOSResponse = list[dict[str, Any]]
+# RouterOS API responses are loosely typed dicts; use these aliases
+# instead of bare ``dict``/``list[dict]`` so pyright strict mode can
+# infer proper key/value types and avoid ``Unknown`` cascades.
+RouterOSRow: TypeAlias = dict[str, Any]
+"""A single row returned by the RouterOS API."""
+
+RouterOSResponse: TypeAlias = list[RouterOSRow]
+"""A list of rows returned by the RouterOS API."""
 
 
 @runtime_checkable
@@ -40,7 +44,7 @@ class MikrotikClient(Protocol):
 
     def get_userman_base_path(self, router_key: str = ...) -> str: ...
 
-    def get_router_info(self, router_key: str) -> dict[str, Any]: ...
+    def get_router_info(self, router_key: str) -> RouterOSRow: ...
 
     def check_connection_health(self, router_key: str) -> tuple[bool, str]: ...
 
@@ -60,7 +64,7 @@ class MikrotikClient(Protocol):
     def invalidate_version(self, router_key: str) -> None: ...
 
     # ── Diagnostics / lifecycle ────────────────────────────────
-    def get_metrics(self) -> dict[str, Any]: ...
+    def get_metrics(self) -> RouterOSRow: ...
 
     def test_connection(
         self, ip: str, username: str, password: str, port: int = ...

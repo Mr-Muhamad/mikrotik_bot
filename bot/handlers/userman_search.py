@@ -1,4 +1,5 @@
 import logging
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from telegram import Update
@@ -92,7 +93,7 @@ def _format_userman_search_results(paginator: Any) -> str:
     return header + ":\n\n" + "\n".join(lines)
 
 
-def _format_userman_detail(user: dict[str, Any]) -> str:
+def _format_userman_detail(user: RouterOSRow) -> str:
     name = user.get("name") or user.get("username") or UNKNOWN_NAME
     raw_pwd = user.get("password") or "—"
     pwd = (
@@ -195,7 +196,7 @@ async def userman_search_select(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def _execute_um_action(
-    action: str, h: dict[str, Any], router_key: str, hosts: list[dict[str, Any]], idx: int,
+    action: str, h: RouterOSRow, router_key: str, hosts: list[RouterOSRow], idx: int,
     context: Any,
 ) -> str:
     """Execute a userman action (kick, reset, toggle, delete) and return result message."""

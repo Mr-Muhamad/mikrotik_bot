@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -144,7 +144,7 @@ async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFA
     return WAITING_HOTSPOT_SEARCH
 
 
-async def _search_users(router_key: str, term: str) -> list[dict[str, Any]]:
+async def _search_users(router_key: str, term: str) -> list[RouterOSRow]:
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, term)
     except Exception:
@@ -164,7 +164,7 @@ async def _search_users(router_key: str, term: str) -> list[dict[str, Any]]:
     ]
 
 
-async def _search_hosts_by_field(router_key: str, field: str, value: str) -> list[dict[str, Any]]:
+async def _search_hosts_by_field(router_key: str, field: str, value: str) -> list[RouterOSRow]:
     """Search hotspot hosts by a specific field (mac-address or address).
 
     Delegates to :meth:`HotspotManager.search_hosts` so the host list is fetched
@@ -179,7 +179,7 @@ async def _search_hosts_by_field(router_key: str, field: str, value: str) -> lis
     return [h for h in hosts if value in str(h.get(field) or "").lower()]
 
 
-async def _search_hosts_with_users(router_key: str, query: str) -> list[dict[str, Any]]:
+async def _search_hosts_with_users(router_key: str, query: str) -> list[RouterOSRow]:
     try:
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, query)
         try:
@@ -191,7 +191,7 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[dict[str
     return _enrich_hosts(hosts, users)
 
 
-def _enrich_hosts(hosts: list[dict[str, Any]], users: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _enrich_hosts(hosts: list[RouterOSRow], users: list[RouterOSRow]) -> list[RouterOSRow]:
     user_map = {u.get("name", "").lower(): u for u in users if u.get("name")}
     for h in hosts:
         uname = str(h.get("user") or "").lower()

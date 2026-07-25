@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from core.backup.files import is_valid_router_backup_name
 from core.mikrotik_api import mikrotik_api
@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class BackupRestore:
-    def list_router_backups(self, router_key: str) -> list[dict[str, Any]]:
+    def list_router_backups(self, router_key: str) -> list[RouterOSRow]:
         try:
             files = mikrotik_api.execute(router_key, "file/print")
             backups = []
@@ -36,7 +36,7 @@ class BackupRestore:
             logger.error(f"Failed to list backups on {router_key}: {e}")
             return []
 
-    def restore_backup(self, router_key: str, backup_name: str) -> dict[str, Any]:
+    def restore_backup(self, router_key: str, backup_name: str) -> RouterOSRow:
         router_name = mikrotik_api.get_router_name(router_key)
         try:
             if not is_valid_router_backup_name(backup_name):

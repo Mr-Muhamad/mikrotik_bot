@@ -2,6 +2,7 @@ import asyncio
 import logging
 from collections.abc import Generator, Sequence
 from datetime import UTC
+from core.mikrotik_client import RouterOSRow
 from typing import Any, TypedDict, cast
 
 from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
@@ -10,7 +11,7 @@ from telegram.ext import CallbackContext, ExtBot, Job
 logger = logging.getLogger(__name__)
 
 # Type alias for the bot context used across this module
-_CleanerContext = CallbackContext[ExtBot[None], dict[str, Any], dict[str, Any], dict[str, Any]]
+_CleanerContext = CallbackContext[ExtBot[None], RouterOSRow, RouterOSRow, RouterOSRow]
 _Update = Update
 _CallbackQuery = CallbackQuery
 

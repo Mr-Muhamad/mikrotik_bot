@@ -3,7 +3,7 @@ import os
 import shutil
 import threading
 from datetime import UTC, datetime
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from core.backup import files as backup_files
 from core.backup.files import (
@@ -27,7 +27,7 @@ def _get_backup_lock(router_key: str) -> threading.RLock:
 
 
 class SystemBackupService:
-    def full_backup(self, router_key: str, backup_root: str | None = None) -> dict[str, Any]:
+    def full_backup(self, router_key: str, backup_root: str | None = None) -> RouterOSRow:
         lock = _get_backup_lock(router_key)
         if not lock.acquire(blocking=False):
             return {
@@ -40,7 +40,7 @@ class SystemBackupService:
         finally:
             lock.release()
 
-    def _full_backup_internal(self, router_key: str, backup_root: str | None = None) -> dict[str, Any]:
+    def _full_backup_internal(self, router_key: str, backup_root: str | None = None) -> RouterOSRow:
         router_name = mikrotik_api.get_router_name(router_key)
         backup_root = backup_root or backup_files.BACKUP_DIR
         file_prefix = sanitize_router_name(router_name)

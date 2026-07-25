@@ -1,3 +1,4 @@
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -167,7 +168,7 @@ def get_report_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_batches_keyboard(
-    batches: list[dict[str, Any]],
+    batches: list[RouterOSRow],
     page: int = 0,
     total: int = 0,
     page_size: int = 10,
@@ -358,7 +359,7 @@ def get_discovered_routers_keyboard(
 
 
 def get_saved_routers_keyboard(
-    routers: list[dict[str, Any]],
+    routers: list[RouterOSRow],
 ) -> InlineKeyboardMarkup:
     """Return a keyboard listing saved routers with version info."""
     keyboard: _KeyboardLayout = []
@@ -425,7 +426,7 @@ def get_reboot_keyboard(router_key: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
-def _user_button_label(user: dict[str, Any]) -> str:
+def _user_button_label(user: RouterOSRow) -> str:
     name = str(user.get("name", "N/A"))
     comment = str(user.get("comment", ""))
     label = f"{name} ({comment})" if comment else name
@@ -435,7 +436,7 @@ def _user_button_label(user: dict[str, Any]) -> str:
 
 
 def get_user_selection_keyboard(
-    users: list[dict[str, Any]],
+    users: list[RouterOSRow],
     action_prefix: str,
     back_callback: str = "menu_hotspot",
 ) -> InlineKeyboardMarkup:
@@ -456,7 +457,7 @@ def get_user_selection_keyboard(
 
 
 def get_paginated_user_keyboard(
-    users: list[dict[str, Any]],
+    users: list[RouterOSRow],
     action_prefix: str,
     paginator: Any,
     back_callback: str = "menu_hotspot",
@@ -496,12 +497,12 @@ def get_paginated_user_keyboard(
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_edit_user_keyboard(users: list[dict[str, Any]]) -> InlineKeyboardMarkup:
+def get_edit_user_keyboard(users: list[RouterOSRow]) -> InlineKeyboardMarkup:
     """Return a keyboard listing hotspot users for selection to edit."""
     return get_user_selection_keyboard(users, "edit_user", "menu_hotspot")
 
 
-def get_delete_user_keyboard(users: list[dict[str, Any]]) -> InlineKeyboardMarkup:
+def get_delete_user_keyboard(users: list[RouterOSRow]) -> InlineKeyboardMarkup:
     """Return a keyboard listing hotspot users for selection to delete."""
     return get_user_selection_keyboard(users, "delete_user", "menu_hotspot")
 
@@ -635,7 +636,7 @@ def get_host_detail_keyboard(is_disabled: bool = False, mac: str = "") -> Inline
 
 
 def get_blocked_macs_keyboard(
-    blocked: list[dict[str, Any]],
+    blocked: list[RouterOSRow],
 ) -> InlineKeyboardMarkup:
     """لوحة مفاتيح قائمة MACs المحظورة مع زر رفع الحظر لكل عنصر."""
     from bot.handlers.callback_constants import unblock_mac_cb
@@ -747,7 +748,7 @@ def get_logs_submenu_keyboard(
 
 
 def get_backup_restore_keyboard(
-    backups: list[dict[str, Any]],
+    backups: list[RouterOSRow],
 ) -> InlineKeyboardMarkup:
     """Return keyboard listing available backups for restore."""
     keyboard: _KeyboardLayout = []
@@ -795,7 +796,7 @@ def get_backup_download_keyboard(
 
 
 def get_userman_restore_keyboard(
-    tar_files: list[dict[str, Any]],
+    tar_files: list[RouterOSRow],
 ) -> InlineKeyboardMarkup:
     """Return keyboard listing saved User Manager tar backups for restore."""
     keyboard: _KeyboardLayout = []
@@ -819,7 +820,7 @@ def get_userman_restore_confirm_keyboard() -> InlineKeyboardMarkup:
 
 def get_operator_router_assignment_keyboard(
     operator_id: int,
-    all_routers: list[dict[str, Any]],
+    all_routers: list[RouterOSRow],
     assigned_router_ids: list[int],
 ) -> InlineKeyboardMarkup:
     """لوحة مفاتيح إسناد/سحب الروترات لمشغّل معيّن.

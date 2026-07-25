@@ -8,7 +8,7 @@ encryption, and metadata helpers. Isolated from the former god-object
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from config import DEFAULT_API_PORT
 
@@ -107,7 +107,7 @@ def save_manual_router(ip: str, port: int = DEFAULT_API_PORT, username: str = ""
             raise RouterAlreadyExistsError(f"Router IP {ip} already exists") from e
 
 
-def get_saved_routers(active_only: bool = True, decrypt: bool = False, owner_id: int | None = None) -> list[dict[str, Any]]:
+def get_saved_routers(active_only: bool = True, decrypt: bool = False, owner_id: int | None = None) -> list[RouterOSRow]:
     """جلب الروترات المحفوظة من قاعدة البيانات.
 
     Args:
@@ -149,7 +149,7 @@ def get_saved_routers(active_only: bool = True, decrypt: bool = False, owner_id:
         return result
 
 
-def get_router_by_id(router_id: int, decrypt: bool = True) -> dict[str, Any] | None:
+def get_router_by_id(router_id: int, decrypt: bool = True) -> RouterOSRow | None:
     from database.models import decrypt_password, get_db
 
     with get_db() as conn:
@@ -164,7 +164,7 @@ def get_router_by_id(router_id: int, decrypt: bool = True) -> dict[str, Any] | N
         return None
 
 
-def get_router_by_ip(ip_address: str) -> dict[str, Any] | None:
+def get_router_by_ip(ip_address: str) -> RouterOSRow | None:
     from database.models import decrypt_password, get_db
 
     with get_db() as conn:
@@ -232,7 +232,7 @@ def update_router_alias(router_id: int, alias: str) -> None:
         )
 
 
-def get_router_display_name(router: dict[str, Any]) -> str:
+def get_router_display_name(router: RouterOSRow) -> str:
     alias = router.get("name_alias", "") or ""
     if alias:
         return alias

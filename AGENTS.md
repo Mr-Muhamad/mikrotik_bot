@@ -403,4 +403,4 @@ py -3.12 -m pytest -q
 - إعدادات الـ logging تتم حصراً في `main.py` قبل `configure_logging()`؛ لا تضف `logging.basicConfig` جديد أو `setLevel` لمكتبات غير مزعجة.
 - لا يوجد `HEALTH_CHECK_PORT` أو `aiohttp` في المشروع بعد الآن؛ تمت إزالة health check server بالكامل.
 - `WATCHDOG_FIRST_DELAY` معرّف في `config.py:50` ويُستخدم في `bot/handlers/watchdog.py:67` كمهلة أولى للـ Job. لا تستخدم `first=10` مضمّناً.
-- هناك 8 استخدامات إنتاجية لـ `# type: ignore` في الكود: `core/mikrotik_client.py:12`, `core/connection_pool.py:56,57`, `core/backup/file_server.py:164`, `core/backup/ftp.py:26,102`, `core/backup/userman.py:21,55`. جميعها مبررة ومعلّمة.
+- هناك استخدامات إنتاجية لـ `# type: ignore` في الكود: `core/connection_pool.py:101`, `core/mikrotik_api.py:217`, `bot/handlers/backup.py:82,83`, `bot/handlers/settings.py:181`, `utils/error_response.py:122`. جميعها مبررة ومعلّمة، ويُتحقق منها عبر `scripts/check_type_ignore.py`.

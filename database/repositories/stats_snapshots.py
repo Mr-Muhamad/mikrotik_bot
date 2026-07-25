@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date, timedelta
+from core.mikrotik_client import RouterOSRow
 from typing import Any
 
 from database.models import get_db
@@ -43,7 +44,7 @@ def save_snapshot(router_key: str, data: dict[str, Any]) -> None:
         logger.warning(f"Failed to save snapshot for {router_key}: {e}")
 
 
-def get_yesterday_snapshot(router_key: str) -> dict[str, Any] | None:
+def get_yesterday_snapshot(router_key: str) -> RouterOSRow | None:
     """استرداد snapshot أمس للراوتر المحدد. يُعيد None إن لم يوجد."""
 
     yesterday = (date.today() - timedelta(days=1)).isoformat()
@@ -61,7 +62,7 @@ def get_yesterday_snapshot(router_key: str) -> dict[str, Any] | None:
         return None
 
 
-def get_week_snapshots(router_key: str) -> list[dict[str, Any]]:
+def get_week_snapshots(router_key: str) -> list[RouterOSRow]:
     """استرداد snapshots آخر 7 أيام للراوتر، مرتبة من الأقدم للأحدث."""
 
     week_ago = (date.today() - timedelta(days=7)).isoformat()

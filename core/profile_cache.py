@@ -6,7 +6,7 @@
 import logging
 import threading
 import time
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from collections import OrderedDict
 
@@ -61,7 +61,7 @@ class ProfileCache:
         with self._lock:
             self._store.clear()
 
-    def stats(self) -> dict[str, Any]:
+    def stats(self) -> RouterOSRow:
         """إحصائيات الكاش للمراقبة."""
         with self._lock:
             now = time.time()

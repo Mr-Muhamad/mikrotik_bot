@@ -16,7 +16,7 @@ Requirements:
 
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Any
+from core.mikrotik_client import RouterOSRow
 
 from core.network_probe import DiscoveredRouter, MNDPListenerProbe
 
@@ -49,7 +49,7 @@ async def discover_routers(
         await progress_callback("جاري البحث عن أجهزة MikroTik عبر الشبكة المحلية (MNDP + ARP)...")
 
     # 1. MNDP Discovery
-    mndp_results: list[dict[str, Any]] = []
+    mndp_results: list[RouterOSRow] = []
     try:
         mndp_probe = MNDPListenerProbe(timeout=mndp_timeout)
         mndp_results = await mndp_probe.discover()
@@ -60,7 +60,7 @@ async def discover_routers(
         logger.warning(f"MNDP discovery error: {e}")
 
     # 2. ARP Table Probe
-    arp_results: list[dict[str, Any]] = []
+    arp_results: list[RouterOSRow] = []
     try:
         arp_probe = ARPTableProbe()
         arp_results = arp_probe.discover()
@@ -69,7 +69,7 @@ async def discover_routers(
         logger.warning(f"ARP probe error: {e}")
 
     # 3. Port Scan Probe on candidate IPs from ARP
-    port_results: list[dict[str, Any]] = []
+    port_results: list[RouterOSRow] = []
     candidate_ips = [r["ip"] for r in arp_results if r.get("ip")]
     if candidate_ips:
         try:
