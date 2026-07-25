@@ -9,11 +9,11 @@ from __future__ import annotations
 import io
 import logging
 from core.mikrotik_client import RouterOSRow
-from typing import Any
 
 import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.worksheet import Worksheet
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ RIGHT_ALIGN = Alignment(horizontal="right", vertical="center")
 LEFT_ALIGN = Alignment(horizontal="left", vertical="center")
 
 
-def _auto_fit_columns(ws: Any) -> None:
+def _auto_fit_columns(ws: Worksheet) -> None:
     """Adjust column widths dynamically based on max cell text length."""
     for col in ws.columns:
         max_len = 0

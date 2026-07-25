@@ -1,9 +1,8 @@
 import logging
 import re
-from typing import Any
 
 from librouteros.exceptions import LibRouterosError
-from telegram import Message, Update
+from telegram import InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, Update
 from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
@@ -161,7 +160,7 @@ async def _dispatch_message(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     text: str,
-    reply_markup: Any,
+    reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | None,
     target_id: int,
     error_label: str,
 ) -> None:
@@ -169,7 +168,11 @@ async def _dispatch_message(
         query = update.callback_query if update else None
         query_msg = get_query_message(query)
         if query is not None and query_msg is not None:
-            msg = await query.edit_message_text(text=text, reply_markup=reply_markup)
+            # edit_message_text only accepts InlineKeyboardMarkup | None
+            msg = await query.edit_message_text(
+                text=text,
+                reply_markup=reply_markup if isinstance(reply_markup, InlineKeyboardMarkup) else None,
+            )
         elif update and update.effective_message:
             msg = await update.effective_message.reply_text(text=text, reply_markup=reply_markup)
         else:
@@ -194,7 +197,7 @@ async def send_error(
     error: Exception,
     router_key: str | None = None,
     log_extra: str = "",
-    reply_markup: Any = None,
+    reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | None = None,
     chat_id: int | None = None,
 ) -> None:
     error_text = _sanitize_error_text(str(error))
@@ -219,7 +222,7 @@ async def send_text(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     text: str,
-    reply_markup: Any = None,
+    reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | None = None,
     chat_id: int | None = None,
 ) -> None:
     target_id = chat_id or _get_chat_id(update)

@@ -3,10 +3,10 @@ import logging
 from collections.abc import Generator, Sequence
 from datetime import UTC
 from core.mikrotik_client import RouterOSRow
-from typing import Any, TypedDict, cast
+from typing import TypedDict, cast
 
 from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
-from telegram.ext import CallbackContext, ExtBot, Job
+from telegram.ext import CallbackContext, ExtBot, JobQueue
 
 logger = logging.getLogger(__name__)
 
@@ -179,8 +179,8 @@ async def schedule_delete(
     if not message_id:
         return
     job_name = _delete_job_name(chat_id, message_id)
-    job_queue: Any = context.job_queue
-    existing: list[Job[Any]] = job_queue.get_jobs_by_name(job_name)
+    job_queue: JobQueue = context.job_queue  # type: ignore[assignment]
+    existing = list(job_queue.get_jobs_by_name(job_name))
     for j in existing:
         j.schedule_removal()
     job_queue.run_once(
@@ -192,11 +192,11 @@ async def schedule_delete(
 
 
 async def _delete_job(context: _CleanerContext) -> None:
-    data: dict[str, Any] = cast(dict[str, Any], context.job.data)
+    data = cast(dict[str, object], context.job.data)  # type: ignore[union-attr]
     try:
         await context.bot.delete_message(
-            chat_id=data["chat_id"],
-            message_id=data["message_id"],
+            chat_id=str(data["chat_id"]),
+            message_id=int(str(data["message_id"])),
         )
         _stats["messages_deleted"] += 1
     except Exception as e:

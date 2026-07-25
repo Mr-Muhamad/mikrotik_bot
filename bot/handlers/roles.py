@@ -1,6 +1,4 @@
-from typing import Any
-
-from telegram import Update
+from telegram import Message, Update
 from telegram.ext import ContextTypes
 
 from config import ADMIN_IDS
@@ -21,7 +19,7 @@ OP_ASSIGN_SUCCESS = "✅ تم إسناد الراوتر #{router_id} للمشغ�
 OP_REVOKE_SUCCESS = "✅ تم سحب الراوتر #{router_id} من المشغّل {operator_id}"
 OP_NO_ROUTERS_FOR_OP = "⚠️ لا توجد روترات مخصصة لك. تواصل مع المسؤول."
 
-def _parse_role_target(msg: Any) -> tuple[int | None, str]:
+def _parse_role_target(msg: Message) -> tuple[int | None, str]:
     """Extract (target_id, new_role) from a message or forwarded message."""
     forward_user = getattr(msg, "forward_from", None)
     if forward_user:
@@ -74,6 +72,8 @@ async def roles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Super Admin assigns a role to an admin: /role <id> <role> or by forwarding a message from the user."""
     msg = update.message
+    if not msg:
+        return
     target, new_role = _parse_role_target(msg)
 
     if not target or not new_role:

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 from core.mikrotik_client import RouterOSRow
-from typing import Any
+
+import sqlite3
 
 # عدد سجلات النسخ المحتفظ بها لكل راوتر قبل الحذف التلقائي (retention).
 BACKUP_JOBS_RETENTION_PER_ROUTER = 50
@@ -90,7 +91,7 @@ def record_backup_result(
     return job_id if job_id is not None else 0
 
 
-def _prune_backup_jobs(cursor: Any, router_key: str) -> None:
+def _prune_backup_jobs(cursor: sqlite3.Cursor, router_key: str) -> None:
     cursor.execute("SELECT COUNT(*) FROM backup_jobs WHERE router_key = ?", (router_key,))
     count = cursor.fetchone()[0]
     if count > BACKUP_JOBS_RETENTION_PER_ROUTER:

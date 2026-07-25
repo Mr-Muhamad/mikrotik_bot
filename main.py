@@ -4,7 +4,7 @@ import logging
 import signal
 import sys
 
-from typing import Any
+from types import FrameType
 
 from telegram.ext import (
     Application,
@@ -30,7 +30,7 @@ configure_logging(logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def post_init(app: Application[Any, Any, Any, Any, Any, Any]):
+async def post_init(app: Application) -> None:  # type: ignore[reportMissingTypeArgument]
     await set_bot_commands(app)
     # استعادة حالة الـ watchdog من DB قبل بدء الجدولة
     from core.watchdog import load_status_from_db
@@ -102,7 +102,7 @@ def main():
         # Signal handlers for graceful shutdown
         shutdown_event = asyncio.Event()
 
-        def signal_handler(signum: int, frame: Any) -> None:
+        def signal_handler(signum: int, frame: FrameType | None) -> None:
             logger.info(f"Received signal {signum}, initiating graceful shutdown...")
             shutdown_event.set()
 

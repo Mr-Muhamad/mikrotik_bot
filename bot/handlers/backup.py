@@ -262,6 +262,8 @@ async def schedule_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
         h, m = int(hour), int(minute)
         if not (0 <= h < 24 and 0 <= m < 60):
             raise ValueError
+        if not context.job_queue:
+            raise RuntimeError("JobQueue not available")
         backup_scheduler.start_daily(context.job_queue, h, m)
         await run_blocking(
             log_action,
@@ -289,6 +291,8 @@ async def schedule_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def schedule_disable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
+    if not context.job_queue:
+        return
     backup_scheduler.stop(context.job_queue)
     await run_blocking(log_action, "disable_schedule", "", "", query.from_user.id)
     await query.edit_message_text(SCHEDULE_REMOVED, reply_markup=get_backup_keyboard())

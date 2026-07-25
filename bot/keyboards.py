@@ -1,9 +1,10 @@
 from core.mikrotik_client import RouterOSRow
-from typing import Any
+from core.network_probe import DiscoveredRouter
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from database.models import get_router_display_name
+from utils.pagination import Paginator
 
 # Type aliases for keyboard construction
 _KeyboardRow = list[InlineKeyboardButton]
@@ -344,7 +345,7 @@ def get_confirm_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_discovered_routers_keyboard(
-    routers: list[Any],
+    routers: list[DiscoveredRouter],
 ) -> InlineKeyboardMarkup:
     """Return a keyboard listing discovered routers for selection."""
     keyboard: _KeyboardLayout = []
@@ -459,7 +460,7 @@ def get_user_selection_keyboard(
 def get_paginated_user_keyboard(
     users: list[RouterOSRow],
     action_prefix: str,
-    paginator: Any,
+    paginator: Paginator,
     back_callback: str = "menu_hotspot",
 ) -> InlineKeyboardMarkup:
     """Return a paginated keyboard listing hotspot users for selection."""
@@ -575,7 +576,7 @@ def get_cancel_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_search_results_keyboard(
-    paginator: Any,
+    paginator: Paginator,
     is_userman: bool = False,
 ) -> InlineKeyboardMarkup:
     """Return a keyboard listing search result hosts for selection using Paginator."""
@@ -596,16 +597,16 @@ def get_search_results_keyboard(
     nav_row: _KeyboardRow = []
     if paginator.has_prev():
         cb_data = (
-            userman_search_page(paginator.prev_page())
+            userman_search_page(str(paginator.prev_page()))
             if is_userman
-            else hotspot_search_page(paginator.prev_page())
+            else hotspot_search_page(str(paginator.prev_page()))
         )
         nav_row.append(InlineKeyboardButton("⬅️ السابق", callback_data=cb_data))
     if paginator.has_next():
         cb_data = (
-            userman_search_page(paginator.next_page())
+            userman_search_page(str(paginator.next_page()))
             if is_userman
-            else hotspot_search_page(paginator.next_page())
+            else hotspot_search_page(str(paginator.next_page()))
         )
         nav_row.append(InlineKeyboardButton("التالي ➡️", callback_data=cb_data))
 
@@ -667,15 +668,15 @@ def get_userman_detail_keyboard(is_disabled: bool = False) -> InlineKeyboardMark
     return InlineKeyboardMarkup(keyboard)
 
 
-def _logs_time_label(filters: dict[str, Any]) -> str:
-    since_days: int | None = filters.get("since_days")
+def _logs_time_label(filters: dict[str, object]) -> str:
+    since_days = filters.get("since_days")
     if not since_days:
         return "الكل"
     return next((name for name, days in TIME_OPTIONS if days == since_days), "الكل")
 
 
 def get_logs_filter_keyboard(
-    filters: dict[str, Any],
+    filters: dict[str, object],
     page: int = 0,
     total: int = 0,
     page_size: int = 10,
@@ -683,9 +684,9 @@ def get_logs_filter_keyboard(
     """Return the filter + pagination keyboard for the audit log view."""
     has_prev: bool = page > 0
     has_next: bool = (page + 1) * page_size < total
-    router_label: str = filters.get("router") or "الكل"
-    admin_label: str = filters.get("admin_label") or filters.get("admin_id") or "الكل"
-    action_label: str = filters.get("action") or "الكل"
+    router_label = str(filters.get("router") or "الكل")
+    admin_label = str(filters.get("admin_label") or filters.get("admin_id") or "الكل")
+    action_label = str(filters.get("action") or "الكل")
     time_label: str = _logs_time_label(filters)
 
     keyboard: _KeyboardLayout = [
@@ -721,13 +722,13 @@ def get_logs_filter_keyboard(
 
 def get_logs_submenu_keyboard(
     suffix: str,
-    options: list[Any],
+    options: list[str],
     page: int = 0,
     page_size: int = SUBMENU_PAGE_SIZE,
 ) -> InlineKeyboardMarkup:
     """Return a keyboard listing filter options for the given category."""
     start: int = page * page_size
-    chunk: list[Any] = options[start : start + page_size]
+    chunk: list[str] = options[start : start + page_size]
     keyboard: _KeyboardLayout = []
     for i, opt in enumerate(chunk):
         label: str = str(opt)

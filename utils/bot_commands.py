@@ -1,18 +1,17 @@
 import asyncio
 import logging
-from typing import Any
-
 from telegram import (
     BotCommand,
     BotCommandScopeAllGroupChats,
     BotCommandScopeAllPrivateChats,
 )
+from telegram.ext import Application
 
 
 logger = logging.getLogger(__name__)
 
 
-async def set_bot_commands(app: Any):
+async def set_bot_commands(app: Application) -> None:  # type: ignore[reportMissingTypeArgument]
     """Set bot commands menu for both private chats and groups — retries 3 times."""
     PRIVATE = BotCommandScopeAllPrivateChats()
     GROUP = BotCommandScopeAllGroupChats()

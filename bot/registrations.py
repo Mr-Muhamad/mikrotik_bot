@@ -31,7 +31,7 @@ separate CHs precede the standalone ``cancel``; main CH is added after
 all standalone handlers.
 """
 
-from typing import Any
+from telegram.ext import Application
 
 import bot.handlers.constants as constants  # noqa: F401 — passed to build_application
 import bot.registration_parts.conversation  # noqa: F401 — side-effect import populates CH registry  # pyright: ignore[reportUnusedImport]
@@ -42,7 +42,7 @@ from bot.registration_parts.separate_handlers import (  # noqa: E501
 from utils.handler_registry import build_application
 
 
-def build_all(application: Any) -> None:
+def build_all(application: Application) -> None:  # type: ignore[reportMissingTypeArgument]
     """Build all handlers from registry and add to application.
 
     Registration order is critical:

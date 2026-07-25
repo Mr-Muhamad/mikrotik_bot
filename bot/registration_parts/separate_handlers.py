@@ -8,8 +8,6 @@ Split from ``bot/registrations.py`` (Step 3b of SRP refactor). The
 live here so ``bot/registrations.py`` stays a thin wiring layer.
 """
 
-from typing import Any
-
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
@@ -38,7 +36,7 @@ from bot.handlers.routers import (
 )
 
 
-def _build_rename_handler() -> "CH[Any]":
+def _build_rename_handler() -> CH:  # type: ignore[reportMissingTypeArgument]
     """Build the separate rename ConversationHandler.
 
     This is a short conversation: trigger -> enter new name -> done.
@@ -63,7 +61,7 @@ def _build_rename_handler() -> "CH[Any]":
     )
 
 
-def _build_manual_add_handler() -> "CH[Any]":
+def _build_manual_add_handler() -> CH:  # type: ignore[reportMissingTypeArgument]
     """Build the separate manual-router-add ConversationHandler.
 
     Multi-step: IP -> port -> user -> pass -> alias -> confirm.
@@ -106,7 +104,7 @@ def _build_manual_add_handler() -> "CH[Any]":
     )
 
 
-def _build_discovery_handler() -> "CH[Any]":
+def _build_discovery_handler() -> CH:  # type: ignore[reportMissingTypeArgument]
     """Build the separate router-discovery ConversationHandler.
 
     Multi-step: select discovered router -> enter username -> enter password -> done.
@@ -141,7 +139,7 @@ def _build_discovery_handler() -> "CH[Any]":
     )
 
 
-def register_separate_conversation_handlers(application: Application[Any, Any, Any, Any, Any, Any]) -> None:
+def register_separate_conversation_handlers(application: Application) -> None:  # type: ignore[reportMissingTypeArgument]
     """Register separate ConversationHandlers before standalone handlers.
 
     These must be registered BEFORE standalone handlers so their

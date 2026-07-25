@@ -435,7 +435,7 @@ async def _validate_edit_field(
     return new_value
 
 
-def _transform_renewal_day(new_value: str, user_data: dict[str, object]) -> str | None:
+def _transform_renewal_day(new_value: str, user_data: dict[str, str]) -> str | None:
     """Transform a renewal day input into ``name/day`` format, or ``None`` on error."""
     if not new_value.isdigit() or not (1 <= int(new_value) <= 31):
         return None
