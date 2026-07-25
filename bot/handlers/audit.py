@@ -1,6 +1,5 @@
 from datetime import UTC, datetime, timedelta
 from core.mikrotik_client import RouterOSRow
-from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -64,7 +63,7 @@ def _get_filters(context: ContextTypes.DEFAULT_TYPE) -> RouterOSRow:
     return context.user_data.setdefault("logs_filters", _empty_filters())
 
 
-def _build_db_filters(filters: dict[str, Any]) -> dict[str, Any]:
+def _build_db_filters(filters: dict[str, str | int | None]) -> dict[str, str | int | None]:
     db_filters = {
         "router": filters.get("router"),
         "admin_id": filters.get("admin_id"),
@@ -72,12 +71,12 @@ def _build_db_filters(filters: dict[str, Any]) -> dict[str, Any]:
     }
     since_days = filters.get("since_days")
     if since_days:
-        cutoff = datetime.now(UTC) - timedelta(days=since_days)
+        cutoff = datetime.now(UTC) - timedelta(days=float(since_days))
         db_filters["since"] = cutoff.strftime(UTC_TIMESTAMP_FORMAT)
     return db_filters
 
 
-def _format_filters_short(filters: dict[str, Any]) -> str:
+def _format_filters_short(filters: dict[str, str | int | None]) -> str:
     parts = []
     if filters.get("router"):
         parts.append(f"🔍 {filters['router']}")

@@ -1,6 +1,5 @@
 import logging
 from core.mikrotik_client import RouterOSRow
-from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -74,7 +73,7 @@ logger = logging.getLogger(__name__)
 MAX_SEARCH_RESULTS = 50
 
 
-def _format_userman_search_results(paginator: Any) -> str:
+def _format_userman_search_results(paginator: Paginator) -> str:
     if not paginator.items:
         return NO_RESULTS
     lines = []
@@ -197,7 +196,7 @@ async def userman_search_select(update: Update, context: ContextTypes.DEFAULT_TY
 
 async def _execute_um_action(
     action: str, h: RouterOSRow, router_key: str, hosts: list[RouterOSRow], idx: int,
-    context: Any,
+    context: ContextTypes.DEFAULT_TYPE,
 ) -> str:
     """Execute a userman action (kick, reset, toggle, delete) and return result message."""
     username = h.get("name") or h.get("username")

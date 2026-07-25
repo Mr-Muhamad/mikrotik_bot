@@ -172,7 +172,7 @@ class MikrotikAPI:
             return list(cmd_path(cmd, **kwargs))
         return list(cmd_path(cmd))
 
-    def _debug_log(self, method: str, command: str, kwargs: dict[str, Any]):
+    def _debug_log(self, method: str, command: str, kwargs: dict[str, object]):
         """يسجل kwargs مع إخفاء كلمات المرور."""
         if kwargs:
             sanitized = {k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()}

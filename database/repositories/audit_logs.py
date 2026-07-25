@@ -12,7 +12,7 @@ from typing import Any
 from datetime import UTC
 
 
-def _logs_where_clauses(filters: dict[str, Any] | None) -> tuple[list[str], list[Any]]:
+def _logs_where_clauses(filters: dict[str, str | int | None] | None) -> tuple[list[str], list[str | int | None]]:
     """Build SQL WHERE clauses and params for log filtering.
 
     Supported filter keys (all optional):
@@ -60,7 +60,7 @@ def log_action(action: str, username: str, router_name: str, admin_id: int) -> N
         )
 
 
-def get_logs(limit: int = 20, offset: int = 0, filters: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+def get_logs(limit: int = 20, offset: int = 0, filters: dict[str, str | int | None] | None = None) -> list[dict[str, Any]]:
     from database.models import get_db
 
     clauses, params = _logs_where_clauses(filters)
@@ -75,7 +75,7 @@ def get_logs(limit: int = 20, offset: int = 0, filters: dict[str, Any] | None = 
         return [dict(row) for row in cursor.fetchall()]
 
 
-def get_logs_count(filters: dict[str, Any] | None = None) -> int:
+def get_logs_count(filters: dict[str, str | int | None] | None = None) -> int:
     from database.models import get_db
 
     clauses, params = _logs_where_clauses(filters)

@@ -27,13 +27,16 @@ Example (multi-CH — grouped):
 """
 
 from collections import defaultdict
+from types import ModuleType
 from typing import Any, TypedDict
 
 from telegram.ext import (
+    Application,
     CallbackQueryHandler,
     CommandHandler,
     ConversationHandler,
     MessageHandler,
+    filters,
 )
 
 from utils.request_id import bind_request_id_from_update
@@ -137,7 +140,7 @@ class _GroupStateBuilder:
         """Register a CallbackQueryHandler for this state."""
         return self._add(CallbackQueryHandler, pattern=pattern)
 
-    def message(self, filter_obj: Any) -> Any:
+    def message(self, filter_obj: filters.BaseFilter) -> Any:
         """Register a MessageHandler for this state."""
         return self._add(MessageHandler, filters=filter_obj)
 
@@ -214,7 +217,7 @@ class _StateBuilder:
         """Register a CallbackQueryHandler for this state."""
         return self._add(CallbackQueryHandler, pattern=pattern)
 
-    def message(self, filter_obj: Any) -> Any:
+    def message(self, filter_obj: filters.BaseFilter) -> Any:
         """Register a MessageHandler for this state."""
         return self._add(MessageHandler, filters=filter_obj)
 
@@ -244,7 +247,7 @@ def _build_handler(entry: _RegistryEntry) -> Any:
     return entry["cls"](callback=wrapped, **entry["kwargs"])
 
 
-def build_application(application: Any, constants_module: Any) -> None:
+def build_application(application: Application, constants_module: ModuleType) -> None:  # type: ignore[reportInvalidTypeArguments]
     """Build all handlers from the registry and add them to the application.
 
     Creates:
@@ -308,4 +311,4 @@ def build_application(application: Any, constants_module: Any) -> None:
     # 5. Error handler
     if _registry["error_handler"]:
         wrapped_error_handler = bind_request_id_from_update(_registry["error_handler"])
-        application.add_error_handler(wrapped_error_handler)
+        application.add_error_handler(wrapped_error_handler)  # type: ignore[reportArgumentType]

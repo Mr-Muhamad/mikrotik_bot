@@ -5,15 +5,14 @@ stays separate from firewall address-list manipulation.
 """
 
 import logging
-from core.mikrotik_client import RouterOSRow
-from typing import Any
+from core.mikrotik_client import MikrotikClient, RouterOSRow
 
 from librouteros.exceptions import LibRouterosError
 
 logger = logging.getLogger(__name__)
 
 
-def block_mac(api: Any, router_key: str, mac: str, comment: str = "blocked by bot") -> bool:
+def block_mac(api: MikrotikClient, router_key: str, mac: str, comment: str = "blocked by bot") -> bool:
     """يضيف MAC إلى address-list باسم hotspot_blocked في /ip/firewall/address-list.
 
     يُعيد True عند النجاح وFalse عند الفشل.
@@ -46,7 +45,7 @@ def block_mac(api: Any, router_key: str, mac: str, comment: str = "blocked by bo
 
 
 
-def unblock_mac(api: Any, router_key: str, mac: str) -> bool:
+def unblock_mac(api: MikrotikClient, router_key: str, mac: str) -> bool:
     """يحذف MAC من address-list=hotspot_blocked.
 
     يُعيد True عند النجاح وFalse عند الفشل أو عدم الوجود.
@@ -75,7 +74,7 @@ def unblock_mac(api: Any, router_key: str, mac: str) -> bool:
         return False
 
 
-def get_blocked_macs(api: Any, router_key: str) -> list[RouterOSRow]:
+def get_blocked_macs(api: MikrotikClient, router_key: str) -> list[RouterOSRow]:
     """يُعيد قائمة MACs في address-list=hotspot_blocked.
 
     يُعيد قائمة فارغة عند الفشل.
@@ -93,7 +92,7 @@ def get_blocked_macs(api: Any, router_key: str) -> list[RouterOSRow]:
                 "creation-time": e.get("creation-time", ""),
             }
             for e in entries
-            if isinstance(e, dict)
+            if isinstance(e, dict)  # type: ignore[reportUnnecessaryIsInstance]
         ]
     except (LibRouterosError, ConnectionError, OSError) as e:
         logger.error(f"Failed to fetch blocked MACs on {router_key}: {e}")

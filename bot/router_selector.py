@@ -203,10 +203,10 @@ def get_selected_router(user_id: int) -> str | None:
     from database.models import UTC_TIMESTAMP_FORMAT
     from database.repositories.user_sessions import clear_router_session
 
-    last_activity_raw: Any = session.get("last_activity")
+    last_activity_raw = session.get("last_activity")
     last_activity_str: str = str(last_activity_raw) if last_activity_raw else ""
-    timeout_raw: Any = session.get("session_timeout")
-    timeout_mins: float = float(timeout_raw) if timeout_raw else 15.0
+    timeout_raw = session.get("session_timeout")
+    timeout_mins: float = float(str(timeout_raw)) if timeout_raw else 15.0
 
     # Only enforce if timeout_mins is > 0. If timeout_mins <= 0, it means no timeout.
     if last_activity_str and timeout_mins > 0:
@@ -235,7 +235,7 @@ def set_selected_router(user_id: int, router_key: str) -> None:
     save_user_session(user_id, selected_router=router_key)
 
 
-def set_current_action(user_id: int, action: str, data: Any = None) -> None:
+def set_current_action(user_id: int, action: str, data: str | None = None) -> None:
     """Set the current in-progress action and optional data for a user."""
     save_user_session(user_id, current_action=action, action_data=data)
 
@@ -310,7 +310,7 @@ async def _fast_reachability_check(router_key: str) -> bool:
         return False
 
 
-def require_router(func: Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[Any]]) -> Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[Any]]:
+def require_router(func: Callable[..., Awaitable[object]]) -> Callable[..., Awaitable[object]]:
     """Ensure a router is selected before running a handler.
 
     Lives in the bot (presentation) layer because it depends on presentation
@@ -352,7 +352,7 @@ def require_router(func: Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable
     return wrapper
 
 
-def navigation_guard(func: Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[Any]]) -> Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitable[Any]]:
+def navigation_guard(func: Callable[..., Awaitable[object]]) -> Callable[..., Awaitable[object]]:
     """Central navigation guard: enforce an active router session.
 
     Wraps any handler and, when no router is selected, shows the router
@@ -395,7 +395,7 @@ def navigation_guard(func: Callable[[Update, ContextTypes.DEFAULT_TYPE], Awaitab
     return wrapper
 
 
-def requires_router_check(command: str | None, pattern: str | None, func: Any = None) -> bool:
+def requires_router_check(command: str | None, pattern: str | None, func: Callable[..., object] | None = None) -> bool:
     """Classify a registered handler from its kwargs and target function.
 
     Returns True when the handler is OPERATIONAL and must be guarded

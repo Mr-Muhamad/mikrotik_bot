@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Any, cast
+from typing import cast
 
 from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
 from telegram.ext import ContextTypes
@@ -114,7 +114,7 @@ async def parse_router_id(
         return None
 
 
-def make_back_step(message: str, keyboard_fn: Callable[..., Any], next_state: int):
+def make_back_step(message: str, keyboard_fn: Callable[..., InlineKeyboardMarkup], next_state: int):
     """Factory لدوال "الرجوع" البسيطة المتكررة.
 
     تُنشئ دالة async تستقبل (update, context)، تجيب على الـ callback query،

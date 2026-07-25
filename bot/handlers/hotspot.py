@@ -1,7 +1,6 @@
 import html
 import logging
 from core.mikrotik_client import RouterOSRow
-from typing import Any
 
 from telegram import InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -41,10 +40,7 @@ async def _reply_or_edit(
     if query:
         await safe_edit_or_send(query, context, text, keyboard=reply_markup)
     elif update.message:
-        kwargs: dict[str, Any] = {"reply_markup": reply_markup}
-        if parse_mode:
-            kwargs["parse_mode"] = parse_mode
-        await update.message.reply_text(text, **kwargs)
+        await update.message.reply_text(text, parse_mode=parse_mode, reply_markup=reply_markup)
 
 
 def _categories_kwargs(stats: RouterOSRow) -> dict[str, str]:

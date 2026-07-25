@@ -1,9 +1,8 @@
 import logging
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -100,7 +99,7 @@ async def _send_reply(update: Update, text: str):
         await update.message.reply_text(text)
 
 
-def admin_only(func: Callable[..., Any]):
+def admin_only(func: Callable[..., Awaitable[object]]):
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         user = update.effective_user
@@ -152,7 +151,7 @@ def require_role(min_role: str):
     """
     min_level = ROLE_LEVELS.get(min_role, 30)
 
-    def decorator(func: Callable[..., Any]):
+    def decorator(func: Callable[..., Awaitable[object]]):
         @wraps(func)
         async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
             user = update.effective_user

@@ -6,8 +6,6 @@ god-object ``database.models``.
 
 from __future__ import annotations
 
-from typing import Any
-
 PDF_ALLOWED_COLUMNS = {
     "margin_top",
     "margin_bottom",
@@ -42,7 +40,7 @@ def get_pdf_settings():
         return dict(row) if row else {}
 
 
-def update_pdf_settings(**kwargs: Any):
+def update_pdf_settings(**kwargs: str | int | float | bool):
     from database.models import get_db
 
     with get_db() as conn:

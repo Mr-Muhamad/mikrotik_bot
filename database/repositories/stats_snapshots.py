@@ -5,14 +5,13 @@ from __future__ import annotations
 import logging
 from datetime import date, timedelta
 from core.mikrotik_client import RouterOSRow
-from typing import Any
 
 from database.models import get_db
 
 logger = logging.getLogger(__name__)
 
 
-def save_snapshot(router_key: str, data: dict[str, Any]) -> None:
+def save_snapshot(router_key: str, data: dict[str, object]) -> None:
     """حفظ snapshot يومي لإحصائيات راوتر.
 
     data: dict يحتوي على active_users, total_users, bytes_in, bytes_out (اختياري)
