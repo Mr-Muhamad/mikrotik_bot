@@ -122,48 +122,64 @@ async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE
     return WAITING_PDF_VALUE
 
 
+def _update_margins(value: str) -> str | None:
+    parts = list(map(float, value.split()))
+    if len(parts) != 4:
+        return PDF_SEND_4_VALUES
+    pdf_settings.update(
+        margin_top=parts[0],
+        margin_bottom=parts[1],
+        margin_left=parts[2],
+        margin_right=parts[3],
+    )
+    return None
+
+
+def _update_spacing(value: str) -> str | None:
+    parts = list(map(float, value.split()))
+    if len(parts) != 2:
+        return PDF_SEND_2_VALUES
+    pdf_settings.update(spacing_x=parts[0], spacing_y=parts[1])
+    return None
+
+
+def _update_label_spacing(value: str) -> str | None:
+    parts = list(map(float, value.split()))
+    if len(parts) != 2:
+        return PDF_SEND_2_VALUES
+    pdf_settings.update(label_spacing_single=parts[0], label_spacing_dual=parts[1])
+    return None
+
+
+def _update_value_font_size(value: str) -> str | None:
+    parts = list(map(int, value.split()))
+    if len(parts) == 2 and all(8 <= p <= 16 for p in parts):
+        pdf_settings.update(value_max_font_single=parts[0], value_max_font_dual=parts[1])
+        return None
+    return PDF_SEND_2_VALUES
+
+
+_PDF_OPTION_HANDLERS: dict[str, object] = {
+    "margins": _update_margins,
+    "spacing": _update_spacing,
+    "cards_per_row": lambda v: pdf_settings.update(cards_per_row=int(v)),
+    "cards_per_page": lambda v: pdf_settings.update(cards_per_page=int(v)),
+    "brand_name": lambda v: pdf_settings.update(brand_name=v.strip()),
+    "hotspot_dns": lambda v: pdf_settings.update(hotspot_dns=v.strip()),
+    "show_qr": lambda v: pdf_settings.update(show_qr=1 if v.strip() == "1" else 0),
+    "footer": lambda v: pdf_settings.update(footer_text=v.strip()),
+    "label_spacing": _update_label_spacing,
+    "value_font_size": _update_value_font_size,
+}
+
+
 def _apply_pdf_option_update(option: str, value: str) -> str | None:
     """Apply PDF setting update for a given option and value."""
-    if option == "margins":
-        parts = list(map(float, value.split()))
-        if len(parts) != 4:
-            return PDF_SEND_4_VALUES
-        pdf_settings.update(
-            margin_top=parts[0],
-            margin_bottom=parts[1],
-            margin_left=parts[2],
-            margin_right=parts[3],
-        )
-    elif option == "spacing":
-        parts = list(map(float, value.split()))
-        if len(parts) != 2:
-            return PDF_SEND_2_VALUES
-        pdf_settings.update(spacing_x=parts[0], spacing_y=parts[1])
-    elif option == "cards_per_row":
-        pdf_settings.update(cards_per_row=int(value))
-    elif option == "cards_per_page":
-        pdf_settings.update(cards_per_page=int(value))
-    elif option == "brand_name":
-        pdf_settings.update(brand_name=value.strip())
-    elif option == "hotspot_dns":
-        pdf_settings.update(hotspot_dns=value.strip())
-    elif option == "show_qr":
-        show = 1 if value.strip() == "1" else 0
-        pdf_settings.update(show_qr=show)
-    elif option == "footer":
-        pdf_settings.update(footer_text=value.strip())
-    elif option == "label_spacing":
-        parts = list(map(float, value.split()))
-        if len(parts) != 2:
-            return PDF_SEND_2_VALUES
-        pdf_settings.update(label_spacing_single=parts[0], label_spacing_dual=parts[1])
-    elif option == "value_font_size":
-        parts = list(map(int, value.split()))
-        if len(parts) == 2 and all(8 <= p <= 16 for p in parts):
-            pdf_settings.update(value_max_font_single=parts[0], value_max_font_dual=parts[1])
-        else:
-            return PDF_SEND_2_VALUES
-    return None
+    handler = _PDF_OPTION_HANDLERS.get(option)
+    if handler is None:
+        return None
+    result = handler(value)  # type: ignore[operator]
+    return result if isinstance(result, str) else None
 
 
 @admin_only

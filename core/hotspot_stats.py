@@ -24,6 +24,17 @@ _DATE_RE = re.compile(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})|(\d{1,2})[-/](\d{1,2})
 _DAY_SLASH_RE = re.compile(r"(\d{1,2})[/](\d{1,2})")
 
 
+def _safe_day(val: str | None) -> int | None:
+    """Return int if *val* is a valid day 1-31, else ``None``."""
+    if val is None:
+        return None
+    try:
+        n = int(val)
+    except (ValueError, TypeError):
+        return None
+    return n if 1 <= n <= 31 else None
+
+
 def parse_reset_day(comment: str) -> int | None:
     """Extract the reset day (1-31) from a hotspot user comment.
 
@@ -38,50 +49,74 @@ def parse_reset_day(comment: str) -> int | None:
     if not comment:
         return None
 
-    match = _DATE_RE.search(comment)
-    if match:
-        try:
-            if match.group(3):
-                val = int(match.group(3))
-                if 1 <= val <= 31:
-                    return val
-            if match.group(4):
-                val = int(match.group(4))
-                if 1 <= val <= 31:
-                    return val
-        except (ValueError, TypeError):
-            pass
+    # Full date patterns (YYYY-MM-DD / DD-MM-YYYY)
+    m = _DATE_RE.search(comment)
+    if m:
+        day = _safe_day(m.group(3)) or _safe_day(m.group(4))
+        if day is not None:
+            return day
 
-    match_slash = _DAY_SLASH_RE.search(comment)
-    if match_slash:
-        try:
-            val1 = int(match_slash.group(1))
-            val2 = int(match_slash.group(2))
-            if 1 <= val1 <= 31:
-                return val1
-            elif 1 <= val2 <= 31:
-                return val2
-        except (ValueError, TypeError):
-            pass
+    # DD/MM or MM/DD
+    ms = _DAY_SLASH_RE.search(comment)
+    if ms:
+        day = _safe_day(ms.group(1)) or _safe_day(ms.group(2))
+        if day is not None:
+            return day
 
+    # Legacy /DD
     if "/" in comment:
-        try:
-            val = int(comment.split("/")[-1])
-            if 1 <= val <= 31:
-                return val
-        except (ValueError, TypeError):
-            pass
+        day = _safe_day(comment.split("/")[-1])
+        if day is not None:
+            return day
 
-    # Try extracting standalone day number 1-31
+    # Standalone day number 1-31
     digits = re.findall(r"\b([1-9]|[12]\d|3[01])\b", comment)
     if digits:
-        try:
-            return int(digits[0])
-        except (ValueError, TypeError):
-            pass
+        return _safe_day(digits[0])
 
     return None
 
+
+
+def _classify_limit_gb(limit_bytes: int) -> str:
+    """Return the human-readable bucket for a limit in bytes."""
+    gb = limit_bytes / _GB
+    if gb < 10:
+        return "أخرى"
+    if gb < 60:
+        bucket = int(gb // 10) * 10
+        return f"{bucket} GB"
+    return "50 GB"
+
+
+def _categorize_user(
+    user: dict[str, Any],
+    categories: dict[str, int],
+) -> tuple[bool, int | None]:
+    """Classify one user into ``categories``.
+
+    Returns ``(is_active, reset_day | None)``.
+    """
+    is_disabled = str(user.get("disabled", "false")).lower() == "true"
+
+    if is_disabled:
+        return False, None
+
+    limit_raw = user.get("limit-bytes-total", "")
+    if limit_raw and str(limit_raw) != "0":
+        try:
+            limit_str = str(limit_raw)
+            limit_bytes = (
+                int(parse_bytes(limit_str)) if not limit_str.isdigit() else int(limit_str)
+            )
+            categories[_classify_limit_gb(limit_bytes)] += 1
+        except (ValueError, TypeError):
+            categories["أخرى"] += 1
+    else:
+        categories["أخرى"] += 1
+
+    reset_day = parse_reset_day(user.get("comment", ""))
+    return True, reset_day
 
 
 def get_hotspot_stats(api: MikrotikClient, router_key: str, day: int | None = None) -> dict[str, Any] | None:
@@ -98,71 +133,25 @@ def get_hotspot_stats(api: MikrotikClient, router_key: str, day: int | None = No
             **{".proplist": ".id,name,limit-bytes-total,comment,disabled"},
         )
 
+        categories = {k: 0 for k in ("10 GB", "20 GB", "30 GB", "40 GB", "50 GB", "أخرى")}
+        resets_by_day: dict[int, list[tuple[str, str, str]]] = {}
         active_count = 0
         inactive_count = 0
-        categories = {
-            "10 GB": 0,
-            "20 GB": 0,
-            "30 GB": 0,
-            "40 GB": 0,
-            "50 GB": 0,
-            "أخرى": 0,
-        }
-        resets_by_day: dict[int, list[tuple[str, str, str]]] = {}
 
         for user in users:
-            is_disabled = str(user.get("disabled", "false")).lower() == "true"
-
-            if is_disabled:
-                inactive_count += 1
-            else:
+            is_active, reset_day = _categorize_user(user, categories)
+            if is_active:
                 active_count += 1
-
-                limit_raw = user.get("limit-bytes-total", "")
-                if limit_raw and str(limit_raw) != "0":
-                    try:
-                        limit_str = str(limit_raw)
-                        limit_bytes = (
-                            int(parse_bytes(limit_str))
-                            if not limit_str.isdigit()
-                            else int(limit_str)
-                        )
-                        limit_gb = limit_bytes / _GB
-                        if 10 <= limit_gb < 20:
-                            categories["10 GB"] += 1
-                        elif 20 <= limit_gb < 30:
-                            categories["20 GB"] += 1
-                        elif 30 <= limit_gb < 40:
-                            categories["30 GB"] += 1
-                        elif 40 <= limit_gb < 50:
-                            categories["40 GB"] += 1
-                        elif 50 <= limit_gb < 60:
-                            categories["50 GB"] += 1
-                        elif limit_gb >= 60:
-                            categories["50 GB"] += 1
-                        else:
-                            categories["أخرى"] += 1
-                    except (ValueError, TypeError):
-                        categories["أخرى"] += 1
-                else:
-                    categories["أخرى"] += 1
-
-            if not is_disabled:
-                reset_day = parse_reset_day(user.get("comment", ""))
                 if reset_day is not None:
                     limit = format_bytes(user.get("limit-bytes-total", ""))
                     uname = str(user.get("name", "—"))
                     comment = str(user.get("comment", "") or uname)
                     resets_by_day.setdefault(reset_day, []).append((uname, comment, limit))
+            else:
+                inactive_count += 1
 
         reset_days = sorted(resets_by_day.keys(), reverse=True)
-        if day is None:
-            reset_list: list[tuple[str, str, str]] = []
-            selected_day = None
-        else:
-            reset_list = resets_by_day.get(day, [])
-            selected_day = day
-
+        reset_list = resets_by_day.get(day, []) if day is not None else []
         return {
             "total": len(users),
             "active": active_count,
@@ -171,7 +160,7 @@ def get_hotspot_stats(api: MikrotikClient, router_key: str, day: int | None = No
             "resets_by_day": resets_by_day,
             "reset_days": reset_days,
             "reset_list": reset_list,
-            "selected_day": selected_day,
+            "selected_day": day,
         }
     except (LibRouterosError, ConnectionError, OSError) as e:
         logger.error(f"Error getting hotspot stats: {e}")

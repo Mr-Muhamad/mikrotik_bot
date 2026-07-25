@@ -87,14 +87,8 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
-def configure_logging(level: int = LOG_LEVEL) -> None:
-    """Configure logging with console and rotating file handlers.
-
-    Idempotent: can be called multiple times without duplicating handlers/filters.
-    Adds RequestIdFilter to root logger and all handlers.
-    """
-    # Ensure the console stream can emit UTF-8 (emoji, Arabic) on Windows
-    # codepages that otherwise raise UnicodeEncodeError in the StreamHandler.
+def _ensure_utf8_streams() -> None:
+    """Reconfigure stdout/stderr to UTF-8 so emoji/Arabic don't crash."""
     for _stream in (sys.stdout, sys.stderr):
         try:
             if hasattr(_stream, "reconfigure"):
@@ -104,61 +98,76 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
         except Exception:
             pass
 
+
+def _add_console_handler(root: logging.Logger, level: int) -> None:
+    """Attach a human-readable console handler to *root*."""
+    console = logging.StreamHandler(sys.stdout)
+    console.setLevel(level)
+    console.setFormatter(
+        logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] - %(message)s"
+        )
+    )
+    console.addFilter(RequestIdFilter())
+    root.addHandler(console)
+
+
+def _add_file_handler(root: logging.Logger) -> None:
+    """Attach a rotating JSON file handler to *root*."""
+    if not LOG_FILE:
+        return
+    os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
+    file_handler = logging.handlers.RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=LOG_MAX_BYTES,
+        backupCount=LOG_BACKUP_COUNT,
+        encoding="utf-8",
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(JsonFormatter())
+    file_handler.addFilter(RequestIdFilter())
+    root.addHandler(file_handler)
+
+
+def configure_logging(level: int = LOG_LEVEL) -> None:
+    """Configure logging with console and rotating file handlers.
+
+    Idempotent: can be called multiple times without duplicating handlers/filters.
+    Adds RequestIdFilter to root logger and all handlers.
+    """
+    _ensure_utf8_streams()
+
     root = logging.getLogger()
 
-    # Check if already configured (idempotent)
     has_root_filter = any(isinstance(f, RequestIdFilter) for f in root.filters)
     has_console = any(
         isinstance(h, logging.StreamHandler) and h.stream is sys.stdout for h in root.handlers
     )
     has_file = any(isinstance(h, logging.handlers.RotatingFileHandler) for h in root.handlers)
 
-    # Add RequestIdFilter to all existing handlers that don't have it
+    # Inject RequestIdFilter into any handler that lacks it
     for handler in root.handlers:
         if not any(isinstance(f, RequestIdFilter) for f in handler.filters):
             handler.addFilter(RequestIdFilter())
 
     if has_root_filter and has_console and has_file:
-        # Already fully configured - just update handler levels if needed
         for handler in root.handlers:
             if isinstance(handler, logging.StreamHandler) and handler.stream is sys.stdout:
                 if handler.level != level:
                     handler.setLevel(level)
         return
 
-    # Add RequestIdFilter to root logger (idempotent)
     if not has_root_filter:
         root.addFilter(RequestIdFilter())
 
-    # Root logger stays at DEBUG to allow file handler to capture all levels
     if root.level == logging.NOTSET:
         root.setLevel(logging.DEBUG)
 
-    # Console handler (human readable)
     if not has_console:
-        console = logging.StreamHandler(sys.stdout)
-        console.setLevel(level)
-        console.setFormatter(
-            logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] - %(message)s"
-            )
-        )
-        console.addFilter(RequestIdFilter())
-        root.addHandler(console)
+        _add_console_handler(root, level)
 
-    # File handler (JSON, rotating)
-    if LOG_FILE and not has_file:
-        os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
-        file_handler = logging.handlers.RotatingFileHandler(
-            LOG_FILE,
-            maxBytes=LOG_MAX_BYTES,
-            backupCount=LOG_BACKUP_COUNT,
-            encoding="utf-8",
-        )
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(JsonFormatter())
-        file_handler.addFilter(RequestIdFilter())
-        root.addHandler(file_handler)
+    if not has_file:
+        _add_file_handler(root)
 
     root.setLevel(logging.DEBUG)
 

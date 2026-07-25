@@ -88,29 +88,41 @@ def is_benign_telegram_error(error: Exception) -> bool:
     return False
 
 
-def classify_error(error: Exception) -> str:
-    if isinstance(error, LibRouterosError):
-        msg = str(error).lower()
-        if "timeout" in msg:
-            return CATEGORY_TIMEOUT
-        if any(kw in msg for kw in ("refused", "closed", "reset", "unreachable")):
-            return CATEGORY_CONNECTION
-        if any(kw in msg for kw in ("auth", "password", "login", "credentials", "unauthorized")):
-            return CATEGORY_AUTH
-        if any(kw in msg for kw in ("not found", "no such", "invalid argument")):
-            return CATEGORY_NOT_FOUND
-        return CATEGORY_GENERAL
-    if isinstance(error, (TimeoutError, ConnectionError, OSError)):
-        msg = str(error).lower()
-        if "timeout" in msg or "timed out" in msg:
-            return CATEGORY_TIMEOUT
-        if any(kw in msg for kw in ("space", "disk full", "nospc", "permission denied")):
-            return CATEGORY_STORAGE
+def _classify_librouteros(error: LibRouterosError) -> str:
+    msg = str(error).lower()
+    if "timeout" in msg:
+        return CATEGORY_TIMEOUT
+    if any(kw in msg for kw in ("refused", "closed", "reset", "unreachable")):
         return CATEGORY_CONNECTION
-    if isinstance(error, ValueError):
-        msg = str(error).lower()
-        if "not found" in msg:
-            return CATEGORY_NOT_FOUND
+    if any(kw in msg for kw in ("auth", "password", "login", "credentials", "unauthorized")):
+        return CATEGORY_AUTH
+    if any(kw in msg for kw in ("not found", "no such", "invalid argument")):
+        return CATEGORY_NOT_FOUND
+    return CATEGORY_GENERAL
+
+
+def _classify_os_error(error: TimeoutError | ConnectionError | OSError) -> str:
+    msg = str(error).lower()
+    if "timeout" in msg or "timed out" in msg:
+        return CATEGORY_TIMEOUT
+    if any(kw in msg for kw in ("space", "disk full", "nospc", "permission denied")):
+        return CATEGORY_STORAGE
+    return CATEGORY_CONNECTION
+
+
+_ERROR_CLASSIFIERS: list[tuple[type[Exception], object]] = [
+    (LibRouterosError, _classify_librouteros),
+    (OSError, _classify_os_error),
+]
+
+
+def classify_error(error: Exception) -> str:
+    for exc_type, classifier in _ERROR_CLASSIFIERS:
+        if isinstance(error, exc_type):
+            return classifier(error)  # type: ignore[operator]
+
+    if isinstance(error, ValueError) and "not found" in str(error).lower():
+        return CATEGORY_NOT_FOUND
 
     try:
         import httpx

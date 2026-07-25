@@ -392,11 +392,68 @@ async def edit_back_to_fields(update: Update, context: ContextTypes.DEFAULT_TYPE
 edit_back_search = make_back_step(EDIT_USER_PROMPT, get_cancel_keyboard, WAITING_EDIT_FIELD)
 
 
+async def _validate_edit_field(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    api_field: str,
+    field: str,
+    new_value: str,
+    router_key: str,
+) -> str | None:
+    """Validate *new_value* for the given field; return error message or ``None``."""
+    if api_field == "name":
+        valid, name_msg = validate_username(new_value)
+        if not valid:
+            await reply_final(update, context, f"❌ {name_msg}")
+            return "stop"
+        current_name = str(get_hotspot_edit_session(context.user_data).user_data.get("name", ""))
+        if new_value != current_name:
+            try:
+                exists = await run_blocking(hotspot_manager.user_exists, router_key, new_value)
+            except Exception as e:
+                await send_error(
+                    update, context, e,
+                    router_key=router_key,
+                    log_extra="hotspot_edit_value:user_exists",
+                    reply_markup=get_back_keyboard("edit_back_to_fields"),
+                )
+                return "stop"
+            if exists:
+                await reply_final(update, context, DUPLICATE_USER)
+                return "stop"
+    elif api_field == "password":
+        valid, pwd_msg = validate_password(new_value)
+        if not valid:
+            await reply_final(update, context, f"❌ {pwd_msg}")
+            return "stop"
+    elif api_field == "limit-bytes-total":
+        try:
+            new_value = validate_bytes_input(new_value)
+        except ValueError as e:
+            await reply_final(update, context, f"❌ {e}")
+            return "stop"
+    return new_value
+
+
+def _transform_renewal_day(new_value: str, user_data: dict[str, object]) -> str | None:
+    """Transform a renewal day input into ``name/day`` format, or ``None`` on error."""
+    if not new_value.isdigit() or not (1 <= int(new_value) <= 31):
+        return None
+    day_num = int(new_value)
+    current_comment = str(user_data.get("comment", ""))
+    from core.hotspot_expiry import parse_renewal_day_from_comment
+
+    clean_name, _ = parse_renewal_day_from_comment(current_comment)
+    name_prefix = clean_name if clean_name else (user_data.get("name", "") or "user")
+    return f"{name_prefix}/{day_num}"
+
+
 @admin_only
 async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
     new_value = update.message.text.strip()
-    field = get_hotspot_edit_session(context.user_data).current_field
-    user_id = get_hotspot_edit_session(context.user_data).user_id
+    session = get_hotspot_edit_session(context.user_data)
+    field = session.current_field
+    user_id = session.user_id
     router_key = get_selected_router(update.effective_user.id)
 
     if not router_key or not user_id or not field:
@@ -404,54 +461,21 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
 
-    api_field = FIELD_API_KEYS.get(field, field)
-    api_field = str(api_field)
-    if api_field == "name":
-        valid, name_msg = validate_username(new_value)
-        if not valid:
-            await reply_final(update, context, f"❌ {name_msg}")
-            return WAITING_EDIT_VALUE
-        current_name = str(get_hotspot_edit_session(context.user_data).user_data.get("name", ""))
-        if new_value != current_name:
-            try:
-                exists = await run_blocking(hotspot_manager.user_exists, router_key, new_value)
-            except Exception as e:
-                await send_error(
-                    update,
-                    context,
-                    e,
-                    router_key=router_key,
-                    log_extra="hotspot_edit_value:user_exists",
-                    reply_markup=get_back_keyboard("edit_back_to_fields"),
-                )
-                return WAITING_EDIT_VALUE
-            if exists:
-                await reply_final(update, context, DUPLICATE_USER)
-                return WAITING_EDIT_VALUE
-    if api_field == "password":
-        valid, pwd_msg = validate_password(new_value)
-        if not valid:
-            await reply_final(update, context, f"❌ {pwd_msg}")
-            return WAITING_EDIT_VALUE
-    if api_field == "limit-bytes-total":
-        try:
-            new_value = validate_bytes_input(new_value)
-        except ValueError as e:
-            await reply_final(update, context, f"❌ {e}")
-            return WAITING_EDIT_VALUE
+    api_field = str(FIELD_API_KEYS.get(field, field))
 
-    user_data = get_hotspot_edit_session(context.user_data).user_data
+    result = await _validate_edit_field(update, context, api_field, field, new_value, router_key)
+    if result == "stop":
+        return WAITING_EDIT_VALUE
+    if result is not None:
+        new_value = result
+
+    user_data = session.user_data
     if field == "renewal_day":
-        if not new_value.isdigit() or not (1 <= int(new_value) <= 31):
+        transformed = _transform_renewal_day(new_value, user_data)
+        if transformed is None:
             await reply_final(update, context, "❌ يرجى إدخال رقم يوم صالح بين 1 و 31 (مثال: 15 أو 22)")
             return WAITING_EDIT_VALUE
-        day_num = int(new_value)
-        current_comment = str(user_data.get("comment", ""))
-        from core.hotspot_expiry import parse_renewal_day_from_comment
-
-        clean_name, _ = parse_renewal_day_from_comment(current_comment)
-        name_prefix = clean_name if clean_name else (user_data.get("name", "") or "user")
-        new_value = f"{name_prefix}/{day_num}"
+        new_value = transformed
 
     try:
         user_name = user_data.get("name", "") or user_id
@@ -461,17 +485,12 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         user_data[api_field] = new_value
 
         kick_msg = ""
-        if field == "bytes":
-            if user_name:
-                kicked = await run_blocking(hotspot_manager.kick_user, router_key, user_name)
-                if kicked:
-                    kick_msg = HOTSPOT_EDIT_KICK_COUNT_INLINE.format(count=len(kicked))
+        if field == "bytes" and user_name:
+            kicked = await run_blocking(hotspot_manager.kick_user, router_key, user_name)
+            if kicked:
+                kick_msg = HOTSPOT_EDIT_KICK_COUNT_INLINE.format(count=len(kicked))
 
-        is_disabled = str(user_data.get("disabled", "no")).lower() in (
-            "yes",
-            "true",
-            "1",
-        )
+        is_disabled = str(user_data.get("disabled", "no")).lower() in ("yes", "true", "1")
         text = HOTSPOT_EDIT_SUCCESS.format(kick_msg=kick_msg) + EDIT_SELECT_FIELD.format(
             format_hotspot_user(user_data)
         )
@@ -479,9 +498,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return WAITING_EDIT_VALUE
     except Exception as e:
         await send_error(
-            update,
-            context,
-            e,
+            update, context, e,
             router_key=router_key,
             log_extra="hotspot_edit_value",
             reply_markup=get_back_keyboard("edit_back_to_fields"),
