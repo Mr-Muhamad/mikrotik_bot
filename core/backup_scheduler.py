@@ -18,13 +18,71 @@ class BackupScheduler:
     def __init__(self) -> None:
         self._running = False
 
-    async def _do_backup(self, context: CallbackContext[Any, Any, Any, Job[Any]]) -> None:
+    async def _backup_single_router(
+        self,
+        r: _RouterDict,
+        router_key: str,
+        failed_routers: list[str],
+        successful_routers: list[str],
+    ) -> None:
         from librouteros.exceptions import LibRouterosError
 
-        from config import ADMIN_IDS, ROUTER_KEY_PREFIX
         from core.backup_service import backup_service
         from core.mikrotik_api import mikrotik_api
-        from database.models import get_saved_routers, record_backup_result
+        from database.models import record_backup_result
+
+        is_healthy, health_msg = await run_blocking(
+            mikrotik_api.check_connection_health, router_key
+        )
+        if not is_healthy:
+            logger.warning(
+                f"Router {router_key} is not healthy ({health_msg}), skipping backup"
+            )
+            failed_routers.append(f"{r.get('identity', router_key)} (غير متصل)")
+            return
+
+        router_name = r.get("identity", router_key)
+        try:
+            await run_blocking(backup_service.userman_backup, router_key)
+            successful_routers.append(router_name)
+            await run_blocking(
+                record_backup_result, router_key, "userman", True, "scheduled backup ok",
+                router_name=router_name,
+            )
+            logger.info(f"Scheduled backup done for {router_key}")
+        except (LibRouterosError, ConnectionError, OSError) as e:
+            logger.error(f"Scheduled backup failed for {router_key}: {e}")
+            failed_routers.append(router_name)
+            await run_blocking(
+                record_backup_result, router_key, "userman", False, str(e),
+                router_name=router_name,
+            )
+
+        try:
+            full_result = await run_blocking(backup_service.full_backup, router_key)
+        except (LibRouterosError, ConnectionError, OSError) as e:
+            logger.error(f"Scheduled full backup failed for {router_key}: {e}")
+            failed_routers.append(f"{router_name} (باكوب كامل)")
+            await run_blocking(
+                record_backup_result, router_key, "full", False, str(e),
+                router_name=router_name,
+            )
+        else:
+            success = full_result.get("success")
+            msg = full_result.get("message", "scheduled full backup failed") if not success else "scheduled full backup ok"
+            if not success:
+                logger.error(f"Scheduled full backup failed for {router_key}: {msg}")
+                failed_routers.append(f"{router_name} (باكوب كامل)")
+            else:
+                logger.info(f"Scheduled full backup done for {router_key}")
+            await run_blocking(
+                record_backup_result, router_key, "full", success, str(msg),
+                router_name=router_name,
+            )
+
+    async def _do_backup(self, context: CallbackContext[Any, Any, Any, Job[Any]]) -> None:
+        from config import ADMIN_IDS, ROUTER_KEY_PREFIX
+        from database.models import get_saved_routers
 
         failed_routers: list[str] = []
         successful_routers: list[str] = []
@@ -32,87 +90,12 @@ class BackupScheduler:
 
         logger.info(f"Scheduled backup starting for {len(routers)} routers...")
 
-        router_key: str
         for r in routers:
             if not r.get("username"):
                 continue
             router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+            await self._backup_single_router(r, router_key, failed_routers, successful_routers)
 
-            # فحص صحة الاتصال أولاً
-            is_healthy, health_msg = await run_blocking(
-                mikrotik_api.check_connection_health, router_key
-            )
-            if not is_healthy:
-                logger.warning(
-                    f"Router {router_key} is not healthy ({health_msg}), skipping backup"
-                )
-                failed_routers.append(f"{r.get('identity', router_key)} (غير متصل)")
-                continue
-
-            try:
-                await run_blocking(backup_service.userman_backup, router_key)
-                successful_routers.append(r.get("identity", router_key))
-
-                await run_blocking(
-                    record_backup_result,
-                    router_key,
-                    "userman",
-                    True,
-                    "scheduled backup ok",
-                    router_name=r.get("identity", router_key),
-                )
-                logger.info(f"Scheduled backup done for {router_key}")
-            except (LibRouterosError, ConnectionError, OSError) as e:
-                logger.error(f"Scheduled backup failed for {router_key}: {e}")
-                failed_routers.append(r.get("identity", router_key))
-
-                await run_blocking(
-                    record_backup_result,
-                    router_key,
-                    "userman",
-                    False,
-                    str(e),
-                    router_name=r.get("identity", router_key),
-                )
-
-            try:
-                full_result = await run_blocking(backup_service.full_backup, router_key)
-            except (LibRouterosError, ConnectionError, OSError) as e:
-                logger.error(f"Scheduled full backup failed for {router_key}: {e}")
-                failed_routers.append(f"{r.get('identity', router_key)} (باكوب كامل)")
-                await run_blocking(
-                    record_backup_result,
-                    router_key,
-                    "full",
-                    False,
-                    str(e),
-                    router_name=r.get("identity", router_key),
-                )
-            else:
-                if full_result.get("success"):
-                    logger.info(f"Scheduled full backup done for {router_key}")
-                    await run_blocking(
-                        record_backup_result,
-                        router_key,
-                        "full",
-                        True,
-                        "scheduled full backup ok",
-                        router_name=r.get("identity", router_key),
-                    )
-                else:
-                    msg = full_result.get("message", "scheduled full backup failed")
-                    logger.error(f"Scheduled full backup failed for {router_key}: {msg}")
-                    failed_routers.append(f"{r.get('identity', router_key)} (باكوب كامل)")
-                    await run_blocking(
-                        record_backup_result,
-                        router_key,
-                        "full",
-                        False,
-                        str(msg),
-                        router_name=r.get("identity", router_key),
-                    )
-
-        # تقرير النتائج
         if successful_routers:
             logger.info(f"Backup completed successfully for {len(successful_routers)} routers")
 

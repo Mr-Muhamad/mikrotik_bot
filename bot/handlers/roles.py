@@ -1,3 +1,5 @@
+from typing import Any
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -18,6 +20,24 @@ OP_NO_ROUTERS = "⚠️ لا توجد روترات محفوظة لإسنادها
 OP_ASSIGN_SUCCESS = "✅ تم إسناد الراوتر #{router_id} للمشغّل {operator_id}"
 OP_REVOKE_SUCCESS = "✅ تم سحب الراوتر #{router_id} من المشغّل {operator_id}"
 OP_NO_ROUTERS_FOR_OP = "⚠️ لا توجد روترات مخصصة لك. تواصل مع المسؤول."
+
+def _parse_role_target(msg: Any) -> tuple[int | None, str]:
+    """Extract (target_id, new_role) from a message or forwarded message."""
+    forward_user = getattr(msg, "forward_from", None)
+    if forward_user:
+        target = forward_user.id
+        parts = (msg.text or "").split()
+        new_role = parts[1].strip() if len(parts) >= 2 else ""
+        return target, new_role
+    if msg and msg.text:
+        parts = msg.text.split()
+        if len(parts) >= 3:
+            try:
+                return int(parts[1]), parts[2].strip()
+            except ValueError:
+                pass
+    return None, ""
+
 
 CUSTOMER_ADD_USAGE = "الاستخدام: /add_customer <id>"
 CUSTOMER_REMOVE_USAGE = "الاستخدام: /remove_customer <id>"
@@ -53,24 +73,8 @@ async def roles_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @require_role("super_admin")
 async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Super Admin assigns a role to an admin: /role <id> <role> or by forwarding a message from the user."""
-    target: int | None = None
-    new_role: str = ""
     msg = update.message
-
-    forward_user = getattr(msg, "forward_from", None)
-    if msg and forward_user:
-        target = forward_user.id
-        parts = (msg.text or "").split()
-        if len(parts) >= 2:
-            new_role = parts[1].strip()
-    elif msg and msg.text:
-        parts = msg.text.split()
-        if len(parts) >= 3:
-            try:
-                target = int(parts[1])
-                new_role = parts[2].strip()
-            except ValueError:
-                pass
+    target, new_role = _parse_role_target(msg)
 
     if not target or not new_role:
         if msg:
@@ -82,7 +86,6 @@ async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if msg:
             await msg.reply_text(ROLE_SET_INVALID)
         return
-
     if target not in ADMIN_IDS:
         if msg:
             await msg.reply_text(ROLE_SET_NOT_ADMIN)

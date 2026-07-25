@@ -309,26 +309,13 @@ class HotspotManager:
             logger.error("Failed to fetch hotspot profiles: %s", e)
             return []
 
-    def create_cards(
-        self,
-        router_key: str,
-        count: int,
-        length: int,
-        card_system: CardSystem,
-        profile: str,
-        prefix: str = "",
-        limit_uptime: str = "",
-        limit_bytes: str = "",
-    ) -> list[CardData]:
-        """Create multiple hotspot users with optimized chunked batch insertion."""
-        cards = []
-        base_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
-        batch_comment = f"{prefix}_{base_time}" if prefix else base_time
-
-        existing_names = self._get_existing_usernames(router_key)
-
-        # 1. Generate all unique card credentials in memory first
-        prepared_users = []
+    def _prepare_card_users(
+        self, count: int, length: int, card_system: CardSystem, profile: str,
+        prefix: str, limit_uptime: str, limit_bytes: str, batch_comment: str,
+        existing_names: set[str],
+    ) -> list[tuple[CardData, dict[str, str]]]:
+        """Generate unique credentials and build API params for card users."""
+        prepared_users: list[tuple[CardData, dict[str, str]]] = []
         for i in range(1, count + 1):
             try:
                 username = self._generate_unique_username(prefix, length, existing_names)
@@ -342,19 +329,12 @@ class HotspotManager:
                     password = ""
 
                 card_item = CardData(
-                    username=username,
-                    password=password,
-                    card_number=i,
-                    profile=profile,
-                    limit_uptime=limit_uptime,
-                    limit_bytes=limit_bytes,
-                    comment=batch_comment,
+                    username=username, password=password, card_number=i,
+                    profile=profile, limit_uptime=limit_uptime,
+                    limit_bytes=limit_bytes, comment=batch_comment,
                 )
-
-                user_params = {
-                    "name": username,
-                    "profile": profile,
-                    "comment": batch_comment,
+                user_params: dict[str, str] = {
+                    "name": username, "profile": profile, "comment": batch_comment,
                 }
                 if password:
                     user_params["password"] = password
@@ -367,8 +347,30 @@ class HotspotManager:
             except ValueError as e:
                 logger.error(f"Card preparation error at index {i}: {e}")
                 break
+        return prepared_users
 
-        # 2. Execute additions in safe chunked batches (chunks of 50)
+    def create_cards(
+        self,
+        router_key: str,
+        count: int,
+        length: int,
+        card_system: CardSystem,
+        profile: str,
+        prefix: str = "",
+        limit_uptime: str = "",
+        limit_bytes: str = "",
+    ) -> list[CardData]:
+        """Create multiple hotspot users with optimized chunked batch insertion."""
+        cards: list[CardData] = []
+        base_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
+        batch_comment = f"{prefix}_{base_time}" if prefix else base_time
+
+        existing_names = self._get_existing_usernames(router_key)
+        prepared_users = self._prepare_card_users(
+            count, length, card_system, profile, prefix,
+            limit_uptime, limit_bytes, batch_comment, existing_names,
+        )
+
         chunk_size = 50
         for idx in range(0, len(prepared_users), chunk_size):
             chunk = prepared_users[idx : idx + chunk_size]
@@ -379,7 +381,6 @@ class HotspotManager:
                 except (LibRouterosError, ConnectionError, OSError) as e:
                     logger.error(f"Failed to add hotspot card user '{card_item.username}': {e}")
 
-        # 3. Invalidate cache ONCE at the end
         self.invalidate_users_cache(router_key)
         logger.info(f"Created {len(cards)}/{count} hotspot cards on {router_key} in batch")
         return cards

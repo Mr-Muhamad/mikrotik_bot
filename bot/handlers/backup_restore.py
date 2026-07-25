@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import os
+from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -209,6 +212,19 @@ async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_T
     await edit_clean(query, context, text, keyboard)
 
 
+def _format_restore_summary(result: dict[str, Any]) -> str:
+    """Build a human-readable summary from a userman restore result."""
+    parts = []
+    if result.get("profiles_restored"):
+        parts.append(BACKUP_RESTORE_PROFILES_COUNT.format(count=result["profiles_restored"]))
+    if result.get("users_restored"):
+        parts.append(BACKUP_RESTORE_USERS_COUNT.format(count=result["users_restored"]))
+    if result.get("skipped", {}).get("profiles") or result.get("skipped", {}).get("users"):
+        skipped = result["skipped"]["profiles"] + result["skipped"]["users"]
+        parts.append(BACKUP_RESTORE_SKIPPED.format(skipped=skipped))
+    return "، ".join(parts) if parts else BACKUP_RESTORE_NONE
+
+
 @require_role("admin")
 @admin_only
 async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -217,7 +233,6 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
     if query is None:
         return
     await safe_answer_callback(query)
-
 
     tar_filename = context.user_data.get("userman_restore_tar", "")
     router_key = get_selected_router(get_from_user_id(query))
@@ -243,25 +258,11 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
     try:
         result = await run_blocking(backup_service.userman_restore, router_key, tar_path)
         await run_blocking(
-            log_action,
-            "userman_restore",
-            tar_filename,
-            router_key,
-            get_from_user_id(query),
+            log_action, "userman_restore", tar_filename, router_key, get_from_user_id(query),
         )
 
         if result["success"] and not result.get("errors"):
-            parts = []
-            if result.get("profiles_restored"):
-                parts.append(
-                    BACKUP_RESTORE_PROFILES_COUNT.format(count=result["profiles_restored"])
-                )
-            if result.get("users_restored"):
-                parts.append(BACKUP_RESTORE_USERS_COUNT.format(count=result["users_restored"]))
-            if result.get("skipped", {}).get("profiles") or result.get("skipped", {}).get("users"):
-                skipped = result["skipped"]["profiles"] + result["skipped"]["users"]
-                parts.append(BACKUP_RESTORE_SKIPPED.format(skipped=skipped))
-            summary = "، ".join(parts) if parts else BACKUP_RESTORE_NONE
+            summary = _format_restore_summary(result)
             await query.edit_message_text(USERMAN_RESTORE_SUCCESS.format(summary=summary))
         elif result.get("errors"):
             await query.edit_message_text(
@@ -273,10 +274,6 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
             )
     except Exception as e:
         await send_error(
-            update,
-            context,
-            e,
-            router_key=router_key,
-            log_extra="userman_restore_execute",
+            update, context, e, router_key=router_key, log_extra="userman_restore_execute",
         )
     return ConversationHandler.END

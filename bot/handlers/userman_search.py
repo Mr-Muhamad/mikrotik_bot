@@ -67,6 +67,7 @@ from utils.chat_cleaner import (
     send_loading,
     send_step,
 )
+from utils.pagination import Paginator
 
 logger = logging.getLogger(__name__)
 MAX_SEARCH_RESULTS = 50
@@ -138,8 +139,6 @@ async def userman_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data["search_um_hosts"] = hosts
     await delete_now(context, update.effective_chat.id, loading.message_id)
 
-    from utils.pagination import Paginator
-
     paginator = Paginator(hosts, page=0)
 
     res_text = _format_userman_search_results(paginator)
@@ -165,8 +164,6 @@ async def userman_search_page_handler(update: Update, context: ContextTypes.DEFA
             query, context, "⚠️ عذراً، انتهت صلاحية البحث. يرجى البحث مجدداً.", get_cancel_keyboard()
         )
         return WAITING_USERMAN_SEARCH
-
-    from utils.pagination import Paginator
 
     paginator = Paginator(hosts, page=page)
     res_text = _format_userman_search_results(paginator)
@@ -197,64 +194,71 @@ async def userman_search_select(update: Update, context: ContextTypes.DEFAULT_TY
     return WAITING_USERMAN_SEARCH
 
 
-@admin_only
+async def _execute_um_action(
+    action: str, h: dict[str, Any], router_key: str, hosts: list[dict[str, Any]], idx: int,
+    context: Any,
+) -> str:
+    """Execute a userman action (kick, reset, toggle, delete) and return result message."""
+    username = h.get("name") or h.get("username")
+
+    if action == "um_kick_execute":
+        sessions = await run_blocking(userman_manager.get_active_sessions, router_key)
+        killed = 0
+        for s in sessions:
+            if str(s.get("user")) == str(username):
+                await run_blocking(userman_manager.terminate_session, router_key, s.get(".id"))
+                killed += 1
+        return USERMAN_SEARCH_KICKED.format(killed=killed, username=username)
+
+    if action == "um_reset_counters":
+        await run_blocking(userman_manager.reset_user_counters, router_key, username)
+        return USERMAN_SEARCH_RESET.format(username=username)
+
+    if action == "um_toggle_disabled":
+        is_disabled = str(h.get("disabled", "false")).lower() == "true"
+        if is_disabled:
+            await run_blocking(userman_manager.enable_user, router_key, username)
+            h["disabled"] = "false"
+            return USERMAN_SEARCH_ENABLED.format(username=username)
+        await run_blocking(userman_manager.disable_user, router_key, username)
+        h["disabled"] = "true"
+        return USERMAN_SEARCH_DISABLED.format(username=username)
+
+    if action == "um_delete":
+        await run_blocking(userman_manager.delete_user, router_key, username)
+        hosts.pop(idx)
+        context.user_data.pop("kick_um_idx", None)
+        return USERMAN_SEARCH_DELETED.format(username=username)
+
+    return ""
+
+
 async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await safe_answer_callback(query)
     if is_duplicate_callback(query.data, update.effective_user.id):
         return
-    action = query.data
+    action = str(query.data)
 
     idx = context.user_data.get("kick_um_idx")
     hosts = context.user_data.get("search_um_hosts")
     router_key = get_selected_router(update.effective_user.id)
     if idx is None or not hosts or not router_key:
         await safe_edit_plain(
-            query,
-            context,
-            USERMAN_SEARCH_SESSION_EXPIRED,
-            get_cancel_keyboard(),
+            query, context, USERMAN_SEARCH_SESSION_EXPIRED, get_cancel_keyboard(),
         )
         cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
 
     h = hosts[idx]
-    username = h.get("name") or h.get("username")
-    msg = ""
 
     try:
-        if action == "um_kick_execute":
-            sessions = await run_blocking(userman_manager.get_active_sessions, router_key)
-            killed = 0
-            for s in sessions:
-                if str(s.get("user")) == str(username):
-                    await run_blocking(userman_manager.terminate_session, router_key, s.get(".id"))
-                    killed += 1
-            msg = USERMAN_SEARCH_KICKED.format(killed=killed, username=username)
-        elif action == "um_reset_counters":
-            await run_blocking(userman_manager.reset_user_counters, router_key, username)
-            msg = USERMAN_SEARCH_RESET.format(username=username)
-        elif action == "um_toggle_disabled":
-            is_disabled = str(h.get("disabled", "false")).lower() == "true"
-            if is_disabled:
-                await run_blocking(userman_manager.enable_user, router_key, username)
-                h["disabled"] = "false"
-                msg = USERMAN_SEARCH_ENABLED.format(username=username)
-            else:
-                await run_blocking(userman_manager.disable_user, router_key, username)
-                h["disabled"] = "true"
-                msg = USERMAN_SEARCH_DISABLED.format(username=username)
-        elif action == "um_delete":
-            await run_blocking(userman_manager.delete_user, router_key, username)
-            msg = USERMAN_SEARCH_DELETED.format(username=username)
-            hosts.pop(idx)
-            context.user_data.pop("kick_um_idx", None)
-            from utils.pagination import Paginator
+        msg = await _execute_um_action(action, h, router_key, hosts, idx, context)
 
+        if action == "um_delete":
             paginator = Paginator(hosts, page=0)
             await edit_clean(
-                query,
-                context,
+                query, context,
                 msg + "\n\n" + _format_userman_search_results(paginator),
                 get_search_results_keyboard(paginator, is_userman=True),
             )
@@ -275,10 +279,7 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
             else get_cancel_keyboard()
         )
         await safe_edit_plain(
-            query,
-            context,
-            USERMAN_SEARCH_ERROR.format(e=sanitized_err),
-            kb,
+            query, context, USERMAN_SEARCH_ERROR.format(e=sanitized_err), kb,
         )
 
     return WAITING_USERMAN_SEARCH
@@ -293,7 +294,6 @@ async def userman_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     if on_detail and hosts:
         context.user_data.pop("kick_um_idx", None)
-        from utils.pagination import Paginator
 
         paginator = Paginator(hosts, page=0)
         res_text = _format_userman_search_results(paginator)
