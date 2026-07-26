@@ -103,6 +103,15 @@ async def internal_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 @admin_only
 async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display the main menu with admin name and router info.
+
+    Args:
+        update: Callback query or message triggering the menu.
+        context: Conversation context.
+
+    Returns:
+        ConversationHandler.END.
+    """
     query = update.callback_query
     if query:
         await safe_answer_callback(query)
@@ -123,21 +132,57 @@ async def main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def hotspot_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display the Hotspot management menu.
+
+    Args:
+        update: Callback query from menu navigation.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     await show_menu(update, context, HOTSPOT_MENU, get_hotspot_keyboard)
 
 
 @admin_only
 async def userman_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display the User Manager menu.
+
+    Args:
+        update: Callback query from menu navigation.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     await show_menu(update, context, USERMAN_MENU, get_userman_keyboard)
 
 
 @admin_only
 async def stats_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display the statistics menu.
+
+    Args:
+        update: Callback query from menu navigation.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     await show_menu(update, context, STATS_MENU, get_stats_keyboard)
 
 
 @admin_only
 async def backup_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display the backup operations menu.
+
+    Args:
+        update: Callback query from menu navigation.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     if query:
         await safe_answer_callback(query)
@@ -148,6 +193,15 @@ async def backup_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def pdf_settings_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display the PDF settings menu.
+
+    Args:
+        update: Callback query from menu navigation.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     if query:
         await safe_answer_callback(query)
@@ -169,6 +223,15 @@ async def routers_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def reports_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display the reports menu.
+
+    Args:
+        update: Callback query from menu navigation.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     await show_menu(update, context, REPORTS_MENU, get_reports_keyboard)
 
 
@@ -177,41 +240,113 @@ async def reports_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def menu_userman_from_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End conversation and navigate to User Manager menu.
+
+    Args:
+        update: Callback query from cancel button.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     return await end_conversation(update, context, "menu_userman")
 
 
 @admin_only
 async def end_conversation_to_main(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End conversation and navigate to main menu.
+
+    Args:
+        update: Callback query from cancel button.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     return await end_conversation(update, context, "main_menu")
 
 
 @admin_only
 async def end_conversation_to_hotspot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End conversation and navigate to Hotspot menu.
+
+    Args:
+        update: Callback query from cancel button.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     return await end_conversation(update, context, "menu_hotspot")
 
 
 @admin_only
 async def end_conversation_to_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End conversation and navigate to stats menu.
+
+    Args:
+        update: Callback query from cancel button.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     return await end_conversation(update, context, "menu_stats")
 
 
 @admin_only
 async def end_conversation_to_backup(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End conversation and navigate to backup menu.
+
+    Args:
+        update: Callback query from cancel button.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     return await end_conversation(update, context, "menu_backup")
 
 
 @admin_only
 async def end_conversation_to_pdf_settings(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End conversation and navigate to PDF settings menu.
+
+    Args:
+        update: Callback query from cancel button.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     return await end_conversation(update, context, "menu_pdf_settings")
 
 
 @admin_only
 async def end_conversation_to_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End conversation and navigate to routers menu.
+
+    Args:
+        update: Callback query from cancel button.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     return await end_conversation(update, context, "menu_routers")
 
 
 @admin_only
 async def end_conversation_to_reports(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """End conversation and navigate to reports menu.
+
+    Args:
+        update: Callback query from cancel button.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     return await end_conversation(update, context, "menu_reports")
 
 
@@ -235,6 +370,16 @@ async def end_conversation(
     context: ContextTypes.DEFAULT_TYPE,
     target: str = "main_menu",
 ) -> int:
+    """Clean state and render a target menu, ending the conversation.
+
+    Args:
+        update: Callback or message triggering navigation.
+        context: Conversation context to clean up.
+        target: NAV_TARGETS key for the destination menu.
+
+    Returns:
+        ConversationHandler.END.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     cleanup_state(query.from_user.id, context.user_data)
@@ -254,6 +399,15 @@ def resolve_nav_target(target: str) -> Callable[..., Awaitable[object]]:
 
 @admin_only
 async def go_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Navigate to the previous menu based on saved nav state.
+
+    Args:
+        update: Callback query from back button.
+        context: Conversation context with nav_back in user_data.
+
+    Returns:
+        ConversationHandler.END.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     target = nav_get(context)

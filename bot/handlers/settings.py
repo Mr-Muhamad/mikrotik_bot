@@ -34,6 +34,15 @@ logger = logging.getLogger(__name__)
 
 @admin_only
 async def pdf_group_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show PDF text and branding settings submenu.
+
+    Args:
+        update: Callback query from PDF settings menu.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     from bot.keyboards import get_pdf_text_keyboard
 
     query = update.callback_query
@@ -46,6 +55,15 @@ async def pdf_group_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def pdf_group_layout(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show PDF layout and dimensions settings submenu.
+
+    Args:
+        update: Callback query from PDF settings menu.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     from bot.keyboards import get_pdf_layout_keyboard
 
     query = update.callback_query
@@ -58,6 +76,15 @@ async def pdf_group_layout(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def pdf_group_misc(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show PDF QR code settings submenu.
+
+    Args:
+        update: Callback query from PDF settings menu.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     from bot.keyboards import get_pdf_misc_keyboard
 
     query = update.callback_query
@@ -70,6 +97,15 @@ async def pdf_group_misc(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Prompt user for a new value for the selected PDF setting.
+
+    Args:
+        update: Callback query with option key in callback_data.
+        context: Conversation context for storing selected option.
+
+    Returns:
+        WAITING_PDF_VALUE state constant.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     cleanup_state(query.from_user.id, context.user_data)
@@ -184,6 +220,15 @@ def _apply_pdf_option_update(option: str, value: str) -> str | None:
 
 @admin_only
 async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Apply the user-provided value to the selected PDF setting.
+
+    Args:
+        update: Message with the new setting value.
+        context: Conversation context with pdf_option in user_data.
+
+    Returns:
+        WAITING_PDF_VALUE on error, ConversationHandler.END on success.
+    """
     option = context.user_data.get("pdf_option")
     value = update.message.text.strip()
 

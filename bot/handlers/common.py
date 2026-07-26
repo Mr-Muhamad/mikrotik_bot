@@ -33,6 +33,14 @@ async def show_menu(
     menu_text: str,
     keyboard_func: Callable[[], InlineKeyboardMarkup],
 ) -> None:
+    """Render a menu by editing the current message or sending a new one.
+
+    Args:
+        update: Callback or message triggering the menu.
+        context: Conversation context.
+        menu_text: Formatted menu text template (uses admin_name, router_part).
+        keyboard_func: Callable returning the InlineKeyboardMarkup.
+    """
     query = update.callback_query
     if query:
         await safe_answer_callback(query)

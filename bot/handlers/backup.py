@@ -150,6 +150,15 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
 @require_role("operator")
 @admin_only
 async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Queue a full system backup as a background job.
+
+    Args:
+        update: Callback query from backup menu button.
+        context: Context with router_key in user_data and job_queue.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     if query is not None and is_duplicate_callback(query.data, update.effective_user.id):
         return
@@ -186,6 +195,15 @@ async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @require_role("operator")
 @admin_only
 async def backup_userman(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Queue a User Manager backup as a background job.
+
+    Args:
+        update: Callback query from backup menu button.
+        context: Context with router_key in user_data and job_queue.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = context.user_data["router_key"]
@@ -220,6 +238,15 @@ async def backup_userman(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def schedule_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display current backup schedule status and controls.
+
+    Args:
+        update: Callback query from backup menu.
+        context: Context with job_queue for scheduler state check.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     enabled = backup_scheduler.is_running(context.job_queue)
@@ -239,6 +266,15 @@ async def schedule_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def schedule_menu_from_conversation(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Clean state and navigate to schedule menu from a conversation.
+
+    Args:
+        update: Callback or message triggering navigation.
+        context: Conversation context to clean up.
+
+    Returns:
+        ConversationHandler.END.
+    """
     cleanup_state(update.effective_user.id, context.user_data)
     await schedule_menu(update, context)
     return ConversationHandler.END
@@ -247,6 +283,15 @@ async def schedule_menu_from_conversation(update: Update, context: ContextTypes.
 @require_role("operator")
 @admin_only
 async def schedule_enable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Prompt user to enter a daily backup time (HH:MM).
+
+    Args:
+        update: Callback query from schedule menu.
+        context: Conversation context for state management.
+
+    Returns:
+        WAITING_SCHEDULE_TIME state constant.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     cleanup_state(query.from_user.id, context.user_data)
@@ -259,6 +304,15 @@ async def schedule_enable(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @require_role("operator")
 @admin_only
 async def schedule_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Parse HH:MM input and start daily backup scheduler.
+
+    Args:
+        update: Message with time text (HH:MM format).
+        context: Conversation context with job_queue.
+
+    Returns:
+        WAITING_SCHEDULE_TIME on error, ConversationHandler.END on success.
+    """
     time_str = update.message.text.strip()
     try:
         hour, minute = time_str.split(":")
@@ -292,6 +346,15 @@ async def schedule_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @require_role("operator")
 @admin_only
 async def schedule_disable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Stop the daily backup scheduler.
+
+    Args:
+        update: Callback query from schedule menu.
+        context: Context with job_queue.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     if not context.job_queue:

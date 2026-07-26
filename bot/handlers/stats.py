@@ -66,11 +66,29 @@ async def _show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE, stat_t
 
 @admin_only
 async def stats_hotspot(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display Hotspot statistics with trend comparison.
+
+    Args:
+        update: Callback query from stats menu.
+        context: Context with router_key in user_data.
+
+    Returns:
+        None.
+    """
     await _show_stats(update, context, "hotspot")
 
 
 @admin_only
 async def stats_userman(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display User Manager statistics.
+
+    Args:
+        update: Callback query from stats menu.
+        context: Context with router_key in user_data.
+
+    Returns:
+        None.
+    """
     await _show_stats(update, context, "userman")
 
 

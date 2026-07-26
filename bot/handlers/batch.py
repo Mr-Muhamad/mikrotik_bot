@@ -49,6 +49,15 @@ def _batch_label(batch: RouterOSRow) -> str:
 
 @admin_only
 async def batches_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show first page of saved card batches list.
+
+    Args:
+        update: Callback query from menu button.
+        context: Conversation context with router_key.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     if query:
         await query.answer()
@@ -91,6 +100,15 @@ async def _show_batches_page(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
 
 async def batch_page_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle pagination for the batches list.
+
+    Args:
+        update: Callback query with page index in callback_data.
+        context: Conversation context with router_key.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     await query.answer()
     try:
@@ -101,6 +119,15 @@ async def batch_page_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Load and display details for a selected batch.
+
+    Args:
+        update: Callback query with batch_id in callback_data.
+        context: Conversation context.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     await query.answer()
     try:
@@ -169,6 +196,15 @@ def _format_batch_text(batch: RouterOSRow) -> str:
 
 
 async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Regenerate and send the PDF for a batch from saved card data.
+
+    Args:
+        update: Callback query with batch_id in callback_data.
+        context: Conversation context for sending documents.
+
+    Returns:
+        None.
+    """
     query = update.callback_query
     try:
         batch_id = int(query.data.split(":", 1)[1])

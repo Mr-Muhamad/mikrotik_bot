@@ -44,6 +44,15 @@ MASKED_PASSWORD = "********"
 
 @admin_only
 async def usage_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Prompt user to enter a Hotspot username for usage report.
+
+    Args:
+        update: Callback or message triggering the flow.
+        context: Conversation context with router_key in user_data.
+
+    Returns:
+        WAITING_USAGE_QUERY state constant.
+    """
     query = update.callback_query
     if query:
         await query.answer()
@@ -62,6 +71,15 @@ async def usage_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Search for a Hotspot user and display usage report.
+
+    Args:
+        update: Message with search term (username, MAC, or IP).
+        context: Conversation context with usage_router in user_data.
+
+    Returns:
+        WAITING_USAGE_QUERY if not found, ConversationHandler.END on success.
+    """
     search_term = update.message.text.strip()
     router_key = context.user_data.get("usage_router")
 
