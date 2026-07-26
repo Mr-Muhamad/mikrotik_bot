@@ -28,6 +28,15 @@ from utils.chat_cleaner import reply_final, send_step
 @require_role("operator")
 @admin_only
 async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Begin rename flow by prompting for a new router name.
+
+    Args:
+        update: Callback query with rename_router_{id} in callback_data.
+        context: Conversation context storing rename_router_id.
+
+    Returns:
+        WAITING_RENAME or ConversationHandler.END.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     if is_duplicate_callback(query.data if query else None):
@@ -52,6 +61,15 @@ async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def rename_router_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Apply the new alias to the router and invalidate caches.
+
+    Args:
+        update: Message containing the new name text.
+        context: Conversation context with rename_router_id.
+
+    Returns:
+        ConversationHandler.END on success or invalid state.
+    """
     router_id = context.user_data.get("rename_router_id")
     if not router_id:
         await reply_final(update, context, ERROR_TRY_AGAIN)

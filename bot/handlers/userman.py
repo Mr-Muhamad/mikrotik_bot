@@ -82,6 +82,15 @@ logger = logging.getLogger(__name__)
 
 @admin_only
 async def userman_cards_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start the User Manager card generation flow and show card type options.
+
+    Args:
+        update: Callback query or command triggering card generation.
+        context: Conversation context.
+
+    Returns:
+        WAITING_CARD_TYPE.
+    """
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
     if query:
@@ -96,6 +105,15 @@ async def userman_cards_start(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def userman_card_type_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the card type and show the profile selection keyboard.
+
+    Args:
+        update: Callback query with card_{type} in callback_data.
+        context: Conversation context storing card_type.
+
+    Returns:
+        WAITING_CARD_PROFILE or ConversationHandler.END if no profiles.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -122,6 +140,15 @@ async def userman_card_type_selected(update: Update, context: ContextTypes.DEFAU
 
 @admin_only
 async def userman_card_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the selected profile and show the payment status keyboard.
+
+    Args:
+        update: Callback query with card_profile_{name} in callback_data.
+        context: Conversation context storing card_profile.
+
+    Returns:
+        WAITING_CARD_PAYMENT or ConversationHandler.END on invalid profile.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -138,6 +165,15 @@ async def userman_card_profile_selected(update: Update, context: ContextTypes.DE
 
 @admin_only
 async def userman_card_payment_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the payment status and show the MAC binding keyboard.
+
+    Args:
+        update: Callback query with card_paid or card_unpaid.
+        context: Conversation context storing card_payment.
+
+    Returns:
+        WAITING_CARD_MAC.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -150,6 +186,15 @@ async def userman_card_payment_selected(update: Update, context: ContextTypes.DE
 
 @admin_only
 async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Generate the requested number of cards, create PDF, and save the batch.
+
+    Args:
+        update: Message containing the card count (1-500).
+        context: Conversation context with card_type, card_profile, card_prefix.
+
+    Returns:
+        ConversationHandler.END on success or error.
+    """
     text = update.message.text if update.message is not None else ""
     text = text or ""
     valid, msg = validate_positive_int(text)
@@ -304,6 +349,15 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 @admin_only
 async def userman_card_mac_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the MAC binding preference and prompt for a card prefix.
+
+    Args:
+        update: Callback query with card_bind_known or card_no_bind.
+        context: Conversation context storing card_caller_id.
+
+    Returns:
+        WAITING_CARD_PREFIX.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -322,6 +376,15 @@ async def userman_card_mac_selected(update: Update, context: ContextTypes.DEFAUL
 
 @admin_only
 async def userman_card_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the card prefix and prompt for the card count.
+
+    Args:
+        update: Message containing the prefix text.
+        context: Conversation context storing card_prefix.
+
+    Returns:
+        WAITING_CARD_COUNT.
+    """
     context.user_data["card_prefix"] = update.message.text.strip()
     await send_step(update, context, SEND_CARD_COUNT, get_back_keyboard("card_back_to_prefix"))
     return WAITING_CARD_COUNT
@@ -329,6 +392,15 @@ async def userman_card_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def userman_card_skip_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip the prefix step with an empty value and prompt for card count.
+
+    Args:
+        update: Callback query from the skip button.
+        context: Conversation context storing card_prefix.
+
+    Returns:
+        WAITING_CARD_COUNT.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["card_prefix"] = ""
@@ -345,6 +417,15 @@ userman_back_to_type = make_back_step(CARDS_PROMPT, get_card_type_keyboard, WAIT
 
 @admin_only
 async def userman_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Return to the profile selection step with refreshed profile list.
+
+    Args:
+        update: Callback query from the back button.
+        context: Conversation context.
+
+    Returns:
+        WAITING_CARD_PROFILE.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = get_selected_router(query.from_user.id)
@@ -376,6 +457,15 @@ userman_back_to_prefix = make_back_step(
 
 @admin_only
 async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fetch and display all User Manager users on the selected router.
+
+    Args:
+        update: Callback query from the list button.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = get_selected_router(update.effective_user.id)
@@ -410,6 +500,15 @@ async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def userman_profiles(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fetch and display all User Manager profiles on the selected router.
+
+    Args:
+        update: Callback query from the profiles button.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = get_selected_router(update.effective_user.id)

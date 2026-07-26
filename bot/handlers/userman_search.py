@@ -105,6 +105,15 @@ def _format_userman_detail(user: RouterOSRow) -> str:
 
 @admin_only
 async def userman_search_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start the User Manager search flow and prompt for a query.
+
+    Args:
+        update: Callback query or command triggering the search.
+        context: Conversation context.
+
+    Returns:
+        WAITING_USERMAN_SEARCH.
+    """
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
     if query:
@@ -119,6 +128,15 @@ async def userman_search_start(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def userman_search_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Search User Manager users by query and display paginated results.
+
+    Args:
+        update: Message containing the search text.
+        context: Conversation context storing search_um_hosts.
+
+    Returns:
+        WAITING_USERMAN_SEARCH or ConversationHandler.END if no router.
+    """
     router_key = get_selected_router(update.effective_user.id)
     if not router_key:
         await reply_final(update, context, NO_ROUTER_SELECTED, get_router_keyboard())
@@ -147,6 +165,15 @@ async def userman_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def userman_search_page_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Navigate to a specific page of the cached search results.
+
+    Args:
+        update: Callback query with userman_page_{n} in callback_data.
+        context: Conversation context with search_um_hosts.
+
+    Returns:
+        WAITING_USERMAN_SEARCH.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -175,6 +202,15 @@ async def userman_search_page_handler(update: Update, context: ContextTypes.DEFA
 
 @admin_only
 async def userman_search_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show detail view for a selected User Manager user.
+
+    Args:
+        update: Callback query with userman_select_{idx} in callback_data.
+        context: Conversation context with search_um_hosts.
+
+    Returns:
+        WAITING_USERMAN_SEARCH.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -238,6 +274,15 @@ async def _execute_um_action(
 
 
 async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Execute an action (kick, reset, toggle, delete) on a selected user.
+
+    Args:
+        update: Callback query with um_{action} in callback_data.
+        context: Conversation context with kick_um_idx and search_um_hosts.
+
+    Returns:
+        WAITING_USERMAN_SEARCH or ConversationHandler.END on session expiry.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     if is_duplicate_callback(query.data, update.effective_user.id):
@@ -298,6 +343,15 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
 
 @admin_only
 async def userman_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Return to search results from detail view, or restart the search prompt.
+
+    Args:
+        update: Callback query from the back button.
+        context: Conversation context with kick_um_idx and search_um_hosts.
+
+    Returns:
+        WAITING_USERMAN_SEARCH.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     hosts = context.user_data.get("search_um_hosts")
@@ -324,6 +378,15 @@ async def userman_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def userman_search_add_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fetch available profiles and show selection keyboard.
+
+    Args:
+        update: Callback query from the add-profile button.
+        context: Conversation context with kick_um_idx and search_um_hosts.
+
+    Returns:
+        WAITING_USERMAN_SEARCH or ConversationHandler.END if no profiles.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -363,6 +426,15 @@ async def userman_search_add_profile(update: Update, context: ContextTypes.DEFAU
 
 @admin_only
 async def userman_search_add_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Assign the selected profile to the user via User Manager API.
+
+    Args:
+        update: Callback query with um_profile_{idx} in callback_data.
+        context: Conversation context with add_profile_username and add_profile_list.
+
+    Returns:
+        WAITING_USERMAN_SEARCH or ConversationHandler.END if state expired.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     if is_duplicate_callback(query.data, update.effective_user.id):

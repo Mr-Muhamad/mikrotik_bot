@@ -27,6 +27,15 @@ logger = logging.getLogger(__name__)
 @require_role("admin")
 @admin_only
 async def reboot_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show reboot confirmation for the currently selected router.
+
+    Args:
+        update: Command or callback triggering the reboot flow.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     await clean_command(update, context)
     chat_id = update.effective_chat.id
     router_key = get_selected_router(update.effective_user.id)
@@ -50,6 +59,15 @@ async def reboot_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @require_role("admin")
 @admin_only
 async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Execute or cancel the reboot based on user confirmation.
+
+    Args:
+        update: Callback query with reboot_yes_{key} or reboot_no.
+        context: Conversation context.
+
+    Returns:
+        None (ends interaction, no state constant).
+    """
     query = update.callback_query
     if query is None:
         return
@@ -89,6 +107,15 @@ async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_T
 @require_role("admin")
 @admin_only
 async def reboot_saved_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show reboot confirmation for a specific saved router by ID.
+
+    Args:
+        update: Callback query with reboot_router_{id} in callback_data.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = await ack_callback(update)
     if query is None:
         return

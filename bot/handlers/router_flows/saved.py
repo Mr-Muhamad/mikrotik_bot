@@ -63,6 +63,15 @@ def _build_router_status_text(routers: list[RouterOSRow]) -> str:
 
 @admin_only
 async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display all saved routers with online/offline status.
+
+    Args:
+        update: Callback query or command triggering the list.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = await ack_callback(update)
     user_id = update.effective_user.id if update.effective_user else 0
     from config import ADMIN_IDS
@@ -97,6 +106,15 @@ async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 @admin_only
 async def saved_router_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show details and action buttons for a selected saved router.
+
+    Args:
+        update: Callback query with saved_router_{id} in callback_data.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = await ack_callback(update)
     if query is None:
         return
@@ -124,6 +142,15 @@ async def saved_router_selected(update: Update, context: ContextTypes.DEFAULT_TY
 
 @admin_only
 async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Connect to a saved router using stored credentials and set it as selected.
+
+    Args:
+        update: Callback query with connect_router_{id} in callback_data.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = await ack_callback(update)
     if query is None:
         return
@@ -184,6 +211,15 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @require_role("admin")
 @admin_only
 async def delete_router_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Show confirmation dialog before deleting a saved router.
+
+    Args:
+        update: Callback query with delete_router_{id} in callback_data.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = await ack_callback(update)
     if query is None:
         return
@@ -206,6 +242,15 @@ async def delete_router_confirm(update: Update, context: ContextTypes.DEFAULT_TY
 @require_role("admin")
 @admin_only
 async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Delete the router from DB or cancel based on user confirmation.
+
+    Args:
+        update: Callback query with confirm_delete_router_{yes|no}_{id}.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = await ack_callback(update)
     if query is None:
         return
@@ -232,6 +277,15 @@ async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TY
 
 @admin_only
 async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Probe all saved routers and update their online/offline status.
+
+    Args:
+        update: Callback query from the refresh button.
+        context: Conversation context.
+
+    Returns:
+        None (single-step, no state constant).
+    """
     query = await ack_callback(update)
     if query is None:
         return

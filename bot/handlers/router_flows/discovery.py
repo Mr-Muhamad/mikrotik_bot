@@ -46,6 +46,15 @@ logger = logging.getLogger(__name__)
 
 @admin_only
 async def discover_routers_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Scan the network via MNDP/ARP and display discovered routers.
+
+    Args:
+        update: Callback query from the discovery button.
+        context: Conversation context.
+
+    Returns:
+        None (single-step flow, no state change).
+    """
     query = await ack_callback(update)
     if query is None:
         return
@@ -78,6 +87,15 @@ async def discover_routers_callback(update: Update, context: ContextTypes.DEFAUL
 
 @admin_only
 async def discovered_router_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle selection of a discovered router and prompt for credentials.
+
+    Args:
+        update: Callback query with disc_router_{ip} in callback_data.
+        context: Conversation context storing disc_ip and disc_username.
+
+    Returns:
+        WAITING_DISC_USERNAME or WAITING_DISC_PASSWORD.
+    """
     query = await ack_callback(update)
     if query is None:
         return
@@ -110,6 +128,15 @@ async def discovered_router_selected(update: Update, context: ContextTypes.DEFAU
 
 @admin_only
 async def disc_enter_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the API username and prompt for the password.
+
+    Args:
+        update: Message containing the username text.
+        context: Conversation context storing disc_ip.
+
+    Returns:
+        WAITING_DISC_PASSWORD.
+    """
     context.user_data["disc_username"] = update.message.text
     ip = context.user_data.get("disc_ip", "")
     await send_step(update, context, DISCOVERY_PASSWORD.format(ip), get_nav_back_keyboard())
@@ -118,6 +145,15 @@ async def disc_enter_username(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Test the connection with provided credentials and save or update the router.
+
+    Args:
+        update: Message containing the password text.
+        context: Conversation context with disc_ip, disc_username, disc_router_id.
+
+    Returns:
+        ConversationHandler.END.
+    """
     password = update.message.text
     try:
         await update.message.delete()

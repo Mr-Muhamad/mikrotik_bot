@@ -67,6 +67,15 @@ def _confirm_keyboard():
 @require_role("admin")
 @admin_only
 async def manual_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Initiate the manual router add flow and prompt for the IP address.
+
+    Args:
+        update: Callback query or message triggering the flow.
+        context: Conversation context.
+
+    Returns:
+        WAITING_MANUAL_IP.
+    """
     query = update.callback_query
     cancel_keyboard = InlineKeyboardMarkup(
         [[InlineKeyboardButton("❌ إلغاء", callback_data="cancel_edit")]]
@@ -85,6 +94,15 @@ async def manual_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def manual_add_ip(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate the IP address, check for duplicates, and prompt for port.
+
+    Args:
+        update: Message containing the IP address.
+        context: Conversation context storing manual_ip.
+
+    Returns:
+        WAITING_MANUAL_PORT or WAITING_MANUAL_IP on invalid input.
+    """
     raw = update.message.text.strip()
     ok, msg = validate_ip(raw)
     if not ok:
@@ -113,6 +131,15 @@ async def manual_add_ip(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def manual_add_port(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate the port number and prompt for the API username.
+
+    Args:
+        update: Message containing the port number (empty for default).
+        context: Conversation context storing manual_port.
+
+    Returns:
+        WAITING_MANUAL_USER or WAITING_MANUAL_PORT on invalid input.
+    """
     _cancel_kb = InlineKeyboardMarkup(
         [[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]]
     )
@@ -132,6 +159,15 @@ async def manual_add_port(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def manual_add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate the username and prompt for the password.
+
+    Args:
+        update: Message containing the username text.
+        context: Conversation context storing manual_user.
+
+    Returns:
+        WAITING_MANUAL_PASS or WAITING_MANUAL_USER on invalid input.
+    """
     _cancel_kb = InlineKeyboardMarkup(
         [[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]]
     )
@@ -147,6 +183,15 @@ async def manual_add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def manual_add_pass(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate the password and prompt for an optional alias.
+
+    Args:
+        update: Message containing the password text.
+        context: Conversation context storing manual_pass.
+
+    Returns:
+        WAITING_MANUAL_ALIAS or WAITING_MANUAL_PASS on invalid input.
+    """
     _cancel_kb = InlineKeyboardMarkup(
         [[InlineKeyboardButton("❌ إلغاء الإدخال", callback_data="cancel_edit")]]
     )
@@ -162,6 +207,15 @@ async def manual_add_pass(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def manual_add_alias(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the alias and display the confirmation summary.
+
+    Args:
+        update: Message containing the alias text or /skip.
+        context: Conversation context storing manual_alias.
+
+    Returns:
+        WAITING_MANUAL_CONFIRM.
+    """
     raw = update.message.text.strip()
     alias = "" if (raw == "/skip" or raw == "") else raw
     context.user_data["manual_alias"] = alias
@@ -180,6 +234,15 @@ async def manual_add_alias(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @require_role("admin")
 @admin_only
 async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Save the router to DB, test the connection, and set it as selected.
+
+    Args:
+        update: Callback query with manual_add_confirm_{bool} in callback_data.
+        context: Conversation context with manual_ip/port/user/pass/alias.
+
+    Returns:
+        ConversationHandler.END.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     if query.data == build_manual_add_confirm(False):
