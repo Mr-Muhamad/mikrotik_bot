@@ -72,6 +72,15 @@ def get_card_type_keyboard():
 @require_role("operator")
 @admin_only
 async def hotspot_cards_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start the card-creation flow and prompt for the card count.
+
+    Args:
+        update: Telegram update from callback or command.
+        context: Conversation context; clears previous state.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_COUNT state.
+    """
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
     if query:
@@ -89,6 +98,15 @@ MAX_HOTSPOT_CARDS = 500  # حد أعلى لتجنب إغراق الراوتر
 
 @admin_only
 async def hotspot_cards_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and store the card count, then prompt for card length.
+
+    Args:
+        update: Message update with the count number.
+        context: Conversation context; stores hs_card_count.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_LENGTH or WAITING_HOTSPOT_CARD_COUNT on error.
+    """
     count_text = update.message.text.strip()
     if not count_text.isdigit() or int(count_text) < 1:
         await send_step(update, context, "❌ الرجاء إدخال رقم صحيح أكبر من 0.")
@@ -108,6 +126,15 @@ async def hotspot_cards_count(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def hotspot_cards_length(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and store the card length, then prompt for an optional prefix.
+
+    Args:
+        update: Message update with the length number.
+        context: Conversation context; stores hs_card_length.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_PREFIX or WAITING_HOTSPOT_CARD_LENGTH on error.
+    """
     length_text = update.message.text.strip()
     if not length_text.isdigit() or int(length_text) < 1:
         await send_step(update, context, "❌ الرجاء إدخال رقم صحيح أكبر من 0.")
@@ -124,6 +151,15 @@ async def hotspot_cards_length(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def hotspot_cards_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the typed prefix and show the card type selection keyboard.
+
+    Args:
+        update: Message update with the prefix text.
+        context: Conversation context; stores hs_card_prefix.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_TYPE state.
+    """
     context.user_data["hs_card_prefix"] = update.message.text.strip()
     await send_step(update, context, CHOOSE_CARD_SYSTEM, get_card_type_keyboard())
     return WAITING_HOTSPOT_CARD_TYPE
@@ -131,6 +167,15 @@ async def hotspot_cards_prefix(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def hotspot_cards_skip_prefix(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip prefix entry and proceed to card type selection.
+
+    Args:
+        update: Callback update from the skip button.
+        context: Conversation context; sets hs_card_prefix to empty.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_TYPE state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_prefix"] = ""
@@ -140,6 +185,15 @@ async def hotspot_cards_skip_prefix(update: Update, context: ContextTypes.DEFAUL
 
 @admin_only
 async def hotspot_cards_type_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the selected card system and show the profile picker.
+
+    Args:
+        update: Callback update with hs_card_type<N> data.
+        context: Conversation context; stores hs_card_system.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_PROFILE or ConversationHandler.END on error.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     callback_data = query.data
@@ -181,6 +235,15 @@ async def hotspot_cards_type_selected(update: Update, context: ContextTypes.DEFA
 
 @admin_only
 async def hotspot_cards_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the chosen profile and prompt for uptime type selection.
+
+    Args:
+        update: Callback update with hs_card_profile_<name> data.
+        context: Conversation context; stores hs_card_profile.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_UPTIME or ConversationHandler.END on error.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     profile = resolve_profile_from_callback(context, query.data, "hs_card_profile_")
@@ -198,6 +261,15 @@ async def hotspot_cards_profile_selected(update: Update, context: ContextTypes.D
 
 @admin_only
 async def hotspot_cards_uptime_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle uptime type button: hours or days, then prompt for value.
+
+    Args:
+        update: Callback update with uptime_hours/days data.
+        context: Conversation context; stores hs_uptime_unit.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_UPTIME state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     query_data = query.data
@@ -221,6 +293,15 @@ async def hotspot_cards_uptime_type(update: Update, context: ContextTypes.DEFAUL
 
 @admin_only
 async def hotspot_cards_skip_uptime_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip uptime type selection and clear any previous uptime value.
+
+    Args:
+        update: Callback update from the skip button.
+        context: Conversation context; sets hs_card_uptime to empty.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_UPTIME state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_uptime"] = ""
@@ -233,6 +314,15 @@ async def hotspot_cards_skip_uptime_type(update: Update, context: ContextTypes.D
 
 @admin_only
 async def hotspot_cards_uptime_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and convert the uptime value, then prompt for bytes limit.
+
+    Args:
+        update: Message update with the numeric uptime value.
+        context: Conversation context; stores hs_card_uptime.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_BYTES or WAITING_HOTSPOT_CARD_UPTIME on error.
+    """
     value = update.message.text.strip()
     unit = context.user_data.get("hs_uptime_unit", "hours")
     uptime = convert_uptime_value(value, unit)
@@ -258,6 +348,15 @@ async def hotspot_cards_uptime_value(update: Update, context: ContextTypes.DEFAU
 
 @admin_only
 async def hotspot_cards_skip_uptime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip uptime value entry and proceed to bytes limit prompt.
+
+    Args:
+        update: Callback update from the skip button.
+        context: Conversation context; sets hs_card_uptime to empty.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_BYTES state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_uptime"] = ""
@@ -270,6 +369,15 @@ async def hotspot_cards_skip_uptime(update: Update, context: ContextTypes.DEFAUL
 
 @admin_only
 async def hotspot_cards_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and store the bytes limit, then create the card batch.
+
+    Args:
+        update: Message update with the bytes limit text.
+        context: Conversation context; stores hs_card_bytes.
+
+    Returns:
+        ConversationHandler.END after card creation.
+    """
     bytes_input = update.message.text.strip()
     try:
         from utils.validators import validate_bytes_input
@@ -289,6 +397,15 @@ async def hotspot_cards_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def hotspot_cards_skip_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip bytes limit entry and create the card batch without a limit.
+
+    Args:
+        update: Callback update from the skip button.
+        context: Conversation context; sets hs_card_bytes to empty.
+
+    Returns:
+        ConversationHandler.END after card creation.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_bytes"] = ""
@@ -399,6 +516,15 @@ hs_back_to_type = make_back_step(
 
 @admin_only
 async def hs_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Navigate back from uptime step to the profile picker.
+
+    Args:
+        update: Callback update from the back button.
+        context: Conversation context.
+
+    Returns:
+        WAITING_HOTSPOT_CARD_PROFILE or ConversationHandler.END on error.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = get_selected_router(query.from_user.id)

@@ -36,6 +36,15 @@ from .hotspot_common import search_users_for_action
 @require_role("operator")
 @admin_only
 async def hotspot_delete_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start the delete-user flow and prompt for a username search query.
+
+    Args:
+        update: Telegram update from callback or command.
+        context: Conversation context; clears previous state.
+
+    Returns:
+        WAITING_DELETE_ID state.
+    """
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
     if query:
@@ -50,6 +59,15 @@ async def hotspot_delete_start(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fetch the selected user and show the delete-confirmation prompt.
+
+    Args:
+        update: Callback update with delete_user_<id> data.
+        context: Conversation context; stores delete_user_id.
+
+    Returns:
+        WAITING_INPUT or ConversationHandler.END on error.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     user_id = query.data.replace("delete_user_", "")
@@ -83,11 +101,29 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
 
 @admin_only
 async def hotspot_delete_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Delegate text input to shared search logic for the delete flow.
+
+    Args:
+        update: Telegram update with message text query.
+        context: Conversation context.
+
+    Returns:
+        Shared search handler return value (state constant).
+    """
     return await search_users_for_action(update, context, "delete")
 
 
 @admin_only
 async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Process confirm/cancel for the delete operation.
+
+    Args:
+        update: Callback update with confirm_yes or confirm_no data.
+        context: Conversation context with delete_user_id.
+
+    Returns:
+        ConversationHandler.END on completion.
+    """
     query = update.callback_query
     if is_duplicate_callback(query.data, update.effective_user.id):
         return

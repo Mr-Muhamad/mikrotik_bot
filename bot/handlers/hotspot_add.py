@@ -69,6 +69,15 @@ logger = logging.getLogger(__name__)
 @require_role("operator")
 @admin_only
 async def hotspot_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start the add-user flow and prompt for a username.
+
+    Args:
+        update: Telegram update from callback or command.
+        context: Conversation context; clears previous state.
+
+    Returns:
+        WAITING_USERNAME state.
+    """
     cleanup_state(update.effective_user.id, context.user_data)
     context.args = []
     query = update.callback_query
@@ -84,6 +93,15 @@ async def hotspot_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def hotspot_add_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and store the new username, then prompt for a password.
+
+    Args:
+        update: Message update with the typed username.
+        context: Conversation context; stores username in session.
+
+    Returns:
+        WAITING_PASSWORD or WAITING_USERNAME on validation failure.
+    """
     username = update.message.text.strip()
     valid, msg = validate_username(username)
     if not valid:
@@ -125,6 +143,15 @@ async def hotspot_add_username(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def hotspot_add_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and store the password, then show the profile picker.
+
+    Args:
+        update: Message update with the typed password.
+        context: Conversation context; stores password in session.
+
+    Returns:
+        WAITING_PROFILE or ConversationHandler.END on error.
+    """
     password = update.message.text.strip()
     valid, msg = validate_password(password)
     if not valid:
@@ -164,6 +191,15 @@ async def hotspot_add_password(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def hotspot_add_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store a manually typed profile name and prompt for bytes limit.
+
+    Args:
+        update: Message update with the profile name text.
+        context: Conversation context; stores profile in session.
+
+    Returns:
+        WAITING_BYTES_TOTAL state.
+    """
     profile = update.message.text.strip()
     get_hotspot_add_session(context.user_data).profile = profile
     await send_step(
@@ -177,6 +213,15 @@ async def hotspot_add_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def hotspot_add_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the chosen profile from the callback keyboard and prompt for bytes.
+
+    Args:
+        update: Callback update with add_profile_<name> data.
+        context: Conversation context; stores profile in session.
+
+    Returns:
+        WAITING_BYTES_TOTAL or ConversationHandler.END on invalid profile.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     profile = resolve_profile_from_callback(context, query.data, "add_profile_")
@@ -194,6 +239,15 @@ async def hotspot_add_profile_selected(update: Update, context: ContextTypes.DEF
 
 @admin_only
 async def hotspot_add_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and store the bytes limit, then prompt for uptime type.
+
+    Args:
+        update: Message update with the bytes limit text.
+        context: Conversation context; stores bytes_total in session.
+
+    Returns:
+        WAITING_UPTIME_TYPE or WAITING_BYTES_TOTAL on validation failure.
+    """
     bytes_input = update.message.text.strip()
     try:
         get_hotspot_add_session(context.user_data).bytes_total = validate_bytes_input(bytes_input)
@@ -217,6 +271,15 @@ async def hotspot_add_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def hotspot_add_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Store the comment and execute the final add-user operation.
+
+    Args:
+        update: Message update with the comment text.
+        context: Conversation context with all collected fields.
+
+    Returns:
+        ConversationHandler.END on success/failure, or WAITING_USERNAME on duplicate.
+    """
     comment = update.message.text.strip()
     router_key = get_selected_router(update.effective_user.id)
     if not router_key:
@@ -252,6 +315,15 @@ add_back_to_password = make_back_step(
 
 @admin_only
 async def add_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Navigate back from bytes step to the profile picker.
+
+    Args:
+        update: Callback update from the back button.
+        context: Conversation context.
+
+    Returns:
+        WAITING_PROFILE or ConversationHandler.END on error.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = get_selected_router(query.from_user.id)
@@ -290,6 +362,15 @@ add_back_to_uptime_from_comment = make_back_step(
 
 @admin_only
 async def skip_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip password entry and proceed to profile selection.
+
+    Args:
+        update: Callback update from the skip button.
+        context: Conversation context; sets password to empty.
+
+    Returns:
+        WAITING_PROFILE or ConversationHandler.END on error.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     get_hotspot_add_session(context.user_data).password = ""
@@ -319,6 +400,15 @@ async def skip_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def skip_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip bytes-limit entry and proceed to uptime type selection.
+
+    Args:
+        update: Callback update from the skip button.
+        context: Conversation context; sets bytes_total to empty.
+
+    Returns:
+        WAITING_UPTIME_TYPE state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     get_hotspot_add_session(context.user_data).bytes_total = ""
@@ -331,6 +421,15 @@ async def skip_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def hotspot_add_uptime_type(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle uptime type button: hours, days, or skip.
+
+    Args:
+        update: Callback update with uptime_hours/days/skip_uptime data.
+        context: Conversation context; stores uptime_type or skips.
+
+    Returns:
+        WAITING_UPTIME_VALUE, WAITING_COMMENT, or WAITING_UPTIME_TYPE.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     query_data = query.data
@@ -364,6 +463,15 @@ async def hotspot_add_uptime_type(update: Update, context: ContextTypes.DEFAULT_
 
 @admin_only
 async def hotspot_add_uptime_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and convert the uptime value, then prompt for a comment.
+
+    Args:
+        update: Message update with the uptime numeric value.
+        context: Conversation context; stores uptime_value in session.
+
+    Returns:
+        WAITING_COMMENT or WAITING_UPTIME_VALUE on validation failure.
+    """
     value = update.message.text.strip()
     unit = get_hotspot_add_session(context.user_data).uptime_type or "hours"
     uptime = convert_uptime_value(value, unit)
@@ -389,6 +497,15 @@ async def hotspot_add_uptime_value(update: Update, context: ContextTypes.DEFAULT
 
 @admin_only
 async def skip_uptime(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip uptime entry and proceed to comment prompt.
+
+    Args:
+        update: Callback update from the skip button.
+        context: Conversation context; sets uptime_value to empty.
+
+    Returns:
+        WAITING_COMMENT state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     get_hotspot_add_session(context.user_data).uptime_value = ""
@@ -401,6 +518,15 @@ async def skip_uptime(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Skip comment and execute the add-user operation with empty comment.
+
+    Args:
+        update: Callback update from the skip button.
+        context: Conversation context with all collected fields.
+
+    Returns:
+        ConversationHandler.END on success/failure, or WAITING_USERNAME on duplicate.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = get_selected_router(query.from_user.id)

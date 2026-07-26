@@ -68,6 +68,15 @@ FIELD_API_KEYS = {
 @require_role("operator")
 @admin_only
 async def hotspot_edit_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start the edit-user flow and prompt for a username search query.
+
+    Args:
+        update: Telegram update from callback or command.
+        context: Conversation context; clears previous state.
+
+    Returns:
+        WAITING_EDIT_FIELD state.
+    """
     cleanup_state(update.effective_user.id, context.user_data)
     context.args = []
     query = update.callback_query
@@ -83,11 +92,29 @@ async def hotspot_edit_start(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 @admin_only
 async def hotspot_edit_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Delegate text input to shared search logic for the edit flow.
+
+    Args:
+        update: Telegram update with message text query.
+        context: Conversation context.
+
+    Returns:
+        Shared search handler return value (state constant).
+    """
     return await search_users_for_action(update, context, "edit")
 
 
 @admin_only
 async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fetch selected hotspot user and display the field-edit keyboard.
+
+    Args:
+        update: Callback update with edit_user_<id> data.
+        context: Conversation context; stores user data in session.
+
+    Returns:
+        WAITING_EDIT_VALUE or ConversationHandler.END on error.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -125,6 +152,15 @@ async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Reset byte/uptime counters for the selected user and re-kick active sessions.
+
+    Args:
+        update: Callback update from the reset_counters button.
+        context: Conversation context with active edit session.
+
+    Returns:
+        WAITING_EDIT_VALUE state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -191,6 +227,15 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 @admin_only
 async def hotspot_edit_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Kick all active sessions for the selected hotspot user.
+
+    Args:
+        update: Callback update from the kick button.
+        context: Conversation context with active edit session.
+
+    Returns:
+        WAITING_EDIT_VALUE state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -240,6 +285,15 @@ async def hotspot_edit_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle field selection: toggle disabled, show profile picker, or prompt for value.
+
+    Args:
+        update: Callback update with edit_field_<name> data.
+        context: Conversation context with active edit session.
+
+    Returns:
+        WAITING_EDIT_VALUE or ConversationHandler.END.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -337,6 +391,15 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 @admin_only
 async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Apply the chosen profile to the hotspot user being edited.
+
+    Args:
+        update: Callback update with edit_profile_<name> data.
+        context: Conversation context with active edit session.
+
+    Returns:
+        WAITING_EDIT_VALUE state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     profile = resolve_profile_from_callback(context, query.data, "edit_profile_")
@@ -374,6 +437,15 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
 
 @admin_only
 async def edit_back_to_fields(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Return from profile picker to the field-edit keyboard.
+
+    Args:
+        update: Callback update from the back button.
+        context: Conversation context with active edit session.
+
+    Returns:
+        WAITING_EDIT_VALUE or WAITING_EDIT_FIELD if no user selected.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     user_data = get_hotspot_edit_session(context.user_data).user_data
@@ -456,6 +528,15 @@ def _transform_renewal_day(new_value: str, user_data: RouterOSRow) -> str | None
 
 @admin_only
 async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Validate and apply the new value for the selected edit field.
+
+    Args:
+        update: Message update with the typed new value.
+        context: Conversation context with active edit session.
+
+    Returns:
+        WAITING_EDIT_VALUE or ConversationHandler.END on error.
+    """
     new_value = update.message.text.strip()
     session = get_hotspot_edit_session(context.user_data)
     field = session.current_field

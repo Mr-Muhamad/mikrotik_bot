@@ -61,6 +61,15 @@ def build_csv(report: RouterOSRow) -> str:
 
 @admin_only
 async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Generate and display the hotspot usage report for the selected router.
+
+    Args:
+        update: Callback update from the report button.
+        context: Conversation context; stores report in user_data.
+
+    Returns:
+        None (sends message via send_step).
+    """
     query = update.callback_query
     if query:
         await query.answer()
@@ -81,6 +90,15 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def report_export_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Export the cached report as a CSV file and send it to the chat.
+
+    Args:
+        update: Callback update from the CSV export button.
+        context: Conversation context with report in user_data.
+
+    Returns:
+        None (sends document via Telegram bot API).
+    """
     query = update.callback_query
     await query.answer()
     report = context.user_data.get("report")

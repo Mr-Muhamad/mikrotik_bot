@@ -67,6 +67,15 @@ MAX_SEARCH_RESULTS = 50
 
 @admin_only
 async def hotspot_search_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Start the search flow and display the search prompt with prefix hints.
+
+    Args:
+        update: Telegram update from callback or command.
+        context: Conversation context; clears previous state.
+
+    Returns:
+        WAITING_HOTSPOT_SEARCH state.
+    """
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
     if query:
@@ -81,6 +90,15 @@ async def hotspot_search_start(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def hotspot_search_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Execute prefix-routed search (user:/mac:/ip:/comment:) and show paginated results.
+
+    Args:
+        update: Message update with the search query text.
+        context: Conversation context; stores search_hosts in user_data.
+
+    Returns:
+        WAITING_HOTSPOT_SEARCH state.
+    """
     router_key = get_selected_router(update.effective_user.id)
     if not router_key:
         await reply_final(update, context, NO_ROUTER_SELECTED, get_router_keyboard())
@@ -119,6 +137,15 @@ async def hotspot_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
 
 @admin_only
 async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle pagination button clicks and redraw the search results page.
+
+    Args:
+        update: Callback update with search_page_<n> data.
+        context: Conversation context with search_hosts in user_data.
+
+    Returns:
+        WAITING_HOTSPOT_SEARCH state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
 
@@ -237,6 +264,15 @@ def _format_search_results_text(paginator: Paginator[RouterOSRow]) -> str:
 
 @admin_only
 async def hotspot_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Navigate back from host detail to results, or from results to search prompt.
+
+    Args:
+        update: Callback update from the back button.
+        context: Conversation context with search_hosts in user_data.
+
+    Returns:
+        WAITING_HOTSPOT_SEARCH state.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     hosts = context.user_data.get("search_hosts")
@@ -266,6 +302,15 @@ async def hotspot_search_back(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 @admin_only
 async def hotspot_show_host(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Display detail view for a single host from the search results.
+
+    Args:
+        update: Callback update with search_host_<index> data.
+        context: Conversation context; stores kick_host_idx.
+
+    Returns:
+        WAITING_HOTSPOT_SEARCH or ConversationHandler.END on error.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     try:
@@ -307,6 +352,15 @@ async def hotspot_show_host(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 @admin_only
 async def hotspot_host_action(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Kick the currently displayed host from the hotspot.
+
+    Args:
+        update: Callback update from the kick button.
+        context: Conversation context with kick_host_idx and search_hosts.
+
+    Returns:
+        ConversationHandler.END after kick attempt.
+    """
     query = update.callback_query
     await safe_answer_callback(query)
     router_key = None
