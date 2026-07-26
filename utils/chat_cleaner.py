@@ -12,9 +12,9 @@ from core.mikrotik_client import RouterOSRow
 logger = logging.getLogger(__name__)
 
 # Type alias for the bot context used across this module
-_CleanerContext = CallbackContext[ExtBot[None], RouterOSRow, RouterOSRow, RouterOSRow]
-_Update = Update
-_CallbackQuery = CallbackQuery
+type _CleanerContext = CallbackContext[ExtBot[None], RouterOSRow, RouterOSRow, RouterOSRow]
+type _Update = Update
+type _CallbackQuery = CallbackQuery
 
 DELETE_DELAY = 120  # دقيقتين — وقت مناسب للمستخدم للقراءة والتفاعل
 MAX_TRACKED_MSGS = 200
@@ -281,7 +281,7 @@ async def safe_edit_or_send(
     if not chat_id:
         return None
     try:
-        edited: Message | bool = await query.edit_message_text(
+        edited = await query.edit_message_text(
             text=text, reply_markup=keyboard, parse_mode="HTML"
         )
         if isinstance(edited, Message):
@@ -321,7 +321,7 @@ async def edit_clean(
         if chat_id == 0:
             return None
     try:
-        edited: Message | bool = await query.edit_message_text(
+        edited = await query.edit_message_text(
             text=text, reply_markup=keyboard, parse_mode="HTML"
         )
     except Exception as e:
@@ -357,7 +357,7 @@ async def safe_edit_plain(
         if chat_id == 0:
             return None
     try:
-        edited: Message | bool = await query.edit_message_text(text=text, reply_markup=reply_markup)
+        edited = await query.edit_message_text(text=text, reply_markup=reply_markup)
     except Exception as e:
         if _is_benign_edit_error(e):
             logger.debug(f"safe_edit_plain benign skip: {e}")

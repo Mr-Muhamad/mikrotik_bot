@@ -1,9 +1,11 @@
 """Comprehensive tests for core.userman_manager.UserManager."""
 
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
 
+from core.card_models import CardSystem
 from core.userman_manager import UserManager
 
 RK = "discovered_1"
@@ -128,9 +130,13 @@ class TestCreateCards:
         cards = mgr.create_cards(RK, 3, "type1", "1M")
         assert len(cards) == 3
         for c in cards:
-            assert len(c["username"]) == 8
-            assert len(c["password"]) == 8
-            assert c["username"] != c["password"]
+            username = c["username"]
+            password = c["password"]
+            assert isinstance(username, str)
+            assert isinstance(password, str)
+            assert len(username) == 8
+            assert len(password) == 8
+            assert username != password
 
     def test_type2_same_credentials(self):
         mgr, api = _make_manager()
@@ -160,7 +166,7 @@ class TestCreateCards:
 
     def test_non_card_system_type_returns_empty(self):
         mgr, _ = _make_manager()
-        assert mgr.create_cards(RK, 1, 12345, "1M") == []
+        assert mgr.create_cards(RK, 1, cast(CardSystem | str | None, 12345), "1M") == []
 
     def test_existing_users_fetch_failure_still_proceeds(self):
         mgr, api = _make_manager()
@@ -218,7 +224,9 @@ class TestCreateCards:
         api.execute.side_effect = self._fake_execute(api)
 
         cards = mgr.create_cards(RK, 1, "type1", "1M", prefix="PRE")
-        assert cards[0]["username"].startswith("PRE")
+        username = cards[0]["username"]
+        assert isinstance(username, str)
+        assert username.startswith("PRE")
 
     def test_v6_create_cards(self):
         mgr, api = _make_manager()
@@ -235,7 +243,7 @@ class TestCreateCards:
         _v7_api(api)
         api.execute.side_effect = self._fake_execute(api)
 
-        cards = mgr.create_cards(RK, 1, "type1", "1M", caller_id="AA:BB")
+        mgr.create_cards(RK, 1, "type1", "1M", caller_id="AA:BB")
         add_calls = [c for c in api.execute.call_args_list if "/user/add" in c.args[1]]
         assert add_calls[0].kwargs["caller-id"] == "AA:BB"
 
@@ -363,6 +371,7 @@ class TestAttachV7Profile:
 
         linked, err = mgr._attach_v7_profile(RK, V7, "u1", "1M")
         assert linked is False
+        assert err is not None
         assert "connection lost" in err
 
 
@@ -387,6 +396,7 @@ class TestAttachV6Profile:
 
         linked, err = mgr._attach_v6_profile(RK, V6, "u1", "1M")
         assert linked is False
+        assert err is not None
         assert "fail" in err
 
 
@@ -414,6 +424,7 @@ class TestVerifyProfileLink:
         api.execute.return_value = [{"user": "u1", "profile": "2M"}]
         ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")
         assert ok is False
+        assert err is not None
         assert "not found" in err
 
     def test_empty_rows(self):
@@ -439,6 +450,7 @@ class TestVerifyProfileLink:
         api.execute.side_effect = Exception("timeout")
         ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")
         assert ok is False
+        assert err is not None
         assert "verify failed" in err
 
     def test_user_not_in_profile_table(self):
@@ -720,7 +732,7 @@ class TestDeleteUser:
             [],
         ]
 
-        result = mgr.delete_user(RK, "u1")
+        mgr.delete_user(RK, "u1")
         remove_calls = [c for c in api.execute.call_args_list if "/user/remove" in c.args[1]]
         assert len(remove_calls) == 1
         assert remove_calls[0].kwargs[".id"] == "*1"
@@ -1003,6 +1015,7 @@ class TestEdgeCases:
         ]
 
         user = mgr.get_user(RK, "u1")
+        assert user is not None
         assert user["comment"] == "c"
         assert user["disabled"] == "false"
 
@@ -1094,6 +1107,7 @@ class TestEdgeCases:
 
         linked, err = mgr.add_profile_to_user(RK, "u1", "2M")
         assert linked is False
+        assert err is not None
         assert "timeout" in err
 
     def test_add_profile_to_user_v6_failure(self):
@@ -1103,6 +1117,7 @@ class TestEdgeCases:
 
         linked, err = mgr.add_profile_to_user(RK, "u1", "2M")
         assert linked is False
+        assert err is not None
         assert "timeout" in err
 
     def test_get_user_returns_none_when_print_empty(self):

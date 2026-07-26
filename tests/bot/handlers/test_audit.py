@@ -341,7 +341,7 @@ class TestLogsFilterCallback:
         with (
             patch(f"{P}.get_distinct_log_admins",
                    new_callable=AsyncMock, return_value=admin_list),
-            patch(f"{P}._show_submenu", new_callable=AsyncMock) as mock_sub,
+            patch(f"{P}._show_submenu", new_callable=AsyncMock),
         ):
             await logs_filter_callback(update, ctx)
         assert ctx.user_data["logs_admin_options"] is admin_list
@@ -357,7 +357,7 @@ class TestLogsFilterCallback:
         with (
             patch(f"{P}.get_distinct_log_actions",
                    new_callable=AsyncMock, return_value=["backup", "reboot"]),
-            patch(f"{P}._show_submenu", new_callable=AsyncMock) as mock_sub,
+            patch(f"{P}._show_submenu", new_callable=AsyncMock),
         ):
             await logs_filter_callback(update, ctx)
         assert ctx.user_data["logs_action_options"] == ["backup", "reboot"]

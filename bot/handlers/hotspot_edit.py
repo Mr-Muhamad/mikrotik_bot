@@ -39,8 +39,8 @@ from bot.router_selector import (
     nav_set,
     set_current_action,
 )
-from core.mikrotik_client import RouterOSRow
 from core.hotspot_manager import hotspot_manager
+from core.mikrotik_client import RouterOSRow
 from database.models import log_action
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
@@ -243,6 +243,9 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
     query = update.callback_query
     await safe_answer_callback(query)
 
+    if query is None or not query.data:
+        return WAITING_EDIT_VALUE
+
     field = query.data.replace("edit_field_", "")
     get_hotspot_edit_session(context.user_data).current_field = field
 
@@ -317,7 +320,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             return WAITING_EDIT_VALUE
 
     user_data = get_hotspot_edit_session(context.user_data).user_data
-    api_key = FIELD_API_KEYS.get(field, field)
+    api_key = str(FIELD_API_KEYS.get(field, field))
     current_value = user_data.get(api_key, HOTSPOT_EDIT_EMPTY_VALUE)
     if field == "bytes":
         current_value = format_bytes(current_value)

@@ -269,7 +269,6 @@ class TestGetBatchesKeyboard:
     def test_multi_page_shows_next(self):
         batches = [{"id": i, "name": f"B{i}", "count": i} for i in range(10)]
         m = get_batches_keyboard(batches, page=0, total=20, page_size=10)
-        btns = _btns(m)
         assert any("التالي" in t for t in _flat_btns(m))
         # no prev on first page
         assert not any("السابق" in t for t in _flat_btns(m))

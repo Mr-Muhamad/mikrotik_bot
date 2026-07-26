@@ -75,7 +75,7 @@ class TestWatchdogStart:
         ctx.job_queue = None
         with patch("bot.handlers.watchdog.send_step", new=AsyncMock()):
             await watchdog_module.watchdog_start(update, ctx)
-        ctx.job_queue is None
+        assert ctx.job_queue is None
 
     @pytest.mark.asyncio
     async def test_already_running(self):
@@ -166,11 +166,21 @@ class TestWatchdogStatus:
         update = _cb_update()
         ctx = _ctx()
         now = datetime.now()
-        detail = {"online": True, "last_ok": now, "last_fail": None, "version": "7.14", "active_users": 5}
+        detail = {
+            "online": True,
+            "last_ok": now,
+            "last_fail": None,
+            "version": "7.14",
+            "active_users": 5,
+        }
         bk = {"status": "success", "backup_type": "full", "created_at": "2025-01-01"}
         with (
             patch("bot.handlers.watchdog.get_saved_routers", return_value=[_router()]),
-            patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, side_effect=[detail, bk]),
+            patch(
+                "bot.handlers.watchdog.run_blocking",
+                new_callable=AsyncMock,
+                side_effect=[detail, bk],
+            ),
             patch("bot.handlers.watchdog.safe_edit_or_send", new_callable=AsyncMock),
             patch("bot.handlers.watchdog.get_last_backup"),
         ):
@@ -180,10 +190,18 @@ class TestWatchdogStatus:
     async def test_router_online_no_last_ok(self):
         update = _cb_update()
         ctx = _ctx()
-        detail = {"online": True, "last_ok": None, "last_fail": None, "version": None, "active_users": None}
+        detail = {
+            "online": True,
+            "last_ok": None,
+            "last_fail": None,
+            "version": None,
+            "active_users": None,
+        }
         with (
             patch("bot.handlers.watchdog.get_saved_routers", return_value=[_router()]),
-            patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail),
+            patch(
+                "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail
+            ),
             patch("bot.handlers.watchdog.safe_edit_or_send", new_callable=AsyncMock),
             patch("bot.handlers.watchdog.get_last_backup", return_value=None),
         ):
@@ -194,10 +212,18 @@ class TestWatchdogStatus:
         update = _cb_update()
         ctx = _ctx()
         now = datetime.now()
-        detail = {"online": False, "last_ok": None, "last_fail": now, "version": "7.12", "active_users": 0}
+        detail = {
+            "online": False,
+            "last_ok": None,
+            "last_fail": now,
+            "version": "7.12",
+            "active_users": 0,
+        }
         with (
             patch("bot.handlers.watchdog.get_saved_routers", return_value=[_router()]),
-            patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail),
+            patch(
+                "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail
+            ),
             patch("bot.handlers.watchdog.safe_edit_or_send", new_callable=AsyncMock),
             patch("bot.handlers.watchdog.get_last_backup", return_value=None),
         ):
@@ -207,10 +233,18 @@ class TestWatchdogStatus:
     async def test_router_unchecked(self):
         update = _cb_update()
         ctx = _ctx()
-        detail = {"online": False, "last_ok": None, "last_fail": None, "version": None, "active_users": None}
+        detail = {
+            "online": False,
+            "last_ok": None,
+            "last_fail": None,
+            "version": None,
+            "active_users": None,
+        }
         with (
             patch("bot.handlers.watchdog.get_saved_routers", return_value=[_router()]),
-            patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail),
+            patch(
+                "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail
+            ),
             patch("bot.handlers.watchdog.safe_edit_or_send", new_callable=AsyncMock),
             patch("bot.handlers.watchdog.get_last_backup", return_value=None),
         ):
@@ -220,11 +254,19 @@ class TestWatchdogStatus:
     async def test_router_with_alias(self):
         update = _cb_update()
         ctx = _ctx()
-        detail = {"online": True, "last_ok": datetime.now(), "last_fail": None, "version": "7.14", "active_users": 3}
+        detail = {
+            "online": True,
+            "last_ok": datetime.now(),
+            "last_fail": None,
+            "version": "7.14",
+            "active_users": 3,
+        }
         r = _router(name_alias="MyAlias")
         with (
             patch("bot.handlers.watchdog.get_saved_routers", return_value=[r]),
-            patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail),
+            patch(
+                "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail
+            ),
             patch("bot.handlers.watchdog.safe_edit_or_send", new_callable=AsyncMock),
             patch("bot.handlers.watchdog.get_last_backup", return_value=None),
         ):
@@ -234,11 +276,21 @@ class TestWatchdogStatus:
     async def test_backup_failed(self):
         update = _cb_update()
         ctx = _ctx()
-        detail = {"online": True, "last_ok": datetime.now(), "last_fail": None, "version": "7.14", "active_users": None}
+        detail = {
+            "online": True,
+            "last_ok": datetime.now(),
+            "last_fail": None,
+            "version": "7.14",
+            "active_users": None,
+        }
         bk = {"status": "failed", "backup_type": "full", "created_at": "2025-06-01"}
         with (
             patch("bot.handlers.watchdog.get_saved_routers", return_value=[_router()]),
-            patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, side_effect=[detail, bk]),
+            patch(
+                "bot.handlers.watchdog.run_blocking",
+                new_callable=AsyncMock,
+                side_effect=[detail, bk],
+            ),
             patch("bot.handlers.watchdog.safe_edit_or_send", new_callable=AsyncMock),
             patch("bot.handlers.watchdog.get_last_backup"),
         ):
@@ -248,10 +300,18 @@ class TestWatchdogStatus:
     async def test_message_path_no_callback(self):
         update = _msg_update()
         ctx = _ctx()
-        detail = {"online": True, "last_ok": datetime.now(), "last_fail": None, "version": None, "active_users": None}
+        detail = {
+            "online": True,
+            "last_ok": datetime.now(),
+            "last_fail": None,
+            "version": None,
+            "active_users": None,
+        }
         with (
             patch("bot.handlers.watchdog.get_saved_routers", return_value=[_router()]),
-            patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail),
+            patch(
+                "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=detail
+            ),
             patch("bot.handlers.watchdog.get_last_backup", return_value=None),
         ):
             await watchdog_module.watchdog_status(update, ctx)
@@ -263,11 +323,17 @@ class TestWatchdogStatus:
         ctx = _ctx()
         r1 = _router(db_id=1)
         r2 = _router(db_id=2, identity="Router2")
-        d1 = {"online": True, "last_ok": datetime.now(), "last_fail": None, "version": "7.14", "active_users": 2}
-        d2 = {"online": False, "last_ok": None, "last_fail": datetime.now(), "version": None, "active_users": None}
+        d1 = {
+            "online": True,
+            "last_ok": datetime.now(),
+            "last_fail": None,
+            "version": "7.14",
+            "active_users": 2,
+        }
 
         async def fake_blocking(fn, *args, **kwargs):
             from database.models import get_last_backup as _glb
+
             if fn is _glb:
                 return None
             return d1
@@ -301,12 +367,19 @@ class TestWatchdogRefresh:
         update = _cb_update("watchdog_refresh")
         ctx = _ctx()
         router = _router(username="admin")
-        detail = {"online": True, "last_ok": datetime.now(), "last_fail": None, "version": "7.14", "active_users": 1}
+        detail = {
+            "online": True,
+            "last_ok": datetime.now(),
+            "last_fail": None,
+            "version": "7.14",
+            "active_users": 1,
+        }
 
         async def fake_blocking(fn, *args, **kwargs):
             from core.watchdog import get_router_status_detail as _grsd
             from database.models import get_last_backup as _glb
             from database.models import get_saved_routers as _gsr
+
             if fn is _gsr:
                 return [router]
             if fn is _grsd:
@@ -341,6 +414,7 @@ class TestCheckAllRouters:
 
         async def fake_blocking(fn, *args, **kwargs):
             from database.models import get_saved_routers as _gsr
+
             if fn is _gsr:
                 return [router]
             return {"online": True}
@@ -358,6 +432,7 @@ class TestCheckAllRouters:
 
         async def fake_blocking(fn, *args, **kwargs):
             from database.models import get_saved_routers as _gsr
+
             if fn is _gsr:
                 return [router]
             return {"online": True}
@@ -376,6 +451,7 @@ class TestCheckAllRouters:
 
         async def fake_blocking(fn, *args, **kwargs):
             from database.models import get_saved_routers as _gsr
+
             if fn is _gsr:
                 return [router]
             return {"online": True}
@@ -410,7 +486,9 @@ class TestCheckAllRouters:
     async def test_router_no_username_skipped(self):
         ctx = _ctx()
         router = _router(username="")
-        with patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=[router]):
+        with patch(
+            "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=[router]
+        ):
             await watchdog_module._check_all_routers(ctx)
 
     @pytest.mark.asyncio
@@ -418,7 +496,9 @@ class TestCheckAllRouters:
         ctx = _ctx()
         router = _router()
         router.pop("username", None)
-        with patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=[router]):
+        with patch(
+            "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=[router]
+        ):
             await watchdog_module._check_all_routers(ctx)
 
     @pytest.mark.asyncio
@@ -429,6 +509,7 @@ class TestCheckAllRouters:
 
         async def fake_blocking(fn, *args, **kwargs):
             from database.models import get_saved_routers as _gsr
+
             if fn is _gsr:
                 return [r1, r2]
             return {"online": True}

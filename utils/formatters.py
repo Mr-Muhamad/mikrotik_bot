@@ -209,7 +209,9 @@ def format_trend_chart(snapshots: list[RouterOSRow]) -> str:
     """
     if not snapshots:
         return ""
-    max_active = max((int(cast(int | float, s.get("active_users", 0))) for s in snapshots), default=1) or 1
+    max_active = (
+        max((int(cast(int | float, s.get("active_users", 0))) for s in snapshots), default=1) or 1
+    )
     lines = []
     for s in snapshots:
         day = str(s.get("snapshot_date", ""))[-5:]  # MM-DD فقط

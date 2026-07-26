@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import logging
+from typing import cast
 
 import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -15,7 +16,6 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 from core.mikrotik_client import RouterOSRow
-from typing import cast
 
 logger = logging.getLogger(__name__)
 

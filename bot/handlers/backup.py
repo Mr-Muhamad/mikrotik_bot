@@ -154,6 +154,8 @@ async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query is not None and is_duplicate_callback(query.data, update.effective_user.id):
         return
     await safe_answer_callback(query)
+    if query is None:
+        return
     router_key = context.user_data["router_key"]
 
     if _is_backup_running(router_key):

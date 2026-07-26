@@ -111,7 +111,11 @@ class TestBackupRestoreStart:
         ctx = _ctx()
         with (
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
-            patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, side_effect=RuntimeError("net fail")),
+            patch(
+                "bot.handlers.backup_restore.run_blocking",
+                new_callable=AsyncMock,
+                side_effect=RuntimeError("net fail"),
+            ),
             patch("bot.handlers.backup_restore.send_error", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.cleanup_state"),
@@ -125,7 +129,9 @@ class TestBackupRestoreStart:
         ctx = _ctx()
         with (
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
-            patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=[]),
+            patch(
+                "bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=[]
+            ),
             patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_back_keyboard", return_value="kb"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
@@ -141,7 +147,11 @@ class TestBackupRestoreStart:
         backups = [{"name": "bk1"}, {"name": "bk2"}]
         with (
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
-            patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=backups),
+            patch(
+                "bot.handlers.backup_restore.run_blocking",
+                new_callable=AsyncMock,
+                return_value=backups,
+            ),
             patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_backup_restore_keyboard", return_value="kb"),
             patch("bot.handlers.backup_restore.nav_set"),
@@ -160,7 +170,9 @@ class TestBackupRestoreStart:
             patch("bot.handlers.backup_restore.get_selected_router", return_value=None),
             patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.cleanup_state"),
-            patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock) as mock_safe,
+            patch(
+                "bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock
+            ) as mock_safe,
         ):
             await backup_restore_module.backup_restore_start(update, ctx)
         mock_safe.assert_not_called()
@@ -355,7 +367,11 @@ class TestUsermanRestoreStart:
         update = _cb_update()
         ctx = _ctx()
         with (
-            patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, side_effect=RuntimeError("io")),
+            patch(
+                "bot.handlers.backup_restore.run_blocking",
+                new_callable=AsyncMock,
+                side_effect=RuntimeError("io"),
+            ),
             patch("bot.handlers.backup_restore.send_error", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.cleanup_state"),
@@ -368,7 +384,9 @@ class TestUsermanRestoreStart:
         update = _cb_update()
         ctx = _ctx()
         with (
-            patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=[]),
+            patch(
+                "bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=[]
+            ),
             patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_back_keyboard", return_value="kb"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
@@ -383,7 +401,11 @@ class TestUsermanRestoreStart:
         ctx = _ctx()
         tar_files = [{"filename": "backup1.tar"}, {"filename": "backup2.tar"}]
         with (
-            patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=tar_files),
+            patch(
+                "bot.handlers.backup_restore.run_blocking",
+                new_callable=AsyncMock,
+                return_value=tar_files,
+            ),
             patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_userman_restore_keyboard", return_value="kb"),
             patch("bot.handlers.backup_restore.nav_set"),
@@ -400,14 +422,18 @@ class TestUsermanRestoreStart:
         ctx = _ctx()
         tar_files = [{"filename": "a.tar"}]
         with (
-            patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=tar_files),
+            patch(
+                "bot.handlers.backup_restore.run_blocking",
+                new_callable=AsyncMock,
+                return_value=tar_files,
+            ),
             patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_userman_restore_keyboard", return_value="kb"),
             patch("bot.handlers.backup_restore.nav_set"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.cleanup_state"),
         ):
-            result = await backup_restore_module.userman_restore_start(update, ctx)
+            await backup_restore_module.userman_restore_start(update, ctx)
         assert ctx.user_data.get("userman_restore_list") == tar_files
 
     @pytest.mark.asyncio
@@ -415,10 +441,14 @@ class TestUsermanRestoreStart:
         update = _msg_update()
         ctx = _ctx()
         with (
-            patch("bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=[]),
+            patch(
+                "bot.handlers.backup_restore.run_blocking", new_callable=AsyncMock, return_value=[]
+            ),
             patch("bot.handlers.backup_restore.send_step", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_back_keyboard", return_value="kb"),
-            patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock) as mock_safe,
+            patch(
+                "bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock
+            ) as mock_safe,
             patch("bot.handlers.backup_restore.cleanup_state"),
         ):
             await backup_restore_module.userman_restore_start(update, ctx)
@@ -504,17 +534,29 @@ class TestFormatRestoreSummary:
         assert "4" in summary
 
     def test_only_profiles(self):
-        result = {"profiles_restored": 3, "users_restored": 0, "skipped": {"profiles": 0, "users": 0}}
+        result = {
+            "profiles_restored": 3,
+            "users_restored": 0,
+            "skipped": {"profiles": 0, "users": 0},
+        }
         summary = backup_restore_module._format_restore_summary(result)
         assert "3" in summary
 
     def test_only_users(self):
-        result = {"profiles_restored": 0, "users_restored": 10, "skipped": {"profiles": 0, "users": 0}}
+        result = {
+            "profiles_restored": 0,
+            "users_restored": 10,
+            "skipped": {"profiles": 0, "users": 0},
+        }
         summary = backup_restore_module._format_restore_summary(result)
         assert "10" in summary
 
     def test_only_skipped(self):
-        result = {"profiles_restored": 0, "users_restored": 0, "skipped": {"profiles": 2, "users": 5}}
+        result = {
+            "profiles_restored": 0,
+            "users_restored": 0,
+            "skipped": {"profiles": 2, "users": 5},
+        }
         summary = backup_restore_module._format_restore_summary(result)
         assert "7" in summary
 
@@ -529,17 +571,29 @@ class TestFormatRestoreSummary:
         assert "1" in summary
 
     def test_skipped_none_values(self):
-        result = {"profiles_restored": 0, "users_restored": 0, "skipped": {"profiles": 0, "users": 0}}
+        result = {
+            "profiles_restored": 0,
+            "users_restored": 0,
+            "skipped": {"profiles": 0, "users": 0},
+        }
         summary = backup_restore_module._format_restore_summary(result)
         assert summary is not None and len(summary) > 0
 
     def test_only_skipped_profiles(self):
-        result = {"profiles_restored": 0, "users_restored": 0, "skipped": {"profiles": 3, "users": 0}}
+        result = {
+            "profiles_restored": 0,
+            "users_restored": 0,
+            "skipped": {"profiles": 3, "users": 0},
+        }
         summary = backup_restore_module._format_restore_summary(result)
         assert "3" in summary
 
     def test_only_skipped_users(self):
-        result = {"profiles_restored": 0, "users_restored": 0, "skipped": {"profiles": 0, "users": 2}}
+        result = {
+            "profiles_restored": 0,
+            "users_restored": 0,
+            "skipped": {"profiles": 0, "users": 2},
+        }
         summary = backup_restore_module._format_restore_summary(result)
         assert "2" in summary
 
@@ -579,7 +633,10 @@ class TestUsermanRestoreExecute:
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_from_user_id", return_value=ADMIN_ID),
-            patch("bot.handlers.backup_restore.resolve_userman_backup_file", side_effect=ValueError("bad path")),
+            patch(
+                "bot.handlers.backup_restore.resolve_userman_backup_file",
+                side_effect=ValueError("bad path"),
+            ),
         ):
             result = await backup_restore_module.userman_restore_execute(update, ctx)
         assert result is None
@@ -593,7 +650,10 @@ class TestUsermanRestoreExecute:
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_from_user_id", return_value=ADMIN_ID),
-            patch("bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/missing.tar"),
+            patch(
+                "bot.handlers.backup_restore.resolve_userman_backup_file",
+                return_value="/tmp/missing.tar",
+            ),
             patch("os.path.isfile", return_value=False),
         ):
             result = await backup_restore_module.userman_restore_execute(update, ctx)
@@ -614,7 +674,10 @@ class TestUsermanRestoreExecute:
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_from_user_id", return_value=ADMIN_ID),
-            patch("bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/good.tar"),
+            patch(
+                "bot.handlers.backup_restore.resolve_userman_backup_file",
+                return_value="/tmp/good.tar",
+            ),
             patch("os.path.isfile", return_value=True),
             patch(
                 "bot.handlers.backup_restore.run_blocking",
@@ -640,7 +703,9 @@ class TestUsermanRestoreExecute:
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_from_user_id", return_value=ADMIN_ID),
-            patch("bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/p.tar"),
+            patch(
+                "bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/p.tar"
+            ),
             patch("os.path.isfile", return_value=True),
             patch(
                 "bot.handlers.backup_restore.run_blocking",
@@ -662,7 +727,9 @@ class TestUsermanRestoreExecute:
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_from_user_id", return_value=ADMIN_ID),
-            patch("bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/f.tar"),
+            patch(
+                "bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/f.tar"
+            ),
             patch("os.path.isfile", return_value=True),
             patch(
                 "bot.handlers.backup_restore.run_blocking",
@@ -685,7 +752,10 @@ class TestUsermanRestoreExecute:
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_from_user_id", return_value=ADMIN_ID),
-            patch("bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/exc.tar"),
+            patch(
+                "bot.handlers.backup_restore.resolve_userman_backup_file",
+                return_value="/tmp/exc.tar",
+            ),
             patch("os.path.isfile", return_value=True),
             patch(
                 "bot.handlers.backup_restore.run_blocking",
@@ -707,7 +777,10 @@ class TestUsermanRestoreExecute:
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_from_user_id", return_value=ADMIN_ID),
-            patch("bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/ok2.tar"),
+            patch(
+                "bot.handlers.backup_restore.resolve_userman_backup_file",
+                return_value="/tmp/ok2.tar",
+            ),
             patch("os.path.isfile", return_value=True),
             patch(
                 "bot.handlers.backup_restore.run_blocking",
@@ -733,7 +806,10 @@ class TestUsermanRestoreExecute:
             patch("bot.handlers.backup_restore.get_selected_router", return_value="router1"),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.get_from_user_id", return_value=ADMIN_ID),
-            patch("bot.handlers.backup_restore.resolve_userman_backup_file", return_value="/tmp/p2.tar"),
+            patch(
+                "bot.handlers.backup_restore.resolve_userman_backup_file",
+                return_value="/tmp/p2.tar",
+            ),
             patch("os.path.isfile", return_value=True),
             patch(
                 "bot.handlers.backup_restore.run_blocking",

@@ -1,8 +1,7 @@
-from typing import cast
-
 import json
 import logging
 import os
+from typing import cast
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -126,7 +125,8 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.edit_message_text(
         _format_batch_text(batch),
         reply_markup=get_batch_detail_keyboard(
-            int(batch["id"] or 0), payment_status=str(batch.get("payment_status", "unpaid") or "unpaid")
+            int(batch["id"] or 0),
+            payment_status=str(batch.get("payment_status", "unpaid") or "unpaid"),
         ),
     )
 

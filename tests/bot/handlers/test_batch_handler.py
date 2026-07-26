@@ -1,4 +1,7 @@
-"""Comprehensive tests for bot.handlers.batch — card batch listing, detail, regen, payment, sales, and sharing."""
+"""Comprehensive tests for bot.handlers.batch.
+
+Card batch listing, detail, regen, payment, sales, and sharing.
+"""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -153,7 +156,9 @@ class TestBatchesCommand:
             patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
             patch.object(batch_module, "cleanup_state") as mock_cleanup,
             patch.object(batch_module, "nav_set"),
-            patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=[1, [SAMPLE_BATCH]])),
+            patch.object(
+                batch_module, "run_blocking", new=AsyncMock(side_effect=[1, [SAMPLE_BATCH]])
+            ),
             patch.object(batch_module, "send_step", new=AsyncMock()),
         ):
             await batch_module.batches_command(u, c)
@@ -205,7 +210,9 @@ class TestShowBatchesPage:
         c = _ctx({"router_key": "k"})
         mock_send = AsyncMock()
         with (
-            patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=[1, [SAMPLE_BATCH]])),
+            patch.object(
+                batch_module, "run_blocking", new=AsyncMock(side_effect=[1, [SAMPLE_BATCH]])
+            ),
             patch.object(batch_module, "send_step", new=mock_send),
             patch("bot.handlers.batch.get_batches_keyboard", return_value=MagicMock()),
         ):
@@ -219,7 +226,9 @@ class TestShowBatchesPage:
         u = _update(callback_data="batch_page:1")
         c = _ctx({"router_key": "k"})
         with (
-            patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=[1, [SAMPLE_BATCH]])),
+            patch.object(
+                batch_module, "run_blocking", new=AsyncMock(side_effect=[1, [SAMPLE_BATCH]])
+            ),
             patch("bot.handlers.batch.get_batches_keyboard", return_value=MagicMock()),
         ):
             await batch_module._show_batches_page(u, c, page=1)
@@ -231,7 +240,9 @@ class TestShowBatchesPage:
         c = _ctx({"router_key": "k"})
         mock_send = AsyncMock()
         with (
-            patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db fail"))),
+            patch.object(
+                batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db fail"))
+            ),
             patch.object(batch_module, "send_step", new=mock_send),
         ):
             await batch_module._show_batches_page(u, c, page=0)
@@ -330,7 +341,9 @@ class TestBatchSelect:
         u = _update(callback_data="batch_select:5")
         c = _ctx()
         with (
-            patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("err"))),
+            patch.object(
+                batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("err"))
+            ),
             patch("bot.handlers.batch.get_batches_keyboard", return_value=MagicMock()),
         ):
             await batch_module.batch_select(u, c)
@@ -466,7 +479,9 @@ class TestBatchRegen:
     async def test_exception_during_load(self):
         u = _update(callback_data="batch_regen:7")
         c = _ctx()
-        with patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db"))):
+        with patch.object(
+            batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db"))
+        ):
             await batch_module.batch_regen(u, c)
         u.callback_query.answer.assert_awaited()
 
@@ -549,7 +564,9 @@ class TestMarkBatchPaid:
             patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
             patch.object(batch_module, "is_duplicate_callback", return_value=False),
             patch.object(
-                batch_module, "run_blocking", new=AsyncMock(side_effect=[True, RuntimeError("fail")])
+                batch_module,
+                "run_blocking",
+                new=AsyncMock(side_effect=[True, RuntimeError("fail")]),
             ),
         ):
             await batch_module.mark_batch_paid_handler(u, c)
@@ -633,7 +650,9 @@ class TestSalesSummary:
         c = _ctx()
         with (
             patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-            patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("fail"))),
+            patch.object(
+                batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("fail"))
+            ),
             patch.object(batch_module, "send_step", new=AsyncMock()) as mock_send,
         ):
             await batch_module.show_sales_summary(u, c)
@@ -669,9 +688,7 @@ class TestShareCardStart:
     async def test_success(self):
         u = _update(callback_data="share_card:10")
         c = _ctx()
-        with (
-            patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-        ):
+        with (patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),):
             result = await batch_module.share_card_start(u, c)
         assert result == WAITING_SHARE_RECIPIENT
         assert c.user_data["share_batch_id"] == 10
@@ -681,9 +698,7 @@ class TestShareCardStart:
     async def test_invalid_data(self):
         u = _update(callback_data="share_card:abc")
         c = _ctx()
-        with (
-            patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-        ):
+        with (patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),):
             result = await batch_module.share_card_start(u, c)
         assert result == ConversationHandler.END
         u.callback_query.answer.assert_awaited()
@@ -693,9 +708,7 @@ class TestShareCardStart:
     async def test_missing_colon(self):
         u = _update(callback_data="share_cardbad")
         c = _ctx()
-        with (
-            patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-        ):
+        with (patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),):
             result = await batch_module.share_card_start(u, c)
         assert result == ConversationHandler.END
 
@@ -712,9 +725,7 @@ class TestShareCardSend:
     async def test_invalid_id(self):
         u = _update(text="not_a_number")
         c = self._make_share_ctx()
-        with (
-            patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-        ):
+        with (patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),):
             result = await batch_module.share_card_send(u, c)
         assert result == WAITING_SHARE_RECIPIENT
         u.message.reply_text.assert_awaited_once()
@@ -723,9 +734,7 @@ class TestShareCardSend:
     async def test_no_batch_id_in_user_data(self):
         u = _update(text="12345")
         c = _ctx({})
-        with (
-            patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-        ):
+        with (patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),):
             result = await batch_module.share_card_send(u, c)
         assert result == ConversationHandler.END
 
@@ -747,7 +756,9 @@ class TestShareCardSend:
         c = self._make_share_ctx()
         with (
             patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-            patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db"))),
+            patch.object(
+                batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db"))
+            ),
         ):
             result = await batch_module.share_card_send(u, c)
         assert result == ConversationHandler.END
@@ -777,7 +788,9 @@ class TestShareCardSend:
             patch.object(
                 batch_module,
                 "run_blocking",
-                new=AsyncMock(side_effect=[batch, {"hotspot_dns": "dns.example.com", "brand_name": "MySSID"}]),
+                new=AsyncMock(
+                    side_effect=[batch, {"hotspot_dns": "dns.example.com", "brand_name": "MySSID"}]
+                ),
             ),
         ):
             result = await batch_module.share_card_send(u, c)
@@ -849,9 +862,7 @@ class TestShareCardSend:
     async def test_empty_text(self):
         u = _update(text="")
         c = self._make_share_ctx()
-        with (
-            patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-        ):
+        with (patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),):
             result = await batch_module.share_card_send(u, c)
         assert result == WAITING_SHARE_RECIPIENT
 
@@ -859,8 +870,6 @@ class TestShareCardSend:
     async def test_whitespace_text(self):
         u = _update(text="   ")
         c = self._make_share_ctx()
-        with (
-            patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
-        ):
+        with (patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),):
             result = await batch_module.share_card_send(u, c)
         assert result == WAITING_SHARE_RECIPIENT

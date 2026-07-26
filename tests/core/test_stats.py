@@ -1,7 +1,9 @@
 """Tests for core.stats.StatsManager."""
 
+from typing import cast
 from unittest.mock import MagicMock
 
+from core.mikrotik_client import RouterOSRow
 from core.stats import StatsManager
 
 
@@ -37,6 +39,7 @@ class TestStatsManagerHotspot:
 
         result = self.manager.get_hotspot_stats(self.router_key)
 
+        assert result is not None
         assert result["total_bytes"] == 0
 
     def test_get_hotspot_stats_returns_none_on_exception(self):
@@ -67,6 +70,7 @@ class TestStatsManagerUserman:
 
         result = self.manager.get_userman_stats(self.router_key)
 
+        assert result is not None
         assert result["total_users"] == 3
         assert result["enabled_users"] == 2
         assert result["disabled_users"] == 1
@@ -79,6 +83,7 @@ class TestStatsManagerUserman:
 
         result = self.manager.get_userman_stats(self.router_key)
 
+        assert result is not None
         assert result["total_users"] == 0
         assert result["enabled_users"] == 0
         assert result["disabled_users"] == 0
@@ -98,34 +103,34 @@ class TestStatsManagerFormatting:
         self.manager = StatsManager()
 
     def test_format_hotspot_stats_gigabytes(self):
-        stats = {
+        stats = cast(RouterOSRow, {
             "total_users": 5,
             "active_users": 3,
             "inactive_users": 2,
             "total_bytes": 2_500_000_000,
-        }
+        })
         result = self.manager.format_hotspot_stats(stats, "Router1")
         assert "Router1" in result
         assert "2.50 GB" in result
         assert "5" in result
 
     def test_format_hotspot_stats_megabytes(self):
-        stats = {
+        stats = cast(RouterOSRow, {
             "total_users": 1,
             "active_users": 1,
             "inactive_users": 0,
             "total_bytes": 5_000_000,
-        }
+        })
         result = self.manager.format_hotspot_stats(stats, "R2")
         assert "5.00 MB" in result
 
     def test_format_hotspot_stats_kilobytes(self):
-        stats = {
+        stats = cast(RouterOSRow, {
             "total_users": 1,
             "active_users": 0,
             "inactive_users": 1,
             "total_bytes": 1500,
-        }
+        })
         result = self.manager.format_hotspot_stats(stats, "R3")
         assert "1.50 KB" in result
 
@@ -134,7 +139,7 @@ class TestStatsManagerFormatting:
         assert "❌" in result
 
     def test_format_userman_stats(self):
-        stats = {"total_users": 10, "enabled_users": 7, "disabled_users": 3}
+        stats = cast(RouterOSRow, {"total_users": 10, "enabled_users": 7, "disabled_users": 3})
         result = self.manager.format_userman_stats(stats, "R4")
         assert "10" in result
         assert "7" in result

@@ -47,6 +47,8 @@ logger = logging.getLogger(__name__)
 @admin_only
 async def discover_routers_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    if query is None:
+        return
     await query.edit_message_text(DISCOVERY_START)
     try:
         routers = await discover_routers(mndp_timeout=10)
@@ -77,6 +79,8 @@ async def discover_routers_callback(update: Update, context: ContextTypes.DEFAUL
 @admin_only
 async def discovered_router_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    if query is None:
+        return
     cleanup_state(query.from_user.id, context.user_data)
     ip = query.data.replace("disc_router_", "")
     context.user_data["disc_ip"] = ip

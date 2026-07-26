@@ -1,5 +1,6 @@
 """Unit tests for HotspotManager using the in-memory MikrotikAPIMock."""
 
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
@@ -81,7 +82,7 @@ class TestHotspotManager:
 
     def test_search_hosts_by_mac(self, mock_mikrotik_api):
         hosts = hotspot_manager.search_hosts(self.ROUTER_KEY, "AA:BB:CC:DD:EE:01")
-        found = [h for h in hosts if h.get("mac-address", "").lower() == "aa:bb:cc:dd:ee:01"]
+        found = [h for h in hosts if str(h.get("mac-address", "")).lower() == "aa:bb:cc:dd:ee:01"]
         assert len(found) >= 1
 
     def test_search_hosts_skips_leases_when_no_match(self):
@@ -161,8 +162,8 @@ class TestHotspotManager:
     def test_get_hotspot_stats(self, mock_mikrotik_api):
         stats = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY)
         assert stats is not None
-        assert stats["total"] >= 1
-        assert stats["active"] >= 1
+        assert cast(int, stats["total"]) >= 1
+        assert cast(int, stats["active"]) >= 1
         assert "categories" in stats
 
     def test_parse_reset_day(self):
@@ -214,11 +215,14 @@ class TestHotspotManager:
         hotspot_manager.invalidate_users_cache(self.ROUTER_KEY)
 
         stats = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY)
+        assert stats is not None
         assert stats["reset_days"] == [5, 4]
-        assert len(stats["resets_by_day"][5]) == 2
-        assert len(stats["resets_by_day"][4]) == 1
+        resets_by_day = cast(dict[int, list[object]], stats["resets_by_day"])
+        assert len(resets_by_day[5]) == 2
+        assert len(resets_by_day[4]) == 1
         assert stats["reset_list"] == []
 
         day5 = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY, day=5)
+        assert day5 is not None
         assert day5["selected_day"] == 5
-        assert len(day5["reset_list"]) == 2
+        assert len(cast(list[object], day5["reset_list"])) == 2

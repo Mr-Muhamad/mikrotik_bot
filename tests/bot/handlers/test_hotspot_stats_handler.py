@@ -37,7 +37,8 @@ def _bypass_decorators():
         hotspot_module._original_hotspot_stats = hotspot_module.hotspot_stats.__wrapped__
     hotspot_module.hotspot_stats = hotspot_module._original_hotspot_stats
     if not hasattr(hotspot_module, "_original_hotspot_stats_day_input"):
-        hotspot_module._original_hotspot_stats_day_input = hotspot_module.hotspot_stats_day_input.__wrapped__  # noqa: E501
+        wrapped = hotspot_module.hotspot_stats_day_input.__wrapped__
+        hotspot_module._original_hotspot_stats_day_input = wrapped
     hotspot_module.hotspot_stats_day_input = hotspot_module._original_hotspot_stats_day_input
     yield
 

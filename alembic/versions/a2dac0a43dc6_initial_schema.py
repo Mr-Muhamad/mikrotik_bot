@@ -3,7 +3,7 @@
 Creates all core tables and columns required by the application.
 """
 
-from alembic import op
+from alembic import op  # type: ignore[reportAttributeAccessIssue]
 import sqlalchemy as sa
 
 

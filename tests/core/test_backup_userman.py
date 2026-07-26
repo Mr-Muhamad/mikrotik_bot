@@ -192,7 +192,7 @@ class TestListLocalUsermanBackups:
         (ud / f"{PREFIX}c.bad").write_text("w")
         result = UserManagerBackupService.list_local_userman_backups(str(tmp_path))
         assert len(result) == 2
-        exts = {os.path.splitext(r["filename"])[1] for r in result}
+        exts = {os.path.splitext(str(r["filename"]))[1] for r in result}
         assert exts == {".umb", ".tar"}
 
     def test_list_sorted_by_mtime(self, tmp_path):

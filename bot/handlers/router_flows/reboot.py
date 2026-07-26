@@ -90,6 +90,8 @@ async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_T
 @admin_only
 async def reboot_saved_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    if query is None:
+        return
     router_id = await parse_router_id(query, "reboot_router_")
     if router_id is None:
         return

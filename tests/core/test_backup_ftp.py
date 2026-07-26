@@ -10,6 +10,7 @@ import pytest
 # Patch helpers applied to every test in this module
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def _reset_global_flag():
     """Reset the module-level warning flag between tests."""
@@ -35,6 +36,7 @@ def _ftp_info():
 # ===================================================================
 # _warn_plaintext_ftp
 # ===================================================================
+
 
 class TestWarnPlaintextFtp:
     @patch("core.backup.ftp.ftplib.FTP")
@@ -76,6 +78,7 @@ class TestWarnPlaintextFtp:
 # ===================================================================
 # get_router_ftp_info
 # ===================================================================
+
 
 class TestGetRouterFtpInfo:
     def test_success(self, _patch_api_and_port):
@@ -122,6 +125,7 @@ class TestGetRouterFtpInfo:
         }
 
         result = get_router_ftp_info("r1", 9999)
+        assert result is not None
         assert result["port"] == 9999
 
     def test_returns_none_on_timeout_error(self, _patch_api_and_port):
@@ -136,6 +140,7 @@ class TestGetRouterFtpInfo:
 # ===================================================================
 # download_files_via_ftp
 # ===================================================================
+
 
 class TestDownloadFilesViaFtp:
     @patch("core.backup.ftp.ftplib.FTP")
@@ -203,7 +208,9 @@ class TestDownloadFilesViaFtp:
         ftp_inst.retrbinary.side_effect = fake_retrbinary
 
         with patch("builtins.open", mock_open()):
-            result = download_files_via_ftp("r1", "/tmp", ["good.backup", "fail_file.backup", "also_good.rsc"])
+            result = download_files_via_ftp(
+                "r1", "/tmp", ["good.backup", "fail_file.backup", "also_good.rsc"]
+            )
 
         assert "good.backup" in result
         assert "fail_file.backup" not in result
@@ -364,7 +371,9 @@ class TestDownloadFilesViaFtp:
         assert result == []
 
     @patch("core.backup.ftp.ftplib.FTP")
-    def test_download_returns_empty_list_when_files_to_get_empty(self, MockFTP, _patch_api_and_port):
+    def test_download_returns_empty_list_when_files_to_get_empty(
+        self, MockFTP, _patch_api_and_port
+    ):
         from core.backup.ftp import download_files_via_ftp
 
         mock_api, _ = _patch_api_and_port
@@ -450,6 +459,7 @@ class TestDownloadFilesViaFtp:
 # ===================================================================
 # upload_file_via_ftp
 # ===================================================================
+
 
 class TestUploadFileViaFtp:
     @patch("core.backup.ftp.ftplib.FTP")
@@ -634,6 +644,7 @@ class TestUploadFileViaFtp:
 # Edge cases / integration
 # ===================================================================
 
+
 class TestDownloadEdgeCases:
     @patch("core.backup.ftp.ftplib.FTP")
     def test_download_all_files_fail_returns_empty(self, MockFTP, _patch_api_and_port):
@@ -711,7 +722,9 @@ class TestDownloadEdgeCases:
         ftp_inst.retrbinary.side_effect = fake_retr
 
         with patch("builtins.open", mock_open()):
-            result = download_files_via_ftp("r1", "/tmp", ["ok1.backup", "bad.backup", "ok2.backup"])
+            result = download_files_via_ftp(
+                "r1", "/tmp", ["ok1.backup", "bad.backup", "ok2.backup"]
+            )
 
         assert result == ["ok1.backup", "ok2.backup"]
         assert ftp_inst.quit.call_count == 1
@@ -799,6 +812,7 @@ class TestGetRouterFtpInfoEdgeCases:
         }
 
         result = get_router_ftp_info("my_router", 2121)
+        assert result is not None
         assert result["host"] == "172.16.0.1"
         assert result["user"] == "root"
         assert result["password"] == "hunter2"

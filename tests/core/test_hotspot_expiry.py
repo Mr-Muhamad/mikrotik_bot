@@ -26,6 +26,7 @@ def _freeze_today(day: int):
 # _parse_uptime_to_seconds
 # ---------------------------------------------------------------------------
 
+
 class TestParseUptimeToSeconds:
     def test_empty_string(self):
         assert _parse_uptime_to_seconds("") == 0
@@ -83,7 +84,10 @@ class TestParseUptimeToSeconds:
 # get_expiring_users
 # ---------------------------------------------------------------------------
 
-def _make_user(name: str, profile: str = "default", limit_uptime: str = "3d00:00:00", disabled: str = "false") -> dict:
+
+def _make_user(
+    name: str, profile: str = "default", limit_uptime: str = "3d00:00:00", disabled: str = "false"
+) -> dict:
     return {"name": name, "profile": profile, "limit-uptime": limit_uptime, "disabled": disabled}
 
 
@@ -265,6 +269,7 @@ class TestGetExpiringUsers:
 # parse_renewal_day_from_comment
 # ---------------------------------------------------------------------------
 
+
 class TestParseRenewalDayFromComment:
     def test_empty_string(self):
         assert parse_renewal_day_from_comment("") == ("", None)
@@ -362,7 +367,10 @@ class TestParseRenewalDayFromComment:
 # get_custom_expiring_users
 # ---------------------------------------------------------------------------
 
-def _make_custom_user(name: str, profile: str = "default", comment: str = "", disabled: str = "false") -> dict:
+
+def _make_custom_user(
+    name: str, profile: str = "default", comment: str = "", disabled: str = "false"
+) -> dict:
     return {"name": name, "profile": profile, "comment": comment, "disabled": disabled}
 
 
@@ -426,11 +434,13 @@ class TestGetCustomExpiringUsers:
 
     def test_sorted_by_days_left(self):
         with _freeze_today(10):
-            api = self._api([
-                _make_custom_user("u2", comment="bob/12"),
-                _make_custom_user("u1", comment="alice/11"),
-                _make_custom_user("u3", comment="carol/10"),
-            ])
+            api = self._api(
+                [
+                    _make_custom_user("u2", comment="bob/12"),
+                    _make_custom_user("u1", comment="alice/11"),
+                    _make_custom_user("u3", comment="carol/10"),
+                ]
+            )
             result = get_custom_expiring_users(api, "rk", days_window=5)
             days = [r["days_left"] for r in result]
             assert days == sorted(days)

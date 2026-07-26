@@ -65,6 +65,7 @@ class TestHotspotDeleteStart:
 
             assert result == WAITING_DELETE_ID
             session = get_user_session(ADMIN_ID)
+            assert session is not None
             assert session["selected_router"] == ROUTER_KEY
         finally:
             cleanup_state(ADMIN_ID, {})
@@ -92,7 +93,7 @@ class TestHotspotDeleteSelect:
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("selectme")
         assert user is not None
-        uid = user[".id"]
+        uid = str(user[".id"])
         update = make_mock_update(callback_data=f"delete_user_{uid}")
         context = _make_context()
 
@@ -120,7 +121,8 @@ class TestHotspotDeleteSelect:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("errorme")
-        uid = user[".id"]
+        assert user is not None
+        uid = str(user[".id"])
         update = make_mock_update(callback_data=f"delete_user_{uid}")
         context = _make_context()
 
@@ -143,7 +145,8 @@ class TestConfirmCallback:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("confirmme")
-        uid = user[".id"]
+        assert user is not None
+        uid = str(user[".id"])
         update = make_mock_update(callback_data="confirm_yes")
         context = _make_context()
         context.user_data["delete_user_id"] = uid
@@ -159,7 +162,8 @@ class TestConfirmCallback:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("keepme")
-        uid = user[".id"]
+        assert user is not None
+        uid = str(user[".id"])
         update = make_mock_update(callback_data="confirm_no")
         context = _make_context()
         context.user_data["delete_user_id"] = uid
@@ -188,7 +192,8 @@ class TestConfirmCallback:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("failme")
-        uid = user[".id"]
+        assert user is not None
+        uid = str(user[".id"])
         update = make_mock_update(callback_data="confirm_yes")
         context = _make_context()
         context.user_data["delete_user_id"] = uid

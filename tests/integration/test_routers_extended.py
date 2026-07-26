@@ -197,6 +197,7 @@ class TestRenameRouter:
         from database.models import get_router_by_id
 
         rid = _seed_router(ip="10.0.0.5", identity="OldName")
+        assert rid is not None
         update = make_mock_update(text="NewName")
         context = _make_context()
         context.user_data["rename_router_id"] = rid
@@ -205,6 +206,7 @@ class TestRenameRouter:
             result = await rename_router_value(update, context)
         assert result == ConversationHandler.END
         router = get_router_by_id(rid)
+        assert router is not None
         assert router["name_alias"] == "NewName"
 
     @pytest.mark.asyncio

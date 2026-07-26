@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import cast
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -42,7 +43,6 @@ from core.backup_service import (
 )
 from core.mikrotik_client import RouterOSRow
 from database.models import log_action
-from typing import cast
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback

@@ -14,6 +14,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+from core.mikrotik_client import RouterOSRow
 from core.network_probe import ARPTableProbe, MNDPListenerProbe, PortScanProbe, merge_probe_results
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -28,6 +29,7 @@ async def run_real_discovery_test():
     # 1. Test MNDP (Neighbors)
     print("\n📡 [1/3] اختبار MNDP Broadcast (المسؤول عن جلب Neighbors)...")
     mndp_probe = MNDPListenerProbe(timeout=5.0)
+    mndp_results: list[RouterOSRow] = []
     try:
         mndp_results = await mndp_probe.discover()
         print(f"✅ نتيجة MNDP: تم اكتشاف {len(mndp_results)} راوتر عبر البث الشبكي.")
@@ -51,7 +53,7 @@ async def run_real_discovery_test():
         print(f"   • IP: {item.get('ip')} | MAC: {item.get('mac')}")
 
     # 3. Direct Port Check (8728) on all ARP candidate IPs
-    candidate_ips = [r["ip"] for r in arp_results if r.get("ip")]
+    candidate_ips = [str(r["ip"]) for r in arp_results if r.get("ip")]
     if "192.0.0.1" not in candidate_ips:
         candidate_ips.append("192.0.0.1")
     print(f"\n🔌 [3/3] فحص منفذ API (8728) لـ {len(candidate_ips)} جهاز مرشح...")

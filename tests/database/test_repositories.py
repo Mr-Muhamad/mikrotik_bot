@@ -29,14 +29,18 @@ class TestRoutersRepository:
             username="admin",
             password="secret",
         )
+        assert router_id is not None
         row = routers.get_router_by_id(router_id)
+        assert row is not None
         assert row["ip_address"] == "10.0.0.1"
         assert row["password"] == "secret"  # decrypt=True default
         assert row["identity"] == "R1"
 
     def test_get_router_by_ip(self):
         routers.save_discovered_router(ip="10.0.0.2", identity="R2")
-        assert routers.get_router_by_ip("10.0.0.2")["identity"] == "R2"
+        row = routers.get_router_by_ip("10.0.0.2")
+        assert row is not None
+        assert row["identity"] == "R2"
         assert routers.get_router_by_ip("1.2.3.4") is None
 
     def test_get_router_by_id_missing(self):
@@ -50,7 +54,9 @@ class TestRoutersRepository:
             password="topsecret",
             alias="Edge",
         )
+        assert router_id is not None
         row = routers.get_router_by_id(router_id)
+        assert row is not None
         assert row["ip_address"] == "10.0.0.5"
         assert row["password"] == "topsecret"  # decrypted
         assert row["name_alias"] == "Edge"
@@ -72,29 +78,36 @@ class TestRoutersRepository:
     def test_saved_routers_decrypt_flag(self):
         routers.save_discovered_router(ip="10.0.0.20", username="u", password="p")
         encrypted = routers.get_saved_routers(active_only=True, decrypt=False)[0]
-        assert encrypted["password"].startswith("enc_")
+        password_val = encrypted["password"]
+        assert isinstance(password_val, str)
+        assert password_val.startswith("enc_")
         plain = routers.get_saved_routers(active_only=True, decrypt=True)[0]
         assert plain["password"] == "p"
 
     def test_update_credentials_encrypts(self):
         rid = routers.save_discovered_router(ip="10.0.0.30", username="old", password="oldp")
+        assert rid is not None
         routers.update_router_credentials(rid, "new", "newp")
         row = routers.get_router_by_id(rid)
+        assert row is not None
         assert row["username"] == "new"
         assert row["password"] == "newp"
 
     def test_update_last_seen_and_identity_and_alias(self):
         rid = routers.save_discovered_router(ip="10.0.0.40", identity="Old")
+        assert rid is not None
         routers.update_router_last_seen(rid)
         routers.update_router_identity(rid, "New")
         routers.update_router_alias(rid, "Alias")
         row = routers.get_router_by_id(rid)
+        assert row is not None
         assert row["identity"] == "New"
         assert row["name_alias"] == "Alias"
         assert row["last_seen"]
 
     def test_delete_router(self):
         rid = routers.save_discovered_router(ip="10.0.0.50", identity="Del")
+        assert rid is not None
         routers.delete_router(rid)
         assert routers.get_router_by_id(rid) is None
 
@@ -120,7 +133,7 @@ class TestRoutersRepository:
 
 class TestCardBatchesRepository:
     def test_save_and_get_roundtrip_decrypts(self):
-        cards = [
+        cards: list[object] = [
             {"username": "u1", "password": "p1"},
             {"username": "u2", "password": "p2"},
         ]
@@ -132,6 +145,7 @@ class TestCardBatchesRepository:
             cards=cards,
             created_by=123,
         )
+        assert bid is not None
         batch = card_batches.get_card_batch(bid)
         assert batch is not None
         assert batch["name"] == "batch1"
@@ -150,6 +164,7 @@ class TestCardBatchesRepository:
 
     def test_delete_card_batch(self):
         bid = card_batches.save_card_batch("discovered_1", "b", "hotspot", cards=[{"x": 1}])
+        assert bid is not None
         assert card_batches.delete_card_batch(bid) == 1
         assert card_batches.get_card_batch(bid) is None
 
@@ -213,6 +228,7 @@ class TestUserSessionsRepository:
     def test_save_and_get(self):
         user_sessions.save_user_session(111, "router2", "add_user", '{"k": "v"}')
         s = user_sessions.get_user_session(111)
+        assert s is not None
         assert s["selected_router"] == "router2"
         assert s["current_action"] == "add_user"
 
@@ -246,6 +262,7 @@ class TestBackupsRepository:
     def test_record_and_recent(self):
         backups.record_backup_result("discovered_1", "full", True, "ok", router_name="R1")
         last = backups.get_last_backup("discovered_1")
+        assert last is not None
         assert last["status"] == "success"
         assert backups.get_recent_backups(limit=5)
 

@@ -119,10 +119,11 @@ class TestHotspotEditField:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("pwme")
+        assert user is not None
         update = make_mock_update(callback_data="edit_field_password")
         context = _make_context()
         get_hotspot_edit_session(context.user_data).user_data = user
-        get_hotspot_edit_session(context.user_data).user_id = user[".id"]
+        get_hotspot_edit_session(context.user_data).user_id = str(user[".id"])
 
         result = await hotspot_edit_field(update, context)
         assert result == WAITING_EDIT_VALUE
@@ -134,10 +135,11 @@ class TestHotspotEditField:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("profme")
+        assert user is not None
         update = make_mock_update(callback_data="edit_field_profile")
         context = _make_context()
         get_hotspot_edit_session(context.user_data).user_data = user
-        get_hotspot_edit_session(context.user_data).user_id = user[".id"]
+        get_hotspot_edit_session(context.user_data).user_id = str(user[".id"])
 
         result = await hotspot_edit_field(update, context)
         assert result == WAITING_EDIT_VALUE
@@ -150,10 +152,11 @@ class TestHotspotEditField:
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("prof_err")
+        assert user is not None
         update = make_mock_update(callback_data="edit_field_profile")
         context = _make_context()
         get_hotspot_edit_session(context.user_data).user_data = user
-        get_hotspot_edit_session(context.user_data).user_id = user[".id"]
+        get_hotspot_edit_session(context.user_data).user_id = str(user[".id"])
 
         with patch("bot.handlers.hotspot_edit.send_error", new=AsyncMock()) as mock_err:
             with patch(
@@ -174,7 +177,7 @@ class TestHotspotEditValue:
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("updme")
         assert user is not None
-        uid = user[".id"]
+        uid = str(user[".id"])
         update = make_mock_update(text="newpass")
         context = _make_context()
         get_hotspot_edit_session(context.user_data).current_field = "password"
@@ -185,6 +188,7 @@ class TestHotspotEditValue:
         assert result == WAITING_EDIT_VALUE
 
         updated = hotspot_manager.get_user(ROUTER_KEY, uid)
+        assert updated is not None
         assert updated.get("password") == "newpass"
 
     @pytest.mark.asyncio
@@ -195,7 +199,7 @@ class TestHotspotEditValue:
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("profupd")
         assert user is not None
-        uid = user[".id"]
+        uid = str(user[".id"])
         update = make_mock_update(text="premium")
         context = _make_context()
         get_hotspot_edit_session(context.user_data).current_field = "profile"
@@ -206,6 +210,7 @@ class TestHotspotEditValue:
         assert result == WAITING_EDIT_VALUE
 
         updated = hotspot_manager.get_user(ROUTER_KEY, uid)
+        assert updated is not None
         assert updated.get("profile") == "premium"
 
     @pytest.mark.asyncio
@@ -216,7 +221,7 @@ class TestHotspotEditValue:
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("bytesupd")
         assert user is not None
-        uid = user[".id"]
+        uid = str(user[".id"])
         update = make_mock_update(text="1G")
         context = _make_context()
         get_hotspot_edit_session(context.user_data).current_field = "bytes"
@@ -227,6 +232,7 @@ class TestHotspotEditValue:
         assert result == WAITING_EDIT_VALUE
 
         updated = hotspot_manager.get_user(ROUTER_KEY, uid)
+        assert updated is not None
         assert updated.get("limit-bytes-total") == "1000000000"
 
     @pytest.mark.asyncio
@@ -249,7 +255,7 @@ class TestHotspotEditValue:
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("errupd")
         assert user is not None
-        uid = user[".id"]
+        uid = str(user[".id"])
         update = make_mock_update(text="newpass")
         context = _make_context()
         get_hotspot_edit_session(context.user_data).current_field = "password"

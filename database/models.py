@@ -214,7 +214,7 @@ def init_db():
 
     from alembic.config import Config
 
-    from alembic import command
+    from alembic import command  # type: ignore[reportAttributeAccessIssue]
 
     # Run alembic migrations
     alembic_cfg_path = os.path.join(PROJECT_ROOT, "alembic.ini")

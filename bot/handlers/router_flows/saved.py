@@ -98,6 +98,8 @@ async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE)
 @admin_only
 async def saved_router_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    if query is None:
+        return
     router_id = await parse_router_id(query, "saved_router_")
     if router_id is None:
         return
@@ -123,6 +125,8 @@ async def saved_router_selected(update: Update, context: ContextTypes.DEFAULT_TY
 @admin_only
 async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    if query is None:
+        return
     router_id = await parse_router_id(query, "connect_router_")
     if router_id is None:
         return
@@ -181,6 +185,8 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 async def delete_router_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    if query is None:
+        return
     router_id = await parse_router_id(query, "delete_router_")
     if router_id is None:
         return
@@ -201,6 +207,8 @@ async def delete_router_confirm(update: Update, context: ContextTypes.DEFAULT_TY
 @admin_only
 async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    if query is None:
+        return
     if query.data.startswith("confirm_delete_router_yes_"):
         router_id = await parse_router_id(query, "confirm_delete_router_yes_")
         if router_id is None:
@@ -225,6 +233,8 @@ async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TY
 @admin_only
 async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
+    if query is None:
+        return
     await query.edit_message_text(REFRESHING_ROUTERS)
     try:
         routers = await run_blocking(get_saved_routers, active_only=True, decrypt=True)

@@ -1,7 +1,6 @@
-from typing import cast
-
 import html
 import logging
+from typing import cast
 
 from telegram import InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler

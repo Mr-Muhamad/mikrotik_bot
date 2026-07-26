@@ -7,7 +7,7 @@ from librouteros import connect
 from librouteros.api import Api
 from librouteros.exceptions import LibRouterosError
 
-from config import ROUTER_KEY_PREFIX, DEFAULT_API_PORT
+from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.cache import TTLCache
 from core.exceptions import RouterNotFoundError
 from core.mikrotik_client import RouterOSRow

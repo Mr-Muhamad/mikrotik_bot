@@ -109,6 +109,7 @@ class TestDiscoverRoutersCallback:
             await discover_routers_callback(update, context)
 
         existing = get_router_by_ip("10.0.0.3")
+        assert existing is not None
         assert existing["identity"] == "OldName"
 
     @pytest.mark.asyncio
@@ -131,6 +132,7 @@ class TestSavedRoutersList:
         from database.models import delete_router
 
         for r in _all_saved_routers():
+            assert isinstance(r["id"], int)
             delete_router(r["id"])
         update = make_mock_update(callback_data="saved_routers")
         context = _make_context()
@@ -226,6 +228,7 @@ class TestDeleteRouterExecute:
             identity="ToDelete",
             last_seen=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
+        assert router_id is not None
         update = make_mock_update(callback_data=f"confirm_delete_router_yes_{router_id}")
         context = _make_context()
 
@@ -243,6 +246,7 @@ class TestDeleteRouterExecute:
             identity="KeepMe",
             last_seen=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
+        assert router_id is not None
         update = make_mock_update(callback_data=f"confirm_delete_router_no_{router_id}")
         context = _make_context()
 

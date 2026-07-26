@@ -3,6 +3,7 @@ import os
 import shutil
 import threading
 from datetime import UTC, datetime
+from typing import cast
 
 from core.backup import files as backup_files
 from core.backup.files import (
@@ -11,8 +12,6 @@ from core.backup.files import (
     sanitize_router_name,
 )
 from core.mikrotik_api import mikrotik_api
-from typing import cast
-
 from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)

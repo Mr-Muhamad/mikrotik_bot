@@ -85,7 +85,9 @@ async def test_report_export_excel_sends_document():
     ctx.bot = MagicMock()
     ctx.bot.send_document = AsyncMock()
 
-    with patch("bot.handlers.hotspot_report.run_blocking", new=AsyncMock(return_value=b"PKfakeexcelbytes")):
+    with patch(
+        "bot.handlers.hotspot_report.run_blocking", new=AsyncMock(return_value=b"PKfakeexcelbytes")
+    ):
         await report_module.report_export_excel(update, ctx)
 
     ctx.bot.send_document.assert_called_once()

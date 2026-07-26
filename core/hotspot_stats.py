@@ -236,13 +236,14 @@ def build_usage_report(api: MikrotikClient, router_key: str, top_n: int = 15) ->
             }
         )
 
-    top_consumers = sorted(
-        rows, key=lambda r: int(r.get("total_bytes", 0) or 0), reverse=True
-    )[:top_n]
+    top_consumers = sorted(rows, key=lambda r: int(r.get("total_bytes", 0) or 0), reverse=True)[
+        :top_n
+    ]
     expired = [
         r
         for r in rows
-        if int(r.get("limit", 0) or 0) > 0 and int(r.get("total_bytes", 0) or 0) >= int(r.get("limit", 0) or 0)
+        if int(r.get("limit", 0) or 0) > 0
+        and int(r.get("total_bytes", 0) or 0) >= int(r.get("limit", 0) or 0)
     ]
     near_limit = [
         r
