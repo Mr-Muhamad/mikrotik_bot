@@ -4,7 +4,10 @@ from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from telegram.ext import ConversationHandler
 
+from bot.handlers.constants import WAITING_USAGE_QUERY
+from bot.handlers.usage import usage_query, usage_start
 from tests.fixtures.telegram_mocks import make_mock_context, make_mock_update
 from utils import admin_decorator
 
@@ -21,7 +24,9 @@ async def _call_through(fn, *args, **kwargs):
 def _start_patches():
     stack = ExitStack()
     stack.enter_context(patch("utils.admin_decorator.ADMIN_IDS", [724730774]))
-    stack.enter_context(patch(f"{P}.run_blocking", new_callable=AsyncMock, side_effect=_call_through))
+    stack.enter_context(
+        patch(f"{P}.run_blocking", new_callable=AsyncMock, side_effect=_call_through)
+    )
     stack.enter_context(patch(f"{P}.send_step", new_callable=AsyncMock))
     stack.enter_context(patch(f"{P}.send_error", new_callable=AsyncMock))
     stack.enter_context(patch(f"{P}.get_selected_router"))
@@ -43,9 +48,6 @@ def _all_patches():
 class TestUsageStart:
     @pytest.mark.asyncio
     async def test_returns_waiting_state_when_router_selected(self):
-        from bot.handlers.usage import usage_start
-        from bot.handlers.constants import WAITING_USAGE_QUERY
-
         with patch(f"{P}.get_selected_router", return_value="router_1"):
             result = await usage_start(
                 make_mock_update(callback_data="usage"),
@@ -55,9 +57,6 @@ class TestUsageStart:
 
     @pytest.mark.asyncio
     async def test_ends_conversation_when_no_router(self):
-        from bot.handlers.usage import usage_start
-        from telegram.ext import ConversationHandler
-
         with patch(f"{P}.get_selected_router", return_value=None):
             result = await usage_start(
                 make_mock_update(callback_data="usage"),
@@ -69,9 +68,6 @@ class TestUsageStart:
 class TestUsageQuery:
     @pytest.mark.asyncio
     async def test_successful_search_returns_report(self):
-        from bot.handlers.usage import usage_query
-        from telegram.ext import ConversationHandler
-
         ctx = make_mock_context()
         ctx.user_data["usage_router"] = "router_1"
 
@@ -87,8 +83,14 @@ class TestUsageQuery:
             "limit-bytes-total": "",
             "limit-uptime": "",
         }
-        with patch(f"{P}.hotspot_manager") as mock_hm, \
-             patch(f"{P}.run_blocking", new_callable=AsyncMock, side_effect=_call_through):
+        with (
+            patch(f"{P}.hotspot_manager") as mock_hm,
+            patch(
+                f"{P}.run_blocking",
+                new_callable=AsyncMock,
+                side_effect=_call_through,
+            ),
+        ):
             mock_hm.search_users = AsyncMock(return_value=[mock_user])
             mock_hm.search_hosts = AsyncMock(return_value=[])
             result = await usage_query(
@@ -99,14 +101,17 @@ class TestUsageQuery:
 
     @pytest.mark.asyncio
     async def test_search_no_results_shows_user_not_found(self):
-        from bot.handlers.usage import usage_query
-        from bot.handlers.constants import WAITING_USAGE_QUERY
-
         ctx = make_mock_context()
         ctx.user_data["usage_router"] = "router_1"
 
-        with patch(f"{P}.hotspot_manager") as mock_hm, \
-             patch(f"{P}.run_blocking", new_callable=AsyncMock, side_effect=_call_through):
+        with (
+            patch(f"{P}.hotspot_manager") as mock_hm,
+            patch(
+                f"{P}.run_blocking",
+                new_callable=AsyncMock,
+                side_effect=_call_through,
+            ),
+        ):
             mock_hm.search_users = AsyncMock(return_value=[])
             result = await usage_query(
                 make_mock_update(text="nobody"),
@@ -116,14 +121,17 @@ class TestUsageQuery:
 
     @pytest.mark.asyncio
     async def test_search_failure_sends_error(self):
-        from bot.handlers.usage import usage_query
-        from telegram.ext import ConversationHandler
-
         ctx = make_mock_context()
         ctx.user_data["usage_router"] = "router_1"
 
-        with patch(f"{P}.run_blocking", new_callable=AsyncMock, side_effect=Exception("conn fail")), \
-             patch(f"{P}.send_error", new_callable=AsyncMock) as mock_err:
+        with (
+            patch(
+                f"{P}.run_blocking",
+                new_callable=AsyncMock,
+                side_effect=Exception("conn fail"),
+            ),
+            patch(f"{P}.send_error", new_callable=AsyncMock) as mock_err,
+        ):
             result = await usage_query(
                 make_mock_update(text="testuser"),
                 ctx,

@@ -1,3 +1,5 @@
+import logging
+
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -31,6 +33,8 @@ from utils.formatters import format_hotspot_user
 
 from .constants import WAITING_DELETE_ID, WAITING_INPUT
 from .hotspot_common import search_users_for_action
+
+logger = logging.getLogger(__name__)
 
 
 @require_role("operator")
@@ -87,6 +91,7 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
         )
         return WAITING_INPUT
     except Exception as e:
+        logger.error("hotspot_delete_select failed: %s", e)
         await send_error(
             update,
             context,
@@ -139,10 +144,12 @@ async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ConversationHandler.END
 
         try:
+            logger.info("confirm_callback: deleting user=%s from router=%s", user_id, router_key)
             await run_blocking(hotspot_manager.delete_user, router_key, user_id)
             await run_blocking(log_action, "delete_user", user_id, router_key, query.from_user.id)
             await edit_clean(query, context, SUCCESS_DELETE, get_hotspot_keyboard())
         except Exception as e:
+            logger.error("confirm_callback delete failed: %s", e)
             await send_error(
                 update,
                 context,

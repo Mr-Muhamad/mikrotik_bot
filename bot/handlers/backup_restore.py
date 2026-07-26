@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import cast
 
@@ -50,6 +51,8 @@ from utils.chat_cleaner import edit_clean, send_step
 from utils.error_response import send_error
 from utils.tg_helpers import get_from_user_id
 
+logger = logging.getLogger(__name__)
+
 
 @require_role("admin")
 @admin_only
@@ -68,9 +71,12 @@ async def backup_restore_start(update: Update, context: ContextTypes.DEFAULT_TYP
             await send_step(update, context, ROUTER_NO_CREDENTIALS)
         return ConversationHandler.END
 
+    logger.info("backup_restore_start: user=%s, router=%s", update.effective_user.id, router_key)
+
     try:
         backups = await run_blocking(backup_restore.list_router_backups, router_key)
     except Exception as e:
+        logger.error("backup_restore_start failed: %s", e)
         await send_error(
             update,
             context,
@@ -147,6 +153,7 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
                 BACKUP_RESTORE_FAILED.format(error=result.get("message", "Unknown error"))
             )
     except Exception as e:
+        logger.error("backup_restore_confirm failed: %s", e)
         await send_error(
             update,
             context,
@@ -170,9 +177,12 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
     if query:
         await safe_answer_callback(query)
 
+    logger.info("userman_restore_start: user=%s", update.effective_user.id)
+
     try:
         tar_files = await run_blocking(backup_service.list_local_userman_backups)
     except Exception as e:
+        logger.error("userman_restore_start failed: %s", e)
         await send_error(
             update,
             context,
@@ -283,6 +293,7 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
                 USERMAN_RESTORE_FAILED.format(error=result.get("message", "Unknown error"))
             )
     except Exception as e:
+        logger.error("userman_restore_execute failed: %s", e)
         await send_error(
             update,
             context,

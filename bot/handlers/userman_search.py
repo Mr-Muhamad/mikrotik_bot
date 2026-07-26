@@ -116,6 +116,7 @@ async def userman_search_start(update: Update, context: ContextTypes.DEFAULT_TYP
     """
     cleanup_state(update.effective_user.id, context.user_data)
     query = update.callback_query
+    logger.info("userman_search_start: user=%s", update.effective_user.id)
     if query:
         await safe_answer_callback(query)
         await edit_clean(query, context, USERMAN_SEARCH_PROMPT, get_cancel_keyboard())
@@ -305,6 +306,10 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
     h = hosts[idx]
 
     try:
+        logger.info(
+            "userman_search_action: action=%s, user=%s on router=%s",
+            action, h.get("name", ""), router_key,
+        )
         msg = await _execute_um_action(action, h, router_key, hosts, idx, context)
 
         if action == "um_delete":
@@ -323,6 +328,7 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_userman_detail_keyboard(is_disabled),
         )
     except Exception as e:
+        logger.error("userman_search_action failed: %s", e)
         from utils.error_response import sanitize_error_text
 
         sanitized_err = sanitize_error_text(str(e))

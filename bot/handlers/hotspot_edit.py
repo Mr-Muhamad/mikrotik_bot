@@ -1,3 +1,5 @@
+import logging
+
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -53,6 +55,8 @@ from utils.validators import validate_bytes_input, validate_password, validate_u
 from .constants import WAITING_EDIT_FIELD, WAITING_EDIT_VALUE
 from .hotspot_common import search_users_for_action
 from .session_models import get_hotspot_edit_session
+
+logger = logging.getLogger(__name__)
 
 FIELD_API_KEYS = {
     "name": "name",
@@ -123,6 +127,7 @@ async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         user = await run_blocking(hotspot_manager.get_user, router_key, user_id)
     except Exception as e:
+        logger.error("hotspot_edit_select failed: %s", e)
         await send_error(
             update,
             context,
@@ -174,6 +179,7 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return ConversationHandler.END
 
     try:
+        logger.info("hotspot_edit_reset: user=%s on router=%s", user_id, router_key)
         await run_blocking(hotspot_manager.reset_user_counters, router_key, user_id)
         username = str(user_data.get("name", ""))
         kicked = await run_blocking(hotspot_manager.kick_user, router_key, username) or []
@@ -212,6 +218,7 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
             text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
         )
     except Exception as e:
+        logger.error("hotspot_edit_reset failed: %s", e)
         await send_error(
             update,
             context,
@@ -248,6 +255,7 @@ async def hotspot_edit_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
     router_key = get_selected_router(query.from_user.id)
 
     try:
+        logger.info("hotspot_edit_kick: user=%s on router=%s", username, router_key)
         kicked = await run_blocking(hotspot_manager.kick_user, router_key, username) or []
         fresh_user = await run_blocking(
             hotspot_manager.get_user,
@@ -271,6 +279,7 @@ async def hotspot_edit_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
         )
     except Exception as e:
+        logger.error("hotspot_edit_kick failed: %s", e)
         await send_error(
             update,
             context,
@@ -337,6 +346,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
             )
         except Exception as e:
+            logger.error("hotspot_edit_toggle_disabled failed: %s", e)
             await send_error(
                 update,
                 context,
@@ -363,6 +373,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             )
             return WAITING_EDIT_VALUE
         except Exception as e:
+            logger.error("hotspot_edit_field failed: %s", e)
             await send_error(
                 update,
                 context,
@@ -424,6 +435,7 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_edit_field_keyboard(is_disabled=is_disabled),
         )
     except Exception as e:
+        logger.error("edit_profile_selected failed: %s", e)
         await send_error(
             update,
             context,
@@ -570,6 +582,10 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     try:
         user_name = user_data.get("name", "") or user_id
+        logger.info(
+            "hotspot_edit_value: user=%s, field=%s on router=%s",
+            user_id, field, router_key,
+        )
         await run_blocking(hotspot_manager.edit_user, router_key, user_id, **{api_field: new_value})
         await run_blocking(log_action, "edit_user", user_id, router_key, update.effective_user.id)
 
@@ -588,6 +604,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await send_step(update, context, text, get_edit_field_keyboard(is_disabled=is_disabled))
         return WAITING_EDIT_VALUE
     except Exception as e:
+        logger.error("hotspot_edit_value failed: %s", e)
         await send_error(
             update,
             context,
