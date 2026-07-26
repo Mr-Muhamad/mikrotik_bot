@@ -1,5 +1,6 @@
 """Tests for Hotspot usage report building and CSV export."""
 
+from typing import cast
 from unittest.mock import patch
 
 from bot.handlers.hotspot_report import build_csv
@@ -57,20 +58,26 @@ def test_build_usage_report_classifies_users():
     assert report["disabled"] == 1
     assert report["with_limit"] == 3
 
-    names = [r["name"] for r in report["rows"]]
+    rows = cast(list[dict[str, object]], report["rows"])
+    top_consumers = cast(list[dict[str, object]], report["top_consumers"])
+    expired = cast(list[dict[str, object]], report["expired"])
+    near_limit = cast(list[dict[str, object]], report["near_limit"])
+    inactive = cast(list[dict[str, object]], report["inactive"])
+
+    names = [r["name"] for r in rows]
     assert set(names) == {"userA", "userB", "userC", "userD"}
 
-    top = [r["name"] for r in report["top_consumers"]]
+    top = [r["name"] for r in top_consumers]
     assert top[0] == "userB"
 
-    expired_names = {r["name"] for r in report["expired"]}
+    expired_names = {r["name"] for r in expired}
     assert "userB" in expired_names
 
-    near_names = {r["name"] for r in report["near_limit"]}
+    near_names = {r["name"] for r in near_limit}
     assert "userD" in near_names
     assert "userA" not in near_names
 
-    inactive_names = {r["name"] for r in report["inactive"]}
+    inactive_names = {r["name"] for r in inactive}
     assert inactive_names == {"userC"}
 
 
@@ -85,5 +92,6 @@ def test_build_csv_header_and_rows():
         lines[0]
         == "name,profile,status,bytes_in,bytes_out,total_bytes,total_str,limit_str,percent,comment"
     )
-    assert len(lines) == 1 + len(report["rows"])
+    report_rows = cast(list[dict[str, object]], report["rows"])
+    assert len(lines) == 1 + len(report_rows)
     assert any("userA" in line for line in lines[1:])
