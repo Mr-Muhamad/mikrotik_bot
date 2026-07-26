@@ -3,6 +3,7 @@ import io
 import logging
 import os
 import tempfile
+from typing import cast
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -40,7 +41,7 @@ def build_csv(report: RouterOSRow) -> str:
             "comment",
         ]
     )
-    for r in report.get("rows", []):
+    for r in cast(list[dict[str, object]], report.get("rows", [])):
         writer.writerow(
             [
                 r.get("name", ""),

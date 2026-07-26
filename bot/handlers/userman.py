@@ -209,8 +209,8 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
         unlinked_count = len(cards) - linked_count
         cards_data = [
             CardData(
-                username=c["username"],
-                password=c["password"],
+                username=str(c["username"]),
+                password=str(c["password"]),
                 card_number=i + 1,
                 profile=context.user_data.get("card_profile", ""),
                 caller_id=caller_id,

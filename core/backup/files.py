@@ -150,7 +150,7 @@ def cleanup_router_files(
         files = mikrotik_api.execute(router_key, "file/print")
         matching = []
         for item in files:
-            name = item.get("name", "")
+            name = str(item.get("name", ""))
             if name.startswith(pattern_prefix) and not name.endswith(".txt"):
                 matching.append(item)
 

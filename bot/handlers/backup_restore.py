@@ -42,6 +42,7 @@ from core.backup_service import (
 )
 from core.mikrotik_client import RouterOSRow
 from database.models import log_action
+from typing import cast
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
@@ -214,13 +215,19 @@ async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_T
 def _format_restore_summary(result: RouterOSRow) -> str:
     """Build a human-readable summary from a userman restore result."""
     parts = []
-    if result.get("profiles_restored"):
-        parts.append(BACKUP_RESTORE_PROFILES_COUNT.format(count=result["profiles_restored"]))
-    if result.get("users_restored"):
-        parts.append(BACKUP_RESTORE_USERS_COUNT.format(count=result["users_restored"]))
-    if result.get("skipped", {}).get("profiles") or result.get("skipped", {}).get("users"):
-        skipped = result["skipped"]["profiles"] + result["skipped"]["users"]
-        parts.append(BACKUP_RESTORE_SKIPPED.format(skipped=skipped))
+    profiles_restored = result.get("profiles_restored")
+    if profiles_restored:
+        parts.append(BACKUP_RESTORE_PROFILES_COUNT.format(count=int(profiles_restored)))
+    users_restored = result.get("users_restored")
+    if users_restored:
+        parts.append(BACKUP_RESTORE_USERS_COUNT.format(count=int(users_restored)))
+    skipped_raw = result.get("skipped")
+    if isinstance(skipped_raw, dict):
+        skipped_dict = cast(dict[str, int], skipped_raw)
+        profiles_skipped = skipped_dict.get("profiles", 0)
+        users_skipped = skipped_dict.get("users", 0)
+        if profiles_skipped or users_skipped:
+            parts.append(BACKUP_RESTORE_SKIPPED.format(skipped=profiles_skipped + users_skipped))
     return "، ".join(parts) if parts else BACKUP_RESTORE_NONE
 
 

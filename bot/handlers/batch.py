@@ -1,3 +1,5 @@
+from typing import cast
+
 import json
 import logging
 import os
@@ -124,15 +126,18 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.edit_message_text(
         _format_batch_text(batch),
         reply_markup=get_batch_detail_keyboard(
-            batch["id"], payment_status=batch.get("payment_status", "unpaid")
+            int(batch["id"] or 0), payment_status=str(batch.get("payment_status", "unpaid") or "unpaid")
         ),
     )
 
 
 def _format_batch_text(batch: RouterOSRow) -> str:
-    cards = batch.get("cards", [])
+    cards_raw = batch.get("cards", [])
+    cards = cards_raw if isinstance(cards_raw, list) else []
     total_bytes = 0
     for c in cards:
+        if not isinstance(c, dict):
+            continue
         try:
             limit = int(c.get("limit_bytes", 0) or 0)
         except (ValueError, TypeError):
@@ -141,19 +146,19 @@ def _format_batch_text(batch: RouterOSRow) -> str:
 
     btype = "هوت سبوت" if batch.get("batch_type") == "hotspot" else "User Manager"
     lines = [
-        f"📦 تفاصيل الدفعة #{batch['id']}",
+        f"📦 تفاصيل الدفعة #{int(batch.get('id', 0) or 0)}",
         "",
-        f"🏷️ الاسم: {batch['name']}",
+        f"🏷️ الاسم: {batch.get('name', '')}",
         f"🔧 النوع: {btype}",
         f"📋 البروفايل: {batch.get('profile', '—')}",
-        f"🔢 عدد الكروت: {batch.get('count', len(cards))}",
+        f"🔢 عدد الكروت: {int(batch.get('count', len(cards)) or len(cards))}",
         f"📊 إجمالي حد البيانات: {format_bytes(str(total_bytes)) if total_bytes else '—'}",
         f"🕒 الإنشاء: {batch.get('created_at', '')}",
     ]
     if batch.get("created_by"):
         lines.append(f"👤 المُنشئ: {batch['created_by']}")
-    payment_status = batch.get("payment_status", "unpaid")
-    customer_name = batch.get("customer_name", "")
+    payment_status = str(batch.get("payment_status", "unpaid") or "unpaid")
+    customer_name = str(batch.get("customer_name", "") or "")
     if customer_name:
         lines.append(f"🧑 العميل: {customer_name}")
     status_label = PAYMENT_STATUS_LABELS.get(payment_status, payment_status)
@@ -182,7 +187,8 @@ async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer("⚠️ الدفعة غير موجودة", show_alert=True)
         return
 
-    cards = deserialize_cards(_dump(batch.get("cards", [])))
+    cards_raw = batch.get("cards", [])
+    cards = deserialize_cards(_dump(cards_raw if isinstance(cards_raw, list) else []))
     if not cards:
         await query.answer("⚠️ لا توجد كروت في هذه الدفعة", show_alert=True)
         return
@@ -310,13 +316,14 @@ async def share_card_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(SHARE_CARD_NO_CARDS)
         return ConversationHandler.END
 
-    cards = batch.get("cards", [])
+    cards = cast(list[dict[str, object]], batch.get("cards", []))
     if not cards:
         await update.message.reply_text(SHARE_CARD_NO_CARDS)
         return ConversationHandler.END
 
     # أول كرت في الدفعة
-    card = cards[0] if isinstance(cards[0], dict) else vars(cards[0])
+    first_card = cards[0]
+    card = first_card
     username = card.get("username") or card.get("name") or "—"
     password = card.get("password") or ""
     profile = batch.get("profile") or card.get("profile") or "—"

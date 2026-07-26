@@ -74,7 +74,7 @@ logger = logging.getLogger(__name__)
 MAX_SEARCH_RESULTS = 50
 
 
-def _format_userman_search_results(paginator: Paginator) -> str:
+def _format_userman_search_results(paginator: Paginator[RouterOSRow]) -> str:
     if not paginator.items:
         return NO_RESULTS
     lines = []
@@ -94,10 +94,10 @@ def _format_userman_search_results(paginator: Paginator) -> str:
 
 
 def _format_userman_detail(user: RouterOSRow) -> str:
-    name = user.get("name") or user.get("username") or UNKNOWN_NAME
-    raw_pwd = user.get("password") or "—"
+    name = str(user.get("name") or user.get("username") or UNKNOWN_NAME)
+    raw_pwd = str(user.get("password") or "—")
     pwd = raw_pwd if raw_pwd == "—" else (raw_pwd[:2] + "••••" if len(raw_pwd) > 2 else "••••")
-    profile = user.get("profile") or "—"
+    profile = str(user.get("profile") or "—")
     is_disabled = str(user.get("disabled", "false")).lower() == "true"
     status = USERMAN_SEARCH_STATUS_OFF if is_disabled else USERMAN_SEARCH_STATUS_ON
     return USERMAN_SEARCH_RESULT.format(name=name, pwd=pwd, profile=profile, status=status)

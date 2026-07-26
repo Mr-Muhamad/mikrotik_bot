@@ -304,8 +304,9 @@ class TestWatchdogRefresh:
         detail = {"online": True, "last_ok": datetime.now(), "last_fail": None, "version": "7.14", "active_users": 1}
 
         async def fake_blocking(fn, *args, **kwargs):
-            from database.models import get_saved_routers as _gsr, get_last_backup as _glb
             from core.watchdog import get_router_status_detail as _grsd
+            from database.models import get_last_backup as _glb
+            from database.models import get_saved_routers as _gsr
             if fn is _gsr:
                 return [router]
             if fn is _grsd:

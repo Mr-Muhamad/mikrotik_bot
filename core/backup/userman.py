@@ -10,6 +10,8 @@ from core.backup.files import (
     sanitize_router_name,
 )
 from core.mikrotik_api import mikrotik_api
+from typing import cast
+
 from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
@@ -54,7 +56,7 @@ class UserManagerBackupService:
                     f"User Manager backup created on router but HTTP download failed for {router_key}"  # noqa: E501
                 )
             logger.info(f"User Manager backup completed for {router_name}: {umb_filename}")
-            return result
+            return cast(RouterOSRow, result)
         except Exception as e:
             logger.error(f"User Manager backup failed for {router_name}: {e}")
             if os.path.isfile(umb_path):
@@ -62,7 +64,7 @@ class UserManagerBackupService:
                     os.remove(umb_path)
                 except OSError as cleanup_err:
                     logger.warning(f"Failed to cleanup partial file {umb_path}: {cleanup_err}")
-            return {"success": False, "message": f"فشل الباكوب: {str(e)}"}
+            return cast(RouterOSRow, {"success": False, "message": f"فشل الباكوب: {str(e)}"})
 
     def userman_restore(
         self, router_key: str, umb_path: str, backup_root: str | None = None
@@ -70,14 +72,14 @@ class UserManagerBackupService:
         router_name = mikrotik_api.get_router_name(router_key)
 
         if not os.path.isfile(umb_path):
-            return {"success": False, "message": "ملف الاسترجاع غير موجود"}
+            return cast(RouterOSRow, {"success": False, "message": "ملف الاسترجاع غير موجود"})
 
         filename = os.path.basename(umb_path)
 
         try:
             success = mikrotik_api.upload_file_to_router(router_key, umb_path, filename)
             if not success:
-                return {"success": False, "message": "فشل رفع ملف الاستعادة عبر HTTP"}
+                return cast(RouterOSRow, {"success": False, "message": "فشل رفع ملف الاستعادة عبر HTTP"})
 
             base_path = mikrotik_api.get_userman_base_path(router_key)
             mikrotik_api.execute_long(
@@ -89,10 +91,10 @@ class UserManagerBackupService:
                 "message": f"تمت استعادة User Manager لـ {router_name} من ملف {filename}",
             }
             logger.info(f"User Manager restore completed for {router_name}: {filename}")
-            return result
+            return cast(RouterOSRow, result)
         except Exception as e:
             logger.error(f"User Manager restore failed for {router_name}: {e}")
-            return {"success": False, "message": f"فشل الاستعادة: {str(e)}"}
+            return cast(RouterOSRow, {"success": False, "message": f"فشل الاستعادة: {str(e)}"})
 
     @staticmethod
     def list_local_userman_backups(backup_root: str | None = None) -> list[RouterOSRow]:

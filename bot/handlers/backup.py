@@ -96,7 +96,8 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                 file_name=result.get("local_path", ""),
             )
             if result["success"]:
-                downloaded = result.get("downloaded", [])
+                downloaded_raw = result.get("downloaded", [])
+                downloaded = cast(list[str], downloaded_raw)
                 lines = [BACKUP_SUCCESS_FULL.format(message=result["message"])]
                 if downloaded:
                     lines.append(BACKUP_DOWNLOADED_LOCAL.format(count=len(downloaded)))

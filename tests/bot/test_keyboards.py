@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 from telegram import InlineKeyboardMarkup
 
 from bot.keyboards import (
@@ -14,11 +13,11 @@ from bot.keyboards import (
     _logs_time_label,
     _user_button_label,
     get_back_keyboard,
-    get_batch_detail_keyboard,
-    get_batches_keyboard,
     get_backup_download_keyboard,
     get_backup_keyboard,
     get_backup_restore_keyboard,
+    get_batch_detail_keyboard,
+    get_batches_keyboard,
     get_blocked_macs_keyboard,
     get_cancel_keyboard,
     get_card_mac_keyboard,
@@ -37,12 +36,14 @@ from bot.keyboards import (
     get_main_keyboard,
     get_nav_back_keyboard,
     get_operator_router_assignment_keyboard,
+    get_paginated_user_keyboard,
     get_pdf_layout_keyboard,
     get_pdf_misc_keyboard,
     get_pdf_settings_keyboard,
     get_pdf_text_keyboard,
     get_profile_keyboard,
     get_reboot_keyboard,
+    get_report_keyboard,
     get_reports_keyboard,
     get_restore_confirm_keyboard,
     get_router_action_keyboard,
@@ -58,8 +59,6 @@ from bot.keyboards import (
     get_userman_keyboard,
     get_userman_restore_confirm_keyboard,
     get_userman_restore_keyboard,
-    get_paginated_user_keyboard,
-    get_report_keyboard,
 )
 
 # ---------------------------------------------------------------------------

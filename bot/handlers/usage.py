@@ -98,7 +98,7 @@ async def _show_usage_report(
     bytes_in = user.get("bytes-in", "0")
     bytes_out = user.get("bytes-out", "0")
     try:
-        total_bytes = int(bytes_in) + int(bytes_out)
+        total_bytes = int(str(bytes_in)) + int(str(bytes_out))
         total_str = format_bytes(str(total_bytes))
         in_str = format_bytes(str(bytes_in))
         out_str = format_bytes(str(bytes_out))

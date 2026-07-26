@@ -2,10 +2,12 @@
 
 import os
 import tempfile
+from datetime import UTC, datetime
+
+import pytest
 
 from core.backup.files import (
     BACKUP_FILE_EXTENSIONS,
-    MAX_LOCAL_BACKUPS,
     cleanup_old_backups,
     cleanup_old_files,
     get_ftp_port,
@@ -13,12 +15,9 @@ from core.backup.files import (
     is_valid_router_backup_name,
     parse_router_creation_time,
     resolve_local_backup_file,
-    sanitize_router_name,
     safe_join_file,
+    sanitize_router_name,
 )
-from datetime import UTC, datetime
-
-import pytest
 
 
 class TestGetFtpPort:

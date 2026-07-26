@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime
 
 from telegram import CallbackQuery, Update
 from telegram.ext import ContextTypes
@@ -109,22 +110,35 @@ async def watchdog_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         alias = r.get("name_alias", "")
         display = alias if alias else identity
         detail = await run_blocking(get_router_status_detail, router_key)
-        last_ok = detail.get("last_ok")
-        last_fail = detail.get("last_fail")
+        raw_last_ok = detail.get("last_ok")
+        raw_last_fail = detail.get("last_fail")
         version = detail.get("version") or "—"
         active_users = detail.get("active_users")
         active_text = str(active_users) if active_users is not None else "—"
 
+        last_ok_dt: datetime | None = None
+        if isinstance(raw_last_ok, str):
+            try:
+                last_ok_dt = datetime.fromisoformat(raw_last_ok)
+            except (ValueError, TypeError):
+                pass
+        last_fail_dt: datetime | None = None
+        if isinstance(raw_last_fail, str):
+            try:
+                last_fail_dt = datetime.fromisoformat(raw_last_fail)
+            except (ValueError, TypeError):
+                pass
+
         if detail.get("online"):
             indicator = "🟢"
             detail_line = (
-                WATCHDOG_LAST_OK.format(date=last_ok.strftime("%Y-%m-%d %H:%M"))
-                if last_ok
+                WATCHDOG_LAST_OK.format(date=last_ok_dt.strftime("%Y-%m-%d %H:%M"))
+                if last_ok_dt
                 else WATCHDOG_ONLINE
             )
-        elif last_fail:
+        elif last_fail_dt:
             indicator = "🔴"
-            detail_line = WATCHDOG_LAST_FAIL.format(date=last_fail.strftime("%Y-%m-%d %H:%M"))
+            detail_line = WATCHDOG_LAST_FAIL.format(date=last_fail_dt.strftime("%Y-%m-%d %H:%M"))
         else:
             indicator = "⚪"
             detail_line = WATCHDOG_NOT_CHECKED
@@ -198,7 +212,7 @@ async def _check_all_routers(context: ContextTypes.DEFAULT_TYPE):
 
         try:
             result = await run_blocking(check_router_health, router_key)
-            is_online = result["online"]
+            is_online = bool(result["online"])
         except Exception as e:
             logger.error(f"Watchdog check failed for {router_key}: {e}")
             is_online = False

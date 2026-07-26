@@ -24,7 +24,7 @@ class ProfileSync:
         try:
             base_path = self._api.get_userman_base_path(router_key)
             results = self._api.execute(router_key, f"{base_path}/profile/print")
-            return [r.get("name", "") for r in results if r.get("name")]
+            return [str(r.get("name", "")) for r in results if r.get("name")]
         except (LibRouterosError, ConnectionError, OSError, Exception) as e:
             logger.error(f"Error fetching user manager profiles: {e}")
             return []

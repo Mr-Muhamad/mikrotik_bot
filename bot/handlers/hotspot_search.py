@@ -195,7 +195,7 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[RouterOS
 
 
 def _enrich_hosts(hosts: list[RouterOSRow], users: list[RouterOSRow]) -> list[RouterOSRow]:
-    user_map = {u.get("name", "").lower(): u for u in users if u.get("name")}
+    user_map = {str(u.get("name", "")).lower(): u for u in users if u.get("name")}
     for h in hosts:
         uname = str(h.get("user") or "").lower()
         if uname in user_map:
@@ -207,7 +207,7 @@ def _enrich_hosts(hosts: list[RouterOSRow], users: list[RouterOSRow]) -> list[Ro
     return hosts
 
 
-def _format_search_results_text(paginator: Paginator) -> str:
+def _format_search_results_text(paginator: Paginator[RouterOSRow]) -> str:
     if not paginator.items:
         return NO_RESULTS
     lines = []
@@ -226,7 +226,7 @@ def _format_search_results_text(paginator: Paginator) -> str:
         if uptime:
             detail += f" | ⏰ {uptime}"
         if comment:
-            detail += f"\n    💬 {comment[:30]}"
+            detail += f"\n    💬 {str(comment)[:30]}"
         if str(h.get("_disabled", "false")).lower() == "true":
             detail += HOTSPOT_SEARCH_OFFLINE
         lines.append(detail)

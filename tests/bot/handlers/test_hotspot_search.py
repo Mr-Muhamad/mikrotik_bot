@@ -23,24 +23,10 @@ from bot.handlers.hotspot_search import (
     unblock_mac_handler,
 )
 from bot.messages import (
-    BLOCKED_LIST_EMPTY,
-    BLOCKED_LIST_HEADER,
-    BLOCK_MAC_FAIL,
-    BLOCK_MAC_SUCCESS,
-    DEVICE_NOT_FOUND,
-    DEVICE_NOT_SELECTED,
-    HOST_KICK_FAILED,
-    HOTSPOT_INVALID_BLOCK_DATA,
-    HOTSPOT_INVALID_UNBLOCK_DATA,
-    HOTSPOT_KICK_SUCCESS_SINGLE,
     HOTSPOT_SEARCH_FOUND,
     HOTSPOT_SEARCH_OFFLINE,
-    INVALID_SELECTION,
     NO_RESULTS,
-    NO_ROUTER_SELECTED,
     UNKNOWN_NAME,
-    UNBLOCK_MAC_FAIL,
-    UNBLOCK_MAC_SUCCESS,
 )
 from utils import admin_decorator
 from utils.pagination import Paginator

@@ -33,10 +33,10 @@ class BackupScheduler:
         )
         if not is_healthy:
             logger.warning(f"Router {router_key} is not healthy ({health_msg}), skipping backup")
-            failed_routers.append(f"{r.get('identity', router_key)} (غير متصل)")
+            failed_routers.append(str(r.get("identity", router_key)) + " (غير متصل)")
             return
 
-        router_name = r.get("identity", router_key)
+        router_name = str(r.get("identity", router_key))
         try:
             await run_blocking(backup_service.userman_backup, router_key)
             successful_routers.append(router_name)
@@ -51,7 +51,7 @@ class BackupScheduler:
             logger.info(f"Scheduled backup done for {router_key}")
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.error(f"Scheduled backup failed for {router_key}: {e}")
-            failed_routers.append(router_name)
+            failed_routers.append(str(router_name))
             await run_blocking(
                 record_backup_result,
                 router_key,
@@ -140,7 +140,7 @@ class BackupScheduler:
             if not r.get("username"):
                 continue
             router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
-            router_name = r.get("identity", router_key)
+            router_name = str(r.get("identity", router_key))
             try:
                 expiring = await run_blocking(hotspot_manager.get_expiring_users, router_key, days)
             except Exception as e:
@@ -183,8 +183,8 @@ class BackupScheduler:
                 if not raw:
                     continue
                 snapshot_data: dict[str, int] = {
-                    "active_users": raw.get("active_users", 0),
-                    "total_users": raw.get("total_users", 0),
+                    "active_users": int(raw.get("active_users", 0) or 0),
+                    "total_users": int(raw.get("total_users", 0) or 0),
                     "bytes_in": 0,
                     "bytes_out": 0,
                 }
@@ -252,7 +252,9 @@ class BackupScheduler:
             from database.models import get_backup_schedule, save_backup_schedule
 
             current = get_backup_schedule()
-            save_backup_schedule(False, current["schedule_hour"], current["schedule_minute"])
+            save_backup_schedule(
+                False, int(current["schedule_hour"] or 3), int(current["schedule_minute"] or 0)
+            )
 
     def is_running(self, job_queue: JobQueue | None = None) -> bool:  # type: ignore[reportMissingTypeArgument]
         if job_queue:
@@ -261,7 +263,7 @@ class BackupScheduler:
                 return True
         from database.models import get_backup_schedule
 
-        return get_backup_schedule().get("schedule_enabled", False)
+        return bool(get_backup_schedule().get("schedule_enabled", False))
 
     def restore(self, job_queue: JobQueue) -> None:  # type: ignore[reportMissingTypeArgument]
         from database.models import get_backup_schedule
@@ -270,8 +272,8 @@ class BackupScheduler:
         if settings.get("schedule_enabled") and job_queue:
             self.start_daily(
                 job_queue,
-                settings["schedule_hour"],
-                settings["schedule_minute"],
+                int(settings["schedule_hour"] or 3),
+                int(settings["schedule_minute"] or 0),
                 persist=False,
             )
 

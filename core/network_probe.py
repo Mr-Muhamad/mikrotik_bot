@@ -20,10 +20,10 @@ import socket
 import struct
 import subprocess
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from config import DEFAULT_API_PORT
 from core.mikrotik_client import RouterOSRow
@@ -210,7 +210,7 @@ class ARPTableProbe:
 
     def __init__(
         self,
-        run_fn: Callable[..., Any] = subprocess.run,
+        run_fn: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
         system: str | None = None,
     ) -> None:
         self._run = run_fn
@@ -234,6 +234,11 @@ class ARPTableProbe:
         return [{"ip": ip, "mac": mac, "source": "arp"} for ip, mac in entries.items()]
 
 
+_OpenConnFn = Callable[
+    ..., Awaitable[tuple[asyncio.StreamReader, asyncio.StreamWriter]]
+]
+
+
 class PortScanProbe:
     """Async probe that tests TCP connectivity on the MikroTik API port (8728).
 
@@ -245,7 +250,7 @@ class PortScanProbe:
         ips: list[str],
         port: int = DEFAULT_API_PORT,
         timeout: float = 2.0,
-        open_connection: Callable[..., Any] = asyncio.open_connection,
+        open_connection: _OpenConnFn = asyncio.open_connection,
     ) -> None:
         self._ips = list(ips)
         self._port = port
@@ -320,7 +325,7 @@ class MNDPListenerProbe:
     def __init__(
         self,
         timeout: float = 10.0,
-        socket_factory: Callable[..., Any] | None = None,
+        socket_factory: Callable[..., socket.socket] | None = None,
     ) -> None:
         self._timeout = timeout
         self._socket_factory = socket_factory or socket.socket
@@ -466,10 +471,10 @@ def _merge_port_results(
     """Index verified routers (open API port 8728) by IP."""
     by_ip: dict[str, DiscoveredRouter] = {}
     for entry in port_results:
-        ip = entry["ip"]
+        ip = str(entry["ip"])
         by_ip[ip] = DiscoveredRouter(
             ip_address=ip,
-            mac_address=entry.get("mac", ""),
+            mac_address=str(entry.get("mac", "")),
             source="port_check",
             last_seen=now,
         )
@@ -483,27 +488,27 @@ def _merge_mndp_results(
 ) -> None:
     """Add or enrich entries with MNDP discovery data (richest metadata)."""
     for entry in mndp_results:
-        ip = entry.get("ipv4") or entry.get("ip", "")
+        ip = str(entry.get("ipv4") or entry.get("ip", ""))
         if not ip:
             continue
         if ip in by_ip:
             existing = by_ip[ip]
             existing.source = f"mndp+{existing.source}" if "port" in existing.source else "mndp"
-            existing.last_seen = entry.get("last_seen", existing.last_seen)
+            existing.last_seen = str(entry.get("last_seen", existing.last_seen))
             for attr in _MNDP_ATTRS:
                 val = entry.get(attr, "")
                 if val and (not getattr(existing, attr) or getattr(existing, attr) == "Unknown"):
-                    setattr(existing, attr, val)
+                    setattr(existing, attr, str(val))
         else:
             router = DiscoveredRouter(
                 ip_address=ip,
                 source="mndp",
-                last_seen=entry.get("last_seen", now),
+                last_seen=str(entry.get("last_seen", now)),
             )
             for attr in _MNDP_ATTRS_WITH_MAC:
                 key = attr if attr != "mac_address" else "mac"
                 if entry.get(key):
-                    setattr(router, attr, entry[key])
+                    setattr(router, attr, str(entry[key]))
             by_ip[ip] = router
 
 
@@ -516,7 +521,7 @@ def _enrich_from_arp(
         ip = entry.get("ip")
         if ip and ip in by_ip:
             if not by_ip[ip].mac_address and entry.get("mac"):
-                by_ip[ip].mac_address = entry["mac"]
+                by_ip[ip].mac_address = entry["mac"]  # type: ignore[reportAttributeAccessIssue]
             if "mndp" not in by_ip[ip].source:
                 by_ip[ip].source = "arp+port"
 

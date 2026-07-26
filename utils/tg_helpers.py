@@ -12,13 +12,11 @@ Each function uses assert so the guarantee is explicit and documented.
 
 from __future__ import annotations
 
-from typing import Any
-
 from telegram import CallbackQuery, Message, Update
 from telegram.ext import ContextTypes
 
 
-def get_user_data(context: ContextTypes.DEFAULT_TYPE) -> dict[str, Any]:
+def get_user_data(context: ContextTypes.DEFAULT_TYPE) -> dict[str, object]:
     """Return context.user_data as a guaranteed non-None dict.
 
     user_data is always initialised by python-telegram-bot before any

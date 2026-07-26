@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from core.mikrotik_client import RouterOSRow
+
 
 @dataclass
 class HotspotAddSession:
@@ -23,7 +25,7 @@ def get_hotspot_add_session(user_data: dict[str, object] | None) -> HotspotAddSe
 @dataclass
 class HotspotEditSession:
     user_id: str = ""
-    user_data: dict[str, str] = field(default_factory=dict)
+    user_data: RouterOSRow = field(default_factory=dict)
     current_field: str = ""
 
 

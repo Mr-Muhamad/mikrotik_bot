@@ -298,7 +298,7 @@ class UserManager:
             )
             for user in results or []:
                 if str(user.get(field)) == str(username):
-                    return user.get(".id")
+                    return str(user.get(".id", ""))
         except Exception as e:
             logger.debug(f"API filter failed in _get_user_id for {username}: {e}")
 
@@ -307,7 +307,7 @@ class UserManager:
             results = self._get_all_users_cached(router_key, base_path)
             for user in results or []:
                 if str(user.get(field)) == str(username):
-                    return user.get(".id")
+                    return str(user.get(".id", ""))
         except Exception as e:
             logger.warning(f"Error checking user by field '{field}': {e}")
         return None

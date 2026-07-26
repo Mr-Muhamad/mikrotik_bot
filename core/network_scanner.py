@@ -70,7 +70,7 @@ async def discover_routers(
 
     # 3. Port Scan Probe on candidate IPs from ARP
     port_results: list[RouterOSRow] = []
-    candidate_ips = [r["ip"] for r in arp_results if r.get("ip")]
+    candidate_ips = [str(r["ip"]) for r in arp_results if r.get("ip")]
     if candidate_ips:
         try:
             port_probe = PortScanProbe(ips=candidate_ips, port=8728, timeout=1.5)

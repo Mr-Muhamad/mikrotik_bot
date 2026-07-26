@@ -79,8 +79,9 @@ async def search_users_for_action(
             )
             return WAITING_INPUT
         context.user_data.pop("users_cache", None)
-        get_hotspot_edit_session(context.user_data).user_id = user.get(".id", "")
-        get_hotspot_edit_session(context.user_data).user_data = user
+        edit_session = get_hotspot_edit_session(context.user_data)
+        edit_session.user_id = str(user.get(".id", ""))
+        edit_session.user_data = user
         await send_step(
             update,
             context,

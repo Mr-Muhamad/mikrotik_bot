@@ -7,7 +7,7 @@ from librouteros import connect
 from librouteros.api import Api
 from librouteros.exceptions import LibRouterosError
 
-from config import ROUTER_KEY_PREFIX
+from config import ROUTER_KEY_PREFIX, DEFAULT_API_PORT
 from core.cache import TTLCache
 from core.exceptions import RouterNotFoundError
 from core.mikrotik_client import RouterOSRow
@@ -67,10 +67,10 @@ class ConnectionPool:
     def _connect(self, router_info: RouterOSRow, timeout: int | None = None) -> Api:
         timeout = timeout or CONNECT_TIMEOUT
         api = connect(
-            username=router_info["user"],
-            password=router_info["password"],
-            host=router_info["host"],
-            port=router_info["port"],
+            username=str(router_info["user"]),
+            password=str(router_info["password"]),
+            host=str(router_info["host"]),
+            port=int(router_info["port"] or DEFAULT_API_PORT),
             encoding="utf-8",
             timeout=timeout,
         )

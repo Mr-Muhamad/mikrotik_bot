@@ -2,8 +2,9 @@ import io
 import logging
 import os
 import threading
+from collections.abc import Callable
 from dataclasses import asdict
-from typing import Any, cast
+from typing import Protocol, cast
 from urllib.parse import quote
 
 import qrcode
@@ -23,9 +24,13 @@ CARD_SEPARATOR_LINE_WIDTH = 0.2
 
 FONT_PATH = os.path.join(os.path.dirname(__file__), "fonts")
 
+class _ArabicReshaper(Protocol):
+    def reshape(self, text: str) -> str: ...
+
+
 _arabic_font: str | None = None
-_arabic_reshaper: Any = None
-_bidi_display: Any = None
+_arabic_reshaper: _ArabicReshaper | None = None
+_bidi_display: Callable[[str], str | bytes] | None = None
 _INIT_LOCK = threading.Lock()
 
 

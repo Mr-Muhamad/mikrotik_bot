@@ -5,7 +5,6 @@ import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC
 from functools import wraps
-from typing import Any
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -260,7 +259,7 @@ def nav_get(context: ContextTypes.DEFAULT_TYPE) -> str:
     return context.user_data.get("nav_back", "main_menu")
 
 
-def cleanup_state(user_id: int, user_data: dict[str, Any] | None) -> None:
+def cleanup_state(user_id: int, user_data: dict[str, object] | None) -> None:
     """Clear the user's database action state and conversation-specific user_data keys.
 
     Preserves nav_back, router_key, and profile_names to maintain navigation state.
@@ -300,8 +299,8 @@ async def _fast_reachability_check(router_key: str) -> bool:
             _REACHABILITY_CACHE[router_key] = (False, now)
             return False
 
-        ip = router_cfg["ip_address"]
-        port = router_cfg["port"]
+        ip = str(router_cfg["ip_address"])
+        port = int(router_cfg["port"])  # type: ignore[arg-type]
 
         _reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=1.0)
         writer.close()

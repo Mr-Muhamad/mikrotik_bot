@@ -5,8 +5,6 @@ from __future__ import annotations
 import datetime as _dt
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from core.hotspot_expiry import (
     _parse_uptime_to_seconds,
     get_custom_expiring_users,

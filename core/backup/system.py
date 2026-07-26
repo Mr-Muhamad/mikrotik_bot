@@ -11,6 +11,8 @@ from core.backup.files import (
     sanitize_router_name,
 )
 from core.mikrotik_api import mikrotik_api
+from typing import cast
+
 from core.mikrotik_client import RouterOSRow
 
 logger = logging.getLogger(__name__)
@@ -81,7 +83,7 @@ class SystemBackupService:
                 "message": f"تم الباكوب الكامل لـ {router_name}",
                 "timestamp": timestamp,
                 "local_path": backup_dir,
-                "downloaded": downloaded,
+                "downloaded": str(downloaded),
             }
             if not downloaded:
                 result["warning"] = "تم إنشاء الملفات على الراوتر لكن فشل التحميل المحلي"
@@ -89,7 +91,7 @@ class SystemBackupService:
                     f"Full backup created on router but FTP download failed for {router_key}"
                 )
             logger.info(f"Full backup completed for {router_name}")
-            return result
+            return cast(RouterOSRow, result)
         except Exception as e:
             logger.error(f"Full backup failed for {router_name}: {e}")
             if os.path.isdir(backup_dir):
@@ -99,4 +101,4 @@ class SystemBackupService:
                     logger.warning(
                         f"Failed to cleanup partial backup directory {backup_dir}: {cleanup_err}"
                     )
-            return {"success": False, "message": f"فشل نسخ إحتياطى: {str(e)}"}
+            return cast(RouterOSRow, {"success": False, "message": f"فشل نسخ إحتياطى: {str(e)}"})

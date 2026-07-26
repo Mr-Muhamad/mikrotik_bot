@@ -8,7 +8,8 @@ re-exports these repositories at import time).
 from __future__ import annotations
 
 from datetime import UTC
-from typing import Any
+
+_LogRow = dict[str, str | int | float | bytes | None]
 
 
 def _logs_where_clauses(
@@ -64,7 +65,7 @@ def log_action(action: str, username: str, router_name: str, admin_id: int) -> N
 def get_logs(
     limit: int = 20, offset: int = 0,
     filters: dict[str, str | int | None] | None = None,
-) -> list[dict[str, Any]]:
+) -> list[_LogRow]:
     from database.models import get_db
 
     clauses, params = _logs_where_clauses(filters)

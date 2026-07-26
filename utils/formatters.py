@@ -1,5 +1,6 @@
 import re
 from functools import lru_cache
+from typing import cast
 
 from core.mikrotik_client import RouterOSRow
 
@@ -126,7 +127,7 @@ def format_hotspot_user(user: RouterOSRow) -> str:
     bytes_in = user.get("bytes-in", "0")
     bytes_out = user.get("bytes-out", "0")
     try:
-        total_consumed = int(bytes_in) + int(bytes_out)
+        total_consumed = int(cast(str | int, bytes_in)) + int(cast(str | int, bytes_out))
         total_text = format_bytes(str(total_consumed))
     except (ValueError, TypeError):
         total_text = "غير معروف"
@@ -190,13 +191,13 @@ def format_hotspot_usage_report(report: RouterOSRow, router_name: str) -> str:
         f"📊 بحد بيانات: {report['with_limit']}",
         f"📦 إجمالي البيانات: {report['total_bytes_str']}",
         "",
-        f"⏳ مقترب من الحد: {len(report['near_limit'])}",
-        f"⌛ منتهٍ (وصل الحد): {len(report['expired'])}",
-        f"💤 غير نشط: {len(report['inactive'])}",
+        f"⏳ مقترب من الحد: {len(cast(list[RouterOSRow], report.get('near_limit', [])))}",
+        f"⌛ منتهٍ (وصل الحد): {len(cast(list[RouterOSRow], report.get('expired', [])))}",
+        f"💤 غير نشط: {len(cast(list[RouterOSRow], report.get('inactive', [])))}",
         "",
         "🔝 الأكثر استهلاكاً:",
     ]
-    for r in report.get("top_consumers", [])[:5]:
+    for r in cast(list[RouterOSRow], report.get("top_consumers", []))[:5]:
         lines.append(f"• {r['name']}: {r['total_str']} ({r['percent']:.0f}%)")
     return "\n".join(lines)
 
@@ -208,11 +209,11 @@ def format_trend_chart(snapshots: list[RouterOSRow]) -> str:
     """
     if not snapshots:
         return ""
-    max_active = max((s.get("active_users", 0) for s in snapshots), default=1) or 1
+    max_active = max((int(cast(int | float, s.get("active_users", 0))) for s in snapshots), default=1) or 1
     lines = []
     for s in snapshots:
-        day = s.get("snapshot_date", "")[-5:]  # MM-DD فقط
-        active = s.get("active_users", 0)
+        day = str(s.get("snapshot_date", ""))[-5:]  # MM-DD فقط
+        active = int(cast(int | float, s.get("active_users", 0)))
         bar_len = round((active / max_active) * 8)
         bar = "█" * bar_len
         lines.append(f"{day} | {bar:<8} {active}")
@@ -226,8 +227,8 @@ def format_vs_yesterday(current: RouterOSRow, yesterday: RouterOSRow | None) -> 
     """
     if not yesterday:
         return ""
-    prev = yesterday.get("active_users", 0)
-    curr = current.get("active_users", 0)
+    prev = int(cast(int | float, yesterday.get("active_users", 0)))
+    curr = int(cast(int | float, current.get("active_users", 0)))
     diff = curr - prev
     if diff > 0:
         arrow = "↑"

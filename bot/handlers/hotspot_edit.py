@@ -39,6 +39,7 @@ from bot.router_selector import (
     nav_set,
     set_current_action,
 )
+from core.mikrotik_client import RouterOSRow
 from core.hotspot_manager import hotspot_manager
 from database.models import log_action
 from utils.admin_decorator import admin_only, require_role
@@ -437,16 +438,16 @@ async def _validate_edit_field(
     return new_value
 
 
-def _transform_renewal_day(new_value: str, user_data: dict[str, str]) -> str | None:
+def _transform_renewal_day(new_value: str, user_data: RouterOSRow) -> str | None:
     """Transform a renewal day input into ``name/day`` format, or ``None`` on error."""
     if not new_value.isdigit() or not (1 <= int(new_value) <= 31):
         return None
     day_num = int(new_value)
-    current_comment = str(user_data.get("comment", ""))
+    current_comment = str(user_data.get("comment", "") or "")
     from core.hotspot_expiry import parse_renewal_day_from_comment
 
     clean_name, _ = parse_renewal_day_from_comment(current_comment)
-    name_prefix = clean_name if clean_name else (user_data.get("name", "") or "user")
+    name_prefix = clean_name if clean_name else (str(user_data.get("name", "") or "") or "user")
     return f"{name_prefix}/{day_num}"
 
 

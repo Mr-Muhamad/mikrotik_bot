@@ -310,9 +310,9 @@ async def sync_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @admin_only
 async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     metrics = await run_blocking(mikrotik_api.get_metrics)
-    total = metrics.get("total_attempts", 0)
-    success = metrics.get("successful", 0)
-    failed = metrics.get("failed", 0)
+    total = int(metrics.get("total_attempts", 0) or 0)
+    success = int(metrics.get("successful", 0) or 0)
+    failed = int(metrics.get("failed", 0) or 0)
     rate = (success * 100 // total) if total > 0 else 0
 
     server_health_text = ""

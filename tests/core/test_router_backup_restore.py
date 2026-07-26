@@ -1,6 +1,6 @@
 """Tests for core.backup.restore."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from core.backup.restore import BackupRestore
 

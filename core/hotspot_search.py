@@ -116,7 +116,7 @@ def kick_host(api: MikrotikClient, router_key: str, mac_or_ip: str) -> tuple[boo
 
     lease_by_mac = get_leases_by_mac(api, router_key, {mac}) if mac else {}
     lease = lease_by_mac.get(mac, {})
-    host_name = lease.get("host-name") or h.get("user") or mac or ip
+    host_name = str(lease.get("host-name") or h.get("user") or mac or ip)
 
     api.execute(router_key, "ip/hotspot/host/remove", **{".id": host_id})
     return True, host_name

@@ -47,9 +47,13 @@ def download_files_via_ftp(router_key: str, backup_dir: str, files_to_get: list[
     try:
         _warn_plaintext_ftp()
         ftp = ftplib.FTP()
-        ftp.connect(ftp_info["host"], ftp_info["port"], timeout=10)
+        host = str(ftp_info["host"])
+        port = int(ftp_info["port"] or 21)
+        user = str(ftp_info["user"])
+        password = str(ftp_info["password"])
+        ftp.connect(host, port, timeout=10)
         ftp.set_pasv(True)
-        ftp.login(ftp_info["user"], ftp_info["password"])
+        ftp.login(user, password)
         logger.info(f"FTP connected to {ftp_info['host']}:{ftp_info['port']} (passive mode)")
 
         for fname in files_to_get:
@@ -79,9 +83,13 @@ def upload_file_via_ftp(router_key: str, local_path: str, remote_name: str) -> b
     try:
         _warn_plaintext_ftp()
         ftp = ftplib.FTP()
-        ftp.connect(ftp_info["host"], ftp_info["port"], timeout=10)
+        host = str(ftp_info["host"])
+        port = int(ftp_info["port"] or 21)
+        user = str(ftp_info["user"])
+        password = str(ftp_info["password"])
+        ftp.connect(host, port, timeout=10)
         ftp.set_pasv(True)
-        ftp.login(ftp_info["user"], ftp_info["password"])
+        ftp.login(user, password)
         logger.info(f"FTP connected to {ftp_info['host']}:{ftp_info['port']} (passive mode)")
 
         with open(local_path, "rb") as file_handle:

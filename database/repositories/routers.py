@@ -245,10 +245,10 @@ def update_router_alias(router_id: int, alias: str) -> None:
 
 
 def get_router_display_name(router: RouterOSRow) -> str:
-    alias = router.get("name_alias", "") or ""
+    alias = str(router.get("name_alias", "") or "")
     if alias:
         return alias
-    identity = router.get("identity", "Unknown")
+    identity = str(router.get("identity", "Unknown"))
     if identity and identity != "Unknown":
         return identity
-    return router.get("ip_address", "Unknown")
+    return str(router.get("ip_address", "Unknown"))

@@ -4,7 +4,7 @@ import os
 import re
 import threading
 import time
-from typing import Any
+from typing import Protocol
 
 from librouteros import connect
 from librouteros.exceptions import LibRouterosError
@@ -15,6 +15,19 @@ from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
 from database.models import get_router_by_id, get_router_display_name
 
 logger = logging.getLogger(__name__)
+
+
+class _RouterOSApiPath(Protocol):
+    """Minimal protocol for the object returned by ``api.path(...)``."""
+
+    def __call__(self, command: str, **kwargs: object) -> list[RouterOSRow]: ...
+
+
+class _RouterOSApi(Protocol):
+    """Minimal protocol for the librouteros API connection object."""
+
+    def path(self, *args: str) -> _RouterOSApiPath: ...
+    def close(self) -> None: ...
 
 _MIN_INTERVAL = 0.1  # 100ms بين الأوامر لنفس الراوتر
 _RETRY_DELAYS = (1.0, 2.0)  # تأخير exponential backoff بين المحاولات
@@ -75,7 +88,7 @@ class MikrotikAPI:
             # مسار User Manager (v6/v7)، والراوتر البطيء تحت الحمل قد يتجاوز 30s.
             result = self.execute_long(router_key, "system/resource/print")
             if result:
-                version = result[0].get("version", "unknown")
+                version = str(result[0].get("version", "unknown"))
                 self._pool.set_version(router_key, version)
                 return version
         except (LibRouterosError, ConnectionError, OSError) as e:
@@ -137,7 +150,7 @@ class MikrotikAPI:
         try:
             self._throttle(router_key)
             with self._connection_ctx(router_key, timeout=API_TIMEOUT) as api:
-                result = self._call_command(api, "system/resource/print")
+                result = self._call_command(api, "system/resource/print")  # type: ignore[reportArgumentType]
                 if result:
                     return True, "healthy"
                 return False, "empty_response"
@@ -163,7 +176,7 @@ class MikrotikAPI:
     #  Low-level building blocks
     # ──────────────────────────────────────────────────────────────
 
-    def _call_command(self, api: Any, command: str, **kwargs: object) -> RouterOSResponse:
+    def _call_command(self, api: _RouterOSApi, command: str, **kwargs: object) -> RouterOSResponse:
         """ينفذ أمر MikroTik واحد على اتصال موجود (بدون retry)."""
         parts = command.split("/")
         cmd = parts.pop()
@@ -202,7 +215,7 @@ class MikrotikAPI:
                     router_key, timeout=timeout, force_reconnect=force
                 ) as api:
                     self._debug_log("_execute_with_retry", command, kwargs)
-                    return self._call_command(api, command, **kwargs)
+                    return self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
             except (LibRouterosError, ConnectionError, OSError) as e:
                 if command == "system/reboot":
                     logger.info(f"Reboot command sent - connection may be lost: {e}")
@@ -234,7 +247,7 @@ class MikrotikAPI:
         try:
             with self._connection_ctx(router_key, timeout=API_TIMEOUT) as api:
                 self._debug_log("execute_non_blocking", command, kwargs)
-                self._call_command(api, command, **kwargs)
+                self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
                 logger.info(f"Non-blocking command sent: {command}")
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.info(f"Non-blocking command sent - connection may be lost: {e}")

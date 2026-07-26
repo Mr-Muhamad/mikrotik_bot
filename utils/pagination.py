@@ -1,12 +1,13 @@
-from typing import Any
+from typing import TypeVar
 
+T = TypeVar("T")
 PAGE_SIZE = 10
 
 
-class Paginator:
-    """يقسم القائمة إلى صفحات مع أزرار التنقييم."""
+class Paginator[T]:
+    """يقسم القائمة إلى صفحات مع أزرار التنقيء."""
 
-    def __init__(self, items: list[Any], page: int = 0, page_size: int = PAGE_SIZE):
+    def __init__(self, items: list[T], page: int = 0, page_size: int = PAGE_SIZE):
         self.items = items
         self.page = max(0, page)
         self.page_size = page_size
@@ -15,7 +16,7 @@ class Paginator:
             self.page = max(0, self.total_pages - 1)
 
     @property
-    def current_items(self) -> list[Any]:
+    def current_items(self) -> list[T]:
         start = self.page * self.page_size
         return self.items[start : start + self.page_size]
 

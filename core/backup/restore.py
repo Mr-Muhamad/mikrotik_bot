@@ -13,13 +13,13 @@ class BackupRestore:
             files = mikrotik_api.execute(router_key, "file/print")
             backups = []
             for item in files:
-                name = item.get("name", "")
+                name = str(item.get("name", ""))
                 if name.startswith("backup_") and name.endswith(".backup"):
                     backups.append(
                         {
                             "name": name,
                             "type": "system",
-                            "size": item.get("size", "0"),
+                            "size": str(item.get("size", "0")),
                         }
                     )
                 elif name.startswith("export_") and name.endswith(".rsc"):
@@ -27,7 +27,7 @@ class BackupRestore:
                         {
                             "name": name,
                             "type": "export",
-                            "size": item.get("size", "0"),
+                            "size": str(item.get("size", "0")),
                         }
                     )
             backups.sort(key=lambda x: x["name"], reverse=True)

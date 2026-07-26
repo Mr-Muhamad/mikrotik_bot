@@ -367,7 +367,7 @@ def get_saved_routers_keyboard(
     keyboard: _KeyboardLayout = []
     for r in routers:
         name: str = get_router_display_name(r)
-        version: str = r.get("version", "")
+        version: str = str(r.get("version", ""))
         if version:
             name += f" (v{version})"
         keyboard.append([InlineKeyboardButton(name, callback_data=f"saved_router_{r['id']}")])
@@ -445,7 +445,7 @@ def get_user_selection_keyboard(
     """Return a keyboard listing hotspot users for selection with a given action prefix."""
     keyboard: _KeyboardLayout = []
     for user in users:
-        user_id: str = user.get(".id") or "*0"
+        user_id: str = str(user.get(".id") or "*0")
         keyboard.append(
             [
                 InlineKeyboardButton(
@@ -461,13 +461,13 @@ def get_user_selection_keyboard(
 def get_paginated_user_keyboard(
     users: list[RouterOSRow],
     action_prefix: str,
-    paginator: Paginator,
+    paginator: Paginator[RouterOSRow],
     back_callback: str = "menu_hotspot",
 ) -> InlineKeyboardMarkup:
     """Return a paginated keyboard listing hotspot users for selection."""
     keyboard: _KeyboardLayout = []
     for user in paginator.current_items:
-        user_id: str = user.get(".id") or "*0"
+        user_id: str = str(user.get(".id") or "*0")
         keyboard.append(
             [
                 InlineKeyboardButton(
@@ -577,7 +577,7 @@ def get_cancel_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_search_results_keyboard(
-    paginator: Paginator,
+    paginator: Paginator[RouterOSRow],
     is_userman: bool = False,
 ) -> InlineKeyboardMarkup:
     """Return a keyboard listing search result hosts for selection using Paginator."""
@@ -645,8 +645,8 @@ def get_blocked_macs_keyboard(
 
     keyboard: _KeyboardLayout = []
     for entry in blocked:
-        mac: str = entry.get("address", "")
-        comment: str = entry.get("comment", "")
+        mac: str = str(entry.get("address", ""))
+        comment: str = str(entry.get("comment", ""))
         label: str = f"🔓 {mac}" + (f" ({comment[:15]})" if comment else "")
         keyboard.append([InlineKeyboardButton(label, callback_data=unblock_mac_cb(mac))])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="hotspot_search")])
@@ -755,8 +755,8 @@ def get_backup_restore_keyboard(
     """Return keyboard listing available backups for restore."""
     keyboard: _KeyboardLayout = []
     for idx, b in enumerate(backups[:10]):
-        name: str = b.get("name", "")
-        btype: str = "📦" if b.get("type") == "system" else "📄"
+        name: str = str(b.get("name", ""))
+        btype: str = "📦" if str(b.get("type")) == "system" else "📄"
         keyboard.append([InlineKeyboardButton(f"{btype} {name}", callback_data=f"restore:{idx}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_backup")])
     return InlineKeyboardMarkup(keyboard)
@@ -803,8 +803,8 @@ def get_userman_restore_keyboard(
     """Return keyboard listing saved User Manager tar backups for restore."""
     keyboard: _KeyboardLayout = []
     for idx, f in enumerate(tar_files):
-        name: str = f.get("filename", "")
-        size_kb: int = f.get("size", 0) // 1024
+        name: str = str(f.get("filename", ""))
+        size_kb: int = int(f.get("size") or 0) // 1024
         label: str = f"{name} ({size_kb}KB)"
         keyboard.append([InlineKeyboardButton(label, callback_data=f"userman_restore_tar:{idx}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_backup")])
@@ -833,12 +833,12 @@ def get_operator_router_assignment_keyboard(
 
     keyboard: _KeyboardLayout = []
     for r in all_routers:
-        rid: int | None = r.get("id")
-        if rid is None:
+        raw_rid = r.get("id")
+        if raw_rid is None:
             continue
-        rid_int: int = int(rid)
-        name: str = r.get("name_alias") or r.get("identity") or str(rid_int)
-        ip: str = r.get("ip_address", "")
+        rid_int: int = int(raw_rid)
+        name: str = str(r.get("name_alias") or r.get("identity") or str(rid_int))
+        ip: str = str(r.get("ip_address", ""))
         label_name: str = f"{name} ({ip})" if ip else name
         if rid_int in assigned_router_ids:
             label: str = f"✅ {label_name}"

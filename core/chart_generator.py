@@ -123,7 +123,7 @@ def generate_sales_chart(
     else:
         profile_counts: dict[str, int] = {}
         for b in batches:
-            prof = b.get("profile") or "غير محدد"
+            prof = str(b.get("profile") or "غير محدد")
             cnt = int(b.get("count", 0) or 0)
             profile_counts[prof] = profile_counts.get(prof, 0) + cnt
 

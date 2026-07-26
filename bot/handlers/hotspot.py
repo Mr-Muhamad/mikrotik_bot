@@ -1,3 +1,5 @@
+from typing import cast
+
 import html
 import logging
 
@@ -44,7 +46,7 @@ async def _reply_or_edit(
 
 
 def _categories_kwargs(stats: RouterOSRow) -> dict[str, str]:
-    cats = stats["categories"]
+    cats = cast(dict[str, str], stats["categories"])
     return {
         "cat_10": cats["10 GB"],
         "cat_20": cats["20 GB"],
@@ -66,7 +68,8 @@ def _summary_text(stats: RouterOSRow) -> str:
 
 def _reset_block_text(stats: RouterOSRow) -> str:
     formatted_items = []
-    for item in stats["reset_list"]:
+    reset_list = cast(list[tuple[str, str, str] | tuple[str, str]], stats["reset_list"])
+    for item in reset_list:
         if len(item) == 3:
             name, comment, limit = item
             display = f"{name} ({comment})" if comment and comment != name else name
@@ -75,11 +78,11 @@ def _reset_block_text(stats: RouterOSRow) -> str:
             display = comment
         formatted_items.append(f"  • {html.escape(display)} - {html.escape(limit)}")
 
-    reset_list = "\n".join(formatted_items) or "  لا يوجد"
+    reset_list_str = "\n".join(formatted_items) or "  لا يوجد"
     return HOTSPOT_STATS_RESET_BLOCK.format(
         selected_day=stats["selected_day"],
-        reset_count=len(stats["reset_list"]),
-        reset_list=reset_list,
+        reset_count=len(reset_list),
+        reset_list=reset_list_str,
     )
 
 
@@ -112,7 +115,7 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ConversationHandler.END
 
         text = _summary_text(stats)
-        reset_days = stats["reset_days"]
+        reset_days = cast(list[int], stats["reset_days"])
         if reset_days:
             from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -203,13 +206,14 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
             )
             return WAITING_STATS_DAY
 
-        if day not in stats["reset_days"]:
+        reset_days_list = cast(list[int], stats["reset_days"])
+        if day not in reset_days_list:
             text = (
                 _summary_text(stats)
                 + "\n\n"
                 + HOTSPOT_STATS_DAY_NOT_FOUND.format(
                     day=day,
-                    days=", ".join(map(str, stats["reset_days"])),
+                    days=", ".join(map(str, reset_days_list)),
                 )
             )
             await _reply_or_edit(

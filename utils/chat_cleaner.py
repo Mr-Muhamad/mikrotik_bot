@@ -292,9 +292,9 @@ async def safe_edit_or_send(
     except Exception as e:
         str(e)
         if _is_benign_edit_error(e):
-            prev: int | None = context.user_data.pop("last_msg", None)
-            if prev:
-                await delete_now(context, chat_id, prev)
+            prev = context.user_data.pop("last_msg", None)
+            if prev is not None:
+                await delete_now(context, chat_id, int(prev))
             msg = await context.bot.send_message(
                 chat_id=chat_id, text=text, reply_markup=keyboard, parse_mode="HTML"
             )
@@ -386,9 +386,9 @@ async def _send_replacing_last(
     chat_type = update.effective_chat.type if update.effective_chat else None
     if update.message and chat_type == "private":
         await delete_now(context, chat_id, update.message.message_id)
-    prev: int | None = context.user_data.pop("last_msg", None)
-    if prev:
-        await delete_now(context, chat_id, prev)
+    prev = context.user_data.pop("last_msg", None)
+    if prev is not None:
+        await delete_now(context, chat_id, int(prev))
     msg = await context.bot.send_message(
         chat_id=chat_id, text=text, reply_markup=keyboard, parse_mode="HTML"
     )

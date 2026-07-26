@@ -48,14 +48,14 @@ def check_router_health(router_key: str) -> RouterOSRow:
         if res and len(res) > 0:
             info = res[0]
             try:
-                cpu_load = int(info.get("cpu-load", 0))
-                free_mem = int(info.get("free-memory", 0))
+                cpu_load = int(str(info.get("cpu-load", "0")))
+                free_mem = int(str(info.get("free-memory", "0")))
             except (ValueError, TypeError):
                 pass
 
         with _router_status_lock:
             _router_status.setdefault(router_key, {})
-            _router_status[router_key]["last_ok"] = datetime.now()
+            _router_status[router_key]["last_ok"] = datetime.now().isoformat()
             _router_status[router_key]["alert_sent"] = False
             _router_status[router_key]["cpu_load"] = cpu_load
             _router_status[router_key]["free_memory"] = free_mem
@@ -88,7 +88,7 @@ def check_router_health(router_key: str) -> RouterOSRow:
     except (LibRouterosError, ConnectionError, OSError) as e:
         with _router_status_lock:
             _router_status.setdefault(router_key, {})
-            _router_status[router_key]["last_fail"] = datetime.now()
+            _router_status[router_key]["last_fail"] = datetime.now().isoformat()
         record_health(router_key, "offline", str(e))
         return {"online": False, "error": str(e)}
 
@@ -114,12 +114,23 @@ def get_router_status_detail(router_key: str) -> RouterOSRow:
     last_ok = status.get("last_ok")
     last_fail = status.get("last_fail")
 
+    def _parse_dt(val: str | None) -> datetime | None:
+        if not val:
+            return None
+        try:
+            return datetime.fromisoformat(val)
+        except (ValueError, TypeError):
+            return None
+
+    last_ok_dt = _parse_dt(last_ok) if isinstance(last_ok, str) else None
+    last_fail_dt = _parse_dt(last_fail) if isinstance(last_fail, str) else None
+
     if has_active:
         online = True
-        if not last_ok or (last_fail and last_fail >= last_ok):
-            status["last_ok"] = datetime.now()
+        if not last_ok_dt or (last_fail_dt and last_fail_dt >= last_ok_dt):
+            status["last_ok"] = datetime.now().isoformat()
     else:
-        online = bool(last_ok and (not last_fail or last_ok > last_fail))
+        online = bool(last_ok_dt and (not last_fail_dt or last_ok_dt > last_fail_dt))
 
     status["online"] = online
     status["version"] = None
@@ -148,7 +159,7 @@ def get_router_status_detail(router_key: str) -> RouterOSRow:
 def was_alert_sent(router_key: str) -> bool:
     """Check if an alert was already sent for current outage."""
     with _router_status_lock:
-        return _router_status.get(router_key, {}).get("alert_sent", False)
+        return bool(_router_status.get(router_key, {}).get("alert_sent", False))
 
 
 def mark_alert_sent(router_key: str):
@@ -182,7 +193,7 @@ def load_status_from_db() -> None:
         with _router_status_lock:
             for router_key, row in all_latest.items():
                 is_online = row["status"] == "online"
-                checked_at_str = row.get("checked_at", "")
+                checked_at_str = str(row.get("checked_at", ""))
                 # تحويل النص إلى datetime للتوافق مع get_router_status_detail
                 try:
                     from datetime import datetime as _dt
@@ -193,9 +204,9 @@ def load_status_from_db() -> None:
                 _last_known_status[router_key] = is_online
                 _router_status.setdefault(router_key, {})
                 if is_online and checked_at:
-                    _router_status[router_key]["last_ok"] = checked_at
+                    _router_status[router_key]["last_ok"] = checked_at.isoformat()
                 elif not is_online and checked_at:
-                    _router_status[router_key]["last_fail"] = checked_at
+                    _router_status[router_key]["last_fail"] = checked_at.isoformat()
                 # alert_sent يبدأ دائماً كـ False بعد restart لضمان إرسال تنبيه جديد إذا ظل offline
                 _router_status[router_key].setdefault("alert_sent", False)
         logger.info(f"Watchdog: loaded status for {len(all_latest)} routers from DB")

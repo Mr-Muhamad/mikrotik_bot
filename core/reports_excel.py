@@ -15,6 +15,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.worksheet import Worksheet
 
 from core.mikrotik_client import RouterOSRow
+from typing import cast
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +93,7 @@ def build_usage_excel_report(report: RouterOSRow, title: str = "تقرير اس�
         cell.border = THIN_BORDER
 
     # Data Rows
-    rows_data = report.get("rows", [])
+    rows_data: list[RouterOSRow] = cast(list[RouterOSRow], report.get("rows", []))
     for idx, r in enumerate(rows_data, start=4):
         row_values = [
             r.get("name", ""),

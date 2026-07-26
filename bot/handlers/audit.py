@@ -76,16 +76,21 @@ def _build_db_filters(filters: dict[str, str | int | None]) -> dict[str, str | i
     return db_filters
 
 
-def _format_filters_short(filters: dict[str, str | int | None]) -> str:
+def _format_filters_short(filters: RouterOSRow) -> str:
     parts = []
-    if filters.get("router"):
-        parts.append(f"🔍 {filters['router']}")
-    if filters.get("admin_id") is not None:
-        parts.append(f"👤 {filters.get('admin_label') or filters['admin_id']}")
-    if filters.get("action"):
-        parts.append(f"⚙️ {filters['action']}")
-    if filters.get("since_days"):
-        label = next((name for name, days in TIME_OPTIONS if days == filters["since_days"]), "")
+    router_val = filters.get("router")
+    if router_val:
+        parts.append(f"🔍 {str(router_val)}")
+    admin_id_val = filters.get("admin_id")
+    if admin_id_val is not None:
+        admin_label_val = filters.get("admin_label")
+        parts.append(f"👤 {str(admin_label_val) if admin_label_val else str(admin_id_val)}")
+    action_val = filters.get("action")
+    if action_val:
+        parts.append(f"⚙️ {str(action_val)}")
+    since_days_val = filters.get("since_days")
+    if since_days_val:
+        label = next((name for name, days in TIME_OPTIONS if days == since_days_val), "")
         parts.append(f"🕓 {label}")
     return " | ".join(parts) if parts else AUDIT_NO_FILTERS
 
@@ -239,13 +244,22 @@ async def _show_logs_page(
 ) -> None:
     """Display a page of audit logs filtered by the active filter state."""
     filters = _get_filters(context)
-    db_filters = _build_db_filters(filters)
+    # Cast RouterOSRow to expected filter type for db and keyboard functions
+    filter_dict: dict[str, object] = {}
+    for k, v in filters.items():
+        if v is None:
+            filter_dict[k] = None
+        elif isinstance(v, (str, int)):
+            filter_dict[k] = v
+        else:
+            filter_dict[k] = str(v)
+    db_filters = _build_db_filters(filter_dict)  # type: ignore[arg-type]
     total = await run_blocking(get_logs_count, db_filters)
     header = f"🔎 {_format_filters_short(filters)}"
 
     if total == 0:
         text = AUDIT_LIST_EMPTY.format(header=header, no_results=NO_RESULTS)
-        keyboard = get_logs_filter_keyboard(filters, page, 0)
+        keyboard = get_logs_filter_keyboard(filter_dict, page, 0)
         nav_set(context, "main_menu")
         if from_callback and update.callback_query:
             await safe_edit_or_send(update.callback_query, context, text, keyboard)
@@ -257,7 +271,7 @@ async def _show_logs_page(
     logs = await run_blocking(get_logs, PAGE_SIZE, offset, db_filters)
     if not logs:
         text = AUDIT_PAGE_EMPTY.format(header=header)
-        keyboard = get_logs_filter_keyboard(filters, page, total)
+        keyboard = get_logs_filter_keyboard(filter_dict, page, total)
         nav_set(context, "main_menu")
         if from_callback and update.callback_query:
             await safe_edit_or_send(update.callback_query, context, text, keyboard)
@@ -270,16 +284,16 @@ async def _show_logs_page(
 
     lines = [AUDIT_LIST_HEADER.format(start=start, end=end, total=total), header, ""]
     for log in logs:
-        action = log.get("action", "")
-        username = log.get("username", "")
-        router = log.get("router_name", "")
-        ts = log.get("timestamp", "")
+        action = str(log.get("action", ""))
+        username = str(log.get("username", ""))
+        router = str(log.get("router_name", ""))
+        ts = str(log.get("timestamp", ""))
         if ts and len(ts) > 16:
             ts = ts[:16]
         lines.append(f"• [{ts}] {action} — {username} @ {router}")
 
     text = "\n".join(lines)
-    keyboard = get_logs_filter_keyboard(filters, page, total)
+    keyboard = get_logs_filter_keyboard(filter_dict, page, total)
 
     nav_set(context, "main_menu")
 

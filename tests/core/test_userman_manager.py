@@ -1,10 +1,9 @@
 """Comprehensive tests for core.userman_manager.UserManager."""
 
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
 
-from core.card_models import CardSystem
 from core.userman_manager import UserManager
 
 RK = "discovered_1"

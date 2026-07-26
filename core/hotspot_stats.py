@@ -111,7 +111,7 @@ def _categorize_user(
     else:
         categories["أخرى"] += 1
 
-    reset_day = parse_reset_day(user.get("comment", ""))
+    reset_day = parse_reset_day(str(user.get("comment", "")))
     return True, reset_day
 
 
@@ -119,7 +119,7 @@ def get_hotspot_stats(
     api: MikrotikClient,
     router_key: str,
     day: int | None = None,
-) -> RouterOSRow | None:
+) -> dict[str, object] | None:
     """Return hotspot statistics, optionally filtered to a single reset day.
 
     When ``day`` is ``None`` the ``reset_list`` is empty and ``reset_days``
@@ -167,7 +167,7 @@ def get_hotspot_stats(
         return None
 
 
-def build_usage_report(api: MikrotikClient, router_key: str, top_n: int = 15) -> RouterOSRow:
+def build_usage_report(api: MikrotikClient, router_key: str, top_n: int = 15) -> dict[str, object]:
     """Build an exportable Hotspot usage report for a router.
 
     Fetches all hotspot users (long-running call) and classifies them into
@@ -236,9 +236,19 @@ def build_usage_report(api: MikrotikClient, router_key: str, top_n: int = 15) ->
             }
         )
 
-    top_consumers = sorted(rows, key=lambda r: r["total_bytes"], reverse=True)[:top_n]
-    expired = [r for r in rows if r["limit"] > 0 and r["total_bytes"] >= r["limit"]]
-    near_limit = [r for r in rows if r["limit"] > 0 and 90 <= r["percent"] < 100]
+    top_consumers = sorted(
+        rows, key=lambda r: int(r.get("total_bytes", 0) or 0), reverse=True
+    )[:top_n]
+    expired = [
+        r
+        for r in rows
+        if int(r.get("limit", 0) or 0) > 0 and int(r.get("total_bytes", 0) or 0) >= int(r.get("limit", 0) or 0)
+    ]
+    near_limit = [
+        r
+        for r in rows
+        if int(r.get("limit", 0) or 0) > 0 and 90 <= float(r.get("percent", 0) or 0) < 100
+    ]
     inactive = [r for r in rows if r["status"] == "disabled"]
 
     return {

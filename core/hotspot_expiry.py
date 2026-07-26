@@ -63,8 +63,8 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
             )
             active_map: dict[str, int] = {}
             for sess in active_sessions:
-                uname = sess.get("user", "")
-                uptime_secs = _parse_uptime_to_seconds(sess.get("uptime", ""))
+                uname = str(sess.get("user", ""))
+                uptime_secs = _parse_uptime_to_seconds(str(sess.get("uptime", "")))
                 active_map[uname] = active_map.get(uname, 0) + uptime_secs
         except Exception as e:
             logger.warning(f"Failed to fetch active sessions for {router_key}: {e}")
@@ -74,13 +74,13 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
             # تخطي المستخدمين المعطلين
             if str(user.get("disabled", "false")).lower() == "true":
                 continue
-            limit_raw = user.get("limit-uptime", "")
+            limit_raw = str(user.get("limit-uptime", ""))
             limit_secs = _parse_uptime_to_seconds(limit_raw)
             if limit_secs <= 0:
                 continue
             name = user.get("name", "")
             # uptime_used = ما استُهلك من حد المستخدم (من الجلسات النشطة)
-            used_secs = active_map.get(name, 0)
+            used_secs = active_map.get(str(name), 0)
             remaining_secs = max(0, limit_secs - used_secs)
             remaining_days = remaining_secs / 86400
             if remaining_days <= days:
@@ -95,7 +95,7 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
                 )
     except (LibRouterosError, ConnectionError, OSError) as e:
         logger.warning(f"get_expiring_users failed for {router_key}: {e}")
-    return sorted(result, key=lambda x: x["remaining_days"])
+    return sorted(result, key=lambda x: float(x["remaining_days"] or 0))
 
 
 def parse_renewal_day_from_comment(comment: str) -> tuple[str, int | None]:
@@ -159,4 +159,4 @@ def get_custom_expiring_users(
                 )
     except Exception as e:
         logger.warning(f"get_custom_expiring_users failed for {router_key}: {e}")
-    return sorted(result, key=lambda x: x["days_left"])
+    return sorted(result, key=lambda x: int(x.get("days_left", 0) or 0))

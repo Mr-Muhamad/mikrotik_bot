@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import json
 from datetime import UTC
-from typing import Any
 
 from core.mikrotik_client import RouterOSRow
 from utils.crypto import decrypt_data, encrypt_data
@@ -28,7 +27,7 @@ def save_card_batch(
     batch_type: str,
     profile: str = "",
     comment_prefix: str = "",
-    cards: list[Any] | None = None,
+    cards: list[object] | None = None,
     created_by: int | None = None,
     unit_price: float = 0.0,
 ) -> int | None:
@@ -119,7 +118,7 @@ def get_card_batches_count(router_key: str | None = None) -> int:
         return row["c"] if row else 0
 
 
-def _decode_batch_cards(cards_json: str) -> list[Any]:
+def _decode_batch_cards(cards_json: str) -> list[object]:
     """Decrypt and parse a stored batch payload into a list of card dicts."""
     if not cards_json:
         return []

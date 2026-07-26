@@ -3,6 +3,7 @@ import re
 import secrets
 import string
 from datetime import datetime
+from typing import cast
 
 from librouteros.exceptions import LibRouterosError
 
@@ -83,7 +84,7 @@ class HotspotManager:
     def _get_existing_usernames(self, router_key: str) -> set[str]:
         """Fetch all existing hotspot usernames from the router."""
         users = self._get_all_users_cached(router_key)
-        return {u.get("name", "") for u in users}
+        return {str(u.get("name", "")) for u in users}
 
     def user_exists(self, router_key: str, name: str) -> bool:
         """Return True if a hotspot user with the given name already exists on the router.
@@ -222,8 +223,8 @@ class HotspotManager:
                 )
                 for user in batch:
                     uid = user.get(".id")
-                    if uid and uid not in seen:
-                        seen.add(uid)
+                    if uid and str(uid) not in seen:
+                        seen.add(str(uid))
                         results.append(user)
             except (LibRouterosError, ConnectionError, OSError) as e:
                 logger.debug(
@@ -419,7 +420,8 @@ class HotspotManager:
         """
         from core.hotspot_stats import get_hotspot_stats as _build
 
-        return _build(self._api, router_key, day)
+        result = _build(self._api, router_key, day)
+        return cast(RouterOSRow, result) if result is not None else None
 
     def build_usage_report(self, router_key: str, top_n: int = 15) -> RouterOSRow:
         """Build an exportable Hotspot usage report for a router.
@@ -428,7 +430,7 @@ class HotspotManager:
         """
         from core.hotspot_stats import build_usage_report as _build
 
-        return _build(self._api, router_key, top_n)
+        return cast(RouterOSRow, _build(self._api, router_key, top_n))
 
     def block_mac(self, router_key: str, mac: str, comment: str = "blocked by bot") -> bool:
         """يضيف MAC إلى address-list باسم hotspot_blocked.
@@ -478,7 +480,7 @@ class HotspotManager:
             )
             purged = 0
             for u in users:
-                uid = u.get(".id")
+                uid = str(u.get(".id", ""))
                 if not uid:
                     continue
                 limit_bytes = int(u.get("limit-bytes-total", 0) or 0)
