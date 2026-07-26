@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 
 from telegram import Update
@@ -35,6 +36,9 @@ from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import safe_edit_or_send, send_step
+from utils.error_response import send_error
+
+logger = logging.getLogger(__name__)
 
 PAGE_SIZE = 10
 SUBMENU_PAGE_SIZE = 20
@@ -98,6 +102,7 @@ def _format_filters_short(filters: RouterOSRow) -> str:
 @admin_only
 async def logs_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show audit log page 0 with the filter menu."""
+    logger.info("logs_command: user=%s", update.effective_user.id)
     context.user_data["logs_filters"] = _empty_filters()
     context.user_data["logs_menu"] = None
     context.user_data["logs_sub_page"] = 0
@@ -110,21 +115,26 @@ async def logs_filter_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     query = update.callback_query
     await safe_answer_callback(query)
     category = query.data.replace("logs_filter_", "")
-    if category == "router":
-        options = await run_blocking(get_distinct_log_routers)
-        context.user_data["logs_router_options"] = options
-        context.user_data["logs_menu"] = "router"
-    elif category == "admin":
-        options = await run_blocking(get_distinct_log_admins)
-        context.user_data["logs_admin_options"] = options
-        context.user_data["logs_menu"] = "admin"
-    elif category == "action":
-        options = await run_blocking(get_distinct_log_actions)
-        context.user_data["logs_action_options"] = options
-        context.user_data["logs_menu"] = "action"
-    elif category == "time":
-        context.user_data["logs_menu"] = "time"
-    else:
+    try:
+        if category == "router":
+            options = await run_blocking(get_distinct_log_routers)
+            context.user_data["logs_router_options"] = options
+            context.user_data["logs_menu"] = "router"
+        elif category == "admin":
+            options = await run_blocking(get_distinct_log_admins)
+            context.user_data["logs_admin_options"] = options
+            context.user_data["logs_menu"] = "admin"
+        elif category == "action":
+            options = await run_blocking(get_distinct_log_actions)
+            context.user_data["logs_action_options"] = options
+            context.user_data["logs_menu"] = "action"
+        elif category == "time":
+            context.user_data["logs_menu"] = "time"
+        else:
+            return
+    except Exception as e:
+        logger.error("logs_filter_callback failed: %s", e)
+        await send_error(update, context, e, log_extra="logs_filter")
         return
     context.user_data["logs_sub_page"] = 0
     await _show_submenu(update, context)
@@ -254,7 +264,12 @@ async def _show_logs_page(
         else:
             filter_dict[k] = str(v)
     db_filters = _build_db_filters(filter_dict)  # type: ignore[arg-type]
-    total = await run_blocking(get_logs_count, db_filters)
+    try:
+        total = await run_blocking(get_logs_count, db_filters)
+    except Exception as e:
+        logger.error("get_logs_count failed: %s", e)
+        await send_error(update, context, e, log_extra="logs_count")
+        return
     header = f"🔎 {_format_filters_short(filters)}"
 
     if total == 0:
@@ -268,7 +283,12 @@ async def _show_logs_page(
         return
 
     offset = page * PAGE_SIZE
-    logs = await run_blocking(get_logs, PAGE_SIZE, offset, db_filters)
+    try:
+        logs = await run_blocking(get_logs, PAGE_SIZE, offset, db_filters)
+    except Exception as e:
+        logger.error("get_logs failed: %s", e)
+        await send_error(update, context, e, log_extra="logs_fetch")
+        return
     if not logs:
         text = AUDIT_PAGE_EMPTY.format(header=header)
         keyboard = get_logs_filter_keyboard(filter_dict, page, total)

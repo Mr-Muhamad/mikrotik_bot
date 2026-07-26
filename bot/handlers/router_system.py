@@ -5,6 +5,8 @@ logic to the core layer and maps plain tokens (``"hotspot"``, ``"userman"``,
 ``"both"``, ``"unknown"``) to user-facing Arabic strings from ``bot.messages``.
 """
 
+import logging
+
 from bot.messages import (
     ROUTER_SYSTEM_BOTH,
     ROUTER_SYSTEM_HOTSPOT,
@@ -20,6 +22,8 @@ from core.router_info import (
 )
 from utils.async_blocking import run_blocking
 
+logger = logging.getLogger(__name__)
+
 # Map plain tokens -> user-facing Arabic strings.
 _TOKEN_TO_TEXT = {
     SYSTEM_BOTH: ROUTER_SYSTEM_BOTH,
@@ -34,5 +38,9 @@ async def get_router_system_part(router_key: str | None) -> str:
 
     Returns one of ROUTER_SYSTEM_* Arabic constants from bot.messages.
     """
-    token = await run_blocking(detect_router_system, router_key)
+    try:
+        token = await run_blocking(detect_router_system, router_key)
+    except Exception as e:
+        logger.error("get_router_system_part failed: %s", e)
+        return ROUTER_SYSTEM_UNKNOWN
     return _TOKEN_TO_TEXT.get(token, ROUTER_SYSTEM_UNKNOWN)

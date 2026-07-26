@@ -1,3 +1,5 @@
+import logging
+
 from telegram import Message, Update
 from telegram.ext import ContextTypes
 
@@ -6,6 +8,9 @@ from database.models import list_admin_roles, log_action, set_admin_role
 from utils.admin_decorator import ROLE_LABELS, ROLE_LEVELS, admin_only, require_role
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import safe_edit_or_send
+from utils.error_response import send_error
+
+logger = logging.getLogger(__name__)
 
 ROLE_SET_USAGE = "الاستخدام: /role <id> <admin|operator|viewer>"
 ROLE_SET_INVALID = "الدور غير صالح. استخدم أحد القيم: admin, operator, viewer"
@@ -98,18 +103,25 @@ async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     actor = update.effective_user.id if update.effective_user else 0
     if target == actor and new_role != "admin":
+        logger.warning("role_set_command: self-demotion attempt by user=%s", actor)
         if msg:
             await msg.reply_text(ROLE_SET_SELF_DEMOTE)
         return
 
-    set_admin_role(target, new_role, actor)
-    log_action(
-        "role_change",
-        (update.effective_user.username if update.effective_user else "") or "",
-        "",
-        actor,
-    )
+    try:
+        set_admin_role(target, new_role, actor)
+        log_action(
+            "role_change",
+            (update.effective_user.username if update.effective_user else "") or "",
+            "",
+            actor,
+        )
+    except Exception as e:
+        logger.error("role_set_command failed: %s", e)
+        await send_error(update, context, e, log_extra="role_change")
+        return
     label = ROLE_LABELS.get(new_role, new_role)
+    logger.info("role_set_command: actor=%s set role=%s for target=%s", actor, new_role, target)
     if msg:
         await msg.reply_text(ROLE_SET_DONE.format(label=label, admin_id=target))
 
@@ -147,9 +159,15 @@ async def add_customer_command(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     actor = update.effective_user.id if update.effective_user else 0
-    set_admin_role(target, "customer", actor)
-    username = (update.effective_user.username if update.effective_user else "") or ""
-    log_action("add_customer", username, "", actor)
+    try:
+        set_admin_role(target, "customer", actor)
+        username = (update.effective_user.username if update.effective_user else "") or ""
+        log_action("add_customer", username, "", actor)
+    except Exception as e:
+        logger.error("add_customer_command failed: %s", e)
+        await send_error(update, context, e, log_extra="add_customer")
+        return
+    logger.info("add_customer_command: actor=%s added customer=%s", actor, target)
     await msg.reply_text(CUSTOMER_ADD_SUCCESS.format(customer_id=target))
 
 
@@ -171,8 +189,13 @@ async def remove_customer_command(update: Update, context: ContextTypes.DEFAULT_
         return
 
     actor = update.effective_user.id
-    delete_admin_role(target)
-    log_action("remove_customer", update.effective_user.username or "", "", actor)
+    try:
+        delete_admin_role(target)
+        log_action("remove_customer", update.effective_user.username or "", "", actor)
+    except Exception as e:
+        logger.error("remove_customer_command failed: %s", e)
+        await send_error(update, context, e, log_extra="remove_customer")
+        return
     await update.message.reply_text(CUSTOMER_REMOVE_SUCCESS.format(customer_id=target))
 
 
@@ -235,7 +258,12 @@ async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAUL
         return
 
     actor = update.effective_user.id
-    assign_router_to_operator(operator_id, router_id, actor)
+    try:
+        assign_router_to_operator(operator_id, router_id, actor)
+    except Exception as e:
+        logger.error("op_assign_router_callback failed: %s", e)
+        await send_error(update, context, e, log_extra="op_assign_router")
+        return
 
     # تحديث الـ keyboard
     all_routers = get_saved_routers(active_only=True)
@@ -265,7 +293,12 @@ async def op_revoke_router_callback(update: Update, context: ContextTypes.DEFAUL
     except ValueError:
         return
 
-    revoke_router_from_operator(operator_id, router_id)
+    try:
+        revoke_router_from_operator(operator_id, router_id)
+    except Exception as e:
+        logger.error("op_revoke_router_callback failed: %s", e)
+        await send_error(update, context, e, log_extra="op_revoke_router")
+        return
 
     # تحديث الـ keyboard
     all_routers = get_saved_routers(active_only=True)

@@ -1,3 +1,5 @@
+import logging
+
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -23,6 +25,9 @@ from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import is_duplicate_callback, safe_answer_callback
 from utils.chat_cleaner import reply_final, send_step
+from utils.error_response import send_error
+
+logger = logging.getLogger(__name__)
 
 
 @require_role("operator")
@@ -48,7 +53,13 @@ async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE
     except (ValueError, IndexError):
         await query.edit_message_text(ERROR_OCCURRED.format(""), reply_markup=get_router_keyboard())
         return ConversationHandler.END
-    router = await run_blocking(get_router_by_id, router_id, decrypt=False)
+    try:
+        router = await run_blocking(get_router_by_id, router_id, decrypt=False)
+    except Exception as e:
+        logger.error("rename_router_start failed: %s", e)
+        await send_error(update, context, e, log_extra="rename_start")
+        cleanup_state(query.from_user.id, context.user_data)
+        return ConversationHandler.END
     if not router:
         await query.edit_message_text(ROUTER_NOT_FOUND)
         context.user_data.clear()
@@ -72,6 +83,7 @@ async def rename_router_value(update: Update, context: ContextTypes.DEFAULT_TYPE
     """
     router_id = context.user_data.get("rename_router_id")
     if not router_id:
+        logger.warning("rename_router_value: missing router_id in session")
         await reply_final(update, context, ERROR_TRY_AGAIN)
         context.user_data.clear()
         return ConversationHandler.END
@@ -79,17 +91,24 @@ async def rename_router_value(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not new_name:
         await send_step(update, context, ROUTER_NAME_EMPTY)
         return WAITING_RENAME
-    await run_blocking(update_router_alias, router_id, new_name)
-    mikrotik_api.invalidate_router_name(f"{ROUTER_KEY_PREFIX}{router_id}")
-    mikrotik_api.invalidate_version(f"{ROUTER_KEY_PREFIX}{router_id}")
-    router = await run_blocking(get_router_by_id, router_id, decrypt=False)
-    await run_blocking(
-        log_action,
-        "rename_router",
-        new_name,
-        router.get("identity", "") if router else "",
-        update.effective_user.id,
-    )
+    logger.info("rename_router_value: router_id=%s, new_name=%s", router_id, new_name)
+    try:
+        await run_blocking(update_router_alias, router_id, new_name)
+        mikrotik_api.invalidate_router_name(f"{ROUTER_KEY_PREFIX}{router_id}")
+        mikrotik_api.invalidate_version(f"{ROUTER_KEY_PREFIX}{router_id}")
+        router = await run_blocking(get_router_by_id, router_id, decrypt=False)
+        await run_blocking(
+            log_action,
+            "rename_router",
+            new_name,
+            router.get("identity", "") if router else "",
+            update.effective_user.id,
+        )
+    except Exception as e:
+        logger.error("rename_router_value failed: %s", e)
+        await send_error(update, context, e, log_extra="rename_router")
+        cleanup_state(update.effective_user.id, context.user_data)
+        return ConversationHandler.END
     await reply_final(
         update,
         context,
