@@ -24,21 +24,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
-      - name: Ruff (F821)
-        run: |
-          ruff check . --select F821 --exclude venv --exclude __pycache__ --exclude backups --exclude logs --exclude _releases --exclude "scripts/Activate.ps1"
+      - name: Ruff
+        run: ruff check .
 
       - name: Validate Handlers
         run: |
           python scripts/validate_handlers.py
 
+      - name: Validate RouterOS Paths
+        run: python scripts/validate_routeros_paths.py
+
+      - name: Check Type Ignore
+        run: python scripts/check_type_ignore.py
+
       - name: Py Compile
         run: |
           python -c "import py_compile; py_compile.compile('main.py', doraise=True)"
 
-      - name: Pytest
+      - name: Pytest + Coverage
         run: |
-          python -m pytest -q
+          python -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --cov-fail-under=80 -q
 
       - name: Pyright
         run: |

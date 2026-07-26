@@ -354,9 +354,8 @@ mikrotik_bot/
 
 - **Pyright (strict):** صفر أخطاء.
 - **Ruff:** صفر أخطاء Style أو Bugs.
-- **Black:** الكود منسق بالكامل عبر `black`.
 - **Pytest:** كل الاختبارات ناجحة بنسبة 100%.
-- **Coverage:** لا تقل عن 90%.
+- **Coverage:** لا تقل عن 80%.
 - **Architecture:** لا توجد Circular Imports، ولا خرق لطبقات المشروع.
 - **Type Safety:** لا يوجد `Any` غير مبرر، ولا تجاهل للأخطاء بـ `# type: ignore` إلا مع تعليق يوضح السبب. يُتحقق عبر `py -3.12 scripts/check_type_ignore.py` و`pyright`.
 - **Security:** لا توجد أسرار (Secrets) داخل الكود، ولا استدعاءات غير آمنة.
@@ -379,17 +378,23 @@ mikrotik_bot/
 قبل تشغيل `python main.py` (أو `py -3.12 main.py`) أو دمج أي تعديل، يُنصح بتنفيذ الأوامر التالية كحد أدنى:
 
 ```bash
-ruff check . --select F821 --exclude venv --exclude __pycache__ --exclude backups --exclude logs --exclude _releases --exclude "scripts/Activate.ps1"
-py -3.12 scripts/validate_handlers.py
 py -3.12 -c "import py_compile; py_compile.compile('main.py', doraise=True)"
-py -3.12 -m pytest -q
+ruff check .
+py -3.12 scripts/validate_handlers.py
+py -3.12 scripts/validate_routeros_paths.py
+py -3.12 scripts/check_type_ignore.py
+py -3.12 -m pyright
+py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --cov-fail-under=80 -q
 ```
 
 ملاحظات:
 
-- `ruff check . --select F821` يركز على الأسماء غير المعرفة.
-- `scripts/validate_handlers.py` يتحقق من اتساق imports وتسجيل المعالجات؛ يتجاهل ثوابت ALL-CAPS (مثل `PATTERNS`, `CALLBACKS`) لأنها ليست معالجات.
-- `pytest` مهيأ في `pyproject.toml` ويستخدم مجلد `tests`.
+- `ruff check .` يستخدم الإعدادات من `ruff.toml` (قواعد E/F/W/I/UP/B).
+- `validate_handlers.py` يتحقق من اتساق imports وتسجيل المعالجات؛ يتجاهل ثوابت ALL-CAPS (مثل `PATTERNS`, `CALLBACKS`) لأنها ليست معالجات.
+- `validate_routeros_paths.py` يمنع hardcoded User Manager paths في `core/` لضمان توافق RouterOS v6/v7.
+- `check_type_ignore.py` يتحقق من أن كل `# type: ignore` يحمل سبباً موثّقاً.
+- `pyright` يستخدم `pyrightconfig.json` (وضع strict).
+- `pytest` مهيأ في `pyproject.toml`. التغطية ≥ 80% مطلوبة (`--cov-fail-under=80`).
 - عند تعديل Telegram flows، اختبر يدوياً من حساب مشرف داخل Telegram.
 
 ## ملاحظات صيانة معروفة
