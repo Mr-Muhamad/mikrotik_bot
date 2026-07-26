@@ -2,6 +2,7 @@
 
 import pytest
 
+from core.mikrotik_client import RouterOSRow
 from database.models import (
     BACKUP_JOBS_RETENTION_PER_ROUTER,
     cleanup_old_logs,
@@ -152,7 +153,7 @@ class TestLogsFiltering:
             )
             conn.commit()
         rows = get_logs(filters={"since": "2001-01-01 00:00:00"})
-        assert all(r["timestamp"] >= "2001-01-01 00:00:00" for r in rows)
+        assert all(str(r["timestamp"]) >= "2001-01-01 00:00:00" for r in rows)
         assert len(rows) == 4
 
     def test_distinct_log_actions(self):
@@ -225,6 +226,7 @@ class TestUserSessions:
         save_user_session(222, "old_router")
         save_user_session(222, "new_router", "new_action")
         session = get_user_session(222)
+        assert session is not None
         assert session["selected_router"] == "new_router"
         assert session["current_action"] == "new_action"
 
@@ -260,6 +262,7 @@ class TestDiscoveredRouters:
         assert router_id is not None
 
         by_id = get_router_by_id(router_id)
+        assert by_id is not None
         assert by_id["ip_address"] == "10.0.0.1"
         assert by_id["password"] == "secret"
         assert by_id["identity"] == "TestRouter"
@@ -280,8 +283,10 @@ class TestDiscoveredRouters:
     def test_save_updates_existing_ip(self):
         id1 = save_discovered_router(ip="10.0.0.3", identity="First")
         id2 = save_discovered_router(ip="10.0.0.3", identity="Second")
+        assert id1 is not None
         assert id1 == id2
         router = get_router_by_id(id1)
+        assert router is not None
         assert router["identity"] == "Second"
 
     def test_get_saved_routers_active_only(self):
@@ -294,32 +299,39 @@ class TestDiscoveredRouters:
 
     def test_delete_router(self):
         router_id = save_discovered_router(ip="10.0.0.20", identity="ToDelete")
+        assert router_id is not None
         delete_router(router_id)
         assert get_router_by_id(router_id) is None
 
     def test_update_credentials(self):
         router_id = save_discovered_router(ip="10.0.0.30", username="old", password="oldpass")
+        assert router_id is not None
         update_router_credentials(router_id, "newuser", "newpass")
         router = get_router_by_id(router_id)
+        assert router is not None
         assert router["username"] == "newuser"
         assert router["password"] == "newpass"
 
     def test_update_alias(self):
         router_id = save_discovered_router(ip="10.0.0.40", identity="SomeRouter")
+        assert router_id is not None
         update_router_alias(router_id, "MyAlias")
         router = get_router_by_id(router_id)
+        assert router is not None
         assert router["name_alias"] == "MyAlias"
 
     def test_update_identity(self):
         router_id = save_discovered_router(ip="10.0.0.50", identity="OldIdentity")
+        assert router_id is not None
         update_router_identity(router_id, "NewIdentity")
         router = get_router_by_id(router_id)
+        assert router is not None
         assert router["identity"] == "NewIdentity"
 
 
 class TestRouterDisplayName:
     def test_alias_used_first(self):
-        router = {
+        router: RouterOSRow = {
             "name_alias": "MyAlias",
             "identity": "SomeRouter",
             "ip_address": "1.2.3.4",
@@ -327,15 +339,15 @@ class TestRouterDisplayName:
         assert get_router_display_name(router) == "MyAlias"
 
     def test_identity_when_no_alias(self):
-        router = {"name_alias": "", "identity": "MyRouter", "ip_address": "1.2.3.4"}
+        router: RouterOSRow = {"name_alias": "", "identity": "MyRouter", "ip_address": "1.2.3.4"}
         assert get_router_display_name(router) == "MyRouter"
 
     def test_ip_when_no_identity(self):
-        router = {"name_alias": "", "identity": "Unknown", "ip_address": "1.2.3.4"}
+        router: RouterOSRow = {"name_alias": "", "identity": "Unknown", "ip_address": "1.2.3.4"}
         assert get_router_display_name(router) == "1.2.3.4"
 
     def test_ip_when_identity_unknown(self):
-        router = {"name_alias": "", "identity": "Unknown", "ip_address": "5.6.7.8"}
+        router: RouterOSRow = {"name_alias": "", "identity": "Unknown", "ip_address": "5.6.7.8"}
         assert get_router_display_name(router) == "5.6.7.8"
 
 
@@ -383,6 +395,7 @@ class TestBackupJobs:
     def test_get_last_failed_status(self):
         record_backup_result("discovered_2", "userman", False, "conn refused", router_name="R2")
         last = get_last_backup("discovered_2")
+        assert last is not None
         assert last["status"] == "failed"
         assert last["backup_type"] == "userman"
 
@@ -390,6 +403,7 @@ class TestBackupJobs:
         record_backup_result("discovered_3", "full", True, "first")
         record_backup_result("discovered_3", "userman", True, "second")
         last = get_last_backup("discovered_3")
+        assert last is not None
         assert last["details"] == "second"
         assert last["backup_type"] == "userman"
 
@@ -455,6 +469,7 @@ class TestSQLInjectionPrevention:
             cursor = conn.cursor()
             with pytest.raises(ValueError, match="Invalid table name"):
                 from database.models import _column_exists
+
                 _column_exists(cursor, "logs; DROP TABLE logs; --", "id")
 
     def test_add_column_if_missing_rejects_malicious_table(self):
@@ -462,6 +477,7 @@ class TestSQLInjectionPrevention:
             cursor = conn.cursor()
             with pytest.raises(ValueError, match="Invalid table name"):
                 from database.models import _add_column_if_missing
+
                 _add_column_if_missing(cursor, "fake; DROP TABLE logs; --", "x TEXT")
 
     def test_add_column_if_missing_rejects_malicious_column(self):
@@ -469,14 +485,17 @@ class TestSQLInjectionPrevention:
             cursor = conn.cursor()
             with pytest.raises(ValueError, match="Invalid column name"):
                 from database.models import _add_column_if_missing
-                _add_column_if_missing(
-                    cursor, "discovered_routers", "x; DROP TABLE logs; -- TEXT"
-                )
+
+                _add_column_if_missing(cursor, "discovered_routers", "x; DROP TABLE logs; -- TEXT")
 
     def test_existing_column_migrations_still_work(self):
         with get_db() as conn:
             cursor = conn.cursor()
             from database.models import _add_column_if_missing
 
-            _add_column_if_missing(cursor, "discovered_routers", "test_col_migration INTEGER DEFAULT 0")
-            _add_column_if_missing(cursor, "discovered_routers", "test_col_migration INTEGER DEFAULT 0")
+            _add_column_if_missing(
+                cursor, "discovered_routers", "test_col_migration INTEGER DEFAULT 0"
+            )
+            _add_column_if_missing(
+                cursor, "discovered_routers", "test_col_migration INTEGER DEFAULT 0"
+            )
