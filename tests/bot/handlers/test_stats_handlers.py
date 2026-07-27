@@ -158,6 +158,7 @@ class TestStatsUserman:
     @pytest.mark.asyncio
     async def test_stats_chart_callback_success(self):
         ctx = MagicMock()
+        ctx.bot.send_photo = AsyncMock()
         ctx.user_data = {"router_key": "discovered_1"}
         update = _query_update()
 

@@ -135,7 +135,8 @@ def main():
     import os
     import re
     sys.path.insert(0, os.path.abspath("."))
-    import bot.registrations  # noqa: F401
+    import bot.registrations  # noqa: F401 # pyright: ignore[reportUnusedImport]
+    _ = bot.registrations
     from utils.handler_registry import _registry  # pyright: ignore[reportPrivateUsage]
 
     registered_pats = []
