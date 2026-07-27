@@ -75,7 +75,7 @@ async def backup_restore_start(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         backups = await run_blocking(backup_restore.list_router_backups, router_key)
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.error("backup_restore_start failed: %s", e)
         await send_error(
             update,
@@ -152,7 +152,7 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
             await query.edit_message_text(
                 BACKUP_RESTORE_FAILED.format(error=result.get("message", "Unknown error"))
             )
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.error("backup_restore_confirm failed: %s", e)
         await send_error(
             update,
@@ -181,7 +181,7 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
 
     try:
         tar_files = await run_blocking(backup_service.list_local_userman_backups)
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.error("userman_restore_start failed: %s", e)
         await send_error(
             update,
@@ -292,7 +292,7 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
             await query.edit_message_text(
                 USERMAN_RESTORE_FAILED.format(error=result.get("message", "Unknown error"))
             )
-    except Exception as e:
+    except (OSError, ValueError) as e:
         logger.error("userman_restore_execute failed: %s", e)
         await send_error(
             update,

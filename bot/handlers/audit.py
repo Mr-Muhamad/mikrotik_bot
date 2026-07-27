@@ -132,7 +132,7 @@ async def logs_filter_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             context.user_data["logs_menu"] = "time"
         else:
             return
-    except Exception as e:
+    except (ValueError, OSError) as e:
         logger.error("logs_filter_callback failed: %s", e)
         await send_error(update, context, e, log_extra="logs_filter")
         return
@@ -266,7 +266,7 @@ async def _show_logs_page(
     db_filters = _build_db_filters(filter_dict)  # type: ignore[arg-type]
     try:
         total = await run_blocking(get_logs_count, db_filters)
-    except Exception as e:
+    except (ValueError, OSError) as e:
         logger.error("get_logs_count failed: %s", e)
         await send_error(update, context, e, log_extra="logs_count")
         return
@@ -285,7 +285,7 @@ async def _show_logs_page(
     offset = page * PAGE_SIZE
     try:
         logs = await run_blocking(get_logs, PAGE_SIZE, offset, db_filters)
-    except Exception as e:
+    except (ValueError, OSError) as e:
         logger.error("get_logs failed: %s", e)
         await send_error(update, context, e, log_extra="logs_fetch")
         return

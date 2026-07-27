@@ -1,6 +1,7 @@
 import logging
 import os
 
+import telegram.error
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -134,14 +135,14 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                     chat_id=chat_id,
                     text=BACKUP_FAILED_USERMAN.format(message=result["message"]),
                 )
-    except Exception as e:
+    except (ValueError, OSError) as e:
         logger.error(f"Background backup failed for {router_key}: {e}")
         try:
             await context.bot.send_message(
                 chat_id=chat_id,
                 text=BACKUP_ERROR_UNEXPECTED.format(router_key=router_key),
             )
-        except Exception:
+        except telegram.error.TelegramError:
             pass
     finally:
         _set_backup_running(router_key, False)
@@ -330,7 +331,7 @@ async def schedule_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
             update.effective_user.id,
         )
         await reply_final(update, context, SCHEDULE_SET, get_backup_keyboard())
-    except Exception as e:
+    except (ValueError, RuntimeError, OSError) as e:
         await send_error(
             update,
             context,
@@ -420,6 +421,6 @@ async def backup_download_file(update: Update, context: ContextTypes.DEFAULT_TYP
                 caption=f"📦 {'Full Backup' if backup_type == 'full' else 'User Manager'} — {fname}",  # noqa: E501
             )
         await query.answer(BACKUP_DL_SEND_SUCCESS, show_alert=False)
-    except Exception as e:
+    except (telegram.error.TelegramError, OSError, ValueError) as e:
         logger.error(f"Failed to send backup file {fname}: {e}")
         await query.answer(BACKUP_DL_SEND_FAIL, show_alert=True)

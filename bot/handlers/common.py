@@ -23,7 +23,7 @@ async def get_router_part(router_key: str | None, fmt: str = "\n📡 {}") -> str
     except RouterNotFoundError as e:
         logger.warning(f"Router not found while getting name for {router_key}: {e}")
         return ""
-    except Exception:
+    except (OSError, ValueError):
         return ""
 
 

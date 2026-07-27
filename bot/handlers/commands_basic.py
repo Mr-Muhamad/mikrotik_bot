@@ -8,6 +8,7 @@ and shared helpers.
 
 import logging
 
+import telegram.error
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -181,12 +182,12 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         try:
             await update.message.delete()
-        except Exception as e:
+        except telegram.error.TelegramError as e:
             logger.debug(f"Failed to delete user message: {e}")
         if last_msg_id:
             try:
                 await context.bot.delete_message(chat_id=chat_id, message_id=last_msg_id)
-            except Exception as e:
+            except telegram.error.TelegramError as e:
                 logger.debug(f"Failed to delete last message {last_msg_id}: {e}")
         if router_key:
             await send_and_track(
@@ -235,7 +236,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 update.effective_chat.id,
                 "❌ حدث خطأ غير متوقع.\nاستخدم /cancel للخروج من الوضع الحالي\nأو /start للعودة للقائمة.",  # noqa: E501
             )
-        except Exception as e:
+        except telegram.error.TelegramError as e:
             logger.debug(f"Failed to send error message: {e}")
     elif error:
         try:
@@ -254,7 +255,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     ),
                     parse_mode="HTML",
                 )
-        except Exception as send_admin_err:
+        except telegram.error.TelegramError as send_admin_err:
             logger.debug(f"Failed to notify admin of background error: {send_admin_err}")
 
     if update and update.effective_user:
@@ -268,7 +269,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await send_and_track(context, chat_id, HELP, parse_mode="HTML")
     try:
         await update.message.delete()
-    except Exception as e:
+    except telegram.error.TelegramError as e:
         logger.debug(f"Failed to delete help command message: {e}")
 
 
@@ -282,7 +283,7 @@ async def clean_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
         try:
             await update.message.delete()
-        except Exception as e:
+        except telegram.error.TelegramError as e:
             logger.debug(f"Failed to delete clean command message: {e}")
     msg = await context.bot.send_message(chat_id, CLEAN_DONE)
     await schedule_delete(context, chat_id, msg.message_id, 3)
@@ -300,7 +301,7 @@ async def sync_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await schedule_delete(context, chat_id, msg.message_id, 5)
     try:
         await update.message.delete()
-    except Exception as e:
+    except telegram.error.TelegramError as e:
         logger.debug(f"Failed to delete sync command message: {e}")
 
 
@@ -344,7 +345,7 @@ async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
     except ImportError:
         logger.warning("psutil is not installed. Server health metrics disabled.")
-    except Exception as e:
+    except (OSError, ValueError, AttributeError) as e:
         logger.error(f"Failed to fetch system metrics: {e}")
 
     text = (
@@ -369,7 +370,7 @@ async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
         try:
             await update.message.delete()
-        except Exception as e:
+        except telegram.error.TelegramError as e:
             logger.debug(f"Failed to delete metrics command message: {e}")
     await schedule_delete(context, chat_id, msg.message_id, 30)
 
