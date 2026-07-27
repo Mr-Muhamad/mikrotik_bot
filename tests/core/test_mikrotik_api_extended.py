@@ -226,7 +226,7 @@ class TestTestConnectionApiCloseError:
             MagicMock(return_value=[{"version": "6.49"}]),
             MagicMock(return_value=[{"name": "Router1"}]),
         ]
-        mock_api.close.side_effect = IOError("socket closed")
+        mock_api.close.side_effect = OSError("socket closed")
         with (
             patch("socket.create_connection", return_value=MagicMock()),
             patch("core.mikrotik_api.connect", return_value=mock_api),
@@ -614,7 +614,9 @@ class TestExecuteLongDelegation:
             patch.object(api._pool, "get_connection", return_value=fake),
             patch.object(api._pool, "release_connection"),
         ):
-            with patch.object(api, "_execute_with_retry", wraps=api._execute_with_retry) as mock_exec:
+            with patch.object(
+                api, "_execute_with_retry", wraps=api._execute_with_retry
+            ) as mock_exec:
                 api.execute_long("r1", "system/resource/print")
                 assert mock_exec.call_args[0][2] == 120
 
@@ -625,7 +627,9 @@ class TestExecuteLongDelegation:
             patch.object(api._pool, "get_connection", return_value=fake),
             patch.object(api._pool, "release_connection"),
         ):
-            with patch.object(api, "_execute_with_retry", wraps=api._execute_with_retry) as mock_exec:
+            with patch.object(
+                api, "_execute_with_retry", wraps=api._execute_with_retry
+            ) as mock_exec:
                 api.execute("r1", "system/resource/print")
                 assert mock_exec.call_args[0][2] == 30
 
@@ -677,7 +681,7 @@ class TestDownloadFullFlow:
 class TestProbeSslFullFlow:
     def test_probe_connect_success_close_error(self, api):
         mock_probe = MagicMock()
-        mock_probe.close.side_effect = IOError("already closed")
+        mock_probe.close.side_effect = OSError("already closed")
         with patch("core.mikrotik_api.connect", return_value=mock_probe) as mock_connect:
             result = api._probe_api_ssl("10.0.0.1", "admin", "pass")
         mock_connect.assert_called_once_with(
