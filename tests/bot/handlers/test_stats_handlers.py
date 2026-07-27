@@ -1,5 +1,6 @@
 """Tests for bot.handlers.stats."""
 
+import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -160,9 +161,18 @@ class TestStatsUserman:
         ctx.user_data = {"router_key": "discovered_1"}
         update = _query_update()
 
-        with patch(
-            "bot.handlers.stats.run_blocking",
-            new=AsyncMock(side_effect=[[], "Router1", b"\x89PNGfakechartbytes"]),
+        mock_chart_mod = MagicMock()
+        mock_chart_mod.generate_trend_chart = AsyncMock(
+            return_value=b"\x89PNGfakechartbytes"
+        )
+        with (
+            patch.dict(
+                sys.modules, {"core.chart_generator": mock_chart_mod}
+            ),
+            patch(
+                "bot.handlers.stats.run_blocking",
+                new=AsyncMock(side_effect=[[], "Router1", b"\x89PNGfakechartbytes"]),
+            ),
         ):
             await stats_module.stats_chart_callback(update, ctx)
         ctx.bot.send_photo.assert_called_once()

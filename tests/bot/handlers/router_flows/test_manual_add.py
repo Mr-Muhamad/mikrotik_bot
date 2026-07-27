@@ -405,9 +405,7 @@ class TestManualAddConfirm:
                 patch(f"{P}.safe_answer_callback", new_callable=AsyncMock)
             )
             mock_api = MagicMock()
-            mock_api.test_connection = AsyncMock(
-                side_effect=lambda *a, **k: _call_through(lambda: (True, "7.12", "Router"))
-            )
+            mock_api.test_connection = MagicMock(return_value=(True, "7.12", "Router"))
             stack.enter_context(patch(f"{P}.mikrotik_api", mock_api))
             stack.enter_context(
                 patch(f"{P}.save_manual_router", AsyncMock(return_value=42))
@@ -518,11 +516,7 @@ class TestManualAddConfirm:
                 patch(f"{P}.safe_answer_callback", new_callable=AsyncMock)
             )
             mock_api = MagicMock()
-            mock_api.test_connection = AsyncMock(
-                side_effect=lambda *a, **k: _call_through(
-                    lambda: (False, "Auth failed", "")
-                )
-            )
+            mock_api.test_connection = MagicMock(return_value=(False, "Auth failed", ""))
             stack.enter_context(patch(f"{P}.mikrotik_api", mock_api))
             stack.enter_context(
                 patch(f"{P}.save_manual_router", AsyncMock(return_value=42))

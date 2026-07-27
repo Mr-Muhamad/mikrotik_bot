@@ -1,5 +1,6 @@
 import logging
 import re
+from collections.abc import Callable
 
 import telegram.error
 from librouteros.exceptions import LibRouterosError
@@ -110,7 +111,7 @@ def _classify_os_error(error: TimeoutError | ConnectionError | OSError) -> str:
     return CATEGORY_CONNECTION
 
 
-_ERROR_CLASSIFIERS: list[tuple[type[Exception], object]] = [
+_ERROR_CLASSIFIERS: list[tuple[type[Exception], Callable[..., str]]] = [
     (LibRouterosError, _classify_librouteros),
     (OSError, _classify_os_error),
 ]
@@ -119,7 +120,7 @@ _ERROR_CLASSIFIERS: list[tuple[type[Exception], object]] = [
 def classify_error(error: Exception) -> str:
     for exc_type, classifier in _ERROR_CLASSIFIERS:
         if isinstance(error, exc_type):
-            return classifier(error)  # type: ignore[operator]
+            return classifier(error)
 
     if isinstance(error, ValueError) and "not found" in str(error).lower():
         return CATEGORY_NOT_FOUND

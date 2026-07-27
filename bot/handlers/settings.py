@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Callable
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -195,7 +196,7 @@ def _update_value_font_size(value: str) -> str | None:
     return PDF_SEND_2_VALUES
 
 
-_PDF_OPTION_HANDLERS: dict[str, object] = {
+_PDF_OPTION_HANDLERS: dict[str, Callable[..., object]] = {
     "margins": _update_margins,
     "spacing": _update_spacing,
     "cards_per_row": lambda v: pdf_settings.update(cards_per_row=int(v)),
@@ -214,7 +215,7 @@ def _apply_pdf_option_update(option: str, value: str) -> str | None:
     handler = _PDF_OPTION_HANDLERS.get(option)
     if handler is None:
         return None
-    result = handler(value)  # type: ignore[operator]
+    result = handler(value)
     return result if isinstance(result, str) else None
 
 
