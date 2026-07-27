@@ -223,9 +223,8 @@ def get_selected_router(user_id: int) -> str | None:
                 )
                 clear_router_session(user_id)
                 return None
-        except Exception as e:
+        except (ValueError, TypeError) as e:
             logger.warning(f"Failed to parse last_activity for user {user_id}: {e}")
-
     return router_key
 
 
@@ -307,7 +306,7 @@ async def _fast_reachability_check(router_key: str) -> bool:
         await writer.wait_closed()
         _REACHABILITY_CACHE[router_key] = (True, now)
         return True
-    except Exception as e:
+    except (TimeoutError, OSError) as e:
         logger.warning(f"Fast reachability check failed for {router_key}: {e}")
         _REACHABILITY_CACHE[router_key] = (False, now)
         return False

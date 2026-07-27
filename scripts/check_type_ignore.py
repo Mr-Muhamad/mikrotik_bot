@@ -33,7 +33,7 @@ def scan_files():
         rel = path.relative_to(PROJECT_ROOT)
         try:
             lines = path.read_text(encoding="utf-8").splitlines()
-        except Exception:
+        except Exception:  # noqa: BLE001
             continue
         for i, line in enumerate(lines, 1):
             if IGNORE_PATTERN.search(line):

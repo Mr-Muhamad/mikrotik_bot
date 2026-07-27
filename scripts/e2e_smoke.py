@@ -159,7 +159,7 @@ async def run_flow(app: Application, update: Update) -> None:
                 if handler.check_update(update):
                     logger.debug("MATCH handler=%s", type(handler).__name__)
                     break
-            except Exception:
+            except Exception:  # noqa: BLE001
                 logger.debug("check_update failed for handler=%s", type(handler).__name__)
     try:
         await app.process_update(update)

@@ -6,6 +6,7 @@
 
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram.ext import ContextTypes
 
 from bot.profile_callbacks import cache_profile_names
@@ -50,7 +51,7 @@ async def fetch_profiles(
             raw = await run_blocking(profile_sync.get_userman_profiles, router_key)
         else:
             raw = await run_blocking(hotspot_manager.get_profiles, router_key)
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.warning(f"fetch_profiles({source}) failed for {router_key}: {e}")
         return []
 
