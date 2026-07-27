@@ -66,6 +66,7 @@ from bot.handlers.hotspot_search import (
 )
 from bot.handlers.menus import (
     backup_menu,
+    go_back,
     hotspot_menu,
     main_menu,
     pdf_settings_menu,
@@ -95,7 +96,7 @@ from bot.handlers.routers import (
     saved_router_selected,
     saved_routers_list,
 )
-from bot.handlers.settings import pdf_group_layout, pdf_group_misc
+from bot.handlers.settings import pdf_group_layout, pdf_group_misc, pdf_group_text
 from bot.handlers.stats import stats_chart_callback, stats_hotspot, stats_userman
 from bot.handlers.timeout import cmd_timeout, handle_timeout_selection
 from bot.handlers.usage import usage_start
@@ -137,6 +138,7 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["cancel_timeout"])(handle_time
 standalone(CallbackQueryHandler, pattern=PATTERNS["select_router"])(start)
 standalone(CallbackQueryHandler, pattern=PATTERNS["roles_back"])(roles_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["main_menu"])(main_menu)
+standalone(CallbackQueryHandler, pattern=PATTERNS["go_back"])(go_back)
 standalone(CallbackQueryHandler, pattern=PATTERNS["menu_hotspot"])(hotspot_menu)
 standalone(CallbackQueryHandler, pattern=PATTERNS["menu_userman"])(userman_menu)
 standalone(CallbackQueryHandler, pattern=PATTERNS["menu_stats"])(stats_menu)
@@ -215,5 +217,6 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["op_assign_router"])(op_assign
 standalone(CallbackQueryHandler, pattern=PATTERNS["op_revoke_router"])(op_revoke_router_callback)
 
 # PDF settings standalone callbacks
+standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_text"])(pdf_group_text)
 standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_layout"])(pdf_group_layout)
 standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_misc"])(pdf_group_misc)

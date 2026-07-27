@@ -64,3 +64,21 @@ async def safe_answer_callback(
             )
         else:
             logger.warning(f"Callback answer failed: {e}")
+
+
+def is_latest_message(query: CallbackQuery | None, user_data: dict[str, object] | None) -> bool:
+    """Check if the callback query originates from the active/latest message.
+
+    Args:
+        query: The incoming callback query.
+        user_data: The context.user_data dict containing 'last_msg'.
+
+    Returns:
+        True if query is from the latest message or no last_msg tracked, False otherwise.
+    """
+    if query is None or query.message is None or user_data is None:
+        return True
+    last_msg_id = user_data.get("last_msg")
+    if last_msg_id is not None:
+        return query.message.message_id == int(str(last_msg_id))
+    return True

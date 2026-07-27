@@ -209,16 +209,20 @@ fallback(CommandHandler, command="usage")(usage_start)
 async def _unhandled_callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if query:
+        from bot.keyboards import get_main_keyboard
         from utils.callback_utils import safe_answer_callback
 
-        await safe_answer_callback(
-            query,
-            text=(
-                "⚠️ هذه القائمة قديمة أو منتهية. يرجى التفاعل مع آخر رسالة"
-                " أو كتابة /start لتحديث الواجهة."
-            ),
-            show_alert=True,
-        )
+        # 1. إجابة فورية لمنع تجمد الزر لثوانٍ
+        await safe_answer_callback(query)
+
+        # 2. تحديث الرسالة القديمة برمجياً بدون alert مزعج
+        try:
+            await query.edit_message_text(
+                "⚠️ هذه القائمة قديمة أو منتهية الصلاحية.\nتم تحديث الواجهة تلقائياً.",
+                reply_markup=get_main_keyboard(),
+            )
+        except Exception as e:
+            logger.debug(f"Handling stale callback message edit skip: {e}")
 
 
 fallback(CallbackQueryHandler, pattern=r"^.*$")(_unhandled_callback_handler)

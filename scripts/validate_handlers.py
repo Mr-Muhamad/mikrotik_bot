@@ -131,6 +131,47 @@ def main():
             for name in sorted(actual_handlers):
                 print(f"   {name}")
 
+    # 2. Audit InlineKeyboardButton callback_data in keyboards.py
+    import os
+    import re
+    sys.path.insert(0, os.path.abspath("."))
+    import bot.registrations
+    from utils.handler_registry import _registry
+
+    registered_pats = []
+    for item in _registry["standalone"]:
+        if item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]:
+            registered_pats.append(item["kwargs"]["pattern"])
+    for state, items in _registry["states"].items():
+        for item in items:
+            if item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]:
+                registered_pats.append(item["kwargs"]["pattern"])
+    for item in _registry["entry_points"]:
+        if item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]:
+            registered_pats.append(item["kwargs"]["pattern"])
+
+    with open("bot/keyboards.py", encoding="utf-8") as kf:
+        ktree = ast.parse(kf.read(), filename="bot/keyboards.py")
+
+    kb_cbs = set()
+    for node in ast.walk(ktree):
+        if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "InlineKeyboardButton":
+            for kw in node.keywords:
+                if kw.arg == "callback_data" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                    kb_cbs.add(kw.value.value)
+
+    unregistered_cbs = []
+    for cb in sorted(kb_cbs):
+        matched = any(re.search(p if isinstance(p, str) else p.pattern, cb) for p in registered_pats)
+        if not matched:
+            unregistered_cbs.append(cb)
+
+    if unregistered_cbs:
+        has_error = True
+        print("[ERROR] INLINE KEYBOARD CALLBACK_DATA WITH NO REGISTERED HANDLER:")
+        for cb in unregistered_cbs:
+            print(f"   '{cb}'")
+
     if has_error:
         sys.exit(1)
 
