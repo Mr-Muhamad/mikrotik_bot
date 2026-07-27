@@ -4,6 +4,7 @@ from contextlib import ExitStack
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from telegram.error import TelegramError
 
 from bot.handlers.constants import WAITING_DISC_PASSWORD, WAITING_DISC_USERNAME
 from tests.fixtures.telegram_mocks import make_mock_context, make_mock_update
@@ -106,7 +107,7 @@ class TestDiscoverRoutersCallback:
         query = MagicMock()
         query.edit_message_text = AsyncMock()
         with patch(f"{P}.ack_callback", new_callable=AsyncMock, return_value=query), patch(
-            f"{P}.discover_routers", new_callable=AsyncMock, side_effect=RuntimeError("net fail")
+            f"{P}.discover_routers", new_callable=AsyncMock, side_effect=OSError("net fail")
         ):
             from bot.handlers.router_flows.discovery import discover_routers_callback
 
@@ -266,7 +267,7 @@ class TestDiscEnterPassword:
         context.user_data["disc_username"] = "admin"
         with ExitStack() as stack:
             mock_api = stack.enter_context(patch(f"{P}.mikrotik_api"))
-            mock_api.test_connection = AsyncMock(side_effect=RuntimeError("net err"))
+            mock_api.test_connection = AsyncMock(side_effect=OSError("net err"))
             status_msg = MagicMock()
             status_msg.edit_text = AsyncMock()
             status_msg.message_id = 10
@@ -289,7 +290,7 @@ class TestDiscEnterPassword:
             status_msg.edit_text = AsyncMock()
             status_msg.message_id = 10
             update.message.reply_text = AsyncMock(return_value=status_msg)
-            update.message.delete = AsyncMock(side_effect=RuntimeError("perm denied"))
+            update.message.delete = AsyncMock(side_effect=TelegramError("perm denied"))
             stack.enter_context(patch(f"{P}.get_router_by_ip", return_value=None))
             stack.enter_context(
                 patch("core.router_info.detect_router_system", new_callable=AsyncMock)
