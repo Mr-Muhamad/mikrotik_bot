@@ -114,7 +114,7 @@ class TestBackupRestoreStart:
             patch(
                 "bot.handlers.backup_restore.run_blocking",
                 new_callable=AsyncMock,
-                side_effect=RuntimeError("net fail"),
+                side_effect=OSError("net fail"),
             ),
             patch("bot.handlers.backup_restore.send_error", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
@@ -332,7 +332,7 @@ class TestBackupRestoreConfirm:
             patch(
                 "bot.handlers.backup_restore.run_blocking",
                 new_callable=AsyncMock,
-                side_effect=RuntimeError("timeout"),
+                side_effect=OSError("timeout"),
             ),
             patch("bot.handlers.backup_restore.send_error", new_callable=AsyncMock),
         ):
@@ -370,7 +370,7 @@ class TestUsermanRestoreStart:
             patch(
                 "bot.handlers.backup_restore.run_blocking",
                 new_callable=AsyncMock,
-                side_effect=RuntimeError("io"),
+                side_effect=OSError("io"),
             ),
             patch("bot.handlers.backup_restore.send_error", new_callable=AsyncMock),
             patch("bot.handlers.backup_restore.safe_answer_callback", new_callable=AsyncMock),
@@ -760,7 +760,7 @@ class TestUsermanRestoreExecute:
             patch(
                 "bot.handlers.backup_restore.run_blocking",
                 new_callable=AsyncMock,
-                side_effect=RuntimeError("net down"),
+                side_effect=OSError("net down"),
             ),
             patch("bot.handlers.backup_restore.send_error", new_callable=AsyncMock),
         ):
