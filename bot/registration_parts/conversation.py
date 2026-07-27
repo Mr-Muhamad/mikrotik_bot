@@ -11,8 +11,12 @@ AFTER ``bot.registration_parts.standalone`` so standalone decorators
 run first.
 """
 
+import logging
+
 from telegram import Update
 from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, filters
+
+logger = logging.getLogger(__name__)
 
 from bot.handlers.backup import schedule_enable, schedule_menu_from_conversation, schedule_set
 from bot.handlers.batch import share_card_send, share_card_start

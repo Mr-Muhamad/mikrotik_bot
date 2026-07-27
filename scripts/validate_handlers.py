@@ -56,8 +56,8 @@ def _get_root_call_name(node: ast.AST) -> str | None:
     return None
 
 
-def _extract_handler_names(tree: ast.AST) -> set:
-    names = set()
+def _extract_handler_names(tree: ast.AST) -> set[str]:
+    names: set[str] = set()
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
@@ -78,8 +78,8 @@ def _extract_handler_names(tree: ast.AST) -> set:
     return names
 
 
-def _local_defs(tree: ast.AST) -> set:
-    names = set()
+def _local_defs(tree: ast.AST) -> set[str]:
+    names: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             names.add(node.name)
@@ -95,7 +95,7 @@ def main():
     with open(source_path, encoding="utf-8") as f:
         tree = ast.parse(f.read())
 
-    imported: set = set()
+    imported: set[str] = set()
     for node in ast.walk(tree):
         if (
             isinstance(node, ast.ImportFrom)
@@ -135,14 +135,14 @@ def main():
     import os
     import re
     sys.path.insert(0, os.path.abspath("."))
-    import bot.registrations
-    from utils.handler_registry import _registry
+    import bot.registrations  # noqa: F401
+    from utils.handler_registry import _registry  # pyright: ignore[reportPrivateUsage]
 
     registered_pats = []
     for item in _registry["standalone"]:
         if item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]:
             registered_pats.append(item["kwargs"]["pattern"])
-    for state, items in _registry["states"].items():
+    for _state, items in _registry["states"].items():
         for item in items:
             if item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]:
                 registered_pats.append(item["kwargs"]["pattern"])
