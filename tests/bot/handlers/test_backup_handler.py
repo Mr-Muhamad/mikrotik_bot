@@ -132,7 +132,7 @@ class TestBackupFull:
 
         with patch(
             "bot.handlers.backup.run_blocking",
-            new=AsyncMock(side_effect=Exception("net down")),
+            new=AsyncMock(side_effect=OSError("net down")),
         ):
             await job_func(job_ctx)
 
@@ -218,7 +218,7 @@ class TestBackupUserman:
 
         with patch(
             "bot.handlers.backup.run_blocking",
-            new=AsyncMock(side_effect=Exception("timeout")),
+            new=AsyncMock(side_effect=OSError("timeout")),
         ):
             await job_func(job_ctx)
 

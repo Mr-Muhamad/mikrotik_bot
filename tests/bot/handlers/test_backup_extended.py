@@ -309,7 +309,7 @@ class TestBackgroundBackupJob:
         ctx = self._make_job_context("full")
 
         with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
-            mock_rb.side_effect = Exception("crash")
+            mock_rb.side_effect = OSError("crash")
             await _background_backup_job(ctx)
 
         ctx.bot.send_message.assert_awaited_once()
@@ -335,7 +335,7 @@ class TestBackgroundBackupJob:
         _BACKUP_LOCKS[ROUTER_KEY] = True
 
         with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
-            mock_rb.side_effect = Exception("crash")
+            mock_rb.side_effect = OSError("crash")
             await _background_backup_job(ctx)
 
         assert ROUTER_KEY not in _BACKUP_LOCKS
