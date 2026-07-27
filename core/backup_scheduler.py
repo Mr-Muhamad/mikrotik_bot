@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timedelta
 
-from librouteros.exceptions import LibRouterosError
 from telegram.ext import CallbackContext, JobQueue
 
 from core.mikrotik_client import RouterOSRow
@@ -23,8 +22,6 @@ class BackupScheduler:
         failed_routers: list[str],
         successful_routers: list[str],
     ) -> None:
-        from librouteros.exceptions import LibRouterosError
-
         from core.backup_service import backup_service
         from core.mikrotik_api import mikrotik_api
         from database.models import record_backup_result
@@ -50,8 +47,11 @@ class BackupScheduler:
                 router_name=router_name,
             )
             logger.info(f"Scheduled backup done for {router_key}")
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Scheduled backup failed for {router_key}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Scheduled backup failed for {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             failed_routers.append(str(router_name))
             await run_blocking(
                 record_backup_result,
@@ -64,8 +64,11 @@ class BackupScheduler:
 
         try:
             full_result = await run_blocking(backup_service.full_backup, router_key)
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Scheduled full backup failed for {router_key}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Scheduled full backup failed for {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             failed_routers.append(f"{router_name} (باكوب كامل)")
             await run_blocking(
                 record_backup_result,
@@ -144,8 +147,11 @@ class BackupScheduler:
             router_name = str(r.get("identity", router_key))
             try:
                 expiring = await run_blocking(hotspot_manager.get_expiring_users, router_key, days)
-            except (LibRouterosError, OSError) as e:
-                logger.warning(f"Expiry check failed for {router_key}: {e}")
+            except Exception as e:  # noqa: BLE001
+                logger.warning(
+                    f"Expiry check failed for {router_key} "
+                    f"(error type: {type(e).__name__}): {e}"
+                )
                 continue
 
             if not expiring:
@@ -164,8 +170,11 @@ class BackupScheduler:
             for admin_id in ADMIN_IDS:
                 try:
                     await context.bot.send_message(admin_id, message, parse_mode="HTML")
-                except (LibRouterosError, OSError, ValueError) as e:
-                    logger.warning(f"Failed to notify admin {admin_id} about expiry: {e}")
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(
+                        f"Failed to notify admin {admin_id} about expiry "
+                        f"(error type: {type(e).__name__}): {e}"
+                    )
 
     async def _do_stats_snapshot(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
         """حفظ snapshot يومي لإحصائيات كل راوتر في قاعدة البيانات."""
@@ -191,8 +200,11 @@ class BackupScheduler:
                 }
                 await run_blocking(save_snapshot, router_key, snapshot_data)
                 logger.info(f"Stats snapshot saved for {router_key}")
-            except (LibRouterosError, OSError) as e:
-                logger.warning(f"Stats snapshot failed for {router_key}: {e}")
+            except Exception as e:  # noqa: BLE001
+                logger.warning(
+                    f"Stats snapshot failed for {router_key} "
+                    f"(error type: {type(e).__name__}): {e}"
+                )
 
     def start_daily(
         self,

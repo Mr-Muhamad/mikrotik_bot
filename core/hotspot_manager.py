@@ -5,8 +5,6 @@ import string
 from datetime import datetime
 from typing import cast
 
-from librouteros.exceptions import LibRouterosError
-
 from core.cache import TTLCache
 from core.card_models import CardData, CardSystem
 from core.mikrotik_api import mikrotik_api
@@ -103,8 +101,11 @@ class HotspotManager:
                 **{"?name": name, ".proplist": ".id"},
             )
             return len(users) > 0
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Failed to check user existence for '{name}': {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Failed to check user existence for '{name}' "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return False
 
     def _generate_unique_username(self, prefix: str, length: int, existing_names: set[str]) -> str:
@@ -226,12 +227,10 @@ class HotspotManager:
                     if uid and str(uid) not in seen:
                         seen.add(str(uid))
                         results.append(user)
-            except (LibRouterosError, ConnectionError, OSError) as e:
+            except Exception as e:  # noqa: BLE001
                 logger.debug(
-                    "API-side filtered search for '%s' on %s failed: %s",
-                    search,
-                    field,
-                    e,
+                    f"API-side filtered search for '{search}' on {field} failed "
+                    f"(error type: {type(e).__name__}): {e}"
                 )
 
         if not results:
@@ -304,8 +303,11 @@ class HotspotManager:
             results = self._api.execute(router_key, "ip/hotspot/user/profile/print")
             self._profiles_cache.set(router_key, results)
             return results
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error("Failed to fetch hotspot profiles: %s", e)
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Failed to fetch hotspot profiles "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return []
 
     def _prepare_card_users(
@@ -397,8 +399,11 @@ class HotspotManager:
                 try:
                     self._api.execute(router_key, "ip/hotspot/user/add", **user_params)
                     cards.append(card_item)
-                except (LibRouterosError, ConnectionError, OSError) as e:
-                    logger.error(f"Failed to add hotspot card user '{card_item.username}': {e}")
+                except Exception as e:  # noqa: BLE001
+                    logger.error(
+                        f"Failed to add hotspot card user '{card_item.username}' "
+                        f"(error type: {type(e).__name__}): {e}"
+                    )
 
         self.invalidate_users_cache(router_key)
         logger.info(f"Created {len(cards)}/{count} hotspot cards on {router_key} in batch")
@@ -497,11 +502,17 @@ class HotspotManager:
                     try:
                         self.delete_user(router_key, uid)
                         purged += 1
-                    except (LibRouterosError, OSError) as ex:
-                        logger.warning("Failed to purge user %s: %s", uid, ex)
+                    except Exception as ex:  # noqa: BLE001
+                        logger.warning(
+                            f"Failed to purge user {uid} "
+                            f"(error type: {type(ex).__name__}): {ex}"
+                        )
             return purged
-        except (LibRouterosError, OSError) as e:
-            logger.error("Failed to purge expired users on %s: %s", router_key, e)
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Failed to purge expired users on {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return 0
 
 

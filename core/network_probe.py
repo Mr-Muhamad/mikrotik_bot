@@ -228,8 +228,11 @@ class ARPTableProbe:
             else:
                 logger.info(f"ARP table probe not supported on {self._system}")
                 return []
-        except (OSError, subprocess.TimeoutExpired) as e:
-            logger.error(f"Failed to parse ARP table: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Failed to parse ARP table "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return []
         return [{"ip": ip, "mac": mac, "source": "arp"} for ip, mac in entries.items()]
 
@@ -280,12 +283,12 @@ class PortScanProbe:
             writer.close()
             try:
                 await writer.wait_closed()
-            except OSError:
+            except Exception:  # noqa: BLE001
                 # Broad catch: may be closed already, mock objects in tests,
                 # or other StreamWriter edge cases. This is just cleanup.
                 pass
             return True
-        except (TimeoutError, ConnectionRefusedError, OSError):
+        except Exception:  # noqa: BLE001
             return False
 
 
@@ -436,8 +439,11 @@ class MNDPListenerProbe:
         except PermissionError as e:
             logger.warning(f"MNDP requires admin privileges (run as Administrator): {e}")
             raise
-        except OSError as e:
-            logger.error(f"Failed to start MNDP listener: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Failed to start MNDP listener "
+                f"(error type: {type(e).__name__}): {e}"
+            )
         finally:
             if sock:
                 try:

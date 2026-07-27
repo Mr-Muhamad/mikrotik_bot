@@ -1,7 +1,5 @@
 import logging
 
-from librouteros.exceptions import LibRouterosError
-
 from core.backup.files import is_valid_router_backup_name
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
@@ -34,8 +32,11 @@ class BackupRestore:
                     )
             backups.sort(key=lambda x: x["name"], reverse=True)
             return backups
-        except (LibRouterosError, OSError) as e:
-            logger.error(f"Failed to list backups on {router_key}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Failed to list backups on {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return []
 
     def restore_backup(self, router_key: str, backup_name: str) -> RouterOSRow:
@@ -59,6 +60,9 @@ class BackupRestore:
                 "success": True,
                 "message": f"تمت استعادة النسخة الاحتياطية {backup_name} بنجاح",
             }
-        except (LibRouterosError, OSError) as e:
-            logger.error(f"Failed to restore {backup_name} on {router_name}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Failed to restore {backup_name} on {router_name} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return {"success": False, "message": f"فشل الاستعادة: {str(e)}"}

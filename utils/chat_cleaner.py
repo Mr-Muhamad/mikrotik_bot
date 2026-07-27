@@ -4,7 +4,6 @@ from collections.abc import Generator, Sequence
 from datetime import UTC
 from typing import TypedDict, cast
 
-import telegram.error
 from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
 from telegram.ext import CallbackContext, ExtBot, JobQueue
 
@@ -143,24 +142,33 @@ async def _delete_message_ids(
         try:
             await context.bot.delete_message(chat_id=chat_id, message_id=message_ids[0])
             return 1
-        except telegram.error.TelegramError as e:
-            logger.debug(f"Failed to delete message {message_ids[0]} in chat {chat_id}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.debug(
+                f"Failed to delete message {message_ids[0]} in chat {chat_id} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return 0
 
     try:
         result = await context.bot.delete_messages(chat_id=chat_id, message_ids=message_ids)
         if result is True:
             return len(message_ids)
-    except telegram.error.TelegramError as e:
-        logger.debug(f"Batched delete failed for chat {chat_id}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.debug(
+            f"Batched delete failed for chat {chat_id} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
 
     deleted = 0
     for mid in message_ids:
         try:
             await context.bot.delete_message(chat_id=chat_id, message_id=mid)
             deleted += 1
-        except telegram.error.TelegramError as e:
-            logger.debug(f"Failed to delete message {mid} in chat {chat_id}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.debug(
+                f"Failed to delete message {mid} in chat {chat_id} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
         # Throttle to prevent FloodWait when deleting many individual messages
         await asyncio.sleep(0.05)
     return deleted
@@ -200,8 +208,8 @@ async def _delete_job(context: _CleanerContext) -> None:
             message_id=int(str(data["message_id"])),
         )
         _stats["messages_deleted"] += 1
-    except telegram.error.TelegramError as e:
-        logger.debug(f"Delete failed: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.debug(f"Delete failed (error type: {type(e).__name__}): {e}")
 
 
 async def delete_now(context: _CleanerContext, chat_id: int, message_id: int) -> None:
@@ -209,8 +217,8 @@ async def delete_now(context: _CleanerContext, chat_id: int, message_id: int) ->
     try:
         await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
         _stats["messages_deleted"] += 1
-    except telegram.error.TelegramError as e:
-        logger.debug(f"delete_now failed: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.debug(f"delete_now failed (error type: {type(e).__name__}): {e}")
 
 
 def track_message(context: _CleanerContext, chat_id: int, message_id: int) -> None:
@@ -290,7 +298,7 @@ async def safe_edit_or_send(
             context.user_data["last_msg"] = edited.message_id
             return edited
         return None
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         str(e)
         if _is_benign_edit_error(e):
             prev = context.user_data.pop("last_msg", None)
@@ -325,7 +333,7 @@ async def edit_clean(
         edited = await query.edit_message_text(
             text=text, reply_markup=keyboard, parse_mode="HTML"
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         if _is_benign_edit_error(e):
             # المحتوى لم يتغير أو الرسالة محذوفة — حالة حميدة، نتجاهلها بصمت
             logger.debug(f"edit_clean benign skip: {e}")
@@ -359,7 +367,7 @@ async def safe_edit_plain(
             return None
     try:
         edited = await query.edit_message_text(text=text, reply_markup=reply_markup)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         if _is_benign_edit_error(e):
             logger.debug(f"safe_edit_plain benign skip: {e}")
             return None

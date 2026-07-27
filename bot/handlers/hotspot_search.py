@@ -340,7 +340,7 @@ async def hotspot_show_host(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 is_disabled=is_disabled, mac=mac if mac != "—" else ""
             ),
         )
-    except (ValueError, telegram.error.TelegramError) as e:
+    except Exception as e:  # noqa: BLE001
         await send_error(
             update,
             context,
@@ -403,7 +403,7 @@ async def hotspot_host_action(update: Update, context: ContextTypes.DEFAULT_TYPE
             await safe_edit_plain(
                 query, context, HOST_KICK_FAILED, reply_markup=get_hotspot_keyboard()
             )
-    except (LibRouterosError, OSError, MikrotikBotError) as e:
+    except Exception as e:  # noqa: BLE001
         await send_error(
             update,
             context,
@@ -517,7 +517,7 @@ async def show_blocked_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text,
                 reply_markup=get_blocked_macs_keyboard(blocked),
             )
-    except (LibRouterosError, OSError, MikrotikBotError) as e:
+    except Exception as e:  # noqa: BLE001
         await send_error(
             update,
             context,

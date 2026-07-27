@@ -90,7 +90,7 @@ def _local_defs(tree: ast.AST) -> set[str]:
     return names
 
 
-def main():
+def main():  # noqa: C901
     source_path = "bot/registrations.py"
     with open(source_path, encoding="utf-8") as f:
         tree = ast.parse(f.read())

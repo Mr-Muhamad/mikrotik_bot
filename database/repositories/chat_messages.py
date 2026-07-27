@@ -1,7 +1,6 @@
 """Repository for tracking messages sent by the bot for cleanup."""
 
 import logging
-import sqlite3
 
 logger = logging.getLogger(__name__)
 
@@ -16,8 +15,11 @@ def add_tracked_message(chat_id: int, message_id: int) -> None:
                 "INSERT INTO tracked_messages (chat_id, message_id) VALUES (?, ?)",
                 (chat_id, message_id),
             )
-    except sqlite3.Error as e:
-        logger.error(f"Failed to track message {message_id} in chat {chat_id}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Failed to track message {message_id} in chat {chat_id} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
 
 
 def get_tracked_messages(chat_id: int) -> list[int]:
@@ -31,8 +33,11 @@ def get_tracked_messages(chat_id: int) -> list[int]:
                 (chat_id,),
             )
             return [row["message_id"] for row in cursor.fetchall()]
-    except sqlite3.Error as e:
-        logger.error(f"Failed to get tracked messages for chat {chat_id}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Failed to get tracked messages for chat {chat_id} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         return []
 
 
@@ -50,8 +55,11 @@ def remove_tracked_messages(chat_id: int, message_ids: list[int]) -> None:
                 f"DELETE FROM tracked_messages WHERE chat_id = ? AND message_id IN ({placeholders})",  # noqa: E501
                 [chat_id] + message_ids,
             )
-    except sqlite3.Error as e:
-        logger.error(f"Failed to remove tracked messages {message_ids} in chat {chat_id}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Failed to remove tracked messages {message_ids} in chat {chat_id} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
 
 
 def delete_stale_records(cutoff_datetime: str) -> None:
@@ -66,5 +74,8 @@ def delete_stale_records(cutoff_datetime: str) -> None:
             deleted_count = cursor.rowcount
             if deleted_count > 0:
                 logger.info(f"Purged {deleted_count} stale tracked messages from database.")
-    except sqlite3.Error as e:
-        logger.error(f"Failed to delete stale tracked messages: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Failed to delete stale tracked messages "
+            f"(error type: {type(e).__name__}): {e}"
+        )

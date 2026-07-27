@@ -211,5 +211,8 @@ def load_status_from_db() -> None:
                 # alert_sent يبدأ دائماً كـ False بعد restart لضمان إرسال تنبيه جديد إذا ظل offline
                 _router_status[router_key].setdefault("alert_sent", False)
         logger.info(f"Watchdog: loaded status for {len(all_latest)} routers from DB")
-    except sqlite3.Error as e:
-        logger.warning(f"Watchdog: failed to load status from DB: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            f"Watchdog: failed to load status from DB "
+            f"(error type: {type(e).__name__}): {e}"
+        )

@@ -12,13 +12,12 @@ from telegram.ext import ContextTypes
 sys.path.insert(0, os.path.abspath("."))
 
 from bot.registration_parts.conversation import _unhandled_callback_handler
-from utils.callback_utils import is_latest_message, safe_answer_callback
+from utils.callback_utils import is_latest_message
 from utils.handler_registry import _registry
 
 
 def test_pdf_group_text_and_go_back_registered_standalone():
     """Verify pdf_group_text and go_back are registered in standalone handlers."""
-    import bot.registrations  # Ensure registry is populated
 
     registered_funcs = [
         item["func"].__name__

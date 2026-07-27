@@ -71,14 +71,16 @@ class TestSafeAnswerCallback:
 
     @pytest.mark.asyncio
     async def test_ignores_query_too_old(self):
+        import telegram.error
         query = AsyncMock()
-        query.answer.side_effect = Exception("Query is too old")
+        query.answer.side_effect = telegram.error.BadRequest("Query is too old")
         # Should not raise
         await safe_answer_callback(query)
 
     @pytest.mark.asyncio
     async def test_ignores_invalid_query_id(self):
+        import telegram.error
         query = AsyncMock()
-        query.answer.side_effect = Exception("query id is invalid")
+        query.answer.side_effect = telegram.error.BadRequest("query id is invalid")
         # Should not raise
         await safe_answer_callback(query)

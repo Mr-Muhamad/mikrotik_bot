@@ -1,7 +1,5 @@
 import logging
 
-from librouteros.exceptions import LibRouterosError
-
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient
 
@@ -25,8 +23,11 @@ class ProfileSync:
             base_path = self._api.get_userman_base_path(router_key)
             results = self._api.execute(router_key, f"{base_path}/profile/print")
             return [str(r.get("name", "")) for r in results if r.get("name")]
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Error fetching user manager profiles: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Error fetching user manager profiles "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return []
 
 

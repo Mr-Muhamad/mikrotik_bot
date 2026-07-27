@@ -58,7 +58,7 @@ def mock_mikrotik_api():
     from core.hotspot_manager import hotspot_manager
 
     hotspot_manager._users_cache.clear()
-    with (
+    patches = [
         patch("core.mikrotik_api.mikrotik_api", mock),
         patch("core.hotspot_manager.mikrotik_api", mock),
         patch("core.backup.system.mikrotik_api", mock),
@@ -75,8 +75,16 @@ def mock_mikrotik_api():
         patch("core.stats.mikrotik_api", mock),
         patch("core.userman_manager.mikrotik_api", mock),
         patch("core.profile_sync.mikrotik_api", mock),
-    ):
+        patch("core.backup.files.mikrotik_api", mock),
+        patch("core.watchdog.mikrotik_api", mock),
+    ]
+    for p in patches:
+        p.start()
+    try:
         yield mock
+    finally:
+        for p in reversed(patches):
+            p.stop()
 
 
 @pytest.fixture

@@ -3,8 +3,6 @@ import os
 from datetime import UTC, datetime
 from typing import cast
 
-from librouteros.exceptions import LibRouterosError
-
 from core.backup import files as backup_files
 from core.backup.files import (
     USERMAN_BACKUP_PREFIX,
@@ -58,8 +56,11 @@ class UserManagerBackupService:
                 )
             logger.info(f"User Manager backup completed for {router_name}: {umb_filename}")
             return cast(RouterOSRow, result)
-        except (LibRouterosError, OSError) as e:
-            logger.error(f"User Manager backup failed for {router_name}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"User Manager backup failed for {router_name} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             if os.path.isfile(umb_path):
                 try:
                     os.remove(umb_path)
@@ -95,8 +96,11 @@ class UserManagerBackupService:
             }
             logger.info(f"User Manager restore completed for {router_name}: {filename}")
             return cast(RouterOSRow, result)
-        except (LibRouterosError, OSError) as e:
-            logger.error(f"User Manager restore failed for {router_name}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"User Manager restore failed for {router_name} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return cast(RouterOSRow, {"success": False, "message": f"فشل الاستعادة: {str(e)}"})
 
     @staticmethod

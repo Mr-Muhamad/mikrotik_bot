@@ -2,8 +2,6 @@ import ftplib
 import logging
 import os
 
-from librouteros.exceptions import LibRouterosError
-
 from core.backup.files import get_ftp_port
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
@@ -33,8 +31,11 @@ def get_router_ftp_info(router_key: str, ftp_port: int) -> RouterOSRow | None:
             "password": info["password"],
             "port": ftp_port,
         }
-    except (LibRouterosError, OSError) as e:
-        logger.warning(f"Cannot get FTP info for {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            f"Cannot get FTP info for {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         return None
 
 

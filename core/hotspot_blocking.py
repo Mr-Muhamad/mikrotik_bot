@@ -6,8 +6,6 @@ stays separate from firewall address-list manipulation.
 
 import logging
 
-from librouteros.exceptions import LibRouterosError
-
 from core.mikrotik_client import MikrotikClient, RouterOSRow
 
 logger = logging.getLogger(__name__)
@@ -45,8 +43,11 @@ def block_mac(
         )
         logger.info(f"Blocked MAC {mac} on {router_key}")
         return True
-    except (LibRouterosError, ConnectionError, OSError) as e:
-        logger.error(f"Failed to block MAC {mac} on {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Failed to block MAC {mac} on {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         return False
 
 
@@ -74,8 +75,11 @@ def unblock_mac(api: MikrotikClient, router_key: str, mac: str) -> bool:
         )
         logger.info(f"Unblocked MAC {mac} on {router_key}")
         return True
-    except (LibRouterosError, ConnectionError, OSError) as e:
-        logger.error(f"Failed to unblock MAC {mac} on {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Failed to unblock MAC {mac} on {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         return False
 
 
@@ -99,6 +103,9 @@ def get_blocked_macs(api: MikrotikClient, router_key: str) -> list[RouterOSRow]:
             for e in entries
             if isinstance(e, dict)  # type: ignore[reportUnnecessaryIsInstance]
         ]
-    except (LibRouterosError, ConnectionError, OSError) as e:
-        logger.error(f"Failed to fetch blocked MACs on {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Failed to fetch blocked MACs on {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         return []

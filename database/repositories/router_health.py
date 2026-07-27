@@ -1,7 +1,6 @@
 """Repository for router health log — persistent watchdog state across restarts."""
 
 import logging
-import sqlite3
 from datetime import UTC
 
 from core.mikrotik_client import RouterOSRow
@@ -22,8 +21,11 @@ def record_health(router_key: str, status: str, error_msg: str = "") -> None:
                    VALUES (?, ?, ?, ?)""",
                 (router_key, status, now_utc(), error_msg or ""),
             )
-    except sqlite3.Error as e:
-        logger.warning(f"Failed to record health for {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            f"Failed to record health for {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
 
 
 def get_latest_health(router_key: str) -> RouterOSRow | None:
@@ -39,8 +41,11 @@ def get_latest_health(router_key: str) -> RouterOSRow | None:
                 (router_key,),
             ).fetchone()
             return dict(row) if row else None
-    except sqlite3.Error as e:
-        logger.warning(f"Failed to get latest health for {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            f"Failed to get latest health for {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         return None
 
 
@@ -58,8 +63,8 @@ def get_all_latest_health() -> dict[str, RouterOSRow]:
                        WHERE h2.router_key = h1.router_key
                    )""").fetchall()
             return {row["router_key"]: dict(row) for row in rows}
-    except sqlite3.Error as e:
-        logger.warning(f"Failed to get all latest health: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"Failed to get all latest health (error type: {type(e).__name__}): {e}")
         return {}
 
 
@@ -76,8 +81,11 @@ def get_health_history(router_key: str, limit: int = 10) -> list[RouterOSRow]:
                 (router_key, limit),
             ).fetchall()
             return [dict(row) for row in rows]
-    except sqlite3.Error as e:
-        logger.warning(f"Failed to get health history for {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            f"Failed to get health history for {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         return []
 
 
@@ -96,6 +104,6 @@ def cleanup_health_history(days: int = 7) -> int:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM router_health_log WHERE checked_at < ?", (cutoff_text,))
             return cursor.rowcount
-    except sqlite3.Error as e:
-        logger.warning(f"Failed to cleanup health history: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"Failed to cleanup health history (error type: {type(e).__name__}): {e}")
         return 0

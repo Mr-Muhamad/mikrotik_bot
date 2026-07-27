@@ -92,8 +92,11 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_confirm_keyboard(),
         )
         return WAITING_INPUT
-    except (LibRouterosError, OSError, MikrotikBotError) as e:
-        logger.error("hotspot_delete_select failed: %s", e)
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            "hotspot_delete_select failed "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         await send_error(
             update,
             context,
@@ -150,8 +153,11 @@ async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await run_blocking(hotspot_manager.delete_user, router_key, user_id)
             await run_blocking(log_action, "delete_user", user_id, router_key, query.from_user.id)
             await edit_clean(query, context, SUCCESS_DELETE, get_hotspot_keyboard())
-        except (LibRouterosError, OSError, MikrotikBotError) as e:
-            logger.error("confirm_callback delete failed: %s", e)
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                "confirm_callback delete failed "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             await send_error(
                 update,
                 context,

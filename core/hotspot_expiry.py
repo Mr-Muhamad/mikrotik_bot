@@ -8,8 +8,6 @@ handle and returns a plain list of dicts.
 import logging
 import re
 
-from librouteros.exceptions import LibRouterosError
-
 from core.mikrotik_client import MikrotikClient, RouterOSRow
 
 logger = logging.getLogger(__name__)
@@ -29,8 +27,11 @@ def _parse_uptime_to_seconds(raw: str) -> int:
         mn = int(m.group(3) or 0)
         s = int(m.group(4) or 0)
         return d * 86400 + h * 3600 + mn * 60 + s
-    except (LibRouterosError, OSError) as e:
-        logger.debug(f"Failed to parse uptime '{raw}': {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.debug(
+            f"Failed to parse uptime '{raw}' "
+            f"(error type: {type(e).__name__}): {e}"
+        )
         return 0
 
 
@@ -66,8 +67,11 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
                 uname = str(sess.get("user", ""))
                 uptime_secs = _parse_uptime_to_seconds(str(sess.get("uptime", "")))
                 active_map[uname] = active_map.get(uname, 0) + uptime_secs
-        except (LibRouterosError, OSError) as e:
-            logger.warning(f"Failed to fetch active sessions for {router_key}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                f"Failed to fetch active sessions for {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             active_map = {}
 
         for user in users:
@@ -93,8 +97,11 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
                         "uptime_used_secs": used_secs,
                     }
                 )
-    except (LibRouterosError, ConnectionError, OSError) as e:
-        logger.warning(f"get_expiring_users failed for {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            f"get_expiring_users failed for {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
     return sorted(result, key=lambda x: float(x["remaining_days"] or 0))
 
 
@@ -157,6 +164,9 @@ def get_custom_expiring_users(
                         "profile": user.get("profile", "—"),
                     }
                 )
-    except (LibRouterosError, OSError) as e:
-        logger.warning(f"get_custom_expiring_users failed for {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            f"get_custom_expiring_users failed for {router_key} "
+            f"(error type: {type(e).__name__}): {e}"
+        )
     return sorted(result, key=lambda x: int(x.get("days_left", 0) or 0))

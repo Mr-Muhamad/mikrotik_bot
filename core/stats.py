@@ -1,7 +1,5 @@
 import logging
 
-from librouteros.exceptions import LibRouterosError
-
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient, RouterOSRow
 
@@ -47,8 +45,11 @@ class StatsManager:
                 "inactive_users": inactive,
                 "total_bytes": total_bytes,
             }
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Error getting hotspot stats: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Error getting hotspot stats "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return None
 
     def get_userman_stats(self, router_key: str) -> RouterOSRow | None:
@@ -68,8 +69,11 @@ class StatsManager:
                 "enabled_users": enabled,
                 "disabled_users": disabled,
             }
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Error getting userman stats: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Error getting userman stats "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return None
 
     def format_hotspot_stats(self, stats: RouterOSRow | None, router_name: str) -> str:

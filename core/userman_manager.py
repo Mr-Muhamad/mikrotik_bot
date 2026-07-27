@@ -3,8 +3,6 @@ import secrets
 import string
 from datetime import datetime
 
-from librouteros.exceptions import LibRouterosError
-
 from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
@@ -94,9 +92,11 @@ class UserManager:
                     **{".proplist": "name,username"},
                 )
             }
-        except (LibRouterosError, ConnectionError, OSError) as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(
-                f"Failed to fetch existing User Manager users for deduplication on {router_key}: {e}"  # noqa: E501
+                f"Failed to fetch existing User Manager users for "
+                f"deduplication on {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
             )
             existing = set()
 
@@ -132,8 +132,11 @@ class UserManager:
                 )
                 cards.append(result)
                 existing.add(username)
-            except (LibRouterosError, ConnectionError, OSError) as e:
-                logger.error(f"Card {i + 1}/{count} failed on {router_key}: {e}")
+            except Exception as e:  # noqa: BLE001
+                logger.error(
+                    f"Card {i + 1}/{count} failed on {router_key} "
+                    f"(error type: {type(e).__name__}): {e}"
+                )
 
         logger.info(
             f"Created {len(cards)}/{count} User Manager cards on {router_key} (type: {card_system.name}, profile: {profile})"  # noqa: E501
@@ -218,10 +221,10 @@ class UserManager:
                 user=username,
                 profile=profile,
             )
-        except (LibRouterosError, ConnectionError, OSError) as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(
                 f"User '{username}' was created on {router_key} but profile "
-                f"'{profile}' could not be linked: {e}"
+                f"'{profile}' could not be linked (error type: {type(e).__name__}): {e}"
             )
             return False, str(e)
         return self._verify_profile_link(router_key, base_path, username, profile)
@@ -248,10 +251,10 @@ class UserManager:
                 numbers=username,
                 customer="admin",
             )
-        except (LibRouterosError, ConnectionError, OSError) as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(
                 f"User '{username}' was created on {router_key} but profile "
-                f"'{profile}' could not be activated: {e}"
+                f"'{profile}' could not be activated (error type: {type(e).__name__}): {e}"
             )
             return False, str(e)
         return self._verify_profile_link(router_key, base_path, username, profile)
@@ -281,8 +284,11 @@ class UserManager:
                 if link_user is not None and str(link_user) == str(username):
                     return True, None
             return False, "profile link not found after attach"
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.warning(f"Could not verify profile link for '{username}' on {router_key}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                f"Could not verify profile link for '{username}' on {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return False, f"verify failed: {e}"
 
     def _get_user_id(self, router_key: str, username: str) -> str | None:
@@ -296,13 +302,16 @@ class UserManager:
             results = self._api.execute(
                 router_key,
                 f"{base_path}/user/print",
-                **{f"?{field}": username, ".proplist": ".id," + field},
+                **{ f"?{field}": username, ".proplist": ".id," + field },
             )
             for user in results or []:
                 if str(user.get(field)) == str(username):
                     return str(user.get(".id", ""))
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.debug(f"API filter failed in _get_user_id for {username}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.debug(
+                f"API filter failed in _get_user_id for {username} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
 
         # Fallback to full list if filter not supported
         try:
@@ -310,8 +319,11 @@ class UserManager:
             for user in results or []:
                 if str(user.get(field)) == str(username):
                     return str(user.get(".id", ""))
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.warning(f"Error checking user by field '{field}': {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                f"Error checking user by field '{field}' "
+                f"(error type: {type(e).__name__}): {e}"
+            )
         return None
 
     def set_user_caller_id(self, router_key: str, username: str, caller_id: str) -> None:

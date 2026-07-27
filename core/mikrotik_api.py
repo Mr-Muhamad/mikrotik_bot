@@ -91,9 +91,12 @@ class MikrotikAPI:
                 version = str(result[0].get("version", "unknown"))
                 self._pool.set_version(router_key, version)
                 return version
-        except (LibRouterosError, ConnectionError, OSError) as e:
+        except Exception as e:  # noqa: BLE001
             # الفشل متحمَّل (نعود إلى v6)، لذا WARNING أدق من ERROR لئلا يملأ السجلات.
-            logger.warning(f"Failed to get version for {router_key}: {e}")
+            logger.warning(
+                f"Failed to get version for {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
         return "unknown"
 
     def is_version_7(self, router_key: str = "router1") -> bool:
@@ -154,8 +157,11 @@ class MikrotikAPI:
                 if result:
                     return True, "healthy"
                 return False, "empty_response"
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.warning(f"Health check failed for {router_key}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                f"Health check failed for {router_key} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return False, str(e)
 
     # ──────────────────────────────────────────────────────────────
@@ -226,7 +232,10 @@ class MikrotikAPI:
                 last_exc = e
                 if attempt == len(_RETRY_DELAYS):
                     total = 1 + len(_RETRY_DELAYS)
-                    logger.error(f"All {total} attempts failed for {command} on {router_key}: {e}")
+                    logger.error(
+                        f"All {total} attempts failed for {command} on {router_key} "
+                        f"(error type: {type(e).__name__}): {e}"
+                    )
                     raise
         raise last_exc  # type: ignore[misc]
 
@@ -249,10 +258,11 @@ class MikrotikAPI:
                 self._debug_log("execute_non_blocking", command, kwargs)
                 self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
                 logger.info(f"Non-blocking command sent: {command}")
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.info(f"Non-blocking command sent - connection may be lost: {e}")
-        except (ValueError, TypeError, KeyError) as e:
-            logger.info(f"Non-blocking command sent with error (expected): {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.info(
+                f"Non-blocking command failed "
+                f"(error type: {type(e).__name__}): {e}"
+            )
 
     # ──────────────────────────────────────────────────────────────
     #  Connection test (independent — uses raw librouteros connect)
@@ -298,15 +308,21 @@ class MikrotikAPI:
                 logger.error(f"test_connection OSError for {ip}:{port}: {e}")
             ssl_hint = self._probe_api_ssl(ip, username, password)
             return False, self._classify_connect_failure(e, ip, port, ssl_hint), ""
-        except (ValueError, TypeError, KeyError) as e:
-            logger.error(f"test_connection unexpected error for {ip}:{port}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"test_connection unexpected error for {ip}:{port} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return False, self._classify_connect_failure(e, ip, port), ""
         finally:
             if api:
                 try:
                     api.close()
-                except (OSError, LibRouterosError) as e:
-                    logger.debug(f"Error closing test connection for {ip}: {e}")
+                except Exception as e:  # noqa: BLE001
+                    logger.debug(
+                        f"Error closing test connection for {ip} "
+                        f"(error type: {type(e).__name__}): {e}"
+                    )
 
     def _is_timeout_error(self, exc: Exception) -> bool:
         """يتحقق ما إذا كان الخطأ مهلة اتصال (winerror/errno 10060 أو نص timed out)."""
@@ -433,8 +449,11 @@ class MikrotikAPI:
             )
             logger.info(f"Router fetched {remote_name} from {url}")
             return True
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Router failed to fetch {remote_name}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Router failed to fetch {remote_name} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return False
         finally:
             cleanup_serve_file(serve_name)
@@ -483,8 +502,11 @@ class MikrotikAPI:
                 return True
             logger.warning(f"File {remote_name} not found in upload dir after push")
             return False
-        except (LibRouterosError, ConnectionError, OSError) as e:
-            logger.error(f"Router failed to push {remote_name}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.error(
+                f"Router failed to push {remote_name} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return False
 
     def _probe_api_ssl(self, ip: str, username: str, password: str) -> str:
@@ -500,14 +522,20 @@ class MikrotikAPI:
             )
             try:
                 probe.close()
-            except (OSError, LibRouterosError) as e:
-                logger.debug(f"Error closing api-ssl probe for {ip}: {e}")
+            except Exception as e:  # noqa: BLE001
+                logger.debug(
+                    f"Error closing api-ssl probe for {ip} "
+                    f"(error type: {type(e).__name__}): {e}"
+                )
             return (
                 "\n\n💡 لاحظت أن منفذ 8729 (api-ssl) مفتوح على الراوتر. البوت يستخدم حالياً "
                 "8728 (api النصّي) حسب إعدادات الأمان. إن رغبت باستخدام SSL راجع المسؤول."
             )
-        except (LibRouterosError, OSError) as e:
-            logger.debug(f"api-ssl probe failed for {ip}: {e}")
+        except Exception as e:  # noqa: BLE001
+            logger.debug(
+                f"api-ssl probe failed for {ip} "
+                f"(error type: {type(e).__name__}): {e}"
+            )
             return ""
 
 
