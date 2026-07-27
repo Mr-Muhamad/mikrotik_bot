@@ -6,6 +6,7 @@ Card batch listing, detail, regen, payment, sales, and sharing.
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import telegram.error
 from telegram.ext import ConversationHandler
 
 from bot.handlers import batch as batch_module
@@ -241,7 +242,7 @@ class TestShowBatchesPage:
         mock_send = AsyncMock()
         with (
             patch.object(
-                batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db fail"))
+                batch_module, "run_blocking", new=AsyncMock(side_effect=OSError("db fail"))
             ),
             patch.object(batch_module, "send_step", new=mock_send),
         ):
@@ -342,7 +343,7 @@ class TestBatchSelect:
         c = _ctx()
         with (
             patch.object(
-                batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("err"))
+                batch_module, "run_blocking", new=AsyncMock(side_effect=OSError("err"))
             ),
             patch("bot.handlers.batch.get_batches_keyboard", return_value=MagicMock()),
         ):
@@ -480,7 +481,7 @@ class TestBatchRegen:
         u = _update(callback_data="batch_regen:7")
         c = _ctx()
         with patch.object(
-            batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db"))
+            batch_module, "run_blocking", new=AsyncMock(side_effect=OSError("db"))
         ):
             await batch_module.batch_regen(u, c)
         u.callback_query.answer.assert_awaited()
@@ -511,7 +512,7 @@ class TestBatchRegen:
             patch.object(
                 batch_module,
                 "run_blocking",
-                new=AsyncMock(side_effect=[batch, RuntimeError("gen")]),
+                new=AsyncMock(side_effect=[batch, OSError("gen")]),
             ),
             patch.object(batch_module, "deserialize_cards", return_value=[MagicMock()]),
         ):
@@ -566,7 +567,7 @@ class TestMarkBatchPaid:
             patch.object(
                 batch_module,
                 "run_blocking",
-                new=AsyncMock(side_effect=[True, RuntimeError("fail")]),
+                new=AsyncMock(side_effect=[True, OSError("fail")]),
             ),
         ):
             await batch_module.mark_batch_paid_handler(u, c)
@@ -651,7 +652,7 @@ class TestSalesSummary:
         with (
             patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
             patch.object(
-                batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("fail"))
+                batch_module, "run_blocking", new=AsyncMock(side_effect=OSError("fail"))
             ),
             patch.object(batch_module, "send_step", new=AsyncMock()) as mock_send,
         ):
@@ -757,7 +758,7 @@ class TestShareCardSend:
         with (
             patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
             patch.object(
-                batch_module, "run_blocking", new=AsyncMock(side_effect=RuntimeError("db"))
+                batch_module, "run_blocking", new=AsyncMock(side_effect=OSError("db"))
             ),
         ):
             result = await batch_module.share_card_send(u, c)
@@ -831,7 +832,7 @@ class TestShareCardSend:
             patch.object(
                 batch_module,
                 "run_blocking",
-                new=AsyncMock(side_effect=[batch, RuntimeError("settings")]),
+                new=AsyncMock(side_effect=[batch, OSError("settings")]),
             ),
         ):
             result = await batch_module.share_card_send(u, c)
@@ -844,7 +845,7 @@ class TestShareCardSend:
         c = self._make_share_ctx()
         batch = dict(SAMPLE_BATCH)
         bot_mock = MagicMock()
-        bot_mock.send_message = AsyncMock(side_effect=RuntimeError("tg fail"))
+        bot_mock.send_message = AsyncMock(side_effect=telegram.error.TelegramError("tg fail"))
         u.get_bot = MagicMock(return_value=bot_mock)
         with (
             patch("utils.admin_decorator.ADMIN_IDS", [ADMIN_ID]),
