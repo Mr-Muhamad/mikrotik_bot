@@ -1,5 +1,7 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
+
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient, RouterOSRow
 
@@ -45,7 +47,7 @@ class StatsManager:
                 "inactive_users": inactive,
                 "total_bytes": total_bytes,
             }
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.error(f"Error getting hotspot stats: {e}")
             return None
 
@@ -66,7 +68,7 @@ class StatsManager:
                 "enabled_users": enabled,
                 "disabled_users": disabled,
             }
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.error(f"Error getting userman stats: {e}")
             return None
 

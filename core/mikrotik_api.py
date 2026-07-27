@@ -139,7 +139,7 @@ class MikrotikAPI:
             else:
                 broken = True
             raise
-        except Exception:
+        except (ValueError, TypeError, KeyError, RuntimeError):
             broken = True
             raise
         finally:
@@ -251,7 +251,7 @@ class MikrotikAPI:
                 logger.info(f"Non-blocking command sent: {command}")
         except (LibRouterosError, ConnectionError, OSError) as e:
             logger.info(f"Non-blocking command sent - connection may be lost: {e}")
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.info(f"Non-blocking command sent with error (expected): {e}")
 
     # ──────────────────────────────────────────────────────────────
@@ -298,14 +298,14 @@ class MikrotikAPI:
                 logger.error(f"test_connection OSError for {ip}:{port}: {e}")
             ssl_hint = self._probe_api_ssl(ip, username, password)
             return False, self._classify_connect_failure(e, ip, port, ssl_hint), ""
-        except Exception as e:
+        except (ValueError, TypeError, KeyError) as e:
             logger.error(f"test_connection unexpected error for {ip}:{port}: {e}")
             return False, self._classify_connect_failure(e, ip, port), ""
         finally:
             if api:
                 try:
                     api.close()
-                except Exception as e:
+                except (OSError, LibRouterosError) as e:
                     logger.debug(f"Error closing test connection for {ip}: {e}")
 
     def _is_timeout_error(self, exc: Exception) -> bool:
@@ -416,7 +416,7 @@ class MikrotikAPI:
 
         try:
             serve_name = prepare_serve_file(local_path, remote_name)
-        except Exception as e:
+        except OSError as e:
             logger.error(f"Failed to stage file for upload: {e}")
             return False
 
@@ -433,7 +433,7 @@ class MikrotikAPI:
             )
             logger.info(f"Router fetched {remote_name} from {url}")
             return True
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.error(f"Router failed to fetch {remote_name}: {e}")
             return False
         finally:
@@ -483,7 +483,7 @@ class MikrotikAPI:
                 return True
             logger.warning(f"File {remote_name} not found in upload dir after push")
             return False
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.error(f"Router failed to push {remote_name}: {e}")
             return False
 
@@ -500,13 +500,13 @@ class MikrotikAPI:
             )
             try:
                 probe.close()
-            except Exception as e:
+            except (OSError, LibRouterosError) as e:
                 logger.debug(f"Error closing api-ssl probe for {ip}: {e}")
             return (
                 "\n\n💡 لاحظت أن منفذ 8729 (api-ssl) مفتوح على الراوتر. البوت يستخدم حالياً "
                 "8728 (api النصّي) حسب إعدادات الأمان. إن رغبت باستخدام SSL راجع المسؤول."
             )
-        except Exception as e:
+        except (LibRouterosError, OSError) as e:
             logger.debug(f"api-ssl probe failed for {ip}: {e}")
             return ""
 

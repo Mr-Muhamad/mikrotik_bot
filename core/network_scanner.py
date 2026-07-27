@@ -56,7 +56,7 @@ async def discover_routers(
         logger.info(f"MNDP found {len(mndp_results)} devices")
     except PermissionError:
         logger.warning("MNDP requires Administrator privileges, falling back to ARP/Port scan")
-    except Exception as e:
+    except OSError as e:
         logger.warning(f"MNDP discovery error: {e}")
 
     # 2. ARP Table Probe
@@ -65,7 +65,7 @@ async def discover_routers(
         arp_probe = ARPTableProbe()
         arp_results = arp_probe.discover()
         logger.info(f"ARP probe found {len(arp_results)} dynamic entries")
-    except Exception as e:
+    except OSError as e:
         logger.warning(f"ARP probe error: {e}")
 
     # 3. Port Scan Probe on candidate IPs from ARP
@@ -76,7 +76,7 @@ async def discover_routers(
             port_probe = PortScanProbe(ips=candidate_ips, port=8728, timeout=1.5)
             port_results = await port_probe.discover()
             logger.info(f"Port scan found {len(port_results)} reachable API ports")
-        except Exception as e:
+        except OSError as e:
             logger.warning(f"Port scan error: {e}")
 
     # Merge results from all probes

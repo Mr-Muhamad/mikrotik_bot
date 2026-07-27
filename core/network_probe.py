@@ -280,7 +280,7 @@ class PortScanProbe:
             writer.close()
             try:
                 await writer.wait_closed()
-            except Exception:
+            except OSError:
                 # Broad catch: may be closed already, mock objects in tests,
                 # or other StreamWriter edge cases. This is just cleanup.
                 pass

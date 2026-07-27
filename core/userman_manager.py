@@ -3,6 +3,8 @@ import secrets
 import string
 from datetime import datetime
 
+from librouteros.exceptions import LibRouterosError
+
 from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
@@ -92,7 +94,7 @@ class UserManager:
                     **{".proplist": "name,username"},
                 )
             }
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.warning(
                 f"Failed to fetch existing User Manager users for deduplication on {router_key}: {e}"  # noqa: E501
             )
@@ -130,7 +132,7 @@ class UserManager:
                 )
                 cards.append(result)
                 existing.add(username)
-            except Exception as e:
+            except (LibRouterosError, ConnectionError, OSError) as e:
                 logger.error(f"Card {i + 1}/{count} failed on {router_key}: {e}")
 
         logger.info(
@@ -216,7 +218,7 @@ class UserManager:
                 user=username,
                 profile=profile,
             )
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.warning(
                 f"User '{username}' was created on {router_key} but profile "
                 f"'{profile}' could not be linked: {e}"
@@ -246,7 +248,7 @@ class UserManager:
                 numbers=username,
                 customer="admin",
             )
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.warning(
                 f"User '{username}' was created on {router_key} but profile "
                 f"'{profile}' could not be activated: {e}"
@@ -279,7 +281,7 @@ class UserManager:
                 if link_user is not None and str(link_user) == str(username):
                     return True, None
             return False, "profile link not found after attach"
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.warning(f"Could not verify profile link for '{username}' on {router_key}: {e}")
             return False, f"verify failed: {e}"
 
@@ -299,7 +301,7 @@ class UserManager:
             for user in results or []:
                 if str(user.get(field)) == str(username):
                     return str(user.get(".id", ""))
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.debug(f"API filter failed in _get_user_id for {username}: {e}")
 
         # Fallback to full list if filter not supported
@@ -308,7 +310,7 @@ class UserManager:
             for user in results or []:
                 if str(user.get(field)) == str(username):
                     return str(user.get(".id", ""))
-        except Exception as e:
+        except (LibRouterosError, ConnectionError, OSError) as e:
             logger.warning(f"Error checking user by field '{field}': {e}")
         return None
 
