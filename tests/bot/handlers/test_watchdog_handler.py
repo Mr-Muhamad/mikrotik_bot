@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from telegram.error import TelegramError
 
 from bot.handlers import watchdog as watchdog_module
 from core.watchdog import ALERT_NONE, ALERT_RECOVERED, ALERT_WENT_OFFLINE
@@ -474,7 +475,7 @@ class TestCheckAllRouters:
             call_count += 1
             if call_count == 1:
                 return [router]
-            raise RuntimeError("connection failed")
+            raise OSError("connection failed")
 
         with (
             patch("bot.handlers.watchdog.run_blocking", side_effect=fake_blocking),
@@ -592,7 +593,7 @@ class TestNotifyAdmins:
             call_count += 1
             if call_count == 1:
                 raise RetryAfter(retry_after=timedelta(seconds=2))
-            raise RuntimeError("still broken")
+            raise TelegramError("still broken")
 
         ctx.bot.send_message = AsyncMock(side_effect=side_effect)
         with (
@@ -604,7 +605,7 @@ class TestNotifyAdmins:
     @pytest.mark.asyncio
     async def test_general_exception(self):
         ctx = _ctx()
-        ctx.bot.send_message = AsyncMock(side_effect=RuntimeError("network"))
+        ctx.bot.send_message = AsyncMock(side_effect=TelegramError("network"))
         with patch("bot.handlers.watchdog.ADMIN_IDS", [ADMIN_ID]):
             await watchdog_module._notify_admins(ctx, "test")
 
