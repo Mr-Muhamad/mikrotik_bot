@@ -112,7 +112,12 @@ class TestDiscEnterPassword:
         update.message.reply_text = AsyncMock(return_value=status_msg)
 
         async def fake_run_blocking(func, *args, **kwargs):
-            if getattr(func, "__name__", "") == "get_router_by_ip":
+            skip_names = {
+                "get_router_by_ip",
+                "check_router_health",
+                "detect_router_system",
+            }
+            if getattr(func, "__name__", "") in skip_names:
                 return None
             result = func(*args, **kwargs)
             if hasattr(result, "__await__"):
