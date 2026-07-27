@@ -160,7 +160,7 @@ async def run_flow(app: Application, update: Update) -> None:
                     logger.debug("MATCH handler=%s", type(handler).__name__)
                     break
             except Exception:
-                pass
+                logger.debug("check_update failed for handler=%s", type(handler).__name__)
     try:
         await app.process_update(update)
     except Exception as e:  # never abort the whole suite on one failure

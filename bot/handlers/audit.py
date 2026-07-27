@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime, timedelta
 
 from telegram import Update
@@ -254,7 +255,6 @@ async def _show_logs_page(
 ) -> None:
     """Display a page of audit logs filtered by the active filter state."""
     filters = _get_filters(context)
-    # Cast RouterOSRow to expected filter type for db and keyboard functions
     filter_dict: dict[str, object] = {}
     for k, v in filters.items():
         if v is None:
@@ -273,13 +273,7 @@ async def _show_logs_page(
     header = f"🔎 {_format_filters_short(filters)}"
 
     if total == 0:
-        text = AUDIT_LIST_EMPTY.format(header=header, no_results=NO_RESULTS)
-        keyboard = get_logs_filter_keyboard(filter_dict, page, 0)
-        nav_set(context, "main_menu")
-        if from_callback and update.callback_query:
-            await safe_edit_or_send(update.callback_query, context, text, keyboard)
-        else:
-            await send_step(update, context, text, keyboard)
+        await _render_logs_empty(update, context, header, filter_dict, page, 0, from_callback)
         return
 
     offset = page * PAGE_SIZE
@@ -290,15 +284,45 @@ async def _show_logs_page(
         await send_error(update, context, e, log_extra="logs_fetch")
         return
     if not logs:
-        text = AUDIT_PAGE_EMPTY.format(header=header)
-        keyboard = get_logs_filter_keyboard(filter_dict, page, total)
-        nav_set(context, "main_menu")
-        if from_callback and update.callback_query:
-            await safe_edit_or_send(update.callback_query, context, text, keyboard)
-        else:
-            await send_step(update, context, text, keyboard)
+        await _render_logs_empty(update, context, header, filter_dict, page, total, from_callback)
         return
 
+    await _render_logs_list(
+        update, context, logs, header, filter_dict, page, total, offset, from_callback,
+    )
+
+
+async def _render_logs_empty(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    header: str,
+    filter_dict: dict[str, object],
+    page: int,
+    total: int,
+    from_callback: bool,
+) -> None:
+    text = AUDIT_PAGE_EMPTY.format(header=header) if total > 0 else AUDIT_LIST_EMPTY.format(
+        header=header, no_results=NO_RESULTS,
+    )
+    keyboard = get_logs_filter_keyboard(filter_dict, page, total)
+    nav_set(context, "main_menu")
+    if from_callback and update.callback_query:
+        await safe_edit_or_send(update.callback_query, context, text, keyboard)
+    else:
+        await send_step(update, context, text, keyboard)
+
+
+async def _render_logs_list(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    logs: Sequence[Mapping[str, object]],
+    header: str,
+    filter_dict: dict[str, object],
+    page: int,
+    total: int,
+    offset: int,
+    from_callback: bool,
+) -> None:
     start = offset + 1
     end = min(offset + PAGE_SIZE, total)
 
@@ -314,9 +338,7 @@ async def _show_logs_page(
 
     text = "\n".join(lines)
     keyboard = get_logs_filter_keyboard(filter_dict, page, total)
-
     nav_set(context, "main_menu")
-
     if from_callback and update.callback_query:
         await safe_edit_or_send(update.callback_query, context, text, keyboard)
     else:

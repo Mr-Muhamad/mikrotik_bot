@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from collections.abc import Mapping
 from datetime import datetime
 
 from librouteros.exceptions import LibRouterosError
@@ -106,58 +107,7 @@ async def watchdog_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     lines = [WATCHDOG_STATUS_HEADER]
     for r in routers:
-        router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
-        identity = r.get("identity", router_key)
-        ip = r.get("ip_address", "—")
-        alias = r.get("name_alias", "")
-        display = alias if alias else identity
-        detail = await run_blocking(get_router_status_detail, router_key)
-        raw_last_ok = detail.get("last_ok")
-        raw_last_fail = detail.get("last_fail")
-        version = detail.get("version") or "—"
-        active_users = detail.get("active_users")
-        active_text = str(active_users) if active_users is not None else "—"
-
-        last_ok_dt: datetime | None = None
-        if isinstance(raw_last_ok, str):
-            try:
-                last_ok_dt = datetime.fromisoformat(raw_last_ok)
-            except (ValueError, TypeError):
-                pass
-        last_fail_dt: datetime | None = None
-        if isinstance(raw_last_fail, str):
-            try:
-                last_fail_dt = datetime.fromisoformat(raw_last_fail)
-            except (ValueError, TypeError):
-                pass
-
-        if detail.get("online"):
-            indicator = "🟢"
-            detail_line = (
-                WATCHDOG_LAST_OK.format(date=last_ok_dt.strftime("%Y-%m-%d %H:%M"))
-                if last_ok_dt
-                else WATCHDOG_ONLINE
-            )
-        elif last_fail_dt:
-            indicator = "🔴"
-            detail_line = WATCHDOG_LAST_FAIL.format(date=last_fail_dt.strftime("%Y-%m-%d %H:%M"))
-        else:
-            indicator = "⚪"
-            detail_line = WATCHDOG_NOT_CHECKED
-
-        lines.append(f"{indicator} <b>{display}</b> ({ip})")
-        lines.append(WATCHDOG_VERSION.format(version=version))
-        lines.append(f"   ├─ {detail_line}")
-        lines.append(WATCHDOG_ACTIVE_HOTSPOT.format(count=active_text))
-        last_backup = await run_blocking(get_last_backup, router_key)
-        if last_backup:
-            backup_icon = "✅" if last_backup.get("status") == "success" else "❌"
-            backup_text = (
-                f"{backup_icon} {last_backup.get('backup_type')} ({last_backup.get('created_at')})"
-            )
-        else:
-            backup_text = "—"
-        lines.append(WATCHDOG_LAST_BACKUP.format(backup=backup_text))
+        lines.extend(await _format_router_status(r))
 
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -173,6 +123,66 @@ async def watchdog_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await safe_edit_or_send(query, context, "\n".join(lines), keyboard=reply_markup)
     else:
         await update.message.reply_text("\n".join(lines), reply_markup=reply_markup)
+
+
+async def _format_router_status(r: Mapping[str, object]) -> list[str]:
+    """Format a single router's health status into display lines."""
+    router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+    identity = r.get("identity", router_key)
+    ip = r.get("ip_address", "—")
+    alias = r.get("name_alias", "")
+    display = alias if alias else identity
+    detail = await run_blocking(get_router_status_detail, router_key)
+    raw_last_ok = detail.get("last_ok")
+    raw_last_fail = detail.get("last_fail")
+    version = detail.get("version") or "—"
+    active_users = detail.get("active_users")
+    active_text = str(active_users) if active_users is not None else "—"
+
+    last_ok_dt = _parse_iso(raw_last_ok)
+    last_fail_dt = _parse_iso(raw_last_fail)
+
+    if detail.get("online"):
+        indicator = "🟢"
+        detail_line = (
+            WATCHDOG_LAST_OK.format(date=last_ok_dt.strftime("%Y-%m-%d %H:%M"))
+            if last_ok_dt
+            else WATCHDOG_ONLINE
+        )
+    elif last_fail_dt:
+        indicator = "🔴"
+        detail_line = WATCHDOG_LAST_FAIL.format(date=last_fail_dt.strftime("%Y-%m-%d %H:%M"))
+    else:
+        indicator = "⚪"
+        detail_line = WATCHDOG_NOT_CHECKED
+
+    result = [
+        f"{indicator} <b>{display}</b> ({ip})",
+        WATCHDOG_VERSION.format(version=version),
+        f"   ├─ {detail_line}",
+        WATCHDOG_ACTIVE_HOTSPOT.format(count=active_text),
+    ]
+
+    last_backup = await run_blocking(get_last_backup, router_key)
+    if last_backup:
+        backup_icon = "✅" if last_backup.get("status") == "success" else "❌"
+        backup_text = (
+            f"{backup_icon} {last_backup.get('backup_type')} ({last_backup.get('created_at')})"
+        )
+    else:
+        backup_text = "—"
+    result.append(WATCHDOG_LAST_BACKUP.format(backup=backup_text))
+    return result
+
+
+def _parse_iso(raw: object) -> datetime | None:
+    """Parse an ISO datetime string, returning None on failure."""
+    if not isinstance(raw, str):
+        return None
+    try:
+        return datetime.fromisoformat(raw)
+    except (ValueError, TypeError):
+        return None
 
 
 @admin_only

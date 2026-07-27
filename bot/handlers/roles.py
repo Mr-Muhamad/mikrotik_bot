@@ -86,29 +86,13 @@ async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     target, new_role = _parse_role_target(msg)
 
-    if not target or not new_role:
-        if msg:
-            await msg.reply_text(
-                ROLE_SET_USAGE + "\n💡 أو يمكنك تحويل (Forward) رسالة"
-                " المستخدم مع ملحق اسم الصلاحية (مثال: /role operator)."
-            )
+    error = _validate_role_assignment(target, new_role, update)
+    if error:
+        await msg.reply_text(error)
         return
-    if new_role not in ROLE_LEVELS:
-        if msg:
-            await msg.reply_text(ROLE_SET_INVALID)
-        return
-    if target not in ADMIN_IDS:
-        if msg:
-            await msg.reply_text(ROLE_SET_NOT_ADMIN)
-        return
+    assert target is not None and new_role is not None
 
     actor = update.effective_user.id if update.effective_user else 0
-    if target == actor and new_role != "admin":
-        logger.warning("role_set_command: self-demotion attempt by user=%s", actor)
-        if msg:
-            await msg.reply_text(ROLE_SET_SELF_DEMOTE)
-        return
-
     try:
         set_admin_role(target, new_role, actor)
         log_action(
@@ -123,8 +107,25 @@ async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     label = ROLE_LABELS.get(new_role, new_role)
     logger.info("role_set_command: actor=%s set role=%s for target=%s", actor, new_role, target)
-    if msg:
-        await msg.reply_text(ROLE_SET_DONE.format(label=label, admin_id=target))
+    await msg.reply_text(ROLE_SET_DONE.format(label=label, admin_id=target))
+
+
+def _validate_role_assignment(
+    target: int | None, new_role: str | None, update: Update,
+) -> str | None:
+    """Return an error message if the role assignment is invalid, else None."""
+    if not target or not new_role:
+        return ROLE_SET_USAGE + "\n💡 أو يمكنك تحويل (Forward) رسالة" \
+            " المستخدم مع ملحق اسم الصلاحية (مثال: /role operator)."
+    if new_role not in ROLE_LEVELS:
+        return ROLE_SET_INVALID
+    if target not in ADMIN_IDS:
+        return ROLE_SET_NOT_ADMIN
+    actor = update.effective_user.id if update.effective_user else 0
+    if target == actor and new_role != "admin":
+        logger.warning("role_set_command: self-demotion attempt by user=%s", actor)
+        return ROLE_SET_SELF_DEMOTE
+    return None
 
 
 role_command = role_set_command

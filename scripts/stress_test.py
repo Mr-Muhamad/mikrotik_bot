@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import random
 import sys
@@ -6,6 +7,8 @@ import time
 from unittest.mock import patch
 
 import psutil
+
+logger = logging.getLogger(__name__)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -55,7 +58,7 @@ async def simulate_load(hotspot_manager, router_key: str, num_requests: int):
             elif op_type == "stats":
                 hotspot_manager.get_hotspot_stats(router_key)
         except Exception:
-            pass  # Ignore errors in stress test, we just want load
+            logger.debug("Stress test worker error on op %s", op_type)
 
     tasks = [asyncio.create_task(worker(i)) for i in range(num_requests)]
     await asyncio.gather(*tasks)
@@ -95,7 +98,7 @@ async def main():
                 hm.list_users("discovered_1", limit=100)
                 hm.get_hotspot_stats("discovered_1")
             except Exception:
-                pass
+                logger.debug("Read worker %d error", i)
 
         monitor_task = asyncio.create_task(monitor_resources(5, process))
         start_time = time.time()
