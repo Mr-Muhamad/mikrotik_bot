@@ -5,6 +5,7 @@ from contextlib import ExitStack
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import telegram.error
 from telegram.ext import ConversationHandler
 
 from tests.fixtures.telegram_mocks import make_mock_context, make_mock_update
@@ -191,7 +192,7 @@ class TestErrorHandler:
     async def test_error_without_update_send_fails(self):
         context = make_mock_context()
         context.error = Exception("bg fail")
-        context.bot.send_message.side_effect = OSError("tg down")
+        context.bot.send_message.side_effect = telegram.error.TelegramError("tg down")
         with patch("config.ADMIN_IDS", [724730774]):
             with patch("utils.error_response.sanitize_error_text", return_value="clean text"):
                 from bot.handlers.commands_basic import error_handler

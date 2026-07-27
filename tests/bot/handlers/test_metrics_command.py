@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import telegram.error
 
 from bot.handlers.commands_basic import metrics_command
 from utils import admin_decorator
@@ -83,7 +84,7 @@ async def test_metrics_command_with_zero_attempts(mock_update, mock_context):
 
 @pytest.mark.asyncio
 async def test_metrics_command_continues_on_delete_failure(mock_update, mock_context):
-    mock_update.message.delete = AsyncMock(side_effect=Exception("nope"))
+    mock_update.message.delete = AsyncMock(side_effect=telegram.error.TelegramError("nope"))
     mock_context.bot.send_message = AsyncMock(return_value=MagicMock(message_id=1))
 
     with (

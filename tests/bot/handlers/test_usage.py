@@ -128,7 +128,7 @@ class TestUsageQuery:
             patch(
                 f"{P}.run_blocking",
                 new_callable=AsyncMock,
-                side_effect=Exception("conn fail"),
+                side_effect=OSError("conn fail"),
             ),
             patch(f"{P}.send_error", new_callable=AsyncMock) as mock_err,
         ):

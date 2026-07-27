@@ -273,8 +273,9 @@ class TestPdfSettingsValue:
         with (
             patch("bot.handlers.settings.pdf_settings") as mock_ps,
             patch("bot.handlers.settings.reply_final", new=AsyncMock()),
+            patch("bot.handlers.settings.send_error", new=AsyncMock()),
         ):
-            mock_ps.update.side_effect = Exception("DB error")
+            mock_ps.update.side_effect = ValueError("DB error")
             ctx = _ctx({"pdf_option": "cards_per_row"})
             update = _text_update("not_a_number")
             result = await pdf_settings_value(update, ctx)

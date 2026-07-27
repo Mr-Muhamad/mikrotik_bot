@@ -1,5 +1,6 @@
 """Tests for bot/handlers/timeout.py - session timeout configuration."""
 
+import sqlite3
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
@@ -82,7 +83,7 @@ class TestHandleTimeoutSelection:
     async def test_error_handling_on_save_failure(self):
         from bot.handlers.timeout import handle_timeout_selection
 
-        with patch(f"{P}.set_session_timeout", side_effect=Exception("db error")):
+        with patch(f"{P}.set_session_timeout", side_effect=sqlite3.Error("db error")):
             update = make_mock_update(callback_data="set_timeout:5")
             ctx = make_mock_context()
             await handle_timeout_selection(update, ctx)
