@@ -1,5 +1,6 @@
 """Tests for bot/handlers/router_flows/saved.py - saved router management."""
 
+import sqlite3
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
@@ -142,7 +143,7 @@ class TestSavedRoutersList:
         import bot.handlers.router_flows.saved as mod
 
         mod.ack_callback.return_value = AsyncMock()
-        mod.run_blocking.side_effect = OSError("db fail")
+        mod.run_blocking.side_effect = sqlite3.Error("db fail")
         update = make_mock_update(callback_data="saved_routers")
         ctx = make_mock_context()
         await mod.saved_routers_list(update, ctx)
@@ -192,10 +193,10 @@ class TestConnectRouter:
         mod.ack_callback.return_value = AsyncMock()
         mod.parse_router_id.return_value = 1
         router = _make_router()
-        mod.run_blocking.return_value = router
-        mod.mikrotik_api.test_connection.return_value = (
-            False, "auth fail", "",
-        )
+        mod.run_blocking.side_effect = [
+            router,
+            (False, "auth fail", ""),
+        ]
         update = make_mock_update(callback_data="connect_router_1")
         ctx = make_mock_context()
         await mod.connect_router(update, ctx)
@@ -286,6 +287,7 @@ class TestRefreshRouters:
         mod.ack_callback.return_value = AsyncMock()
         mod.run_blocking.side_effect = [
             [_make_router()],
+            (True, "7.14", "R1"),
             None,
             [_make_router()],
         ]
@@ -303,7 +305,7 @@ class TestRefreshRouters:
         import bot.handlers.router_flows.saved as mod
 
         mod.ack_callback.return_value = AsyncMock()
-        mod.run_blocking.side_effect = OSError("fail")
+        mod.run_blocking.side_effect = sqlite3.Error("fail")
         update = make_mock_update(callback_data="refresh_routers")
         ctx = make_mock_context()
         await mod.refresh_routers(update, ctx)

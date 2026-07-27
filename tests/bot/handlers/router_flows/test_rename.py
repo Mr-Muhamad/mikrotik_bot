@@ -1,5 +1,6 @@
 """Tests for bot/handlers/router_flows/rename.py — rename conversation flow."""
 
+import sqlite3
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
@@ -120,7 +121,7 @@ class TestRenameRouterStart:
             stack.enter_context(
                 patch(
                     f"{P}.get_router_by_id",
-                    side_effect=RuntimeError("DB crash"),
+                    side_effect=sqlite3.Error("DB crash"),
                 )
             )
             from bot.handlers.router_flows.rename import rename_router_start
@@ -232,7 +233,7 @@ class TestRenameRouterValue:
             stack.enter_context(
                 patch(
                     f"{P}.update_router_alias",
-                    side_effect=RuntimeError("DB error"),
+                    side_effect=sqlite3.Error("DB error"),
                 )
             )
             mock_send_error = stack.enter_context(
@@ -298,7 +299,7 @@ class TestRenameRouterValue:
             stack.enter_context(
                 patch(
                     f"{P}.update_router_alias",
-                    side_effect=RuntimeError("fail"),
+                    side_effect=sqlite3.Error("fail"),
                 )
             )
             from bot.handlers.router_flows.rename import rename_router_value
