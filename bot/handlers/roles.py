@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 
 from telegram import Message, Update
 from telegram.ext import ContextTypes
@@ -116,7 +117,7 @@ async def role_set_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "",
             actor,
         )
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error("role_set_command failed: %s", e)
         await send_error(update, context, e, log_extra="role_change")
         return
@@ -163,7 +164,7 @@ async def add_customer_command(update: Update, context: ContextTypes.DEFAULT_TYP
         set_admin_role(target, "customer", actor)
         username = (update.effective_user.username if update.effective_user else "") or ""
         log_action("add_customer", username, "", actor)
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error("add_customer_command failed: %s", e)
         await send_error(update, context, e, log_extra="add_customer")
         return
@@ -192,7 +193,7 @@ async def remove_customer_command(update: Update, context: ContextTypes.DEFAULT_
     try:
         delete_admin_role(target)
         log_action("remove_customer", update.effective_user.username or "", "", actor)
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error("remove_customer_command failed: %s", e)
         await send_error(update, context, e, log_extra="remove_customer")
         return
@@ -260,7 +261,7 @@ async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAUL
     actor = update.effective_user.id
     try:
         assign_router_to_operator(operator_id, router_id, actor)
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error("op_assign_router_callback failed: %s", e)
         await send_error(update, context, e, log_extra="op_assign_router")
         return
@@ -295,7 +296,7 @@ async def op_revoke_router_callback(update: Update, context: ContextTypes.DEFAUL
 
     try:
         revoke_router_from_operator(operator_id, router_id)
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error("op_revoke_router_callback failed: %s", e)
         await send_error(update, context, e, log_extra="op_revoke_router")
         return

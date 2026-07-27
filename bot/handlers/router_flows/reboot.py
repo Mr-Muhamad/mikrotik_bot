@@ -1,5 +1,6 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -91,7 +92,7 @@ async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_T
             msg = get_query_message(query)
             if msg is not None:
                 await schedule_delete(context, msg.chat_id, msg.message_id)
-        except Exception as e:
+        except (LibRouterosError, OSError) as e:
             logger.info(f"Reboot command sent (connection may be lost): {e}")
             await query.edit_message_text(
                 f"✅ تم بدء إعادة تشغيل {router_name}\n\n⏳ قد يستغرق الأمر 10-30 ثانية حتى يعود الراوتر متاحاً",  # noqa: E501

@@ -5,12 +5,15 @@ import os
 import tempfile
 from typing import cast
 
+import telegram.error
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.handlers.handler_utils import get_query_message
 from bot.keyboards import get_report_keyboard
 from bot.router_selector import cleanup_state, nav_set
+from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
@@ -79,7 +82,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         report = await run_blocking(hotspot_manager.build_usage_report, router_key)
         router_name = await run_blocking(mikrotik_api.get_router_name, router_key)
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.error(f"Report generation failed: {e}")
         await send_error(update, context, e, router_key=router_key, log_extra="report_gen")
         return
@@ -127,7 +130,7 @@ async def report_export_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 caption="📊 تقرير استخدام Hotspot (CSV)",
             )
         await query.answer("✅ تم إرسال ملف CSV", show_alert=False)
-    except Exception as e:
+    except (OSError, telegram.error.TelegramError) as e:
         logger.error(f"CSV export failed: {e}")
         await query.answer("❌ فشل تصدير CSV", show_alert=True)
     finally:
@@ -166,7 +169,7 @@ async def report_export_excel(update: Update, context: ContextTypes.DEFAULT_TYPE
                 filename=filename,
                 caption="📊 تقرير استخدام الشبكة المنسق (.xlsx)",
             )
-    except Exception as e:
+    except (OSError, telegram.error.TelegramError) as e:
         logger.error(f"Excel export failed: {e}")
         await send_error(
             update,

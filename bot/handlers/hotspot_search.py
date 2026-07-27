@@ -1,5 +1,7 @@
 import logging
 
+import telegram.error
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -40,6 +42,7 @@ from bot.router_selector import (
     nav_set,
     set_current_action,
 )
+from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_client import RouterOSRow
 from utils.admin_decorator import admin_only
@@ -177,7 +180,7 @@ async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFA
 async def _search_users(router_key: str, term: str) -> list[RouterOSRow]:
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, term)
-    except Exception:
+    except (LibRouterosError, OSError, MikrotikBotError):
         return []
     return [
         {
@@ -203,7 +206,7 @@ async def _search_hosts_by_field(router_key: str, field: str, value: str) -> lis
     """
     try:
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, value)
-    except Exception:
+    except (LibRouterosError, OSError, MikrotikBotError):
         return []
     value = value.lower().strip()
     return [h for h in hosts if value in str(h.get(field) or "").lower()]
@@ -214,9 +217,9 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[RouterOS
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, query)
         try:
             users = await run_blocking(hotspot_manager.search_users, router_key, query)
-        except Exception:
+        except (LibRouterosError, OSError, MikrotikBotError):
             users = []
-    except Exception:
+    except (LibRouterosError, OSError, MikrotikBotError):
         return []
     return _enrich_hosts(hosts, users)
 
@@ -337,7 +340,7 @@ async def hotspot_show_host(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 is_disabled=is_disabled, mac=mac if mac != "—" else ""
             ),
         )
-    except Exception as e:
+    except (ValueError, telegram.error.TelegramError) as e:
         await send_error(
             update,
             context,
@@ -400,7 +403,7 @@ async def hotspot_host_action(update: Update, context: ContextTypes.DEFAULT_TYPE
             await safe_edit_plain(
                 query, context, HOST_KICK_FAILED, reply_markup=get_hotspot_keyboard()
             )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,
@@ -514,7 +517,7 @@ async def show_blocked_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text,
                 reply_markup=get_blocked_macs_keyboard(blocked),
             )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,

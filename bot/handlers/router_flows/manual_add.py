@@ -1,5 +1,7 @@
 import logging
+import sqlite3
 
+from librouteros.exceptions import LibRouterosError
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -265,7 +267,7 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         cleanup_state(query.from_user.id, context.user_data)
         return ConversationHandler.END
-    except Exception as e:
+    except sqlite3.Error as e:
         await send_error(update, context, e, log_extra="manual_add_save")
         cleanup_state(query.from_user.id, context.user_data)
         return ConversationHandler.END
@@ -296,7 +298,7 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 MANUAL_ADD_CONN_FAILED.format(version),
                 reply_markup=get_router_keyboard(),
             )
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.warning(f"manual_add confirm test connection failed for {ip}: {e}")
         await run_blocking(log_action, "add_router_manual", ip, "offline", query.from_user.id)
         await query.edit_message_text(

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 from datetime import date, timedelta
 
 from core.mikrotik_client import RouterOSRow
@@ -39,7 +40,7 @@ def save_snapshot(router_key: str, data: dict[str, object]) -> None:
                     data.get("bytes_out", 0),
                 ),
             )
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to save snapshot for {router_key}: {e}")
 
 
@@ -56,7 +57,7 @@ def get_yesterday_snapshot(router_key: str) -> RouterOSRow | None:
                 (router_key, yesterday),
             ).fetchone()
             return dict(row) if row else None
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to get yesterday snapshot for {router_key}: {e}")
         return None
 
@@ -75,6 +76,6 @@ def get_week_snapshots(router_key: str) -> list[RouterOSRow]:
                 (router_key, week_ago),
             ).fetchall()
             return [dict(row) for row in rows]
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to get week snapshots for {router_key}: {e}")
         return []

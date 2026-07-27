@@ -1,8 +1,11 @@
 import logging
 import os
+import sqlite3
 from datetime import datetime
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
+from telegram.error import TelegramError
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.handlers.handler_utils import make_back_step
@@ -239,7 +242,7 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
         if status_msg:
             try:
                 await context.bot.delete_message(chat_id=chat_id, message_id=status_msg.message_id)
-            except Exception as e:
+            except TelegramError as e:
                 logger.debug(f"Failed to delete status message: {e}")
 
         # لا نعرض بيانات الدخول (يوزر/باسورد) في الدردشة؛ الملف PDF هو المخرج الرسمي.
@@ -329,10 +332,10 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 cards=serialize_cards(cards_data),
                 created_by=update.effective_user.id if update.effective_user else None,
             )
-        except Exception as e:
+        except sqlite3.Error as e:
             logger.warning(f"Failed to persist userman card batch: {e}")
 
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         await send_error(
             update,
             context,
@@ -484,7 +487,7 @@ async def userman_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
         users = await run_blocking(userman_manager.list_users, router_key)
         text = format_user_list(users)
         await query.edit_message_text(text, reply_markup=get_userman_keyboard())
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         await send_error(
             update,
             context,
@@ -530,7 +533,7 @@ async def userman_profiles(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             text = NO_PROFILES
         await query.edit_message_text(text, reply_markup=get_userman_keyboard())
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         await send_error(
             update,
             context,

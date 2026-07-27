@@ -118,7 +118,7 @@ class TestHotspotEditSelect:
         with patch(
             f"{P}.hotspot_manager.get_user",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("fail"),
+            side_effect=OSError("fail"),
         ):
             from bot.handlers.hotspot_edit import hotspot_edit_select
 
@@ -184,7 +184,7 @@ class TestHotspotEditField:
         with patch(
             f"{P}.hotspot_manager.edit_user",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("API fail"),
+            side_effect=OSError("API fail"),
         ):
             from bot.handlers.hotspot_edit import hotspot_edit_field
 
@@ -218,7 +218,7 @@ class TestHotspotEditField:
         with patch(
             f"{P}.fetch_and_cache_profiles",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("Profile fetch fail"),
+            side_effect=OSError("Profile fetch fail"),
         ):
             from bot.handlers.hotspot_edit import hotspot_edit_field
 
@@ -409,7 +409,7 @@ class TestHotspotEditValue:
         with patch(
             f"{P}.hotspot_manager.edit_user",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("fail"),
+            side_effect=OSError("fail"),
         ):
             from bot.handlers.hotspot_edit import hotspot_edit_value
 
@@ -501,7 +501,7 @@ class TestHotspotEditKick:
         with patch(
             f"{P}.hotspot_manager.kick_user",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("kick fail"),
+            side_effect=OSError("kick fail"),
         ):
             from bot.handlers.hotspot_edit import hotspot_edit_kick
 
@@ -582,7 +582,7 @@ class TestHotspotEditReset:
         with patch(
             f"{P}.hotspot_manager.reset_user_counters",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("reset fail"),
+            side_effect=OSError("reset fail"),
         ):
             from bot.handlers.hotspot_edit import hotspot_edit_reset
 
@@ -649,7 +649,7 @@ class TestEditProfileSelected:
         with patch(
             f"{P}.hotspot_manager.edit_user",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("profile fail"),
+            side_effect=OSError("profile fail"),
         ):
             from bot.handlers.hotspot_edit import edit_profile_selected
 

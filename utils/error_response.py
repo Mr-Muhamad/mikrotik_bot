@@ -1,6 +1,7 @@
 import logging
 import re
 
+import telegram.error
 from librouteros.exceptions import LibRouterosError
 from telegram import InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, Update
 from telegram.error import BadRequest
@@ -183,7 +184,7 @@ async def _dispatch_message(
             )
         if isinstance(msg, Message):
             track_msg(context, target_id, msg.message_id)
-    except Exception as send_err:
+    except telegram.error.TelegramError as send_err:
         if is_benign_telegram_error(send_err):
             logger.debug(
                 f"Benign Telegram error (ignored in _dispatch_message): "

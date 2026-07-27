@@ -122,7 +122,7 @@ class TestHotspotStats:
 
         with patch(
             "bot.handlers.hotspot.run_blocking",
-            new=AsyncMock(side_effect=Exception("net down")),
+            new=AsyncMock(side_effect=OSError("net down")),
         ):
             result = await hotspot_module.hotspot_stats(update, ctx)
         assert result is None

@@ -1,7 +1,9 @@
 import logging
 from datetime import datetime
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
+from telegram.error import TelegramError
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.handlers.constants import WAITING_DISC_PASSWORD, WAITING_DISC_USERNAME
@@ -75,7 +77,7 @@ async def discover_routers_callback(update: Update, context: ContextTypes.DEFAUL
         await query.edit_message_text(
             DISCOVERY_PERMISSION_ERROR, reply_markup=get_router_keyboard()
         )
-    except Exception as e:
+    except OSError as e:
         await send_error(
             update,
             context,
@@ -157,7 +159,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
     password = update.message.text
     try:
         await update.message.delete()
-    except Exception as e:
+    except TelegramError as e:
         logger.debug(f"Failed to delete password message: {e}")
 
     ip = context.user_data.get("disc_ip", "")
@@ -209,7 +211,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
                 f"{DISCOVERY_FAILED}\n\n{version}", reply_markup=get_router_keyboard()
             )
             await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         await send_error(
             update,
             context,

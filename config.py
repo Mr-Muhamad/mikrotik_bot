@@ -30,7 +30,7 @@ if not ENCRYPTION_KEY:
 # Validate Fernet key format and usability at startup
 try:
     Fernet(ENCRYPTION_KEY.encode())
-except Exception as e:
+except ValueError as e:
     print(f"FATAL: ENCRYPTION_KEY is invalid: {e}", file=sys.stderr)
     sys.exit(1)
 

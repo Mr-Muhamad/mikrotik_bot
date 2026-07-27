@@ -4,6 +4,7 @@ from collections.abc import Generator, Sequence
 from datetime import UTC
 from typing import TypedDict, cast
 
+import telegram.error
 from telegram import CallbackQuery, InlineKeyboardMarkup, Message, Update
 from telegram.ext import CallbackContext, ExtBot, JobQueue
 
@@ -142,7 +143,7 @@ async def _delete_message_ids(
         try:
             await context.bot.delete_message(chat_id=chat_id, message_id=message_ids[0])
             return 1
-        except Exception as e:
+        except telegram.error.TelegramError as e:
             logger.debug(f"Failed to delete message {message_ids[0]} in chat {chat_id}: {e}")
             return 0
 
@@ -150,7 +151,7 @@ async def _delete_message_ids(
         result = await context.bot.delete_messages(chat_id=chat_id, message_ids=message_ids)
         if result is True:
             return len(message_ids)
-    except Exception as e:
+    except telegram.error.TelegramError as e:
         logger.debug(f"Batched delete failed for chat {chat_id}: {e}")
 
     deleted = 0
@@ -158,7 +159,7 @@ async def _delete_message_ids(
         try:
             await context.bot.delete_message(chat_id=chat_id, message_id=mid)
             deleted += 1
-        except Exception as e:
+        except telegram.error.TelegramError as e:
             logger.debug(f"Failed to delete message {mid} in chat {chat_id}: {e}")
         # Throttle to prevent FloodWait when deleting many individual messages
         await asyncio.sleep(0.05)
@@ -199,7 +200,7 @@ async def _delete_job(context: _CleanerContext) -> None:
             message_id=int(str(data["message_id"])),
         )
         _stats["messages_deleted"] += 1
-    except Exception as e:
+    except telegram.error.TelegramError as e:
         logger.debug(f"Delete failed: {e}")
 
 
@@ -208,7 +209,7 @@ async def delete_now(context: _CleanerContext, chat_id: int, message_id: int) ->
     try:
         await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
         _stats["messages_deleted"] += 1
-    except Exception as e:
+    except telegram.error.TelegramError as e:
         logger.debug(f"delete_now failed: {e}")
 
 

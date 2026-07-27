@@ -2,7 +2,9 @@ import asyncio
 import logging
 from datetime import datetime
 
+from librouteros.exceptions import LibRouterosError
 from telegram import CallbackQuery, Update
+from telegram.error import TelegramError
 from telegram.ext import ContextTypes
 
 from bot.messages import (
@@ -213,7 +215,7 @@ async def _check_all_routers(context: ContextTypes.DEFAULT_TYPE):
         try:
             result = await run_blocking(check_router_health, router_key)
             is_online = bool(result["online"])
-        except Exception as e:
+        except (LibRouterosError, OSError) as e:
             logger.error(f"Watchdog check failed for {router_key}: {e}")
             is_online = False
 
@@ -247,9 +249,9 @@ async def _notify_admins(context: ContextTypes.DEFAULT_TYPE, text: str):
             await asyncio.sleep(delay)
             try:
                 await context.bot.send_message(admin_id, text, parse_mode="HTML")
-            except Exception as retry_err:
+            except TelegramError as retry_err:
                 logger.error(f"Failed to notify admin {admin_id} after RetryAfter: {retry_err}")
-        except Exception as e:
+        except TelegramError as e:
             logger.warning(f"Failed to notify admin {admin_id}: {e}")
 
 

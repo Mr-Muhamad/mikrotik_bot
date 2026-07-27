@@ -2,6 +2,7 @@ import html
 import logging
 from typing import cast
 
+from librouteros.exceptions import LibRouterosError
 from telegram import InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -17,6 +18,7 @@ from bot.messages import (
     NO_ROUTER_SELECTED,
 )
 from bot.router_selector import cleanup_state, get_selected_router, nav_set
+from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_client import RouterOSRow
 from utils.admin_decorator import admin_only
@@ -140,7 +142,7 @@ async def hotspot_stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text, reply_markup=get_hotspot_keyboard(), parse_mode="HTML"
             )
             return ConversationHandler.END
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,
@@ -233,7 +235,7 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
             reply_markup=get_back_keyboard("menu_hotspot"),
         )
         return WAITING_STATS_DAY
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,

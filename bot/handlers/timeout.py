@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
@@ -75,6 +76,6 @@ async def handle_timeout_selection(update: Update, context: ContextTypes.DEFAULT
             msg += TIMEOUT_SAVED_MINS.format(val=val)
 
         await query.edit_message_text(msg)
-    except Exception as e:
+    except (ValueError, sqlite3.Error) as e:
         logger.error(f"Error setting timeout: {e}")
         await query.edit_message_text(TIMEOUT_SAVE_ERROR)

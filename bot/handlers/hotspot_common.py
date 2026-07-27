@@ -1,5 +1,6 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -18,6 +19,7 @@ from bot.messages import (
     NO_ROUTER_SELECTED,
 )
 from bot.router_selector import cleanup_state, get_selected_router
+from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from database.models import log_action
 from utils.async_blocking import run_blocking
@@ -51,7 +53,7 @@ async def search_users_for_action(
 
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, search_term)
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,
@@ -142,7 +144,7 @@ async def execute_add_user(
             user_id,
         )
         return True, None
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.exception(f"execute_add_user failed: {e}")
         if "already have user" in str(e):
             context.user_data.pop("hotspot_add_session", None)

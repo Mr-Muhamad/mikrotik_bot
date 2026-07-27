@@ -4,6 +4,7 @@ import time
 from collections.abc import Awaitable, Callable
 from functools import wraps
 
+import telegram.error
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -130,7 +131,7 @@ def admin_only(func: Callable[..., Awaitable[object]]):
             if update.callback_query:
                 try:
                     await update.callback_query.answer(text="⏳", show_alert=False)
-                except Exception:
+                except telegram.error.TelegramError:
                     pass
             return
 

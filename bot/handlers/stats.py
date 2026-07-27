@@ -1,5 +1,6 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -53,7 +54,7 @@ async def _show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE, stat_t
             text = stats_manager.format_userman_stats(stats, router_name)
 
         await query.edit_message_text(text, reply_markup=get_stats_keyboard(), parse_mode="HTML")
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         await send_error(
             update,
             context,
@@ -127,7 +128,7 @@ async def stats_chart_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 caption="📈 الرسم البياني المصور لحركة نشاط وتدفق الشبكة للأسبوع الحالي",
                 reply_markup=get_stats_keyboard(),
             )
-    except Exception as e:
+    except (LibRouterosError, OSError, ValueError) as e:
         await send_error(
             update,
             context,

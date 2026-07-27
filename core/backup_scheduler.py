@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 
+from librouteros.exceptions import LibRouterosError
 from telegram.ext import CallbackContext, JobQueue
 
 from core.mikrotik_client import RouterOSRow
@@ -143,7 +144,7 @@ class BackupScheduler:
             router_name = str(r.get("identity", router_key))
             try:
                 expiring = await run_blocking(hotspot_manager.get_expiring_users, router_key, days)
-            except Exception as e:
+            except (LibRouterosError, OSError) as e:
                 logger.warning(f"Expiry check failed for {router_key}: {e}")
                 continue
 
@@ -163,7 +164,7 @@ class BackupScheduler:
             for admin_id in ADMIN_IDS:
                 try:
                     await context.bot.send_message(admin_id, message, parse_mode="HTML")
-                except Exception as e:
+                except (LibRouterosError, OSError, ValueError) as e:
                     logger.warning(f"Failed to notify admin {admin_id} about expiry: {e}")
 
     async def _do_stats_snapshot(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
@@ -190,7 +191,7 @@ class BackupScheduler:
                 }
                 await run_blocking(save_snapshot, router_key, snapshot_data)
                 logger.info(f"Stats snapshot saved for {router_key}")
-            except Exception as e:
+            except (LibRouterosError, OSError) as e:
                 logger.warning(f"Stats snapshot failed for {router_key}: {e}")
 
     def start_daily(

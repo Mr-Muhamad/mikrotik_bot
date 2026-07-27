@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+import telegram.error
 from telegram import (
     BotCommand,
     BotCommandScopeAllGroupChats,
@@ -57,7 +58,7 @@ async def set_bot_commands(app: Application) -> None:  # type: ignore[reportMiss
                 f"✅ Set {len(commands)} bot commands for private+group (attempt {attempt})"
             )
             return
-        except Exception as e:
+        except telegram.error.TelegramError as e:
             logger.warning(f"⚠️ Attempt {attempt}/3 — set_bot_commands failed: {e}")
             if attempt < 3:
                 await asyncio.sleep(2**attempt)

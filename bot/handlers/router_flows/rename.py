@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
@@ -55,7 +56,7 @@ async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE
         return ConversationHandler.END
     try:
         router = await run_blocking(get_router_by_id, router_id, decrypt=False)
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error("rename_router_start failed: %s", e)
         await send_error(update, context, e, log_extra="rename_start")
         cleanup_state(query.from_user.id, context.user_data)
@@ -104,7 +105,7 @@ async def rename_router_value(update: Update, context: ContextTypes.DEFAULT_TYPE
             router.get("identity", "") if router else "",
             update.effective_user.id,
         )
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.error("rename_router_value failed: %s", e)
         await send_error(update, context, e, log_extra="rename_router")
         cleanup_state(update.effective_user.id, context.user_data)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import sqlite3
 
 from database.models import get_db
 
@@ -23,7 +24,7 @@ def assign_router_to_operator(operator_id: int, router_id: int, assigned_by: int
                 (operator_id, router_id, assigned_by),
             )
         return True
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to assign router {router_id} to operator {operator_id}: {e}")
         return False
 
@@ -40,7 +41,7 @@ def revoke_router_from_operator(operator_id: int, router_id: int) -> bool:
                 (operator_id, router_id),
             )
         return cursor.rowcount > 0
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to revoke router {router_id} from operator {operator_id}: {e}")
         return False
 
@@ -57,7 +58,7 @@ def get_operator_routers(operator_id: int) -> list[int]:
                 (operator_id,),
             ).fetchall()
         return [row["router_id"] for row in rows]
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to get routers for operator {operator_id}: {e}")
         return []
 
@@ -74,7 +75,7 @@ def is_operator_allowed(operator_id: int, router_id: int) -> bool:
                 (operator_id, router_id),
             ).fetchone()
         return row is not None
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(
             f"Failed to check permission for operator {operator_id}, router {router_id}: {e}"
         )

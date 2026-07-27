@@ -1,7 +1,9 @@
 import logging
 import os
+import sqlite3
 from datetime import datetime
 
+from librouteros.exceptions import LibRouterosError
 from telegram import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -32,6 +34,7 @@ from bot.router_selector import (
     set_current_action,
 )
 from core.card_models import CardSystem, serialize_cards
+from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from database.models import save_card_batch
 from pdf.card_generator import card_generator
@@ -218,7 +221,7 @@ async def hotspot_cards_type_selected(update: Update, context: ContextTypes.DEFA
             CHOOSE_CARD_PROFILE,
             reply_markup=get_profile_keyboard(profile_names, "hs_card_profile", "hs_back_to_type"),
         )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,
@@ -468,7 +471,7 @@ async def _create_cards(
                 cards=serialize_cards(cards),
                 created_by=update.effective_user.id if update.effective_user else None,
             )
-        except Exception as e:
+        except sqlite3.Error as e:
             logger.warning(f"Failed to persist card batch: {e}")
 
         pdf_path = await run_blocking(card_generator.generate_pdf, cards)
@@ -492,7 +495,7 @@ async def _create_cards(
         else:
             await reply_final(update, context, "🏠 القائمة الرئيسية", get_hotspot_keyboard())
 
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,
@@ -538,7 +541,7 @@ async def hs_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE)
             CHOOSE_CARD_PROFILE,
             reply_markup=get_profile_keyboard(profile_names, "hs_card_profile", "hs_back_to_type"),
         )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,

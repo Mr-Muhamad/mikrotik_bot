@@ -157,7 +157,7 @@ class ConnectionPool:
                     self.active_counts[router_key] -= 1
             try:
                 api.close()
-            except Exception as e:
+            except (LibRouterosError, OSError) as e:
                 logger.debug(f"Error closing broken connection for {router_key}: {e}")
         else:
             with self._lock:
@@ -206,7 +206,7 @@ class ConnectionPool:
                     api = q.get_nowait()
                     api.close()
                     self.active_counts[router_key] -= 1
-                except (queue.Empty, Exception):
+                except (queue.Empty, LibRouterosError, OSError):
                     pass
 
     def close_all(self):

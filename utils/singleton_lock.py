@@ -75,7 +75,7 @@ def acquire_lock(force: bool = False) -> bool:
         _lock_handle.flush()
         logger.info(f"Acquired single-instance lock: {lock_path} (pid={os.getpid()})")
         return True
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Failed to acquire lock: {e}")
         return False
 
@@ -102,7 +102,7 @@ def release_lock() -> None:
                 pass
         _lock_handle.close()
         logger.info("Released single-instance lock")
-    except Exception as e:
+    except OSError as e:
         logger.warning(f"Error releasing lock: {e}")
     finally:
         _lock_handle = None

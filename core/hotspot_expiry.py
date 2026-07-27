@@ -29,7 +29,7 @@ def _parse_uptime_to_seconds(raw: str) -> int:
         mn = int(m.group(3) or 0)
         s = int(m.group(4) or 0)
         return d * 86400 + h * 3600 + mn * 60 + s
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.debug(f"Failed to parse uptime '{raw}': {e}")
         return 0
 
@@ -66,7 +66,7 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
                 uname = str(sess.get("user", ""))
                 uptime_secs = _parse_uptime_to_seconds(str(sess.get("uptime", "")))
                 active_map[uname] = active_map.get(uname, 0) + uptime_secs
-        except Exception as e:
+        except (LibRouterosError, OSError) as e:
             logger.warning(f"Failed to fetch active sessions for {router_key}: {e}")
             active_map = {}
 
@@ -157,6 +157,6 @@ def get_custom_expiring_users(
                         "profile": user.get("profile", "—"),
                     }
                 )
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.warning(f"get_custom_expiring_users failed for {router_key}: {e}")
     return sorted(result, key=lambda x: int(x.get("days_left", 0) or 0))

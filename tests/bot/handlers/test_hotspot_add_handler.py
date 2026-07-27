@@ -187,7 +187,7 @@ class TestHotspotAddPassword:
         c = make_mock_context()
         with patch(
             "bot.handlers.hotspot_add.fetch_and_cache_profiles",
-            new=AsyncMock(side_effect=Exception("router offline")),
+            new=AsyncMock(side_effect=OSError("router offline")),
         ):
             with patch("bot.handlers.hotspot_add.send_error", new=AsyncMock()) as mock_send_error:
                 result = await hotspot_add_password(u, c)
@@ -347,7 +347,7 @@ class TestBackNavigation:
         c = make_mock_context()
         with patch(
             "bot.handlers.hotspot_add.fetch_and_cache_profiles",
-            new=AsyncMock(side_effect=Exception("net err")),
+            new=AsyncMock(side_effect=OSError("net err")),
         ):
             with patch("bot.handlers.hotspot_add.send_error", new=AsyncMock()):
                 result = await add_back_to_profile(u, c)
@@ -397,7 +397,7 @@ class TestSkipHandlers:
         c = make_mock_context()
         with patch(
             "bot.handlers.hotspot_add.fetch_and_cache_profiles",
-            new=AsyncMock(side_effect=Exception("err")),
+            new=AsyncMock(side_effect=OSError("err")),
         ):
             with patch("bot.handlers.hotspot_add.send_error", new=AsyncMock()):
                 result = await skip_password(u, c)

@@ -244,7 +244,7 @@ async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             text=pdf_settings.format_settings(),
             reply_markup=get_pdf_settings_keyboard(),
         )
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         await send_error(
             update,
             context,

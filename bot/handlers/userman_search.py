@@ -1,5 +1,6 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -149,7 +150,7 @@ async def userman_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
 
     try:
         hosts = await run_blocking(userman_manager.search_users, router_key, text)
-    except Exception:
+    except (LibRouterosError, OSError):
         hosts = []
 
     context.user_data["search_um_hosts"] = hosts
@@ -327,7 +328,7 @@ async def userman_search_action(update: Update, context: ContextTypes.DEFAULT_TY
             f"{msg}\n\n" + _format_userman_detail(h),
             reply_markup=get_userman_detail_keyboard(is_disabled),
         )
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.error("userman_search_action failed: %s", e)
         from utils.error_response import sanitize_error_text
 
@@ -408,7 +409,7 @@ async def userman_search_add_profile(update: Update, context: ContextTypes.DEFAU
 
     try:
         profiles = await run_blocking(profile_sync.get_userman_profiles, router_key)
-    except Exception:
+    except (LibRouterosError, OSError):
         profiles = []
 
     if not profiles:
@@ -463,7 +464,7 @@ async def userman_search_add_profile_selected(update: Update, context: ContextTy
         linked, err = await run_blocking(
             userman_manager.add_profile_to_user, router_key, username, profile
         )
-    except Exception:
+    except (LibRouterosError, OSError):
         linked, err = False, "حدث خطأ غير متوقع"
 
     if linked:

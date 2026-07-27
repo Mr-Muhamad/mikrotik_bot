@@ -7,6 +7,8 @@ logic to the core layer and maps plain tokens (``"hotspot"``, ``"userman"``,
 
 import logging
 
+from librouteros.exceptions import LibRouterosError
+
 from bot.messages import (
     ROUTER_SYSTEM_BOTH,
     ROUTER_SYSTEM_HOTSPOT,
@@ -40,7 +42,7 @@ async def get_router_system_part(router_key: str | None) -> str:
     """
     try:
         token = await run_blocking(detect_router_system, router_key)
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.error("get_router_system_part failed: %s", e)
         return ROUTER_SYSTEM_UNKNOWN
     return _TOKEN_TO_TEXT.get(token, ROUTER_SYSTEM_UNKNOWN)

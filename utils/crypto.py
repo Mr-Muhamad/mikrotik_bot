@@ -1,7 +1,7 @@
 import logging
 import os
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ def decrypt_password(token: str) -> str:
     try:
         f = _get_key()
         return f.decrypt(token.encode()).decode()
-    except Exception as e:
+    except (InvalidToken, ValueError) as e:
         logger.error(f"Failed to decrypt password token: {e}")
         return ""
 
@@ -63,6 +63,6 @@ def decrypt_data(token: str) -> str:
         return ""
     try:
         return _get_key().decrypt(token.encode()).decode()
-    except Exception as e:
+    except (InvalidToken, ValueError) as e:
         logger.error(f"Failed to decrypt data token: {e}")
         return ""

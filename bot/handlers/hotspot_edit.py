@@ -1,5 +1,6 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -41,6 +42,7 @@ from bot.router_selector import (
     nav_set,
     set_current_action,
 )
+from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_client import RouterOSRow
 from database.models import log_action
@@ -126,7 +128,7 @@ async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE
     router_key = get_selected_router(query.from_user.id)
     try:
         user = await run_blocking(hotspot_manager.get_user, router_key, user_id)
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.error("hotspot_edit_select failed: %s", e)
         await send_error(
             update,
@@ -217,7 +219,7 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await query.edit_message_text(
             text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
         )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.error("hotspot_edit_reset failed: %s", e)
         await send_error(
             update,
@@ -278,7 +280,7 @@ async def hotspot_edit_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             msg, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
         )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.error("hotspot_edit_kick failed: %s", e)
         await send_error(
             update,
@@ -345,7 +347,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await query.edit_message_text(
                 text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
             )
-        except Exception as e:
+        except (LibRouterosError, OSError, MikrotikBotError) as e:
             logger.error("hotspot_edit_toggle_disabled failed: %s", e)
             await send_error(
                 update,
@@ -372,7 +374,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 keyboard=get_profile_keyboard(profile_names, "edit_profile", "edit_back_to_fields"),
             )
             return WAITING_EDIT_VALUE
-        except Exception as e:
+        except (LibRouterosError, OSError, MikrotikBotError) as e:
             logger.error("hotspot_edit_field failed: %s", e)
             await send_error(
                 update,
@@ -434,7 +436,7 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
             EDIT_SELECT_FIELD.format(format_hotspot_user(user_data or {})),
             reply_markup=get_edit_field_keyboard(is_disabled=is_disabled),
         )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.error("edit_profile_selected failed: %s", e)
         await send_error(
             update,
@@ -498,7 +500,7 @@ async def _validate_edit_field(
         if new_value != current_name:
             try:
                 exists = await run_blocking(hotspot_manager.user_exists, router_key, new_value)
-            except Exception as e:
+            except (LibRouterosError, OSError, MikrotikBotError) as e:
                 await send_error(
                     update,
                     context,
@@ -603,7 +605,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         await send_step(update, context, text, get_edit_field_keyboard(is_disabled=is_disabled))
         return WAITING_EDIT_VALUE
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.error("hotspot_edit_value failed: %s", e)
         await send_error(
             update,

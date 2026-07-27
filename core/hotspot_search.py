@@ -9,6 +9,8 @@ and return plain dicts/lists, keeping the search/kick responsibility here.
 import logging
 import re
 
+from librouteros.exceptions import LibRouterosError
+
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
 
 logger = logging.getLogger(__name__)
@@ -52,7 +54,7 @@ def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> Rout
                 "ip/hotspot/host/print",
                 **{"?address": search_lower, ".proplist": proplist},
             )
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.warning(f"Error searching hotspot hosts: {e}")
 
     if not hosts:
@@ -93,7 +95,7 @@ def kick_host(api: MikrotikClient, router_key: str, mac_or_ip: str) -> tuple[boo
                 "ip/hotspot/host/print",
                 **{"?address": target, ".proplist": proplist},
             )
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.warning(f"Error fetching host details for '{target}': {e}")
 
     if not hosts:
@@ -138,7 +140,7 @@ def _find_active_sessions(
             "ip/hotspot/active/print",
             **{"?user": target, ".proplist": active_proplist},
         )
-    except Exception:
+    except (LibRouterosError, OSError):
         active = api.execute(
             router_key, "ip/hotspot/active/print", **{".proplist": active_proplist}
         )
@@ -182,7 +184,7 @@ def _find_matched_hosts(
             )
             matched_hosts.extend(mac_hosts)
         return matched_hosts
-    except Exception:
+    except (LibRouterosError, OSError):
         all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": host_proplist})
         return [
             h

@@ -1,6 +1,7 @@
 """Repository for router health log — persistent watchdog state across restarts."""
 
 import logging
+import sqlite3
 from datetime import UTC
 
 from core.mikrotik_client import RouterOSRow
@@ -21,7 +22,7 @@ def record_health(router_key: str, status: str, error_msg: str = "") -> None:
                    VALUES (?, ?, ?, ?)""",
                 (router_key, status, now_utc(), error_msg or ""),
             )
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to record health for {router_key}: {e}")
 
 
@@ -38,7 +39,7 @@ def get_latest_health(router_key: str) -> RouterOSRow | None:
                 (router_key,),
             ).fetchone()
             return dict(row) if row else None
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to get latest health for {router_key}: {e}")
         return None
 
@@ -57,7 +58,7 @@ def get_all_latest_health() -> dict[str, RouterOSRow]:
                        WHERE h2.router_key = h1.router_key
                    )""").fetchall()
             return {row["router_key"]: dict(row) for row in rows}
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to get all latest health: {e}")
         return {}
 
@@ -75,7 +76,7 @@ def get_health_history(router_key: str, limit: int = 10) -> list[RouterOSRow]:
                 (router_key, limit),
             ).fetchall()
             return [dict(row) for row in rows]
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to get health history for {router_key}: {e}")
         return []
 
@@ -95,6 +96,6 @@ def cleanup_health_history(days: int = 7) -> int:
             cursor = conn.cursor()
             cursor.execute("DELETE FROM router_health_log WHERE checked_at < ?", (cutoff_text,))
             return cursor.rowcount
-    except Exception as e:
+    except sqlite3.Error as e:
         logger.warning(f"Failed to cleanup health history: {e}")
         return 0

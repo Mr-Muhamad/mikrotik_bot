@@ -56,7 +56,7 @@ def _setup_arabic_support() -> str:
                     _arabic_font = font_name
                     logger.info(f"Loaded Arabic font: {font_name}")
                     break
-                except Exception as e:
+                except (OSError, ValueError) as e:
                     logger.warning(f"Failed to load font {font_file}: {e}")
 
         if _arabic_font is None:
@@ -89,7 +89,7 @@ def _arabic_text(text: str | None) -> str:
         reshaped = _arabic_reshaper.reshape(str(text))
         result = _bidi_display(reshaped)
         return cast(str, result)
-    except Exception as e:
+    except (ValueError, UnicodeEncodeError, UnicodeDecodeError) as e:
         logger.debug(f"Arabic text reshaping failed, using raw text: {e}")
         return str(text)
 

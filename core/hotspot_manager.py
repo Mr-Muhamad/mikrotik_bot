@@ -497,10 +497,10 @@ class HotspotManager:
                     try:
                         self.delete_user(router_key, uid)
                         purged += 1
-                    except Exception as ex:
+                    except (LibRouterosError, OSError) as ex:
                         logger.warning("Failed to purge user %s: %s", uid, ex)
             return purged
-        except Exception as e:
+        except (LibRouterosError, OSError) as e:
             logger.error("Failed to purge expired users on %s: %s", router_key, e)
             return 0
 

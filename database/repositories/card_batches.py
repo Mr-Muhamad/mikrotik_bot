@@ -124,7 +124,7 @@ def _decode_batch_cards(cards_json: str) -> list[object]:
         return []
     try:
         decrypted = decrypt_data(cards_json)
-    except Exception:
+    except (ValueError, TypeError):
         return []
     if not decrypted:
         return []

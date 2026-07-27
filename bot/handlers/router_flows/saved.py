@@ -1,5 +1,7 @@
 import logging
+import sqlite3
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -79,7 +81,7 @@ async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE)
     owner_id = None if user_id in ADMIN_IDS else user_id
     try:
         routers = await run_blocking(get_saved_routers, active_only=True, owner_id=owner_id)
-    except Exception as e:
+    except sqlite3.Error as e:
         await send_error(
             update,
             context,
@@ -198,7 +200,7 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 version,
                 reply_markup=get_router_action_keyboard(router_id),
             )
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         await send_error(
             update,
             context,
@@ -305,7 +307,7 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 if success:
                     await run_blocking(update_router_last_seen, r["id"])
                     updated += 1
-            except Exception as e:
+            except (LibRouterosError, OSError) as e:
                 logger.warning(
                     f"refresh_routers: connection failed for {r.get('identity', r['ip_address'])}: {e}"  # noqa: E501
                 )
@@ -317,7 +319,7 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=get_saved_routers_keyboard(routers),
         )
         reset_rate_limit(query.from_user.id)
-    except Exception as e:
+    except sqlite3.Error as e:
         await send_error(
             update,
             context,

@@ -119,7 +119,7 @@ def create_indexes() -> None:
         for idx in indexes:
             try:
                 cursor.execute(idx)
-            except Exception as e:
+            except sqlite3.Error as e:
                 logger.debug(f"Index creation skipped: {e}")
 
 

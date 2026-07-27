@@ -104,7 +104,7 @@ class TestHotspotDeleteSelect:
         with patch(
             f"{P}.hotspot_manager.get_user",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("API error"),
+            side_effect=OSError("API error"),
         ):
             from bot.handlers.hotspot_delete import hotspot_delete_select
 
@@ -161,7 +161,7 @@ class TestConfirmCallback:
         with patch(
             f"{P}.hotspot_manager.delete_user",
             new_callable=AsyncMock,
-            side_effect=RuntimeError("Delete failed"),
+            side_effect=OSError("Delete failed"),
         ):
             from bot.handlers.hotspot_delete import confirm_callback
 

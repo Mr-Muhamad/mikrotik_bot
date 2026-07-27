@@ -5,6 +5,8 @@ import threading
 from datetime import UTC, datetime
 from typing import cast
 
+from librouteros.exceptions import LibRouterosError
+
 from core.backup import files as backup_files
 from core.backup.files import (
     cleanup_old_backups,
@@ -91,7 +93,7 @@ class SystemBackupService:
                 )
             logger.info(f"Full backup completed for {router_name}")
             return cast(RouterOSRow, result)
-        except Exception as e:
+        except (LibRouterosError, OSError) as e:
             logger.error(f"Full backup failed for {router_name}: {e}")
             if os.path.isdir(backup_dir):
                 try:

@@ -53,9 +53,9 @@ class TestSearchUsersForAction:
             ),
             patch(
                 "bot.handlers.hotspot_common.run_blocking",
-                new=AsyncMock(side_effect=Exception("net down")),
+                new=AsyncMock(side_effect=OSError("net down")),
             ),
-            patch("bot.handlers.hotspot_common.reply_final", new=AsyncMock()),
+            patch("bot.handlers.hotspot_common.send_error", new=AsyncMock()),
         ):
             result = await search_users_for_action(_update(), _ctx(), "delete")
         assert result == ConversationHandler.END
@@ -183,7 +183,7 @@ class TestExecuteAddUser:
     async def test_duplicate_error_clears_state(self):
         with patch(
             "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(side_effect=Exception("already have user with this name")),
+            new=AsyncMock(side_effect=OSError("already have user with this name")),
         ):
             ctx = _ctx()
             get_hotspot_add_session(ctx.user_data).username = "u1"
@@ -202,7 +202,7 @@ class TestExecuteAddUser:
     async def test_other_error_returns_message(self):
         with patch(
             "bot.handlers.hotspot_common.run_blocking",
-            new=AsyncMock(side_effect=Exception("connection timeout")),
+            new=AsyncMock(side_effect=OSError("connection timeout")),
         ):
             ctx = _ctx()
             get_hotspot_add_session(ctx.user_data).username = "u1"

@@ -226,7 +226,7 @@ class TestSearchQuery:
         with patch("bot.handlers.hotspot_search.get_selected_router", return_value="r1"), patch(
             "bot.handlers.hotspot_search.send_loading", new=AsyncMock(return_value=loading_mock)
         ), patch("bot.handlers.hotspot_search.delete_now", new=AsyncMock()), patch(
-            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("net"))
+            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=OSError("net"))
         ), patch(
             "bot.handlers.hotspot_search.send_step", new=AsyncMock()
         ):
@@ -334,7 +334,7 @@ class TestSearchUsers:
     @pytest.mark.asyncio
     async def test_exception_returns_empty(self):
         with patch(
-            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("fail"))
+            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=OSError("fail"))
         ):
             result = await _search_users("r1", "x")
         assert result == []
@@ -397,7 +397,7 @@ class TestSearchHostsByField:
     @pytest.mark.asyncio
     async def test_exception_returns_empty(self):
         with patch(
-            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("fail"))
+            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=OSError("fail"))
         ):
             result = await _search_hosts_by_field("r1", "mac-address", "x")
         assert result == []
@@ -447,7 +447,7 @@ class TestSearchHostsWithUsers:
     @pytest.mark.asyncio
     async def test_hosts_exception(self):
         with patch(
-            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("fail"))
+            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=OSError("fail"))
         ):
             result = await _search_hosts_with_users("r1", "x")
         assert result == []
@@ -457,7 +457,7 @@ class TestSearchHostsWithUsers:
         hosts = [{"host-name": "h1", "user": "admin", "address": "", "mac-address": ""}]
         with patch(
             "bot.handlers.hotspot_search.run_blocking",
-            new=AsyncMock(side_effect=[hosts, Exception("user fail")]),
+            new=AsyncMock(side_effect=[hosts, OSError("user fail")]),
         ):
             result = await _search_hosts_with_users("r1", "admin")
         assert len(result) == 1
@@ -889,7 +889,7 @@ class TestHostAction:
         with patch("bot.handlers.hotspot_search.safe_answer_callback", new=AsyncMock()), patch(
             "bot.handlers.hotspot_search.get_selected_router", return_value="r1"
         ), patch(
-            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("boom"))
+            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=OSError("boom"))
         ), patch(
             "bot.handlers.hotspot_search.send_error", new=AsyncMock()
         ), patch(
@@ -1141,7 +1141,7 @@ class TestShowBlockedList:
         with patch("bot.handlers.hotspot_search.safe_answer_callback", new=AsyncMock()), patch(
             "bot.handlers.hotspot_search.get_selected_router", return_value="r1"
         ), patch(
-            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=Exception("fail"))
+            "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=OSError("fail"))
         ), patch(
             "bot.handlers.hotspot_search.send_error", new=AsyncMock()
         ), patch(

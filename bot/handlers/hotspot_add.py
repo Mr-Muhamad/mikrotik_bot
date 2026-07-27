@@ -1,5 +1,6 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -43,6 +44,7 @@ from bot.router_selector import (
     nav_set,
     set_current_action,
 )
+from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
@@ -120,7 +122,7 @@ async def hotspot_add_username(update: Update, context: ContextTypes.DEFAULT_TYP
                     get_cancel_keyboard(),
                 )
                 return WAITING_USERNAME
-        except Exception as e:
+        except (LibRouterosError, OSError, MikrotikBotError) as e:
             await send_error(
                 update,
                 context,
@@ -176,7 +178,7 @@ async def hotspot_add_password(update: Update, context: ContextTypes.DEFAULT_TYP
             CHOOSE_PROFILE_OR_TYPE,
             get_profile_keyboard(profile_names, "add_profile", "add_back_to_password"),
         )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,
@@ -337,7 +339,7 @@ async def add_back_to_profile(update: Update, context: ContextTypes.DEFAULT_TYPE
             CHOOSE_PROFILE_OR_TYPE,
             reply_markup=get_profile_keyboard(profile_names, "add_profile", "add_back_to_password"),
         )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,
@@ -385,7 +387,7 @@ async def skip_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
             CHOOSE_PROFILE,
             reply_markup=get_profile_keyboard(profile_names, "add_profile", "add_back_to_password"),
         )
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         await send_error(
             update,
             context,

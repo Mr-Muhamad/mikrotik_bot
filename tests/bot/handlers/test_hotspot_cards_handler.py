@@ -222,7 +222,7 @@ class TestHotspotCardsTypeSelected:
         c = make_mock_context()
         with patch(
             "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-            new=AsyncMock(side_effect=Exception("net err")),
+            new=AsyncMock(side_effect=OSError("net err")),
         ):
             with patch("bot.handlers.hotspot_cards.send_error", new=AsyncMock()):
                 result = await hotspot_cards_type_selected(u, c)
@@ -354,7 +354,8 @@ class TestHotspotCardsBytes:
                 with patch("os.remove"):
                     with patch("builtins.open", MagicMock()):
                         with patch("bot.handlers.hotspot_cards.reply_final", new=AsyncMock()):
-                            result = await hotspot_cards_bytes(u, c)
+                            with patch("bot.handlers.hotspot_cards.send_error", new=AsyncMock()):
+                                result = await hotspot_cards_bytes(u, c)
         # Conversation ends; user_data cleaned up
         assert result == ConversationHandler.END
         assert "hs_card_bytes" not in c.user_data
@@ -432,7 +433,7 @@ class TestCreateCards:
         c.user_data["hs_card_count"] = 1
         with patch(
             "bot.handlers.hotspot_cards.run_blocking",
-            new=AsyncMock(side_effect=Exception("router crashed")),
+            new=AsyncMock(side_effect=OSError("router crashed")),
         ):
             with patch("bot.handlers.hotspot_cards.send_error", new=AsyncMock()) as mock_err:
                 result = await _create_cards(u, c, query=u.callback_query)
@@ -476,7 +477,7 @@ class TestBackNavigation:
         c = make_mock_context()
         with patch(
             "bot.handlers.hotspot_cards.fetch_and_cache_profiles",
-            new=AsyncMock(side_effect=Exception("err")),
+            new=AsyncMock(side_effect=OSError("err")),
         ):
             with patch("bot.handlers.hotspot_cards.send_error", new=AsyncMock()):
                 result = await hs_back_to_profile(u, c)

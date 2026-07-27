@@ -1,5 +1,6 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -22,6 +23,7 @@ from bot.router_selector import (
     nav_set,
     set_current_action,
 )
+from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from database.models import log_action
 from utils.admin_decorator import admin_only, require_role
@@ -90,7 +92,7 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_confirm_keyboard(),
         )
         return WAITING_INPUT
-    except Exception as e:
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.error("hotspot_delete_select failed: %s", e)
         await send_error(
             update,
@@ -148,7 +150,7 @@ async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await run_blocking(hotspot_manager.delete_user, router_key, user_id)
             await run_blocking(log_action, "delete_user", user_id, router_key, query.from_user.id)
             await edit_clean(query, context, SUCCESS_DELETE, get_hotspot_keyboard())
-        except Exception as e:
+        except (LibRouterosError, OSError, MikrotikBotError) as e:
             logger.error("confirm_callback delete failed: %s", e)
             await send_error(
                 update,

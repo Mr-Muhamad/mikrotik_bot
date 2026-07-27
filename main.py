@@ -91,7 +91,7 @@ def main():
                 stop_file_server()
                 mikrotik_api.close()
                 logger.info("Connection pool cleaned up")
-            except Exception as e:
+            except (OSError, RuntimeError) as e:
                 logger.error(f"Error during pool cleanup: {e}")
 
         atexit.register(_cleanup_pool)

@@ -6,6 +6,7 @@ Provides wrappers that handle common Telegram callback query errors gracefully.
 import logging
 import time
 
+import telegram.error
 from telegram import CallbackQuery
 
 logger = logging.getLogger(__name__)
@@ -55,7 +56,7 @@ async def safe_answer_callback(
         return
     try:
         await query.answer(text=text, show_alert=show_alert)
-    except Exception as e:
+    except telegram.error.TelegramError as e:
         error_msg = str(e)
         if "Query is too old" in error_msg or "query id is invalid" in error_msg:
             logger.debug(

@@ -95,7 +95,7 @@ def _ensure_utf8_streams() -> None:
                 cast_stream = _stream
                 if isinstance(cast_stream, io.TextIOWrapper):
                     cast_stream.reconfigure(encoding="utf-8")
-        except Exception:
+        except OSError:
             pass
 
 

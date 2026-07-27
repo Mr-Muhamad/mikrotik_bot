@@ -4,6 +4,8 @@ import shutil
 import tarfile
 from datetime import UTC, datetime
 
+from librouteros.exceptions import LibRouterosError
+
 from config import BACKUP_DIR
 from core.mikrotik_api import mikrotik_api
 
@@ -165,8 +167,8 @@ def cleanup_router_files(
                 mikrotik_api.execute(router_key, "file/remove", **{".id": item.get(".id")})
                 deleted += 1
                 logger.debug(f"Removed old router file: {name}")
-            except Exception as e:
+            except (LibRouterosError, OSError) as e:
                 logger.debug(f"Failed to remove router file {name}: {e}")
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.warning(f"Failed to list router files for cleanup: {e}")
     return deleted

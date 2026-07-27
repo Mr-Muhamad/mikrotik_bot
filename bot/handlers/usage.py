@@ -1,5 +1,6 @@
 import logging
 
+from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -89,7 +90,7 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, search_term)
-    except Exception as e:
+    except (LibRouterosError, OSError) as e:
         logger.error(f"Usage search failed: {e}")
         await send_error(update, context, e, router_key=router_key, log_extra="usage_search")
         return ConversationHandler.END
@@ -160,7 +161,7 @@ async def _show_usage_report(
             lines.append(USAGE_CURRENT_ACTIVE.format(devices="\n".join(active_lines)))
         else:
             lines.append(USAGE_NO_ACTIVE)
-    except Exception:
+    except (LibRouterosError, OSError):
         lines.append(USAGE_NO_ACTIVE)
 
     await send_step(update, context, "\n".join(lines), get_back_keyboard("menu_hotspot"))
