@@ -156,7 +156,7 @@ class TestUsermanSearchQuery:
             patch("bot.handlers.userman_search.send_step", new=AsyncMock()),
             patch(
                 "bot.handlers.userman_search.run_blocking",
-                new=AsyncMock(side_effect=Exception("net down")),
+                new=AsyncMock(side_effect=OSError("net down")),
             ),
         ):
             result = await userman_search_query(update, context)
@@ -266,7 +266,7 @@ class TestUsermanSearchAction:
             ),
             patch(
                 "bot.handlers.userman_search.run_blocking",
-                new=AsyncMock(side_effect=Exception("boom")),
+                new=AsyncMock(side_effect=OSError("boom")),
             ),
             patch("bot.handlers.userman_search.safe_edit_plain", new=mock_edit),
         ):

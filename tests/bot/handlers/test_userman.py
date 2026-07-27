@@ -193,12 +193,13 @@ class TestUsermanCardCount:
             patch("bot.handlers.userman.send_step", new=AsyncMock(return_value=status)),
             patch(
                 "bot.handlers.userman.run_blocking",
-                new=AsyncMock(side_effect=[cards, "/tmp/cards.pdf", None]),
+                new=AsyncMock(side_effect=[cards, None, "/tmp/cards.pdf", None]),
             ),
             patch("bot.handlers.userman.userman_manager") as mock_um,
             patch("bot.handlers.userman.card_generator") as mock_cg,
             patch("bot.handlers.userman.log_action"),
             patch("os.path.exists", return_value=True),
+            patch("os.remove"),
             patch("builtins.open", mock_open(read_data=b"PDF")),
         ):
             mock_um.create_cards = MagicMock(return_value=cards)
@@ -231,7 +232,7 @@ class TestUsermanCardCount:
             patch("bot.handlers.userman.send_step", new=AsyncMock(return_value=None)),
             patch(
                 "bot.handlers.userman.run_blocking",
-                new=AsyncMock(side_effect=Exception("net down")),
+                new=AsyncMock(side_effect=OSError("net down")),
             ),
             patch("bot.handlers.userman.send_error", new=AsyncMock()),
         ):
@@ -257,7 +258,7 @@ class TestUsermanCardCount:
             patch("bot.handlers.userman.send_step", new=AsyncMock(return_value=status)),
             patch(
                 "bot.handlers.userman.run_blocking",
-                new=AsyncMock(side_effect=[cards, "/tmp/x.pdf"]),
+                new=AsyncMock(side_effect=[cards, None, "/tmp/x.pdf", None]),
             ),
             patch("bot.handlers.userman.userman_manager") as mock_um,
             patch("bot.handlers.userman.card_generator"),
@@ -299,7 +300,7 @@ class TestUsermanList:
 
         with patch(
             "bot.handlers.userman.run_blocking",
-            new=AsyncMock(side_effect=Exception("boom")),
+            new=AsyncMock(side_effect=OSError("boom")),
         ):
             await userman_list(update, ctx)
         update.callback_query.edit_message_text.assert_called_once()
@@ -341,7 +342,7 @@ class TestUsermanProfiles:
 
         with patch(
             "bot.handlers.userman.run_blocking",
-            new=AsyncMock(side_effect=Exception("net down")),
+            new=AsyncMock(side_effect=OSError("net down")),
         ):
             await userman_profiles(update, ctx)
         update.callback_query.edit_message_text.assert_called_once()
