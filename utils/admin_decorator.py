@@ -113,6 +113,19 @@ def admin_only(func: Callable[..., Awaitable[object]]):
         if _is_group_chat(update):
             return
 
+        from bot.router_selector import get_selected_router
+        router_key = get_selected_router(user_id) or "None"
+
+        if update.callback_query:
+            logger.info(
+                f"📥 [ACTION INCOMING] User: {user_id} ({user.full_name}) | Router: {router_key} | Button: '{update.callback_query.data}' | Handler: {func.__name__}"
+            )
+        elif update.message and update.message.text:
+            text_preview = update.message.text[:30] + ("..." if len(update.message.text) > 30 else "")
+            logger.info(
+                f"📥 [ACTION INCOMING] User: {user_id} ({user.full_name}) | Router: {router_key} | Input: '{text_preview}' | Handler: {func.__name__}"
+            )
+
         if user_id not in ADMIN_IDS:
             from database.models import get_admin_role
 
@@ -128,25 +141,13 @@ def admin_only(func: Callable[..., Awaitable[object]]):
                 return
 
         if not _check_rate_limit(user_id, func.__name__):
+            logger.warning(f"RATE LIMITED: User: {user_id} | Handler: {func.__name__}")
             if update.callback_query:
                 try:
                     await update.callback_query.answer(text="⏳", show_alert=False)
                 except telegram.error.TelegramError:
                     pass
             return
-
-        from bot.router_selector import get_selected_router
-        router_key = get_selected_router(user_id) or "None"
-
-        if update.callback_query:
-            logger.info(
-                f"📥 [ACTION START] User: {user_id} ({user.full_name}) | Router: {router_key} | Button: '{update.callback_query.data}' | Handler: {func.__name__}"
-            )
-        elif update.message and update.message.text:
-            text_preview = update.message.text[:30] + ("..." if len(update.message.text) > 30 else "")
-            logger.info(
-                f"📥 [ACTION START] User: {user_id} ({user.full_name}) | Router: {router_key} | Input: '{text_preview}' | Handler: {func.__name__}"
-            )
 
         start_time = time.perf_counter()
         try:
