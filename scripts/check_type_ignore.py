@@ -11,11 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 # Each entry: (file, line_number, reason)
 KNOWN_IGNORES = [
     ("core/connection_pool.py", 101, "LibRouterosError base class catch"),
-    ("core/mikrotik_api.py", 217, "LibRouterosError base class catch"),
-    ("bot/handlers/backup.py", 82, "job_data JSON keys are strings at runtime"),
     ("bot/handlers/backup.py", 83, "job_data JSON keys are strings at runtime"),
-    ("bot/handlers/settings.py", 181, "dynamic handler dispatch"),
-    ("utils/error_response.py", 122, "dynamic classifier dispatch"),
     ("scripts/e2e_smoke.py", 86, "test mock override"),
     ("scripts/e2e_smoke.py", 96, "test mock override"),
 ]

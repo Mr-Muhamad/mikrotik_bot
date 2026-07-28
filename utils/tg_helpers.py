@@ -6,7 +6,7 @@ but inside a registered handler these values are guaranteed non-None by
 the framework.
 
 Use these helpers instead of direct attribute access to satisfy
-basedpyright without scattering # type: ignore across the codebase.
+basedpyright without scattering suppression comments across the codebase.
 Each function uses assert so the guarantee is explicit and documented.
 """
 
