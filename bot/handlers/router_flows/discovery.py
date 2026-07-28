@@ -156,20 +156,31 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
     Returns:
         ConversationHandler.END.
     """
+    if not update.message or not update.message.text:
+        return WAITING_DISC_PASSWORD
+
     password = update.message.text
     try:
         await update.message.delete()
     except TelegramError as e:
         logger.debug(f"Failed to delete password message: {e}")
 
-    ip = context.user_data.get("disc_ip", "")
+    ip = context.user_data.get("disc_ip")
+    if not ip:
+        logger.error("disc_enter_password missing critical context: disc_ip")
+        if update.effective_message:
+            await update.effective_message.reply_text("❌ حدث خطأ في الجلسة: اسم الراوتر أو IP غير موجود.")
+        cleanup_state(update.effective_user.id if update.effective_user else 0, context.user_data)
+        return ConversationHandler.END
+
     username = context.user_data.get("disc_username", "")
     status_msg = await update.message.reply_text(DISCOVERY_CONNECTING.format(ip))
     try:
-        success, version, identity = await run_blocking(
+        success, conn_result, identity = await run_blocking(
             mikrotik_api.test_connection, ip, username, password
         )
         if success:
+            version = conn_result
             router_db = await run_blocking(get_router_by_ip, ip)
             is_update = router_db is not None
             if is_update:
@@ -184,17 +195,20 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
                     identity=identity,
                     version=version,
                     last_seen=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    owner_id=update.effective_user.id,
+                    owner_id=update.effective_user.id if update.effective_user else 0,
                 )
             router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
-            set_selected_router(update.effective_user.id, router_key)
+            if update.effective_user:
+                set_selected_router(update.effective_user.id, router_key)
+
+            # Deferred inner imports to avoid circular import dependency between bot.handlers and core
             from core.router_info import detect_router_system
             from core.watchdog import check_router_health
 
             await run_blocking(check_router_health, router_key)
             await run_blocking(detect_router_system, router_key)
             await run_blocking(
-                log_action, "connect_discovered", ip, identity, update.effective_user.id
+                log_action, "connect_discovered", ip, identity, update.effective_user.id if update.effective_user else 0
             )
             success_msg = (
                 ROUTER_UPDATED.format(identity, version, ip)
@@ -205,20 +219,37 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
                 success_msg,
                 reply_markup=get_main_keyboard(),
             )
-            reset_rate_limit(update.effective_user.id)
+            if update.effective_user:
+                reset_rate_limit(update.effective_user.id)
         else:
+            error_msg = conn_result
             await status_msg.edit_text(
-                f"{DISCOVERY_FAILED}\n\n{version}", reply_markup=get_router_keyboard()
+                f"{DISCOVERY_FAILED}\n\n{error_msg}", reply_markup=get_router_keyboard()
             )
-            await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
-    except Exception as e:  # noqa: BLE001
+            if update.effective_chat:
+                await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
+    except (LibRouterosError, OSError, ConnectionError) as e:
+        logger.warning(f"Connection/RouterOS error during disc_enter_password for {ip}: {e}")
         await send_error(
             update,
             context,
             e,
-            log_extra="disc_enter_password",
+            log_extra="disc_enter_password_conn",
             reply_markup=get_router_keyboard(),
         )
-        await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
-    cleanup_state(update.effective_user.id, context.user_data)
+        if update.effective_chat:
+            await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
+    except Exception as e:  # noqa: BLE001 - catch-all handler for unexpected runtime errors before ending conversation
+        logger.exception(f"Unexpected error in disc_enter_password: {e}")
+        await send_error(
+            update,
+            context,
+            e,
+            log_extra="disc_enter_password_unexpected",
+            reply_markup=get_router_keyboard(),
+        )
+        if update.effective_chat:
+            await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
+    finally:
+        cleanup_state(update.effective_user.id if update.effective_user else 0, context.user_data)
     return ConversationHandler.END
