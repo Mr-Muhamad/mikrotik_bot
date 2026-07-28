@@ -82,13 +82,16 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         report = await run_blocking(hotspot_manager.build_usage_report, router_key)
         router_name = await run_blocking(mikrotik_api.get_router_name, router_key)
+        stats = await run_blocking(stats_manager.get_hotspot_stats, router_key)
     except (LibRouterosError, OSError, MikrotikBotError) as e:
         logger.error(f"Report generation failed: {e}")
         await send_error(update, context, e, router_key=router_key, log_extra="report_gen")
         return
 
     context.user_data["report"] = report
-    text = stats_manager.format_hotspot_usage_report(report, router_name)
+    stats_text = stats_manager.format_hotspot_stats(stats, router_name) if stats else ""
+    report_text = stats_manager.format_hotspot_usage_report(report, router_name)
+    text = stats_text + "\n\n" + report_text if stats_text else report_text
     await send_step(update, context, text, get_report_keyboard())
 
 

@@ -48,6 +48,13 @@ def _logs_where_clauses(
 def log_action(action: str, username: str, router_name: str, admin_id: int) -> None:
     from database.models import get_db
 
+    logger.info(
+        "📝 [AUDIT LOG] Action: %s | User: %s | Router: %s | Admin: %s",
+        action,
+        username,
+        router_name,
+        admin_id,
+    )
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
