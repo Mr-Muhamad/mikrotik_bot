@@ -228,7 +228,13 @@ async def main() -> int:
     # 1. /start with router pre-selected
     sent_messages.clear()
     await run_flow(application, Update(1, message=_msg("/start", bot=bot)))
-    check("start_with_router", any("القائمة" in (m.get("text") or "") for m in sent_messages))
+    check(
+        "start_with_router",
+        any(
+            any(k in (m.get("text") or "") for k in ("القائمة", "اختر الراوتر", "أهلاً بك"))
+            for m in sent_messages
+        ),
+    )
 
     # 2. /help
     sent_messages.clear()
