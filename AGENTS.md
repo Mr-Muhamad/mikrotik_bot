@@ -93,7 +93,8 @@ mikrotik_bot/
 │   │   ├── __init__.py        # تصدير المعالجات
 │   │   ├── batch.py           # /batches دفعات الكروت
 │   │   ├── commands_basic.py  # /cancel, /clean, /metrics, /sync, معالج الخطأ
-│   │   ├── common.py          # /start, /help, /clean, /metrics, /sync والقوائم
+│   │   ├── common/            # /start, /help, /clean, /metrics, /sync والقوائم
+│   │   ├── common.py          # واجهة توافق لإعادة التصدير
 │   │   ├── handler_utils.py   # دوال مساعدة مشتركة
 │   │   ├── menus.py           # go_back للتنقل بين القوائم
 │   │   ├── roles.py           # /roles إدارة أدوار المشرفين
@@ -157,7 +158,7 @@ mikrotik_bot/
 │   │   ├── system.py          # منطق system backup
 │   │   ├── userman.py         # منطق User Manager backup/restore
 │   │   └── restore.py         # استعادة system backups المحلية
-│   ├── backup_scheduler.py    # جدولة النسخ اليومي عبر JobQueue
+│   ├── backup_scheduler.py    # جدولة النسخ اليومي + فحص انتهاء الاشتراكات + لقطات إحصائية يومية
 │   ├── network_probe.py       # MNDP/ARP/port scan primitives
 │   ├── network_scanner.py     # discovery orchestrator
 │   ├── profile_cache.py       # TTL cache للبروفايلات
@@ -192,7 +193,7 @@ mikrotik_bot/
 │   ├── card_renderer.py       # عرض الكروت
 │   ├── pdf_renderer.py        # عرض PDF
 │   └── pdf_settings.py        # إعدادات PDF
-├── scripts/                   # validate_handlers, snapshot_release, logging audit helper
+├── scripts/                   # validate_handlers, validate_routeros_paths, check_type_ignore, snapshot_release, e2e_smoke, stress_test
 └── tests/                     # pytest tests للوحدات والتكامل
 ```
 
@@ -298,7 +299,7 @@ mikrotik_bot/
 | Flow | النتيجة المتوقعة |
 |------|------------------|
 | `/timeout` | يعرض خيارات: 5/15/30/60 دقيقة أو بدون حد → يحفظ في `user_sessions.timeout_minutes`. |
-| `/roles` (الأدوار) | يعرض أدوار جميع المشرفين → يسمح بتعيين admin/operator/viewer → يدير المشغّلين وربطهم بالروترات. |
+| `/roles` (الأدوار) | يعرض أدوار جميع المشرفين → يسمح بتعيين super_admin/admin/operator/viewer/customer → يدير المشغّلين وربطهم بالروترات. |
 | `/logs` (سجل التدقيق) | يعرض السجلات مع فلاتر (راوتر/مشرف/عملية/مدة) + ترقيم صفحات + تفاصيل كل سجل. |
 | `/metrics` | يعرض مقاييس الاتصال (نجاح/فشل/متوسط الوقت) + حالة استهلاك السيرفر (CPU/RAM). |
 | `/settings` (إعدادات PDF) | يعرض مجموعات الإعدادات (نص/تخطيط/QR) → يسمح بتعديل كل إعداد مع تحقق من القيم. |
@@ -372,8 +373,7 @@ mikrotik_bot/
 
 | الإعداد | القيمة | الوصف |
 |---------|--------|-------|
-| `BACKUP_HOUR` | 3 | ساعة التشغيل الافتراضية (03:00) |
-| `BACKUP_MINUTE` | 0 | دقيقة التشغيل |
+| القيمة الافتراضية | 03:00 | ساعة التشغيل عبر `start_daily(hour=3, minute=0)` في `core/backup_scheduler.py` |
 | `BACKUP_JOBS_RETENTION_PER_ROUTER` | 50 | سجلات النسخ المحتفظ بها لكل راوتر |
 | `MAX_LOCAL_BACKUPS` | 10 | نسخ محلية قصوى |
 | `MAX_ROUTER_BACKUPS` | 5 | نسخ احتياطية قصوى على الراوتر |
@@ -410,7 +410,7 @@ mikrotik_bot/
 | `discovered_routers` | الروترات المكتشفة يدوياً أو تلقائياً (IP، MAC، اسم مستخدم، كلمة مرور مشفرة، حالة النشاط، والمالك) |
 | `user_sessions` | جلسات مستخدمي التيليجرام والراوتر المختار لكل منهم ومهلة الخمول |
 | `logs` | سجل التدقيق (Audit Log) لتوثيق جميع العمليات على الروترات |
-| `admin_roles` | إدارة أدوار المشرفين (admin / operator / viewer) وصلاحياتهم |
+| `admin_roles` | إدارة أدور المشرفين (super_admin / admin / operator / viewer / customer) وصلاحياتهم |
 | `card_batches` | دفعات كروت Hotspot المُنشأة مع بيانات المبيعات والملف بصيغة JSON |
 | `pdf_settings` | الإعدادات الوحيدة (Singleton) لتخصيص شكل PDF الكروت |
 | `backup_settings` | الإعدادات الوحيدة (Singleton) لجدولة النسخ الاحتياطي التلقائي |
@@ -479,5 +479,5 @@ py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --c
 - عند تعديل رسائل المستخدم، ضع النصوص في `bot/messages.py` لا داخل handlers إلا إذا كان النص داخلياً ومؤقتاً.
 - إعدادات الـ logging تتم حصراً في `main.py` قبل `configure_logging()`؛ لا تضف `logging.basicConfig` جديد أو `setLevel` لمكتبات غير مزعجة.
 - لا يوجد `HEALTH_CHECK_PORT` أو `aiohttp` في المشروع بعد الآن؛ تمت إزالة health check server بالكامل.
-- `WATCHDOG_FIRST_DELAY` معرّف في `config.py:50` ويُستخدم في `bot/handlers/watchdog.py:67` كمهلة أولى للـ Job. لا تستخدم `first=10` مضمّناً.
+- `WATCHDOG_FIRST_DELAY` معرّف في `config.py:54` ويُستخدم في `bot/handlers/watchdog.py:67` كمهلة أولى للـ Job. لا تستخدم `first=10` مضمّناً.
 - هناك استخدامات إنتاجية لـ `# type: ignore` في الكود: `core/connection_pool.py:101`, `core/mikrotik_api.py:217`, `bot/handlers/backup.py:82,83`, `bot/handlers/settings.py:181`, `utils/error_response.py:122`. جميعها مبررة ومعلّمة، ويُتحقق منها عبر `scripts/check_type_ignore.py`.
