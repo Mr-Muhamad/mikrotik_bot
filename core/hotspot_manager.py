@@ -2,6 +2,7 @@ import logging
 import re
 import secrets
 import string
+import threading
 from datetime import datetime
 from typing import cast
 
@@ -55,6 +56,8 @@ class HotspotManager:
         self._api_override = api
         self._users_cache = TTLCache(max_size=20, ttl=5)
         self._profiles_cache = TTLCache(max_size=20, ttl=10)
+        self._card_creation_locks: dict[str, threading.Lock] = {}
+        self._card_lock_lock = threading.Lock()
 
     @property
     def _api(self) -> MikrotikClient:
@@ -366,6 +369,12 @@ class HotspotManager:
                 break
         return prepared_users
 
+    def _get_card_creation_lock(self, router_key: str) -> threading.Lock:
+        with self._card_lock_lock:
+            if router_key not in self._card_creation_locks:
+                self._card_creation_locks[router_key] = threading.Lock()
+            return self._card_creation_locks[router_key]
+
     def create_cards(
         self,
         router_key: str,
@@ -378,39 +387,43 @@ class HotspotManager:
         limit_bytes: str = "",
     ) -> list[CardData]:
         """Create multiple hotspot users with optimized chunked batch insertion."""
-        cards: list[CardData] = []
-        base_time = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        batch_comment = f"{prefix}_{base_time}" if prefix else base_time
+        lock = self._get_card_creation_lock(router_key)
+        with lock:
+            cards: list[CardData] = []
+            base_time = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+            batch_comment = f"{prefix}_{base_time}" if prefix else base_time
 
-        existing_names = self._get_existing_usernames(router_key)
-        prepared_users = self._prepare_card_users(
-            count,
-            length,
-            card_system,
-            profile,
-            prefix,
-            limit_uptime,
-            limit_bytes,
-            batch_comment,
-            existing_names,
-        )
+            existing_names = self._get_existing_usernames(router_key)
+            prepared_users = self._prepare_card_users(
+                count,
+                length,
+                card_system,
+                profile,
+                prefix,
+                limit_uptime,
+                limit_bytes,
+                batch_comment,
+                existing_names,
+            )
 
-        chunk_size = 50
-        for idx in range(0, len(prepared_users), chunk_size):
-            chunk = prepared_users[idx : idx + chunk_size]
-            for card_item, user_params in chunk:
-                try:
-                    self._api.execute(router_key, "ip/hotspot/user/add", **user_params)
-                    cards.append(card_item)
-                except Exception as e:  # noqa: BLE001
-                    logger.error(
-                        f"Failed to add hotspot card user '{card_item.username}' "
-                        f"(error type: {type(e).__name__}): {e}"
-                    )
+            chunk_size = 50
+            for idx in range(0, len(prepared_users), chunk_size):
+                chunk = prepared_users[idx : idx + chunk_size]
+                for card_item, user_params in chunk:
+                    try:
+                        self._api.execute(router_key, "ip/hotspot/user/add", **user_params)
+                        cards.append(card_item)
+                    except Exception as e:  # noqa: BLE001
+                        logger.error(
+                            f"Failed to add hotspot card user '{card_item.username}' "
+                            f"(error type: {type(e).__name__}): {e}"
+                        )
 
-        self.invalidate_users_cache(router_key)
-        logger.info(f"Created {len(cards)}/{count} hotspot cards on {router_key} in batch")
-        return cards
+            self.invalidate_users_cache(router_key)
+            logger.info(
+                f"Created {len(cards)}/{count} hotspot cards on {router_key} in batch"
+            )
+            return cards
 
     def _parse_reset_day(self, comment: str) -> int | None:
         """Extract the reset day (1-31) from a hotspot user comment.
@@ -476,40 +489,44 @@ class HotspotManager:
 
         return _fn(self._api, router_key, days)
 
-    def purge_expired_users(self, router_key: str) -> int:
+    def purge_expired_users(self, router_key: str, chunk_size: int = 500) -> int:
         """
         Delete expired or exhausted users in bulk and return the count.
+        Processes users in chunks to avoid timeout on large user lists.
         """
         try:
-            users = self._api.execute(
+            all_users = self._api.execute_long(
                 router_key,
                 "ip/hotspot/user/print",
                 **{".proplist": ".id,bytes-out,bytes-in,limit-bytes-total,uptime,limit-uptime"},
             )
             purged = 0
-            for u in users:
-                uid = str(u.get(".id", ""))
-                if not uid:
-                    continue
-                limit_bytes = int(u.get("limit-bytes-total", 0) or 0)
-                bytes_used = int(u.get("bytes-out", 0) or 0) + int(u.get("bytes-in", 0) or 0)
+            for start in range(0, len(all_users), chunk_size):
+                chunk = all_users[start : start + chunk_size]
+                for u in chunk:
+                    uid = str(u.get(".id", ""))
+                    if not uid:
+                        continue
+                    limit_bytes = int(u.get("limit-bytes-total", 0) or 0)
+                    bytes_used = (
+                        int(u.get("bytes-out", 0) or 0) + int(u.get("bytes-in", 0) or 0)
+                    )
 
-                limit_up_sec = _parse_uptime_seconds(str(u.get("limit-uptime", "")))
-                uptime_sec = _parse_uptime_seconds(str(u.get("uptime", "")))
+                    limit_up_sec = _parse_uptime_seconds(str(u.get("limit-uptime", "")))
+                    uptime_sec = _parse_uptime_seconds(str(u.get("uptime", "")))
 
-                is_bytes_expired = limit_bytes > 0 and bytes_used >= limit_bytes
-                is_uptime_expired = limit_up_sec > 0 and uptime_sec >= limit_up_sec
+                    is_bytes_expired = limit_bytes > 0 and bytes_used >= limit_bytes
+                    is_uptime_expired = limit_up_sec > 0 and uptime_sec >= limit_up_sec
 
-                if is_bytes_expired or is_uptime_expired:
-
-                    try:
-                        self.delete_user(router_key, uid)
-                        purged += 1
-                    except Exception as ex:  # noqa: BLE001
-                        logger.warning(
-                            f"Failed to purge user {uid} "
-                            f"(error type: {type(ex).__name__}): {ex}"
-                        )
+                    if is_bytes_expired or is_uptime_expired:
+                        try:
+                            self.delete_user(router_key, uid)
+                            purged += 1
+                        except Exception as ex:  # noqa: BLE001
+                            logger.warning(
+                                f"Failed to purge user {uid} "
+                                f"(error type: {type(ex).__name__}): {ex}"
+                            )
             return purged
         except Exception as e:  # noqa: BLE001
             logger.error(

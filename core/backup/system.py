@@ -2,6 +2,7 @@ import logging
 import os
 import shutil
 import threading
+import uuid
 from datetime import UTC, datetime
 from typing import cast
 
@@ -48,26 +49,27 @@ class SystemBackupService:
         router_name = mikrotik_api.get_router_name(router_key)
         backup_root = backup_root or backup_files.BACKUP_DIR
         file_prefix = sanitize_router_name(router_name)
-        timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-        backup_dir = os.path.join(backup_root, "system", f"{file_prefix}_{timestamp}")
+        ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+        suffix = f"{ts}_{uuid.uuid4().hex[:8]}"
+        backup_dir = os.path.join(backup_root, "system", f"{file_prefix}_{suffix}")
         os.makedirs(backup_dir, exist_ok=True)
 
         try:
             mikrotik_api.execute_long(
                 router_key,
                 "system/backup/save",
-                **{"name": f"{file_prefix}_{timestamp}"},
+                **{"name": f"{file_prefix}_{suffix}"},
             )
             mikrotik_api.execute_long(
                 router_key,
                 "export",
-                **{"file": f"{file_prefix}_export_{timestamp}"},
+                **{"file": f"{file_prefix}_export_{suffix}"},
             )
 
             downloaded = []
             for fname in [
-                f"{file_prefix}_{timestamp}.backup",
-                f"{file_prefix}_export_{timestamp}.rsc",
+                f"{file_prefix}_{suffix}.backup",
+                f"{file_prefix}_export_{suffix}.rsc",
             ]:
                 if mikrotik_api.download_file_from_router(router_key, fname, backup_dir):
                     downloaded.append(fname)
@@ -80,7 +82,7 @@ class SystemBackupService:
             result = {
                 "success": True,
                 "message": f"تم الباكوب الكامل لـ {router_name}",
-                "timestamp": timestamp,
+                "timestamp": ts,
                 "local_path": backup_dir,
                 "downloaded": str(downloaded),
             }

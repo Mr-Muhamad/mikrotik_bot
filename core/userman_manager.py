@@ -485,17 +485,9 @@ class UserManager:
     def terminate_session(self, router_key: str, session_id: str) -> RouterOSResponse:
         """Terminate a specific User Manager session by its .id or numbers."""
         base_path = self._api.get_userman_base_path(router_key)
-
-        # v6 vs v7 remove session command
-        if base_path.startswith("tool/"):
-            result = self._api.execute(
-                router_key, f"{base_path}/session/remove", numbers=session_id
-            )
-        else:
-            result = self._api.execute(
-                router_key, f"{base_path}/session/remove", numbers=session_id
-            )
-
+        result = self._api.execute(
+            router_key, f"{base_path}/session/remove", numbers=session_id
+        )
         logger.info(f"Terminated User Manager session '{session_id}' on {router_key}")
         return result
 

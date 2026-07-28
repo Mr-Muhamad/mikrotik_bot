@@ -8,6 +8,7 @@ No SSL — this server must run inside an isolated management network only.
 
 import logging
 import os
+import socketserver
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -20,6 +21,10 @@ _ALLOWED_EXTENSIONS = (".backup", ".rsc", ".umb", ".tar")
 
 # Maximum upload size: 100 MB
 _MAX_UPLOAD_BYTES = 100 * 1024 * 1024
+
+class _ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    """Handle requests in separate threads so one slow upload doesn't block others."""
+
 
 _server: HTTPServer | None = None
 _server_thread: threading.Thread | None = None
@@ -125,7 +130,7 @@ def start_file_server() -> None:
     if _server is not None:
         return
 
-    _server = HTTPServer(("0.0.0.0", FILE_SERVER_PORT), _FileRequestHandler)
+    _server = _ThreadingHTTPServer(("0.0.0.0", FILE_SERVER_PORT), _FileRequestHandler)
     _server_thread = threading.Thread(target=_server.serve_forever, daemon=True)
     _server_thread.start()
     logger.info(f"File server started on port {FILE_SERVER_PORT}")

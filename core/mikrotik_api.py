@@ -57,7 +57,10 @@ class MikrotikAPI:
             return cached
         if router_key.startswith(ROUTER_KEY_PREFIX):
             db_id = router_key.replace(ROUTER_KEY_PREFIX, "")
-            router_cfg = get_router_by_id(int(db_id), decrypt=False)
+            try:
+                router_cfg = get_router_by_id(int(db_id), decrypt=False)
+            except (ValueError, TypeError):
+                return "لم يتم اختيار روتر"
             if router_cfg:
                 name = get_router_display_name(router_cfg)
                 self._pool.set_cached_name(router_key, name)
