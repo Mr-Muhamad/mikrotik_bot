@@ -154,8 +154,8 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
         _set_backup_running(router_key, False)
 
 
-@require_role("operator")
 @admin_only
+@require_role("operator")
 async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Queue a full system backup as a background job.
 
@@ -199,8 +199,8 @@ async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-@require_role("operator")
 @admin_only
+@require_role("operator")
 async def backup_userman(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Queue a User Manager backup as a background job.
 
@@ -350,8 +350,8 @@ async def schedule_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-@require_role("operator")
 @admin_only
+@require_role("operator")
 async def schedule_disable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Stop the daily backup scheduler.
 
