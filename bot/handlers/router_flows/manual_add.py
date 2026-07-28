@@ -1,7 +1,5 @@
 import logging
-import sqlite3
 
-from librouteros.exceptions import LibRouterosError
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler
 
