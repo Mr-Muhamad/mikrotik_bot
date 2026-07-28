@@ -84,6 +84,8 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
     user_id = int(job_data["user_id"])  # type: ignore[arg-type]
     b_type = str(job_data["type"])
 
+    logger.info(f"Starting background {b_type} backup for router {router_key} (user={user_id})")
+
     try:
         if b_type == "full":
             result = await run_blocking(backup_service.full_backup, router_key)
@@ -107,10 +109,12 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
 
                 text = "\n".join(lines)
                 await context.bot.send_message(chat_id=chat_id, text=text)
+                logger.info(f"Background full backup succeeded for router {router_key}")
             else:
                 await context.bot.send_message(
                     chat_id=chat_id, text=BACKUP_FAILED_FULL.format(message=result["message"])
                 )
+                logger.warning(f"Background full backup failed for router {router_key}: {result.get('message')}")
 
         elif b_type == "userman":
             result = await run_blocking(backup_service.userman_backup, router_key)
@@ -130,11 +134,13 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                     f"📦 {filename}",
                 ]
                 await context.bot.send_message(chat_id=chat_id, text="\n".join(lines))
+                logger.info(f"Background userman backup succeeded for router {router_key}")
             else:
                 await context.bot.send_message(
                     chat_id=chat_id,
                     text=BACKUP_FAILED_USERMAN.format(message=result["message"]),
                 )
+                logger.warning(f"Background userman backup failed for router {router_key}: {result.get('message')}")
     except (ValueError, OSError) as e:
         logger.error(f"Background backup failed for {router_key}: {e}")
         try:
