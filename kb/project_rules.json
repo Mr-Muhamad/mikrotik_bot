@@ -7,6 +7,13 @@
     "All type ignores must be documented in scripts/check_type_ignore.py and pass pyright.",
     "Functions must maintain a threshold budget under 30 lines where possible.",
     "All user-facing explanatory comments must prefer standard Arabic.",
-    "Synchronous blocking API calls inside async handlers must use run_blocking()."
+    "Synchronous blocking API calls inside async handlers must use run_blocking().",
+    "Exception handling must catch specific exceptions (TrapError, TelegramError, ConnectionError) before any catch-all with # noqa: BLE001.",
+    "Sensitive data (passwords, tokens, API keys) must be sanitized before logging or sending error responses.",
+    "Variables must have single unambiguous semantic meaning (no overloading version with error messages).",
+    "All external I/O calls must be enclosed in try/except with try/finally for cleanup when necessary.",
+    "User input must be validated (non-None, correct type) before forwarding to functions.",
+    "Critical context/state values must raise explicit errors instead of silent empty string defaults.",
+    "Function-level imports must have explicit rationale comments explaining circular import prevention."
   ]
 }
