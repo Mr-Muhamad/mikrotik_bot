@@ -42,6 +42,7 @@ class WaitingState(IntEnum):
     HOTSPOT_CARD_PROFILE = 25
     HOTSPOT_CARD_UPTIME = 26
     HOTSPOT_CARD_BYTES = 27
+    HOTSPOT_CARD_PRICE = 28
 
     # Phase 1: Usage query (34)
     USAGE_QUERY = 34

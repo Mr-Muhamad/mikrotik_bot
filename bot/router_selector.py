@@ -271,20 +271,22 @@ def cleanup_state(user_id: int, user_data: dict[str, object] | None) -> None:
 
 # Cache for fast reachability check results: {router_key: (is_reachable: bool, timestamp: float)}
 _REACHABILITY_CACHE: dict[str, tuple[bool, float]] = {}
-_REACHABILITY_CACHE_TTL = 30.0  # seconds
+_REACHABILITY_CACHE_TTL_SUCCESS = 15.0  # seconds for success
+_REACHABILITY_CACHE_TTL_FAIL = 3.0     # seconds for failure so recovery is detected fast
 
 
 async def _fast_reachability_check(router_key: str) -> bool:
     """
-    Perform a quick router reachability check (max 1 second)
-    with 30-second result caching.
+    Perform a quick router reachability check (max 2.5 seconds)
+    with short result caching for fast recovery.
     """
     import time
 
     now = time.monotonic()
     if router_key in _REACHABILITY_CACHE:
         result, ts = _REACHABILITY_CACHE[router_key]
-        if now - ts < _REACHABILITY_CACHE_TTL:
+        ttl = _REACHABILITY_CACHE_TTL_SUCCESS if result else _REACHABILITY_CACHE_TTL_FAIL
+        if now - ts < ttl:
             return result
 
     try:
@@ -301,7 +303,7 @@ async def _fast_reachability_check(router_key: str) -> bool:
         ip = str(router_cfg["ip_address"])
         port = int(router_cfg["port"])  # type: ignore[arg-type]
 
-        _reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=1.0)
+        _reader, writer = await asyncio.wait_for(asyncio.open_connection(ip, port), timeout=2.5)
         writer.close()
         await writer.wait_closed()
         _REACHABILITY_CACHE[router_key] = (True, now)

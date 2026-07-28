@@ -291,7 +291,9 @@ async def hotspot_add_comment(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     success, error = await execute_add_user(context, update.effective_user.id, router_key, comment)
     if success:
-        await reply_final(update, context, SUCCESS_ADD, get_hotspot_keyboard())
+        await send_step(update, context, SUCCESS_ADD, get_hotspot_keyboard())
+        cleanup_state(update.effective_user.id, context.user_data)
+        return WAITING_USERNAME
     elif error == "duplicate":
         await send_step(
             update,
@@ -302,6 +304,8 @@ async def hotspot_add_comment(update: Update, context: ContextTypes.DEFAULT_TYPE
         return WAITING_USERNAME
     else:
         await reply_final(update, context, ERROR_OCCURRED.format(error))
+        cleanup_state(update.effective_user.id, context.user_data)
+        return ConversationHandler.END
 
     cleanup_state(update.effective_user.id, context.user_data)
     return ConversationHandler.END
@@ -543,6 +547,8 @@ async def skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         msg = get_query_message(query)
         if msg is not None:
             await schedule_delete(context, msg.chat_id, msg.message_id)
+        cleanup_state(query.from_user.id, context.user_data)
+        return WAITING_USERNAME
     elif error == "duplicate":
         await query.edit_message_text(
             DUPLICATE_USER + "\n\n" + ADD_USER_PROMPT,
@@ -551,6 +557,8 @@ async def skip_comment(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return WAITING_USERNAME
     else:
         await query.edit_message_text(ERROR_OCCURRED.format(error))
+        cleanup_state(query.from_user.id, context.user_data)
+        return ConversationHandler.END
 
     cleanup_state(query.from_user.id, context.user_data)
     return ConversationHandler.END

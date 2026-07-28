@@ -59,9 +59,11 @@ from bot.handlers.hotspot_cards import (
     hotspot_cards_count,
     hotspot_cards_length,
     hotspot_cards_prefix,
+    hotspot_cards_price,
     hotspot_cards_profile_selected,
     hotspot_cards_skip_bytes,
     hotspot_cards_skip_prefix,
+    hotspot_cards_skip_price,
     hotspot_cards_skip_uptime,
     hotspot_cards_skip_uptime_type,
     hotspot_cards_start,
@@ -69,6 +71,7 @@ from bot.handlers.hotspot_cards import (
     hotspot_cards_uptime_type,
     hotspot_cards_uptime_value,
     hs_back_to_length,
+    hs_back_to_prefix,
     hs_back_to_profile,
     hs_back_to_type,
     hs_back_to_uptime,
@@ -313,6 +316,10 @@ state("WAITING_HOTSPOT_CARD_LENGTH").message(filters.TEXT & ~filters.COMMAND)(ho
 state("WAITING_HOTSPOT_CARD_PREFIX").callback(PATTERNS["hs_back_to_length"])(hs_back_to_length)
 state("WAITING_HOTSPOT_CARD_PREFIX").callback(PATTERNS["hs_skip_prefix"])(hotspot_cards_skip_prefix)
 state("WAITING_HOTSPOT_CARD_PREFIX").message(filters.TEXT & ~filters.COMMAND)(hotspot_cards_prefix)
+state("WAITING_HOTSPOT_CARD_PRICE").callback(PATTERNS["hs_back_to_prefix"])(hs_back_to_prefix)
+state("WAITING_HOTSPOT_CARD_PRICE").callback(PATTERNS["hs_skip_price"])(hotspot_cards_skip_price)
+state("WAITING_HOTSPOT_CARD_PRICE").message(filters.TEXT & ~filters.COMMAND)(hotspot_cards_price)
+
 state("WAITING_HOTSPOT_CARD_TYPE").callback(PATTERNS["hs_card_type"])(hotspot_cards_type_selected)
 state("WAITING_HOTSPOT_CARD_PROFILE").callback(PATTERNS["hs_back_to_type"])(hs_back_to_type)
 state("WAITING_HOTSPOT_CARD_PROFILE").callback(PATTERNS["hs_back_to_profile"])(hs_back_to_profile)

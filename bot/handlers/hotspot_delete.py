@@ -85,6 +85,7 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
             return ConversationHandler.END
 
         context.user_data["delete_user_id"] = user_id
+        context.user_data["delete_user_name"] = user.get("name", "")
         await query.edit_message_text(
             CONFIRM_DELETE.format(format_hotspot_user(user)),
             reply_markup=get_confirm_keyboard(),
@@ -147,6 +148,12 @@ async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.info("confirm_callback: deleting user=%s from router=%s", user_id, router_key)
             await run_blocking(hotspot_manager.delete_user, router_key, user_id)
             await run_blocking(log_action, "delete_user", user_id, router_key, query.from_user.id)
+            username = context.user_data.get("delete_user_name", "")
+            if username:
+                try:
+                    await run_blocking(hotspot_manager.kick_user, router_key, username)
+                except Exception as kick_err:  # noqa: BLE001
+                    logger.warning("Failed to kick user '%s' after delete: %s", username, kick_err)
             await edit_clean(query, context, SUCCESS_DELETE, get_hotspot_keyboard())
         except Exception as e:  # noqa: BLE001
             logger.error(f"confirm_callback delete failed (error type: {type(e).__name__}): {e}")

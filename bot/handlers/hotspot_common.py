@@ -73,6 +73,7 @@ async def search_users_for_action(
         if action == "delete":
             context.user_data.pop("users_cache", None)
             context.user_data["delete_user_id"] = user.get(".id", "")
+            context.user_data["delete_user_name"] = user.get("name", "")
             await send_step(
                 update,
                 context,

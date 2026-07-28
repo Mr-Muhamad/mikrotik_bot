@@ -49,6 +49,7 @@ from .constants import (
     WAITING_HOTSPOT_CARD_COUNT,
     WAITING_HOTSPOT_CARD_LENGTH,
     WAITING_HOTSPOT_CARD_PREFIX,
+    WAITING_HOTSPOT_CARD_PRICE,
     WAITING_HOTSPOT_CARD_PROFILE,
     WAITING_HOTSPOT_CARD_TYPE,
     WAITING_HOTSPOT_CARD_UPTIME,
@@ -70,6 +71,9 @@ def get_card_type_keyboard():
         [InlineKeyboardButton("🔙 رجوع", callback_data="menu_hotspot")],
     ]
     return InlineKeyboardMarkup(keyboard)
+
+
+CARD_PRICE_PROMPT = "💰 أدخل سعر الكارت الواحد (بالدولار مثلاً 5):\nأو اضغط تخطي إذا لا يوجد سعر."
 
 
 @require_role("operator")
@@ -164,8 +168,13 @@ async def hotspot_cards_prefix(update: Update, context: ContextTypes.DEFAULT_TYP
         WAITING_HOTSPOT_CARD_TYPE state.
     """
     context.user_data["hs_card_prefix"] = update.message.text.strip()
-    await send_step(update, context, CHOOSE_CARD_SYSTEM, get_card_type_keyboard())
-    return WAITING_HOTSPOT_CARD_TYPE
+    await send_step(
+        update,
+        context,
+        CARD_PRICE_PROMPT,
+        get_skip_keyboard("hs_skip_price", "hs_back_to_length"),
+    )
+    return WAITING_HOTSPOT_CARD_PRICE
 
 
 @admin_only
@@ -182,8 +191,47 @@ async def hotspot_cards_skip_prefix(update: Update, context: ContextTypes.DEFAUL
     query = update.callback_query
     await safe_answer_callback(query)
     context.user_data["hs_card_prefix"] = ""
+    await query.edit_message_text(
+        CARD_PRICE_PROMPT,
+        reply_markup=get_skip_keyboard("hs_skip_price", "hs_back_to_length"),
+    )
+    return WAITING_HOTSPOT_CARD_PRICE
+
+
+@admin_only
+async def hotspot_cards_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    price_text = update.message.text.strip()
+    try:
+        price = float(price_text)
+        if price < 0:
+            raise ValueError
+    except (ValueError, TypeError):
+        await send_step(
+            update,
+            context,
+            "❌ الرجاء إدخال رقم صحيح (مثل 5 أو 2.50).",
+            get_skip_keyboard("hs_skip_price", "hs_back_to_length"),
+        )
+        return WAITING_HOTSPOT_CARD_PRICE
+    context.user_data["hs_card_price"] = price_text
+    await send_step(update, context, CHOOSE_CARD_SYSTEM, get_card_type_keyboard())
+    return WAITING_HOTSPOT_CARD_TYPE
+
+
+@admin_only
+async def hotspot_cards_skip_price(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await safe_answer_callback(query)
+    context.user_data["hs_card_price"] = "0"
     await query.edit_message_text(CHOOSE_CARD_SYSTEM, reply_markup=get_card_type_keyboard())
     return WAITING_HOTSPOT_CARD_TYPE
+
+
+hs_back_to_prefix = make_back_step(
+    ENTER_CARD_PREFIX,
+    lambda: get_skip_keyboard("hs_skip_prefix", "hs_back_to_length"),
+    WAITING_HOTSPOT_CARD_PREFIX,
+)
 
 
 @admin_only
@@ -433,6 +481,7 @@ async def _create_cards(
     profile = context.user_data.get("hs_card_profile", "default")
     uptime = context.user_data.get("hs_card_uptime", "")
     bytes_limit = context.user_data.get("hs_card_bytes", "")
+    unit_price = float(context.user_data.get("hs_card_price", "0") or "0")
     try:
         cards = await run_blocking(
             hotspot_manager.create_cards,
@@ -470,6 +519,7 @@ async def _create_cards(
                 comment_prefix=prefix,
                 cards=serialize_cards(cards),
                 created_by=update.effective_user.id if update.effective_user else None,
+                unit_price=unit_price,
             )
         except sqlite3.Error as e:
             logger.warning(f"Failed to persist card batch: {e}")
