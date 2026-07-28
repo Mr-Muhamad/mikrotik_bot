@@ -135,13 +135,33 @@ def admin_only(func: Callable[..., Awaitable[object]]):
                     pass
             return
 
+        from bot.router_selector import get_selected_router
+        router_key = get_selected_router(user_id) or "None"
+
         if update.callback_query:
-            logger.info(f"User {user_id} ({user.full_name}) pressed button: {update.callback_query.data} -> handler: {func.__name__}")
+            logger.info(
+                f"📥 [ACTION START] User: {user_id} ({user.full_name}) | Router: {router_key} | Button: '{update.callback_query.data}' | Handler: {func.__name__}"
+            )
         elif update.message and update.message.text:
             text_preview = update.message.text[:30] + ("..." if len(update.message.text) > 30 else "")
-            logger.info(f"User {user_id} ({user.full_name}) sent text: '{text_preview}' -> handler: {func.__name__}")
+            logger.info(
+                f"📥 [ACTION START] User: {user_id} ({user.full_name}) | Router: {router_key} | Input: '{text_preview}' | Handler: {func.__name__}"
+            )
 
-        res = await func(update, context)
+        start_time = time.perf_counter()
+        try:
+            res = await func(update, context)
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            logger.info(
+                f"✅ [ACTION SUCCESS] User: {user_id} | Router: {router_key} | Handler: {func.__name__} | Time: {elapsed_ms:.1f}ms"
+            )
+        except Exception as e:
+            elapsed_ms = (time.perf_counter() - start_time) * 1000
+            logger.error(
+                f"❌ [ACTION FAILED] User: {user_id} | Router: {router_key} | Handler: {func.__name__} | Error: {e} | Time: {elapsed_ms:.1f}ms",
+                exc_info=True,
+            )
+            raise
 
         from database.repositories.user_sessions import update_activity
 
