@@ -342,8 +342,9 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
         try:
             await run_blocking(hotspot_manager.edit_user, router_key, user_id, disabled=new_value)
+            user_name = user_data.get("name", "") or user_id
             await run_blocking(
-                log_action, "toggle_disabled", user_id, router_key, query.from_user.id
+                log_action, "toggle_disabled", str(user_name), router_key, query.from_user.id
             )
 
             user_data["disabled"] = new_value
@@ -432,7 +433,9 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
     user_id = get_hotspot_edit_session(context.user_data).user_id
     try:
         await run_blocking(hotspot_manager.edit_user, router_key, user_id, profile=profile)
-        await run_blocking(log_action, "edit_user", user_id, router_key, query.from_user.id)
+        user_data = get_hotspot_edit_session(context.user_data).user_data
+        user_name = user_data.get("name", "") if user_data else user_id
+        await run_blocking(log_action, "edit_profile", str(user_name), router_key, query.from_user.id)
         user_data = get_hotspot_edit_session(context.user_data).user_data
         if user_data:
             user_data["profile"] = profile
@@ -608,7 +611,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             router_key,
         )
         await run_blocking(hotspot_manager.edit_user, router_key, user_id, **{api_field: new_value})
-        await run_blocking(log_action, "edit_user", user_id, router_key, update.effective_user.id)
+        await run_blocking(log_action, f"edit_{field}", str(user_name), router_key, update.effective_user.id)
 
         user_data[api_field] = new_value
 
