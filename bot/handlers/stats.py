@@ -128,7 +128,7 @@ async def stats_chart_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 caption="📈 الرسم البياني المصور لحركة نشاط وتدفق الشبكة للأسبوع الحالي",
                 reply_markup=get_stats_keyboard(),
             )
-    except (LibRouterosError, OSError, ValueError) as e:
+    except Exception as e:
         await send_error(
             update,
             context,
