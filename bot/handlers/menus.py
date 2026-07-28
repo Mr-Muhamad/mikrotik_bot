@@ -183,12 +183,7 @@ async def backup_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     Returns:
         None.
     """
-    query = update.callback_query
-    if query:
-        await safe_answer_callback(query)
-        await safe_edit_or_send(query, context, BACKUP_MENU, get_backup_keyboard())
-    else:
-        await send_and_track(context, update.effective_chat.id, BACKUP_MENU, get_backup_keyboard())
+    await show_menu(update, context, BACKUP_MENU, get_backup_keyboard)
 
 
 @admin_only
