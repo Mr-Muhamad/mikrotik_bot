@@ -74,8 +74,8 @@ class HotspotManager:
         cached = self._users_cache.get(router_key)
         if cached is not None:
             return cast(RouterOSResponse, cached)
-        # نجلب الأسماء والتعليقات فقط لتسريع التحقق من التكرار والبحث fallback
-        proplist = "name,comment"
+        # نجلب جميع الحقول المطلوبة للعرض والبحث
+        proplist = ".id,name,profile,disabled,limit-uptime,limit-bytes-total,comment,bytes-in,bytes-out,uptime,password"
         users = self._api.execute(
             router_key, "ip/hotspot/user/print", **{".proplist": proplist}
         )
@@ -109,8 +109,9 @@ class HotspotManager:
             return len(users) > 0
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Failed to check user existence for '{name}' "
-                f"(error type: {type(e).__name__}): {e}"
+                f"Failed to check user existence for '{name}' in user_exists (router='{router_key}') "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
             )
             return False
 
@@ -225,7 +226,7 @@ class HotspotManager:
                     "ip/hotspot/user/print",
                     **{
                         f"?{field}": f"*{search}*",
-                        ".proplist": ".id,name,profile,limit-uptime,limit-bytes-total,comment,bytes-in,bytes-out,uptime,password",  # noqa: E501
+                        ".proplist": ".id,name,profile,disabled,limit-uptime,limit-bytes-total,comment,bytes-in,bytes-out,uptime,password",
                     },
                 )
                 for user in batch:
@@ -311,8 +312,9 @@ class HotspotManager:
             return results
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Failed to fetch hotspot profiles "
-                f"(error type: {type(e).__name__}): {e}"
+                f"Failed to fetch hotspot profiles in get_profiles (router='{router_key}') "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
             )
             return []
 
@@ -365,7 +367,10 @@ class HotspotManager:
 
                 prepared_users.append((card_item, user_params))
             except ValueError as e:
-                logger.error(f"Card preparation error at index {i}: {e}")
+                logger.error(
+                    f"Card preparation error at index {i} in _prepare_card_users: {e}",
+                    exc_info=True,
+                )
                 break
         return prepared_users
 
@@ -415,8 +420,9 @@ class HotspotManager:
                         cards.append(card_item)
                     except Exception as e:  # noqa: BLE001
                         logger.error(
-                            f"Failed to add hotspot card user '{card_item.username}' "
-                            f"(error type: {type(e).__name__}): {e}"
+                            f"Failed to add hotspot card user '{card_item.username}' in generate_cards (router='{router_key}') "
+                            f"(error type: {type(e).__name__}): {e}",
+                            exc_info=True,
                         )
 
             self.invalidate_users_cache(router_key)
@@ -524,14 +530,16 @@ class HotspotManager:
                             purged += 1
                         except Exception as ex:  # noqa: BLE001
                             logger.warning(
-                                f"Failed to purge user {uid} "
-                                f"(error type: {type(ex).__name__}): {ex}"
+                                f"Failed to purge user {uid} in purge_expired_users (router='{router_key}') "
+                                f"(error type: {type(ex).__name__}): {ex}",
+                                exc_info=True,
                             )
             return purged
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Failed to purge expired users on {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                f"Failed to purge expired users on {router_key} in purge_expired_users "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
             )
             return 0
 

@@ -77,9 +77,9 @@ def _reset_block_text(stats: RouterOSRow) -> str:
         else:
             comment, limit = item
             display = comment
-        formatted_items.append(f"  • {html.escape(display)} - {html.escape(limit)}")
+        formatted_items.append(f"🔹 <b>{html.escape(display)}</b>\n └ 🏷️ <code>{html.escape(limit)}</code>")
 
-    reset_list_str = "\n".join(formatted_items) or "  لا يوجد"
+    reset_list_str = "\n\n".join(formatted_items) or "🔹 لا يوجد"
     return HOTSPOT_STATS_RESET_BLOCK.format(
         selected_day=stats["selected_day"],
         reset_count=len(reset_list),
@@ -227,12 +227,22 @@ async def hotspot_stats_day_input(update: Update, context: ContextTypes.DEFAULT_
             return WAITING_STATS_DAY
 
         text = _summary_text(stats) + "\n\n" + _reset_block_text(stats)
+        # Re-build day buttons so user can select other days
+        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+        day_buttons = [
+            InlineKeyboardButton(f"يوم {d}", callback_data=f"stats_day_{d}") for d in reset_days_list
+        ]
+        grid = [day_buttons[i : i + 4] for i in range(0, len(day_buttons), 4)]
+        grid.append([InlineKeyboardButton("🔙 رجوع", callback_data="menu_hotspot")])
+        reply_kb = InlineKeyboardMarkup(grid)
+
         await _reply_or_edit(
             update,
             context,
             text,
             parse_mode="HTML",
-            reply_markup=get_back_keyboard("menu_hotspot"),
+            reply_markup=reply_kb,
         )
         return WAITING_STATS_DAY
     except (LibRouterosError, OSError, MikrotikBotError) as e:

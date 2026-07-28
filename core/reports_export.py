@@ -30,8 +30,9 @@ def generate_hotspot_users_csv(router_key: str) -> str:
         )
     except Exception as e:  # noqa: BLE001
         logger.error(
-            f"Failed to fetch hotspot users for CSV export on {router_key} "
-            f"(error type: {type(e).__name__}): {e}"
+            f"Failed to fetch hotspot users for CSV export on {router_key} in export_hotspot_users_csv "
+            f"(error type: {type(e).__name__}): {e}",
+            exc_info=True,
         )
         return ""
 

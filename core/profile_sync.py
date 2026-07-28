@@ -25,8 +25,9 @@ class ProfileSync:
             return [str(r.get("name", "")) for r in results if r.get("name")]
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Error fetching user manager profiles "
-                f"(error type: {type(e).__name__}): {e}"
+                f"Error fetching user manager profiles in get_userman_profiles (router='{router_key}') "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
             )
             return []
 

@@ -1,0 +1,1227 @@
+[
+  {
+    "id": "class:core.backup_scheduler.BackupScheduler",
+    "name": "BackupScheduler",
+    "file": "core/backup_scheduler.py"
+  },
+  {
+    "id": "class:core.backup_service.BackupService",
+    "name": "BackupService",
+    "file": "core/backup_service.py"
+  },
+  {
+    "id": "class:core.cache.TTLCache",
+    "name": "TTLCache",
+    "file": "core/cache.py"
+  },
+  {
+    "id": "class:core.card_models.CardSystem",
+    "name": "CardSystem",
+    "file": "core/card_models.py"
+  },
+  {
+    "id": "class:core.card_models.CardData",
+    "name": "CardData",
+    "file": "core/card_models.py"
+  },
+  {
+    "id": "class:core.connection_pool.ConnectionPool",
+    "name": "ConnectionPool",
+    "file": "core/connection_pool.py"
+  },
+  {
+    "id": "class:core.exceptions.MikrotikBotError",
+    "name": "MikrotikBotError",
+    "file": "core/exceptions.py"
+  },
+  {
+    "id": "class:core.exceptions.RouterNotFoundError",
+    "name": "RouterNotFoundError",
+    "file": "core/exceptions.py"
+  },
+  {
+    "id": "class:core.exceptions.RouterConnectionError",
+    "name": "RouterConnectionError",
+    "file": "core/exceptions.py"
+  },
+  {
+    "id": "class:core.exceptions.RouterCommandError",
+    "name": "RouterCommandError",
+    "file": "core/exceptions.py"
+  },
+  {
+    "id": "class:core.exceptions.RouterAlreadyExistsError",
+    "name": "RouterAlreadyExistsError",
+    "file": "core/exceptions.py"
+  },
+  {
+    "id": "class:core.hotspot_manager.HotspotManager",
+    "name": "HotspotManager",
+    "file": "core/hotspot_manager.py"
+  },
+  {
+    "id": "class:core.mikrotik_api._RouterOSApiPath",
+    "name": "_RouterOSApiPath",
+    "file": "core/mikrotik_api.py"
+  },
+  {
+    "id": "class:core.mikrotik_api._RouterOSApi",
+    "name": "_RouterOSApi",
+    "file": "core/mikrotik_api.py"
+  },
+  {
+    "id": "class:core.mikrotik_api.MikrotikAPI",
+    "name": "MikrotikAPI",
+    "file": "core/mikrotik_api.py"
+  },
+  {
+    "id": "class:core.mikrotik_client.MikrotikClient",
+    "name": "MikrotikClient",
+    "file": "core/mikrotik_client.py"
+  },
+  {
+    "id": "class:core.network_probe.NetworkProbe",
+    "name": "NetworkProbe",
+    "file": "core/network_probe.py"
+  },
+  {
+    "id": "class:core.network_probe.DiscoveredRouter",
+    "name": "DiscoveredRouter",
+    "file": "core/network_probe.py"
+  },
+  {
+    "id": "class:core.network_probe.ARPTableProbe",
+    "name": "ARPTableProbe",
+    "file": "core/network_probe.py"
+  },
+  {
+    "id": "class:core.network_probe.PortScanProbe",
+    "name": "PortScanProbe",
+    "file": "core/network_probe.py"
+  },
+  {
+    "id": "class:core.network_probe.MNDPListenerProbe",
+    "name": "MNDPListenerProbe",
+    "file": "core/network_probe.py"
+  },
+  {
+    "id": "class:core.network_scanner.MNDPPermissionError",
+    "name": "MNDPPermissionError",
+    "file": "core/network_scanner.py"
+  },
+  {
+    "id": "class:core.profile_cache.ProfileCache",
+    "name": "ProfileCache",
+    "file": "core/profile_cache.py"
+  },
+  {
+    "id": "class:core.profile_sync.ProfileSync",
+    "name": "ProfileSync",
+    "file": "core/profile_sync.py"
+  },
+  {
+    "id": "class:core.router_key.RouterKey",
+    "name": "RouterKey",
+    "file": "core/router_key.py"
+  },
+  {
+    "id": "class:core.stats.StatsManager",
+    "name": "StatsManager",
+    "file": "core/stats.py"
+  },
+  {
+    "id": "class:core.userman_manager.UserManager",
+    "name": "UserManager",
+    "file": "core/userman_manager.py"
+  },
+  {
+    "id": "class:core.backup.file_server._ThreadingHTTPServer",
+    "name": "_ThreadingHTTPServer",
+    "file": "core/backup/file_server.py"
+  },
+  {
+    "id": "class:core.backup.file_server._FileRequestHandler",
+    "name": "_FileRequestHandler",
+    "file": "core/backup/file_server.py"
+  },
+  {
+    "id": "class:core.backup.restore.BackupRestore",
+    "name": "BackupRestore",
+    "file": "core/backup/restore.py"
+  },
+  {
+    "id": "class:core.backup.system.SystemBackupService",
+    "name": "SystemBackupService",
+    "file": "core/backup/system.py"
+  },
+  {
+    "id": "class:core.backup.userman.UserManagerBackupService",
+    "name": "UserManagerBackupService",
+    "file": "core/backup/userman.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestGetFtpPort",
+    "name": "TestGetFtpPort",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestParseRouterCreationTime",
+    "name": "TestParseRouterCreationTime",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestSanitizeRouterName",
+    "name": "TestSanitizeRouterName",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestIsSafeFilename",
+    "name": "TestIsSafeFilename",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestSafeJoinFile",
+    "name": "TestSafeJoinFile",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestResolveLocalBackupFile",
+    "name": "TestResolveLocalBackupFile",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestIsValidRouterBackupName",
+    "name": "TestIsValidRouterBackupName",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestCleanupOldBackups",
+    "name": "TestCleanupOldBackups",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_files.TestCleanupOldFiles",
+    "name": "TestCleanupOldFiles",
+    "file": "tests/core/test_backup_files.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_ftp.TestWarnPlaintextFtp",
+    "name": "TestWarnPlaintextFtp",
+    "file": "tests/core/test_backup_ftp.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_ftp.TestGetRouterFtpInfo",
+    "name": "TestGetRouterFtpInfo",
+    "file": "tests/core/test_backup_ftp.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_ftp.TestDownloadFilesViaFtp",
+    "name": "TestDownloadFilesViaFtp",
+    "file": "tests/core/test_backup_ftp.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_ftp.TestUploadFileViaFtp",
+    "name": "TestUploadFileViaFtp",
+    "file": "tests/core/test_backup_ftp.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_ftp.TestDownloadEdgeCases",
+    "name": "TestDownloadEdgeCases",
+    "file": "tests/core/test_backup_ftp.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_ftp.TestUploadEdgeCases",
+    "name": "TestUploadEdgeCases",
+    "file": "tests/core/test_backup_ftp.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_ftp.TestGetRouterFtpInfoEdgeCases",
+    "name": "TestGetRouterFtpInfoEdgeCases",
+    "file": "tests/core/test_backup_ftp.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_scheduler.MockJob",
+    "name": "MockJob",
+    "file": "tests/core/test_backup_scheduler.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_scheduler.TestBackupScheduler",
+    "name": "TestBackupScheduler",
+    "file": "tests/core/test_backup_scheduler.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_scheduler_extended.TestBackupSingleRouter",
+    "name": "TestBackupSingleRouter",
+    "file": "tests/core/test_backup_scheduler_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_scheduler_extended.TestDoExpiryCheck",
+    "name": "TestDoExpiryCheck",
+    "file": "tests/core/test_backup_scheduler_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_scheduler_extended.TestDoStatsSnapshot",
+    "name": "TestDoStatsSnapshot",
+    "file": "tests/core/test_backup_scheduler_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_scheduler_extended.TestDoBackupNotifications",
+    "name": "TestDoBackupNotifications",
+    "file": "tests/core/test_backup_scheduler_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_scheduler_extended.TestStopRemovesAllJobs",
+    "name": "TestStopRemovesAllJobs",
+    "file": "tests/core/test_backup_scheduler_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_system.TestGetBackupLock",
+    "name": "TestGetBackupLock",
+    "file": "tests/core/test_backup_system.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_system.TestSystemBackupServiceFullBackup",
+    "name": "TestSystemBackupServiceFullBackup",
+    "file": "tests/core/test_backup_system.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_userman.TestUsermanBackup",
+    "name": "TestUsermanBackup",
+    "file": "tests/core/test_backup_userman.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_userman.TestUsermanRestore",
+    "name": "TestUsermanRestore",
+    "file": "tests/core/test_backup_userman.py"
+  },
+  {
+    "id": "class:tests.core.test_backup_userman.TestListLocalUsermanBackups",
+    "name": "TestListLocalUsermanBackups",
+    "file": "tests/core/test_backup_userman.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheInit",
+    "name": "TestTTLCacheInit",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheSetGet",
+    "name": "TestTTLCacheSetGet",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheExpiry",
+    "name": "TestTTLCacheExpiry",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheEviction",
+    "name": "TestTTLCacheEviction",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheClear",
+    "name": "TestTTLCacheClear",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheLen",
+    "name": "TestTTLCacheLen",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheInvalidate",
+    "name": "TestTTLCacheInvalidate",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheGetKeys",
+    "name": "TestTTLCacheGetKeys",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_cache.TestTTLCacheThreadSafety",
+    "name": "TestTTLCacheThreadSafety",
+    "file": "tests/core/test_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_chart_generator.TestGenerateTrendChart",
+    "name": "TestGenerateTrendChart",
+    "file": "tests/core/test_chart_generator.py"
+  },
+  {
+    "id": "class:tests.core.test_chart_generator.TestGenerateSalesChart",
+    "name": "TestGenerateSalesChart",
+    "file": "tests/core/test_chart_generator.py"
+  },
+  {
+    "id": "class:tests.core.test_chart_generator.TestConfigureDarkStyle",
+    "name": "TestConfigureDarkStyle",
+    "file": "tests/core/test_chart_generator.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestConnectionPoolInit",
+    "name": "TestConnectionPoolInit",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestRouterInfo",
+    "name": "TestRouterInfo",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestGetConnection",
+    "name": "TestGetConnection",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestRetry",
+    "name": "TestRetry",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestReleaseConnection",
+    "name": "TestReleaseConnection",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestCloseAll",
+    "name": "TestCloseAll",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestVersionCache",
+    "name": "TestVersionCache",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestNameCache",
+    "name": "TestNameCache",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_connection_pool.TestMetrics",
+    "name": "TestMetrics",
+    "file": "tests/core/test_connection_pool.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server.TestCheckAuth",
+    "name": "TestCheckAuth",
+    "file": "tests/core/test_file_server.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server.TestDoPost",
+    "name": "TestDoPost",
+    "file": "tests/core/test_file_server.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server.TestDoGet",
+    "name": "TestDoGet",
+    "file": "tests/core/test_file_server.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server.TestMaxUploadBytes",
+    "name": "TestMaxUploadBytes",
+    "file": "tests/core/test_file_server.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server.TestAllowedExtensions",
+    "name": "TestAllowedExtensions",
+    "file": "tests/core/test_file_server.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server.TestPrepareAndServeFile",
+    "name": "TestPrepareAndServeFile",
+    "file": "tests/core/test_file_server.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server_extended.TestDoPostSuccess",
+    "name": "TestDoPostSuccess",
+    "file": "tests/core/test_file_server_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server_extended.TestDoGetSuccess",
+    "name": "TestDoGetSuccess",
+    "file": "tests/core/test_file_server_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server_extended.TestStartStopServer",
+    "name": "TestStartStopServer",
+    "file": "tests/core/test_file_server_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server_extended.TestLogMessage",
+    "name": "TestLogMessage",
+    "file": "tests/core/test_file_server_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_file_server_extended.TestCleanupServeFileExtended",
+    "name": "TestCleanupServeFileExtended",
+    "file": "tests/core/test_file_server_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_blocking.TestBlockMac",
+    "name": "TestBlockMac",
+    "file": "tests/core/test_hotspot_blocking.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_blocking.TestUnblockMac",
+    "name": "TestUnblockMac",
+    "file": "tests/core/test_hotspot_blocking.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_blocking.TestGetBlockedMacs",
+    "name": "TestGetBlockedMacs",
+    "file": "tests/core/test_hotspot_blocking.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_expiry.TestParseUptimeToSeconds",
+    "name": "TestParseUptimeToSeconds",
+    "file": "tests/core/test_hotspot_expiry.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_expiry.TestGetExpiringUsers",
+    "name": "TestGetExpiringUsers",
+    "file": "tests/core/test_hotspot_expiry.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_expiry.TestParseRenewalDayFromComment",
+    "name": "TestParseRenewalDayFromComment",
+    "file": "tests/core/test_hotspot_expiry.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_expiry.TestGetCustomExpiringUsers",
+    "name": "TestGetCustomExpiringUsers",
+    "file": "tests/core/test_hotspot_expiry.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager.TestHotspotManager",
+    "name": "TestHotspotManager",
+    "file": "tests/core/test_hotspot_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager_extended.TestParseUptimeSeconds",
+    "name": "TestParseUptimeSeconds",
+    "file": "tests/core/test_hotspot_manager_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager_extended.TestUserExists",
+    "name": "TestUserExists",
+    "file": "tests/core/test_hotspot_manager_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager_extended.TestEditUser",
+    "name": "TestEditUser",
+    "file": "tests/core/test_hotspot_manager_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager_extended.TestResetEnableDisable",
+    "name": "TestResetEnableDisable",
+    "file": "tests/core/test_hotspot_manager_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager_extended.TestPurgeExpiredUsers",
+    "name": "TestPurgeExpiredUsers",
+    "file": "tests/core/test_hotspot_manager_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager_extended.TestGetProfilesError",
+    "name": "TestGetProfilesError",
+    "file": "tests/core/test_hotspot_manager_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager_extended.TestSearchUsersFallback",
+    "name": "TestSearchUsersFallback",
+    "file": "tests/core/test_hotspot_manager_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_manager_extended.TestGetLeasesByMac",
+    "name": "TestGetLeasesByMac",
+    "file": "tests/core/test_hotspot_manager_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_search_core.TestGetLeasesByMac",
+    "name": "TestGetLeasesByMac",
+    "file": "tests/core/test_hotspot_search_core.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_search_core.TestSearchHosts",
+    "name": "TestSearchHosts",
+    "file": "tests/core/test_hotspot_search_core.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_search_core.TestKickHost",
+    "name": "TestKickHost",
+    "file": "tests/core/test_hotspot_search_core.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_search_core.TestKickUser",
+    "name": "TestKickUser",
+    "file": "tests/core/test_hotspot_search_core.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_stats.TestSafeDay",
+    "name": "TestSafeDay",
+    "file": "tests/core/test_hotspot_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_stats.TestParseResetDay",
+    "name": "TestParseResetDay",
+    "file": "tests/core/test_hotspot_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_stats.TestClassifyLimitGb",
+    "name": "TestClassifyLimitGb",
+    "file": "tests/core/test_hotspot_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_stats.TestCategorizeUser",
+    "name": "TestCategorizeUser",
+    "file": "tests/core/test_hotspot_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_stats.TestGetHotspotStats",
+    "name": "TestGetHotspotStats",
+    "file": "tests/core/test_hotspot_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_hotspot_stats.TestBuildUsageReport",
+    "name": "TestBuildUsageReport",
+    "file": "tests/core/test_hotspot_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_metrics.TestRecordMessageType",
+    "name": "TestRecordMessageType",
+    "file": "tests/core/test_metrics.py"
+  },
+  {
+    "id": "class:tests.core.test_metrics.TestRecordMikrotikRequest",
+    "name": "TestRecordMikrotikRequest",
+    "file": "tests/core/test_metrics.py"
+  },
+  {
+    "id": "class:tests.core.test_metrics.TestGetUptime",
+    "name": "TestGetUptime",
+    "file": "tests/core/test_metrics.py"
+  },
+  {
+    "id": "class:tests.core.test_metrics.TestGetMetricsText",
+    "name": "TestGetMetricsText",
+    "file": "tests/core/test_metrics.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestGetRouterName",
+    "name": "TestGetRouterName",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestInvalidateRouterName",
+    "name": "TestInvalidateRouterName",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestExecute",
+    "name": "TestExecute",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestExecuteNonBlocking",
+    "name": "TestExecuteNonBlocking",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestInvalidateVersion",
+    "name": "TestInvalidateVersion",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestGetVersion",
+    "name": "TestGetVersion",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestIsVersion7",
+    "name": "TestIsVersion7",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestGetUsermanBasePath",
+    "name": "TestGetUsermanBasePath",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestTestConnection",
+    "name": "TestTestConnection",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api.TestGetMetrics",
+    "name": "TestGetMetrics",
+    "file": "tests/core/test_mikrotik_api.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestGetVersionOSError",
+    "name": "TestGetVersionOSError",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestGetUsermanBasePathUnknown",
+    "name": "TestGetUsermanBasePathUnknown",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestGetUsermanBasePathParseError",
+    "name": "TestGetUsermanBasePathParseError",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestClose",
+    "name": "TestClose",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestGetRouterInfo",
+    "name": "TestGetRouterInfo",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestHasActiveConnection",
+    "name": "TestHasActiveConnection",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestCheckConnectionHealth",
+    "name": "TestCheckConnectionHealth",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestThrottleSleep",
+    "name": "TestThrottleSleep",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestExecuteWithRetryLastExc",
+    "name": "TestExecuteWithRetryLastExc",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestTestConnectionSocketFailure",
+    "name": "TestTestConnectionSocketFailure",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestTestConnectionApiCloseError",
+    "name": "TestTestConnectionApiCloseError",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestSanitizeConnectDetail",
+    "name": "TestSanitizeConnectDetail",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestGetBotHostForRouter",
+    "name": "TestGetBotHostForRouter",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestUploadFileToRouter",
+    "name": "TestUploadFileToRouter",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestDownloadFileFromRouter",
+    "name": "TestDownloadFileFromRouter",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestProbeApiSslSuccess",
+    "name": "TestProbeApiSslSuccess",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestClassifyConnectFailure",
+    "name": "TestClassifyConnectFailure",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestIsTimeoutError",
+    "name": "TestIsTimeoutError",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestTestConnectionTimeoutClassification",
+    "name": "TestTestConnectionTimeoutClassification",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestCallCommand",
+    "name": "TestCallCommand",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestDebugLog",
+    "name": "TestDebugLog",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestGetCachedVersion",
+    "name": "TestGetCachedVersion",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestConnectionContextBrokenFlag",
+    "name": "TestConnectionContextBrokenFlag",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestForceReconnect",
+    "name": "TestForceReconnect",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestExecuteLongDelegation",
+    "name": "TestExecuteLongDelegation",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestVersion7Detection",
+    "name": "TestVersion7Detection",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestUploadFullFlow",
+    "name": "TestUploadFullFlow",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestDownloadFullFlow",
+    "name": "TestDownloadFullFlow",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestProbeSslFullFlow",
+    "name": "TestProbeSslFullFlow",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestTestConnectionFullFlow",
+    "name": "TestTestConnectionFullFlow",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestRebootSwallow",
+    "name": "TestRebootSwallow",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestNonBlockingSuccess",
+    "name": "TestNonBlockingSuccess",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestDebugLogMasking",
+    "name": "TestDebugLogMasking",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_mikrotik_api_extended.TestGetVersionEmptyResult",
+    "name": "TestGetVersionEmptyResult",
+    "file": "tests/core/test_mikrotik_api_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe.TestDecodeMndpPacket",
+    "name": "TestDecodeMndpPacket",
+    "file": "tests/core/test_network_probe.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe.TestParseArpTableWindows",
+    "name": "TestParseArpTableWindows",
+    "file": "tests/core/test_network_probe.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe.TestParseArpTableLinux",
+    "name": "TestParseArpTableLinux",
+    "file": "tests/core/test_network_probe.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe.TestARPTableProbe",
+    "name": "TestARPTableProbe",
+    "file": "tests/core/test_network_probe.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe.TestPortScanProbe",
+    "name": "TestPortScanProbe",
+    "file": "tests/core/test_network_probe.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe.TestMNDPListenerProbe",
+    "name": "TestMNDPListenerProbe",
+    "file": "tests/core/test_network_probe.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe.TestMergeProbeResults",
+    "name": "TestMergeProbeResults",
+    "file": "tests/core/test_network_probe.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe.TestDiscoveredRouter",
+    "name": "TestDiscoveredRouter",
+    "file": "tests/core/test_network_probe.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe_extended.TestDecodeMndpExtended",
+    "name": "TestDecodeMndpExtended",
+    "file": "tests/core/test_network_probe_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe_extended.TestDiscoveredRouterExtended",
+    "name": "TestDiscoveredRouterExtended",
+    "file": "tests/core/test_network_probe_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe_extended.TestGetLocalIps",
+    "name": "TestGetLocalIps",
+    "file": "tests/core/test_network_probe_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe_extended.TestMNDPSetupSocket",
+    "name": "TestMNDPSetupSocket",
+    "file": "tests/core/test_network_probe_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe_extended.TestMNDSendBroadcast",
+    "name": "TestMNDSendBroadcast",
+    "file": "tests/core/test_network_probe_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe_extended.TestMNDPProcessPacket",
+    "name": "TestMNDPProcessPacket",
+    "file": "tests/core/test_network_probe_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe_extended.TestMNDPDiscoverSync",
+    "name": "TestMNDPDiscoverSync",
+    "file": "tests/core/test_network_probe_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_probe_extended.TestMergeResultsExtended",
+    "name": "TestMergeResultsExtended",
+    "file": "tests/core/test_network_probe_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_network_scanner.TestDiscoverRoutersOrchestrator",
+    "name": "TestDiscoverRoutersOrchestrator",
+    "file": "tests/core/test_network_scanner.py"
+  },
+  {
+    "id": "class:tests.core.test_profile_cache.TestProfileCacheGetSet",
+    "name": "TestProfileCacheGetSet",
+    "file": "tests/core/test_profile_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_profile_cache.TestProfileCacheTTL",
+    "name": "TestProfileCacheTTL",
+    "file": "tests/core/test_profile_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_profile_cache.TestProfileCacheInvalidation",
+    "name": "TestProfileCacheInvalidation",
+    "file": "tests/core/test_profile_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_profile_cache.TestProfileCacheMaxSize",
+    "name": "TestProfileCacheMaxSize",
+    "file": "tests/core/test_profile_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_profile_cache.TestProfileCacheStats",
+    "name": "TestProfileCacheStats",
+    "file": "tests/core/test_profile_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_profile_cache.TestProfileCacheThreadSafety",
+    "name": "TestProfileCacheThreadSafety",
+    "file": "tests/core/test_profile_cache.py"
+  },
+  {
+    "id": "class:tests.core.test_profile_sync.TestProfileSync",
+    "name": "TestProfileSync",
+    "file": "tests/core/test_profile_sync.py"
+  },
+  {
+    "id": "class:tests.core.test_reports_excel.TestBuildUsageExcelReport",
+    "name": "TestBuildUsageExcelReport",
+    "file": "tests/core/test_reports_excel.py"
+  },
+  {
+    "id": "class:tests.core.test_reports_excel.TestBuildSalesExcelReport",
+    "name": "TestBuildSalesExcelReport",
+    "file": "tests/core/test_reports_excel.py"
+  },
+  {
+    "id": "class:tests.core.test_reports_excel.TestAutoFitColumns",
+    "name": "TestAutoFitColumns",
+    "file": "tests/core/test_reports_excel.py"
+  },
+  {
+    "id": "class:tests.core.test_reports_export.TestGenerateHotspotUsersCsv",
+    "name": "TestGenerateHotspotUsersCsv",
+    "file": "tests/core/test_reports_export.py"
+  },
+  {
+    "id": "class:tests.core.test_router_backup_restore.TestListRouterBackups",
+    "name": "TestListRouterBackups",
+    "file": "tests/core/test_router_backup_restore.py"
+  },
+  {
+    "id": "class:tests.core.test_router_backup_restore.TestRestoreBackup",
+    "name": "TestRestoreBackup",
+    "file": "tests/core/test_router_backup_restore.py"
+  },
+  {
+    "id": "class:tests.core.test_router_info.TestCacheGetSet",
+    "name": "TestCacheGetSet",
+    "file": "tests/core/test_router_info.py"
+  },
+  {
+    "id": "class:tests.core.test_router_info.TestDetectRouterSystem",
+    "name": "TestDetectRouterSystem",
+    "file": "tests/core/test_router_info.py"
+  },
+  {
+    "id": "class:tests.core.test_router_key.TestRouterKeyDiscovered",
+    "name": "TestRouterKeyDiscovered",
+    "file": "tests/core/test_router_key.py"
+  },
+  {
+    "id": "class:tests.core.test_router_key.TestRouterKeyLegacy",
+    "name": "TestRouterKeyLegacy",
+    "file": "tests/core/test_router_key.py"
+  },
+  {
+    "id": "class:tests.core.test_router_key.TestRouterKeyParsing",
+    "name": "TestRouterKeyParsing",
+    "file": "tests/core/test_router_key.py"
+  },
+  {
+    "id": "class:tests.core.test_router_key.TestRouterKeyEquality",
+    "name": "TestRouterKeyEquality",
+    "file": "tests/core/test_router_key.py"
+  },
+  {
+    "id": "class:tests.core.test_router_key.TestRouterKeyRepr",
+    "name": "TestRouterKeyRepr",
+    "file": "tests/core/test_router_key.py"
+  },
+  {
+    "id": "class:tests.core.test_router_key.TestRouterKeySlots",
+    "name": "TestRouterKeySlots",
+    "file": "tests/core/test_router_key.py"
+  },
+  {
+    "id": "class:tests.core.test_router_key.TestRouterKeyRaw",
+    "name": "TestRouterKeyRaw",
+    "file": "tests/core/test_router_key.py"
+  },
+  {
+    "id": "class:tests.core.test_stats.TestStatsManagerHotspot",
+    "name": "TestStatsManagerHotspot",
+    "file": "tests/core/test_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_stats.TestStatsManagerUserman",
+    "name": "TestStatsManagerUserman",
+    "file": "tests/core/test_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_stats.TestStatsManagerFormatting",
+    "name": "TestStatsManagerFormatting",
+    "file": "tests/core/test_stats.py"
+  },
+  {
+    "id": "class:tests.core.test_stats_snapshots.TestSaveSnapshot",
+    "name": "TestSaveSnapshot",
+    "file": "tests/core/test_stats_snapshots.py"
+  },
+  {
+    "id": "class:tests.core.test_stats_snapshots.TestGetYesterdaySnapshot",
+    "name": "TestGetYesterdaySnapshot",
+    "file": "tests/core/test_stats_snapshots.py"
+  },
+  {
+    "id": "class:tests.core.test_stats_snapshots.TestGetWeekSnapshots",
+    "name": "TestGetWeekSnapshots",
+    "file": "tests/core/test_stats_snapshots.py"
+  },
+  {
+    "id": "class:tests.core.test_stats_snapshots.TestStatsManagerTrend",
+    "name": "TestStatsManagerTrend",
+    "file": "tests/core/test_stats_snapshots.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestApiProperty",
+    "name": "TestApiProperty",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestGetAllUsersCached",
+    "name": "TestGetAllUsersCached",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestInvalidateCache",
+    "name": "TestInvalidateCache",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestCreateCards",
+    "name": "TestCreateCards",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestCreateUser",
+    "name": "TestCreateUser",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestAttachV7Profile",
+    "name": "TestAttachV7Profile",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestAttachV6Profile",
+    "name": "TestAttachV6Profile",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestVerifyProfileLink",
+    "name": "TestVerifyProfileLink",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestGetUserId",
+    "name": "TestGetUserId",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestSetUserCallerId",
+    "name": "TestSetUserCallerId",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestListUsers",
+    "name": "TestListUsers",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestSearchUsers",
+    "name": "TestSearchUsers",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestGetUser",
+    "name": "TestGetUser",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestAddProfileToUser",
+    "name": "TestAddProfileToUser",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestDeleteUser",
+    "name": "TestDeleteUser",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestEnableUser",
+    "name": "TestEnableUser",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestDisableUser",
+    "name": "TestDisableUser",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestResetUserCounters",
+    "name": "TestResetUserCounters",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestGetActiveSessions",
+    "name": "TestGetActiveSessions",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestTerminateSession",
+    "name": "TestTerminateSession",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestFormatCard",
+    "name": "TestFormatCard",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_userman_manager.TestEdgeCases",
+    "name": "TestEdgeCases",
+    "file": "tests/core/test_userman_manager.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog.TestCheckRouterHealth",
+    "name": "TestCheckRouterHealth",
+    "file": "tests/core/test_watchdog.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog.TestGetRouterStatus",
+    "name": "TestGetRouterStatus",
+    "file": "tests/core/test_watchdog.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog.TestGetRouterStatusDetail",
+    "name": "TestGetRouterStatusDetail",
+    "file": "tests/core/test_watchdog.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog.TestWasAlertSent",
+    "name": "TestWasAlertSent",
+    "file": "tests/core/test_watchdog.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog.TestMarkAlertSent",
+    "name": "TestMarkAlertSent",
+    "file": "tests/core/test_watchdog.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog.TestClearStatus",
+    "name": "TestClearStatus",
+    "file": "tests/core/test_watchdog.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog_extended.TestRecordCheckResultBranches",
+    "name": "TestRecordCheckResultBranches",
+    "file": "tests/core/test_watchdog_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog_extended.TestCheckRouterHealthExtended",
+    "name": "TestCheckRouterHealthExtended",
+    "file": "tests/core/test_watchdog_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog_extended.TestClearAlertSent",
+    "name": "TestClearAlertSent",
+    "file": "tests/core/test_watchdog_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog_extended.TestGetRouterStatusDetailExtended",
+    "name": "TestGetRouterStatusDetailExtended",
+    "file": "tests/core/test_watchdog_extended.py"
+  },
+  {
+    "id": "class:tests.core.test_watchdog_extended.TestLoadStatusFromDb",
+    "name": "TestLoadStatusFromDb",
+    "file": "tests/core/test_watchdog_extended.py"
+  }
+]

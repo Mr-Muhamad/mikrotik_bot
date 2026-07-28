@@ -135,9 +135,8 @@ class ConnectionPool:
             try:
                 # انتظار 30 ثانية كحد أقصى للحصول على اتصال فارغ (Throttle)
                 api = q.get(timeout=30)
-                # فحص صحة الاتصال المُعاد تدويره
                 try:
-                    api.path(command="system/resource/print")
+                    api.path("system", "resource")("print")
                 except (LibRouterosError, ConnectionError, OSError, TimeoutError) as e:
                     logger.debug(f"Pooled connection stale for {router_key}, discarding: {e}")
                     with self._lock:

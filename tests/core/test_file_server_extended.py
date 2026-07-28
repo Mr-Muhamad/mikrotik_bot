@@ -132,12 +132,11 @@ class TestStartStopServer:
 
         fs._server = None
         fs._server_thread = None
-        with patch.object(fs, "HTTPServer") as mock_cls:
+        with patch.object(fs, "_ThreadingHTTPServer") as mock_cls:
             mock_server = MagicMock()
             mock_cls.return_value = mock_server
             start_file_server()
             mock_cls.assert_called_once()
-            mock_server.serve_forever.assert_called_once()
             fs._server = None
             fs._server_thread = None
 

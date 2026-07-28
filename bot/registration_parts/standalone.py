@@ -53,7 +53,7 @@ from bot.handlers.commands_basic import (
     start,
     sync_commands,
 )
-from bot.handlers.hotspot import hotspot_stats
+from bot.handlers.hotspot import hotspot_stats, hotspot_stats_day_input
 from bot.handlers.hotspot_add import hotspot_add_start
 from bot.handlers.hotspot_cards import hotspot_cards_start
 from bot.handlers.hotspot_common import handle_page_callback
@@ -149,6 +149,7 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["menu_pdf_settings"])(pdf_sett
 standalone(CallbackQueryHandler, pattern=PATTERNS["cancel_edit"])(cancel)
 standalone(CallbackQueryHandler, pattern=PATTERNS["clean_chat"])(clean_chat)
 standalone(CallbackQueryHandler, pattern=PATTERNS["hotspot_stats"])(hotspot_stats)
+standalone(CallbackQueryHandler, pattern=PATTERNS["stats_day"])(hotspot_stats_day_input)
 standalone(CallbackQueryHandler, pattern=PATTERNS["userman_list"])(userman_list)
 standalone(CallbackQueryHandler, pattern=PATTERNS["userman_profiles"])(userman_profiles)
 standalone(CallbackQueryHandler, pattern=PATTERNS["stats_hotspot"])(stats_hotspot)

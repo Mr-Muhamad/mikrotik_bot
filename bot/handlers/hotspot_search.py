@@ -216,9 +216,9 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[RouterOS
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, query)
         try:
             users = await run_blocking(hotspot_manager.search_users, router_key, query)
-        except (LibRouterosError, OSError, MikrotikBotError):
+        except Exception:  # noqa: BLE001
             users = []
-    except (LibRouterosError, OSError, MikrotikBotError):
+    except Exception:  # noqa: BLE001
         return []
     return _enrich_hosts(hosts, users)
 

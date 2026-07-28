@@ -1,0 +1,31 @@
+{
+  "name": "MikroTik Telegram Bot",
+  "version": "1.0.0",
+  "description": "Enterprise-grade Telegram Bot system for managing MikroTik RouterOS devices, Hotspot users, User Manager, Backups, and Health Monitoring.",
+  "layers": {
+    "Presentation Layer": {
+      "path": "bot/handlers",
+      "description": "Telegram Handlers, Keyboards, and UI formatting logic."
+    },
+    "Application Layer": {
+      "path": "bot/registrations.py, utils/handler_registry.py",
+      "description": "Command/Callback routing, ConversationHandler states, and application lifecycle."
+    },
+    "Service Layer": {
+      "path": "core/",
+      "description": "Pure Python domain services for Hotspot, User Manager, Backups, Health Watchdog, Reports, and PDF generation."
+    },
+    "Infrastructure & Integration Layer": {
+      "path": "core/mikrotik_api.py, core/connection_pool.py, core/backup/file_server.py, core/backup/ftp.py",
+      "description": "MikroTik RouterOS API wrappers, Connection Pooling, File Server HTTP Listener, and FTP Transport."
+    },
+    "Repository & Database Layer": {
+      "path": "database/",
+      "description": "SQLite ORM/CRUD Repositories, Schema migrations via Alembic, and Shared State synchronization."
+    },
+    "Utilities & Cross-Cutting": {
+      "path": "utils/",
+      "description": "Decorators (@admin_only, @require_role), Cryptography (Fernet), Error Sanitization, Logging with Request ID, Chat Cleaner, and Validators."
+    }
+  }
+}

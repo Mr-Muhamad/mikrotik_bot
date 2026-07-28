@@ -1,0 +1,102 @@
+[
+  {
+    "command": "start",
+    "description": "القائمة الرئيسية"
+  },
+  {
+    "command": "help",
+    "description": "المساعدة والتعليمات"
+  },
+  {
+    "command": "add",
+    "description": "إضافة مستخدم Hotspot"
+  },
+  {
+    "command": "edit",
+    "description": "تعديل مستخدم Hotspot"
+  },
+  {
+    "command": "delete",
+    "description": "حذف مستخدم Hotspot"
+  },
+  {
+    "command": "search",
+    "description": "بحث عن مستخدم أو جهاز"
+  },
+  {
+    "command": "cards",
+    "description": "إنشاء كروت Hotspot PDF"
+  },
+  {
+    "command": "userman",
+    "description": "إدارة User Manager"
+  },
+  {
+    "command": "backup",
+    "description": "قائمة النسخ الاحتياطي والاستعادة"
+  },
+  {
+    "command": "routers",
+    "description": "إدارة الروترات المحفوظة"
+  },
+  {
+    "command": "addrouter",
+    "description": "إضافة روتر يدوياً"
+  },
+  {
+    "command": "settings",
+    "description": "إعدادات PDF والكروت"
+  },
+  {
+    "command": "reboot",
+    "description": "إعادة تشغيل الراوتر المختار"
+  },
+  {
+    "command": "timeout",
+    "description": "إعداد مدة خمول الجلسة"
+  },
+  {
+    "command": "metrics",
+    "description": "مقاييس الأداء واستخدام السيرفر"
+  },
+  {
+    "command": "logs",
+    "description": "عرض سجل التدقيق والإجراءات"
+  },
+  {
+    "command": "sync",
+    "description": "إعادة تحديث قائمة الأوامر السريعة"
+  },
+  {
+    "command": "clean",
+    "description": "تنظيف رسائل المحادثة"
+  },
+  {
+    "command": "usage",
+    "description": "تقرير استهلاك مستخدم معين"
+  },
+  {
+    "command": "watchdog",
+    "description": "عرض حالة مراقبة الروترات"
+  },
+  {
+    "command": "watchdog_start",
+    "description": "بدء مراقبة الروترات الفعالة"
+  },
+  {
+    "command": "cancel",
+    "description": "إلغاء العملية الحالية"
+  },
+  {
+    "command": "reports",
+    "description": "تقارير المبيعات والاستخدام"
+  },
+  {
+    "command": "roles",
+    "description": "إدارة أدوار وأذونات المشرفين"
+  },
+  {
+    "command": "batches",
+    "description": "عرض وتصدير دفعات الكروت"
+  }
+]

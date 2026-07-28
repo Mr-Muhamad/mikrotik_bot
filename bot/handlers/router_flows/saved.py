@@ -200,7 +200,7 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 version,
                 reply_markup=get_router_action_keyboard(router_id),
             )
-    except (LibRouterosError, OSError) as e:
+    except Exception as e:  # noqa: BLE001
         await send_error(
             update,
             context,

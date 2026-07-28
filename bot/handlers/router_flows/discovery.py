@@ -211,7 +211,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
                 f"{DISCOVERY_FAILED}\n\n{version}", reply_markup=get_router_keyboard()
             )
             await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
-    except (LibRouterosError, OSError) as e:
+    except Exception as e:  # noqa: BLE001
         await send_error(
             update,
             context,

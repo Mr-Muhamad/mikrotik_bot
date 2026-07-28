@@ -25,7 +25,7 @@ logging.getLogger("apscheduler").setLevel(logging.WARNING)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("librouteros").setLevel(logging.WARNING)
 logging.getLogger("utils.chat_cleaner").setLevel(logging.WARNING)
-configure_logging(logging.INFO)
+configure_logging(logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

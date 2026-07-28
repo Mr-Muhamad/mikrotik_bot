@@ -1,0 +1,41 @@
+{
+  "roles": [
+    {
+      "name": "super_admin",
+      "description": "Defined in .env via ADMIN_IDS. Has absolute unrestricted access to all commands, router management, user role assignment, reboots, and full system backups.",
+      "permissions": [
+        "*"
+      ]
+    },
+    {
+      "name": "operator",
+      "description": "Operational user assigned via /roles. Restricted to assigned routers and operational commands (add/edit/cards/reports). Cannot delete routers or perform system reboots.",
+      "permissions": [
+        "hotspot:add",
+        "hotspot:edit",
+        "hotspot:search",
+        "hotspot:cards",
+        "userman:read",
+        "userman:cards",
+        "reports:view"
+      ]
+    }
+  ],
+  "decorators": [
+    {
+      "name": "@admin_only",
+      "file": "utils/admin_decorator.py",
+      "purpose": "Verifies that the incoming Telegram user ID is present in ADMIN_IDS or admin_roles repository."
+    },
+    {
+      "name": "@require_role(role_name)",
+      "file": "utils/admin_decorator.py",
+      "purpose": "Enforces minimum role privilege before executing a handler."
+    },
+    {
+      "name": "@require_router",
+      "file": "utils/admin_decorator.py",
+      "purpose": "Ensures the user has an active selected router in user_sessions before proceeding."
+    }
+  ]
+}

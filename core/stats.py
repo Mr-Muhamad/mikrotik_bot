@@ -47,8 +47,9 @@ class StatsManager:
             }
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Error getting hotspot stats "
-                f"(error type: {type(e).__name__}): {e}"
+                f"Error getting hotspot stats in get_hotspot_stats (router='{router_key}') "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
             )
             return None
 
@@ -71,8 +72,9 @@ class StatsManager:
             }
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Error getting userman stats "
-                f"(error type: {type(e).__name__}): {e}"
+                f"Error getting userman stats in get_userman_stats (router='{router_key}') "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
             )
             return None
 

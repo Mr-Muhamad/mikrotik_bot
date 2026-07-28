@@ -171,7 +171,7 @@ class TestHotspotStatsDayInput:
             result = await hotspot_module.hotspot_stats_day_input(update, ctx)
         assert result == hotspot_module.WAITING_STATS_DAY
         text = update.message.reply_text.call_args.args[0]
-        assert "يوم (5)" in text
+        assert "يوم 5" in text
         assert "PREFIX_2026-07-05" in text
 
     @pytest.mark.asyncio

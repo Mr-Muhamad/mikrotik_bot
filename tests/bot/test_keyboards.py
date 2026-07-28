@@ -1085,11 +1085,10 @@ class TestGetHostDetailKeyboard:
         all_data = _btns(m)
         assert not any("block_mac:" in cb for cb in all_data)
 
-    def test_always_has_kick_and_counters(self):
+    def test_always_has_kick(self):
         m = get_host_detail_keyboard()
         all_data = _btns(m)
         assert "host_kick_execute" in all_data
-        assert "host_reset_counters" in all_data
 
     def test_always_has_blocked_list_and_back(self):
         m = get_host_detail_keyboard()

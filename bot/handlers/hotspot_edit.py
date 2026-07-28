@@ -124,10 +124,11 @@ async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     user_id = query.data.replace("edit_user_", "")
     router_key = get_selected_router(query.from_user.id)
+    user = None
     try:
         user = await run_blocking(hotspot_manager.get_user, router_key, user_id)
     except Exception as e:  # noqa: BLE001
-        logger.error(f"hotspot_edit_select failed (error type: {type(e).__name__}): {e}")
+        logger.error(f"hotspot_edit_select failed (error type: {type(e).__name__}): {e}", exc_info=True)
         await send_error(
             update,
             context,
@@ -138,6 +139,14 @@ async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         cleanup_state(query.from_user.id, context.user_data)
         return ConversationHandler.END
+
+    if not user and context.user_data and "users_cache" in context.user_data:
+        cached_users = context.user_data["users_cache"]
+        for u in cached_users:
+            if str(u.get(".id")) == user_id or str(u.get("name")) == user_id:
+                user = u
+                user_id = str(u.get(".id") or u.get("name"))
+                break
 
     if not user:
         await query.edit_message_text(USER_NOT_FOUND)
@@ -558,7 +567,15 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
     router_key = get_selected_router(update.effective_user.id)
 
     if not router_key or not user_id or not field:
-        await reply_final(update, context, DATA_ERROR)
+        missing = []
+        if not router_key:
+            missing.append("لم يتم اختيار راوتر")
+        if not user_id:
+            missing.append("انتهت جلسة المستخدم")
+        if not field:
+            missing.append("لم يتم تحديد الحقل")
+        diag = " (" + ", ".join(missing) + ")"
+        await reply_final(update, context, f"{DATA_ERROR}{diag}\n💡 الرجاء المحاولة مرة أخرى عبر /edit.")
         cleanup_state(update.effective_user.id, context.user_data)
         return ConversationHandler.END
 

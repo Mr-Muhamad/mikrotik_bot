@@ -343,25 +343,24 @@ USAGE_LIMIT_LABEL = "📊 حد البيانات: {limit}"
 USAGE_NO_LIMIT = "غير محدود"
 
 
-HOTSPOT_STATS = """📊 إحصائيات Hotspot
+HOTSPOT_STATS = """📊 ━━━━ <b>إحصائيات الشبكة</b> ━━━━
 
-👥 إجمالي المستخدمين: {total}
-🟢 مفعل: {active}
-🔴 معطّل: {inactive}
-📦 توزيع الحد الكلى (للمستخدمين المفعلين):
-<pre>
-• 10 GB: {cat_10} مستخدم
-• 20 GB: {cat_20} مستخدم
-• 30 GB: {cat_30} مستخدم
-• 40 GB: {cat_40} مستخدم
-• 50 GB: {cat_50} مستخدم
-• أخرى: {cat_other} مستخدم
-</pre>"""
+👥 <b>إجمالي المشتركين:</b> <code>{total}</code>
+├ 🟢 <b>نشط:</b> <code>{active}</code>
+└ 🔴 <b>معطل:</b> <code>{inactive}</code>
 
-HOTSPOT_STATS_RESET_BLOCK = """🔄 تم تصفير العدادات في يوم ({selected_day}) — {reset_count} مستخدم:
-<pre>
-{reset_list}
-</pre>"""
+📦 <b>توزيع الباقات الحجمية (للمنضمين المفعلين):</b>
+ ▫️ <code>10 GB</code> ❯ <b>{cat_10}</b> مشترك
+ ▫️ <code>20 GB</code> ❯ <b>{cat_20}</b> مشترك
+ ▫️ <code>30 GB</code> ❯ <b>{cat_30}</b> مشترك
+ ▫️ <code>40 GB</code> ❯ <b>{cat_40}</b> مشترك
+ ▫️ <code>50 GB</code> ❯ <b>{cat_50}</b> مشترك
+ ▫️ <code>أخرى </code> ❯ <b>{cat_other}</b> مشترك"""
+
+HOTSPOT_STATS_RESET_BLOCK = """🔄 ━━━━ <b>سجل التصفير (يوم {selected_day})</b> ━━━━
+👥 <b>عدد المتأثرين:</b> <code>{reset_count}</code> مشترك
+
+{reset_list}"""
 
 HOTSPOT_STATS_PROMPT = (
     "📅 أدخل رقم اليوم (من الأيام المتاحة: {days}) لعرض المستخدمين الذين تم تصفير عداداتهم:"

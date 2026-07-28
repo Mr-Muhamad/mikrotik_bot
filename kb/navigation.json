@@ -1,0 +1,120 @@
+{
+  "main_menu": {
+    "command": "/start",
+    "children": [
+      {
+        "label": "📊 Hotspot",
+        "action": "menu_hotspot",
+        "sub_items": [
+          {
+            "label": "➕ إضافة مستخدم",
+            "command": "/add"
+          },
+          {
+            "label": "✏️ تعديل مستخدم",
+            "command": "/edit"
+          },
+          {
+            "label": "🗑️ حذف مستخدم",
+            "command": "/delete"
+          },
+          {
+            "label": "🔍 بحث وتتبع",
+            "command": "/search"
+          },
+          {
+            "label": "🎫 كروت Hotspot",
+            "command": "/cards"
+          },
+          {
+            "label": "📈 التقارير",
+            "command": "/reports"
+          },
+          {
+            "label": "📊 الإحصائيات",
+            "action": "hotspot_stats"
+          }
+        ]
+      },
+      {
+        "label": "👥 User Manager",
+        "command": "/userman",
+        "sub_items": [
+          {
+            "label": "🎫 كروت UM",
+            "action": "userman_cards"
+          },
+          {
+            "label": "📋 قائمة المشتركين",
+            "action": "userman_list"
+          },
+          {
+            "label": "⚙️ البروفايلات",
+            "action": "userman_profiles"
+          }
+        ]
+      },
+      {
+        "label": "🔌 إدارة الروترات",
+        "command": "/routers",
+        "sub_items": [
+          {
+            "label": "🔎 اكتشاف شبكي",
+            "action": "router_discover"
+          },
+          {
+            "label": "➕ إضافة يدوي",
+            "command": "/addrouter"
+          },
+          {
+            "label": "🔄 إعادة التشغيل",
+            "command": "/reboot"
+          }
+        ]
+      },
+      {
+        "label": "💾 النسخ الاحتياطي",
+        "command": "/backup",
+        "sub_items": [
+          {
+            "label": "📦 نسخة كاملة",
+            "action": "backup_full"
+          },
+          {
+            "label": "👥 نسخة User Manager",
+            "action": "backup_userman"
+          },
+          {
+            "label": "⚙️ إعدادات الجدولة",
+            "action": "backup_settings"
+          }
+        ]
+      },
+      {
+        "label": "⚙️ الإعدادات والأدوات",
+        "sub_items": [
+          {
+            "label": "📄 إعدادات PDF",
+            "command": "/settings"
+          },
+          {
+            "label": "⏱️ مهلة الجلسة",
+            "command": "/timeout"
+          },
+          {
+            "label": "📈 أداء النظام",
+            "command": "/metrics"
+          },
+          {
+            "label": "📋 سجل التدقيق",
+            "command": "/logs"
+          },
+          {
+            "label": "🛡️ إدارة المشرفين",
+            "command": "/roles"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -134,8 +134,9 @@ class UserManager:
                 existing.add(username)
             except Exception as e:  # noqa: BLE001
                 logger.error(
-                    f"Card {i + 1}/{count} failed on {router_key} "
-                    f"(error type: {type(e).__name__}): {e}"
+                    f"Card {i + 1}/{count} failed on {router_key} in create_cards "
+                    f"(error type: {type(e).__name__}): {e}",
+                    exc_info=True,
                 )
 
         logger.info(

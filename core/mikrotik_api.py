@@ -148,7 +148,10 @@ class MikrotikAPI:
                 broken = True
             raise
         except (ValueError, TypeError, KeyError, RuntimeError):
-            broken = False
+            broken = True
+            raise
+        except Exception:
+            broken = True
             raise
         finally:
             self._pool.release_connection(router_key, api, broken=broken)
@@ -238,8 +241,9 @@ class MikrotikAPI:
                 if attempt == len(_RETRY_DELAYS):
                     total = 1 + len(_RETRY_DELAYS)
                     logger.error(
-                        f"All {total} attempts failed for {command} on {router_key} "
-                        f"(error type: {type(e).__name__}): {e}"
+                        f"All {total} attempts failed for {command} on {router_key} in execute "
+                        f"(error type: {type(e).__name__}): {e}",
+                        exc_info=True,
                     )
                     raise
         raise last_exc  # type: ignore[misc]

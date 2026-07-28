@@ -1,0 +1,12 @@
+{
+  "coding_standards": [
+    "No hardcoded secrets or raw passwords in code or logs.",
+    "Shared state reads/writes on data_store must use data_lock.",
+    "Every handler change must be verified via scripts/validate_handlers.py.",
+    "All callback_data patterns must be defined in bot/handlers/callback_constants.py.",
+    "All type ignores must be documented in scripts/check_type_ignore.py and pass pyright.",
+    "Functions must maintain a threshold budget under 30 lines where possible.",
+    "All user-facing explanatory comments must prefer standard Arabic.",
+    "Synchronous blocking API calls inside async handlers must use run_blocking()."
+  ]
+}

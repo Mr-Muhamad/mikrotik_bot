@@ -1,0 +1,403 @@
+{
+  "engine": "SQLite",
+  "migration_tool": "Alembic",
+  "db_file": "mikrotik_bot.db",
+  "tables": [
+    {
+      "table_name": "routers",
+      "purpose": "Stores discovered and manually added MikroTik routers",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "ip",
+          "type": "TEXT",
+          "unique": true,
+          "nullable": false
+        },
+        {
+          "name": "port",
+          "type": "INTEGER",
+          "default": 8728
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "password_encrypted",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER",
+          "default": 1
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "user_sessions",
+      "purpose": "Stores selected active router per admin Telegram user ID",
+      "columns": [
+        {
+          "name": "admin_id",
+          "type": "INTEGER",
+          "primary_key": true
+        },
+        {
+          "name": "selected_router_key",
+          "type": "TEXT",
+          "nullable": true
+        },
+        {
+          "name": "last_active",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "logs",
+      "purpose": "Audit trail log of admin operations",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "action",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "username",
+          "type": "TEXT",
+          "nullable": true
+        },
+        {
+          "name": "router_name",
+          "type": "TEXT",
+          "nullable": true
+        },
+        {
+          "name": "admin_id",
+          "type": "INTEGER",
+          "nullable": false
+        },
+        {
+          "name": "timestamp",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "card_batches",
+      "purpose": "Stores history of generated Hotspot/User Manager card batches",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "batch_id",
+          "type": "TEXT",
+          "unique": true,
+          "nullable": false
+        },
+        {
+          "name": "router_name",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "card_type",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "profile",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "count",
+          "type": "INTEGER",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "INTEGER",
+          "nullable": false
+        },
+        {
+          "name": "pdf_path",
+          "type": "TEXT",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "admin_roles",
+      "purpose": "Role-based access control assignments (super_admin vs operator)",
+      "columns": [
+        {
+          "name": "admin_id",
+          "type": "INTEGER",
+          "primary_key": true
+        },
+        {
+          "name": "role",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "assigned_by",
+          "type": "INTEGER",
+          "nullable": false
+        },
+        {
+          "name": "assigned_at",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "operator_permissions",
+      "purpose": "Assigned router permissions for operators",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "operator_id",
+          "type": "INTEGER",
+          "nullable": false
+        },
+        {
+          "name": "router_key",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "assigned_by",
+          "type": "INTEGER",
+          "nullable": false
+        },
+        {
+          "name": "assigned_at",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "pdf_settings",
+      "purpose": "PDF rendering customization per router",
+      "columns": [
+        {
+          "name": "router_key",
+          "type": "TEXT",
+          "primary_key": true
+        },
+        {
+          "name": "header_text",
+          "type": "TEXT",
+          "nullable": true
+        },
+        {
+          "name": "footer_text",
+          "type": "TEXT",
+          "nullable": true
+        },
+        {
+          "name": "logo_path",
+          "type": "TEXT",
+          "nullable": true
+        },
+        {
+          "name": "columns_config",
+          "type": "TEXT",
+          "nullable": true
+        }
+      ]
+    },
+    {
+      "table_name": "router_health",
+      "purpose": "Router watchdog health status history",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "router_key",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "latency_ms",
+          "type": "REAL",
+          "nullable": true
+        },
+        {
+          "name": "checked_at",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "stats_snapshots",
+      "purpose": "Daily statistical snapshots for reports",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "router_key",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "snapshot_date",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "total_users",
+          "type": "INTEGER",
+          "default": 0
+        },
+        {
+          "name": "active_users",
+          "type": "INTEGER",
+          "default": 0
+        },
+        {
+          "name": "bytes_in",
+          "type": "INTEGER",
+          "default": 0
+        },
+        {
+          "name": "bytes_out",
+          "type": "INTEGER",
+          "default": 0
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "chat_messages",
+      "purpose": "Tracks bot messages for auto-cleaning (Chat Cleaner)",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "chat_id",
+          "type": "INTEGER",
+          "nullable": false
+        },
+        {
+          "name": "message_id",
+          "type": "INTEGER",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    },
+    {
+      "table_name": "backups",
+      "purpose": "Scheduled & manual backup task records",
+      "columns": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "primary_key": true,
+          "autoincrement": true
+        },
+        {
+          "name": "router_key",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "backup_type",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "file_path",
+          "type": "TEXT",
+          "nullable": true
+        },
+        {
+          "name": "file_size",
+          "type": "INTEGER",
+          "nullable": true
+        },
+        {
+          "name": "status",
+          "type": "TEXT",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT",
+          "nullable": false
+        }
+      ]
+    }
+  ]
+}

@@ -38,7 +38,7 @@ def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> Rout
     hosts: RouterOSResponse = []
 
     proplist = (
-        ".id,mac-address,address,host-name,user,bypass-bypassed,uptime,bytes-in,bytes-out,server"
+        ".id,mac-address,address,user,bypassed,uptime,bytes-in,bytes-out,server"
     )
     try:
         hosts = api.execute(
@@ -46,25 +46,34 @@ def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> Rout
             "ip/hotspot/host/print",
             **{"?mac-address": search_lower, ".proplist": proplist},
         )
-        if not hosts:
+    except Exception:  # noqa: BLE001
+        hosts = []
+
+    if not hosts:
+        try:
             hosts = api.execute(
                 router_key,
                 "ip/hotspot/host/print",
                 **{"?address": search_lower, ".proplist": proplist},
             )
-    except Exception as e:  # noqa: BLE001
-        logger.warning(
-            f"Error searching hotspot hosts "
-            f"(error type: {type(e).__name__}): {e}"
-        )
+        except Exception:  # noqa: BLE001
+            hosts = []
 
     if not hosts:
-        all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": proplist})
-        for h in all_hosts:
-            mac = str(h.get("mac-address", "")).lower()
-            ip = str(h.get("address", "")).lower()
-            if search_lower in ip or search_lower in mac:
-                hosts.append(h)
+        try:
+            all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": proplist})
+            for h in all_hosts:
+                mac = str(h.get("mac-address", "")).lower()
+                ip = str(h.get("address", "")).lower()
+                user = str(h.get("user", "")).lower()
+                if search_lower in ip or search_lower in mac or search_lower in user:
+                    hosts.append(h)
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                f"Error fetching all hotspot hosts in search_hosts (query='{search_lower}', router='{router_key}') "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
+            )
 
     if not hosts:
         return []
@@ -98,8 +107,9 @@ def kick_host(api: MikrotikClient, router_key: str, mac_or_ip: str) -> tuple[boo
             )
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"Error fetching host details for '{target}' "
-            f"(error type: {type(e).__name__}): {e}"
+            f"Error fetching host details for target '{target}' in kick_host (router='{router_key}') "
+            f"(error type: {type(e).__name__}): {e}",
+            exc_info=True,
         )
 
     if not hosts:

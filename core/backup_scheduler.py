@@ -49,8 +49,9 @@ class BackupScheduler:
             logger.info(f"Scheduled backup done for {router_key}")
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Scheduled backup failed for {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                f"Scheduled backup failed for {router_key} in _run_daily_backup "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
             )
             failed_routers.append(str(router_name))
             await run_blocking(
@@ -66,8 +67,9 @@ class BackupScheduler:
             full_result = await run_blocking(backup_service.full_backup, router_key)
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Scheduled full backup failed for {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                f"Scheduled full backup failed for {router_key} in _run_daily_backup "
+                f"(error type: {type(e).__name__}): {e}",
+                exc_info=True,
             )
             failed_routers.append(f"{router_name} (باكوب كامل)")
             await run_blocking(

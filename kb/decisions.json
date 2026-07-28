@@ -1,0 +1,32 @@
+{
+  "architectural_decisions": [
+    {
+      "decision": "Use python-telegram-bot v21+ with ConversationHandler and concurrent_updates(False)",
+      "reason": "Ensures deterministic conversation state transitions and prevents race conditions in stateful flows.",
+      "alternatives": [
+        "aiogram",
+        "telebot"
+      ],
+      "impact": "High stability for multi-step forms like adding routers or generating cards.",
+      "review_trigger": "If telegram throughput requirements exceed 100 updates/sec per bot instance."
+    },
+    {
+      "decision": "Centralize all RouterOS commands in core/ and wrap via connection_pool.py",
+      "reason": "Avoids connection exhaustion on MikroTik devices and provides automatic retries/throttling.",
+      "alternatives": [
+        "Direct raw librouteros sockets in handlers"
+      ],
+      "impact": "Decouples Telegram UI from MikroTik transport errors and enables offline testing.",
+      "review_trigger": "If router pool concurrency limits hit maximum capacity."
+    },
+    {
+      "decision": "Alembic SQLite Migrations",
+      "reason": "Allows graceful database schema evolutions in production without dropping user databases.",
+      "alternatives": [
+        "Manual SQL DDL scripts"
+      ],
+      "impact": "Ensures zero data loss during bot updates.",
+      "review_trigger": "When adding new analytics or logging tables."
+    }
+  ]
+}

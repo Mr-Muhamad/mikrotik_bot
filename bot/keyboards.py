@@ -624,10 +624,7 @@ def get_host_detail_keyboard(is_disabled: bool = False, mac: str = "") -> Inline
 
     toggle_text = "🟢 تفعيل المستخدم" if is_disabled else "🔴 تعطيل المستخدم"
     keyboard = [
-        [
-            InlineKeyboardButton("⛔ طرد من الشبكة", callback_data="host_kick_execute"),
-            InlineKeyboardButton("🔄 تصفير العداد", callback_data="host_reset_counters"),
-        ],
+        [InlineKeyboardButton("⛔ طرد من الشبكة", callback_data="host_kick_execute")],
         [InlineKeyboardButton(toggle_text, callback_data="host_toggle_disabled")],
     ]
     if mac:
