@@ -135,6 +135,12 @@ def admin_only(func: Callable[..., Awaitable[object]]):
                     pass
             return
 
+        if update.callback_query:
+            logger.info(f"User {user_id} ({user.full_name}) pressed button: {update.callback_query.data} -> handler: {func.__name__}")
+        elif update.message and update.message.text:
+            text_preview = update.message.text[:30] + ("..." if len(update.message.text) > 30 else "")
+            logger.info(f"User {user_id} ({user.full_name}) sent text: '{text_preview}' -> handler: {func.__name__}")
+
         res = await func(update, context)
 
         from database.repositories.user_sessions import update_activity
