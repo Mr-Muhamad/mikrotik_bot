@@ -177,10 +177,11 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
     if query:
         await safe_answer_callback(query)
 
-    logger.info("userman_restore_start: user=%s", update.effective_user.id)
+    router_key = get_selected_router(update.effective_user.id)
+    logger.info("userman_restore_start: user=%s, router=%s", update.effective_user.id, router_key)
 
     try:
-        tar_files = await run_blocking(backup_service.list_local_userman_backups)
+        tar_files = await run_blocking(backup_service.list_local_userman_backups, router_key)
     except (OSError, ValueError) as e:
         logger.error("userman_restore_start failed: %s", e)
         await send_error(

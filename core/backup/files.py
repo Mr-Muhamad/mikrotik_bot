@@ -76,11 +76,7 @@ def resolve_userman_backup_file(filename: str, backup_root: str | None = None) -
 def is_valid_router_backup_name(filename: str) -> bool:
     if not is_safe_filename(filename):
         return False
-    return (
-        (filename.startswith("backup_") and filename.endswith(".backup"))
-        or (filename.startswith("export_") and filename.endswith(".rsc"))
-        or (filename.startswith(USERMAN_BACKUP_PREFIX) and filename.endswith(".umb"))
-    )
+    return filename.endswith((".backup", ".rsc", ".umb"))
 
 
 def validate_tar_members(tar: tarfile.TarFile, extract_dir: str) -> None:

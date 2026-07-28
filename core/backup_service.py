@@ -34,8 +34,8 @@ class BackupService:
         return self._userman_service.userman_restore(router_key, tar_path, backup_root=BACKUP_DIR)
 
     @staticmethod
-    def list_local_userman_backups() -> list[RouterOSRow]:
-        return UserManagerBackupService.list_local_userman_backups(backup_root=BACKUP_DIR)
+    def list_local_userman_backups(router_key: str = "") -> list[RouterOSRow]:
+        return UserManagerBackupService.list_local_userman_backups(router_key=router_key, backup_root=BACKUP_DIR)
 
 
 def resolve_userman_backup_file(filename: str) -> str:

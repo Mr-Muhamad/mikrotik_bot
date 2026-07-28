@@ -104,18 +104,24 @@ class UserManagerBackupService:
             return cast(RouterOSRow, {"success": False, "message": f"فشل الاستعادة: {str(e)}"})
 
     @staticmethod
-    def list_local_userman_backups(backup_root: str | None = None) -> list[RouterOSRow]:
+    def list_local_userman_backups(router_key: str = "", backup_root: str | None = None) -> list[RouterOSRow]:
         backup_root = backup_root or backup_files.BACKUP_DIR
         userman_dir = os.path.join(backup_root, "userman")
         if not os.path.isdir(userman_dir):
             return []
+        
+        prefix = USERMAN_BACKUP_PREFIX
+        if router_key:
+            router_name = mikrotik_api.get_router_name(router_key)
+            prefix = f"{USERMAN_BACKUP_PREFIX}{sanitize_router_name(router_name)}"
+
         files = []
         for entry in os.listdir(userman_dir):
             full = os.path.join(userman_dir, entry)
             if (
                 os.path.isfile(full)
                 and (entry.endswith(".umb") or entry.endswith(".tar"))
-                and entry.startswith(USERMAN_BACKUP_PREFIX)
+                and entry.startswith(prefix)
             ):
                 stat = os.stat(full)
                 files.append(

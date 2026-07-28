@@ -495,12 +495,9 @@ class MikrotikAPI:
             )
             logger.info(f"Router pushed {remote_name} to {url}")
 
-            # The file arrives at BACKUP_DIR/uploads/<router_key>/<filename>
-            upload_dir = os.path.join(
-                os.path.dirname(os.path.dirname(local_dir)),
-                "uploads",
-                router_key,
-            )
+            from config import BACKUP_DIR
+
+            upload_dir = os.path.join(BACKUP_DIR, "uploads", router_key)
             src = os.path.join(upload_dir, remote_name)
             if os.path.isfile(src):
                 os.makedirs(local_dir, exist_ok=True)

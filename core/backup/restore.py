@@ -1,6 +1,6 @@
 import logging
 
-from core.backup.files import is_valid_router_backup_name
+from core.backup.files import is_valid_router_backup_name, sanitize_router_name
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
 
@@ -10,11 +10,14 @@ logger = logging.getLogger(__name__)
 class BackupRestore:
     def list_router_backups(self, router_key: str) -> list[RouterOSRow]:
         try:
+            router_name = mikrotik_api.get_router_name(router_key)
+            file_prefix = sanitize_router_name(router_name)
             files = mikrotik_api.execute(router_key, "file/print")
             backups = []
             for item in files:
                 name = str(item.get("name", ""))
-                if name.startswith("backup_") and name.endswith(".backup"):
+                # Match system backups (either prefix-based or backup_*)
+                if name.endswith(".backup") and (name.startswith(f"{file_prefix}_") or name.startswith("backup_")):
                     backups.append(
                         {
                             "name": name,
@@ -22,7 +25,7 @@ class BackupRestore:
                             "size": str(item.get("size", "0")),
                         }
                     )
-                elif name.startswith("export_") and name.endswith(".rsc"):
+                elif name.endswith(".rsc") and (name.startswith(f"{file_prefix}_") or name.startswith("export_")):
                     backups.append(
                         {
                             "name": name,
