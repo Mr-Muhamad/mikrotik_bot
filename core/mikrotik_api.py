@@ -143,7 +143,7 @@ class MikrotikAPI:
                 broken = True
             raise
         except (ValueError, TypeError, KeyError, RuntimeError):
-            broken = True
+            broken = False
             raise
         finally:
             self._pool.release_connection(router_key, api, broken=broken)

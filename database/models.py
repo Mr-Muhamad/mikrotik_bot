@@ -28,7 +28,7 @@ DB_PATH = os.path.join(PROJECT_ROOT, "mikrotik_bot.db")
 logger = logging.getLogger(__name__)
 UTC_TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-VALID_ROLES = ("admin", "operator", "viewer")
+VALID_ROLES = ("admin", "operator", "viewer", "super_admin", "customer")
 
 
 def _get_connection():
@@ -110,8 +110,8 @@ def create_indexes() -> None:
                 "ON router_health_log(router_key, checked_at DESC)"
             ),
             (
-                "CREATE INDEX IF NOT EXISTS idx_snapshots_router_date "
-                "ON stats_snapshots(router_key, snapshot_date DESC)"
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_snapshots_router_date "
+                "ON stats_snapshots(router_key, snapshot_date)"
             ),
             "CREATE INDEX IF NOT EXISTS idx_tracked_messages_chat ON tracked_messages(chat_id)",
             "CREATE INDEX IF NOT EXISTS idx_tracked_messages_date ON tracked_messages(tracked_at)",

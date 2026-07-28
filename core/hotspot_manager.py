@@ -71,8 +71,11 @@ class HotspotManager:
         cached = self._users_cache.get(router_key)
         if cached is not None:
             return cast(RouterOSResponse, cached)
-        # نجلب الأسماء فقط لتسريع التحقق من التكرار عند إنشاء الكروت
-        users = self._api.execute(router_key, "ip/hotspot/user/print", **{".proplist": "name"})
+        # نجلب الأسماء والتعليقات فقط لتسريع التحقق من التكرار والبحث fallback
+        proplist = "name,comment"
+        users = self._api.execute(
+            router_key, "ip/hotspot/user/print", **{".proplist": proplist}
+        )
         self._users_cache.set(router_key, users)
         return users
 

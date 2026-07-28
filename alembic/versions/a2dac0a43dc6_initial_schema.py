@@ -163,6 +163,9 @@ def upgrade() -> None:
         sa.Column("snapshot_date", sa.String, default=""),
         sa.Column("active_users", sa.Integer, default=0),
         sa.Column("total_users", sa.Integer, default=0),
+        sa.Column("bytes_in", sa.Integer, default=0),
+        sa.Column("bytes_out", sa.Integer, default=0),
+        sa.UniqueConstraint("router_key", "snapshot_date", name="uq_snapshots_router_date"),
     )
     op.create_index(
         "idx_snapshots_router_date", "stats_snapshots", ["router_key", "snapshot_date"]

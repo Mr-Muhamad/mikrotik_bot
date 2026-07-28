@@ -501,10 +501,12 @@ class UserManager:
 
     def format_card(self, card: RouterOSRow, index: int) -> str:
         """Format a card dict into a display string with index number."""
+        username = str(card.get("username", "unknown"))
+        password = card.get("password", "")
         lines = [
             f"🎫 كارت #{index + 1}",
-            f"👤 اسم المستخدم: {card['username']}",
-            f"🔑 كلمة السر: {card['password'] if card['password'] else '(فارغة)'}",
+            f"👤 اسم المستخدم: {username}",
+            f"🔑 كلمة السر: {password if password else '(فارغة)'}",
         ]
         return "\n".join(lines)
 
