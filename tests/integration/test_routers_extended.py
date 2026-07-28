@@ -177,11 +177,13 @@ class TestDiscEnterPassword:
                 "bot.handlers.router_flows.discovery.run_blocking",
                 new=AsyncMock(side_effect=Exception("net down")),
             ),
+            patch("bot.handlers.router_flows.discovery.send_error", new=AsyncMock()) as mock_err,
             patch("bot.handlers.router_flows.discovery.schedule_delete", new=AsyncMock()),
             patch("bot.handlers.router_flows.discovery.get_router_by_ip", return_value=None),
         ):
             result = await disc_enter_password(update, context)
         assert result == ConversationHandler.END
+        mock_err.assert_called_once()
 
 
 class TestRenameRouter:

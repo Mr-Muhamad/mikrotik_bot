@@ -117,13 +117,16 @@ class TestDiscoverRoutersCallback:
         update = make_mock_update(callback_data="discover_routers")
         context = _make_context()
 
-        with patch(
-            "bot.handlers.router_flows.discovery.discover_routers",
-            new=AsyncMock(side_effect=Exception("net down")),
+        with (
+            patch(
+                "bot.handlers.router_flows.discovery.discover_routers",
+                new=AsyncMock(side_effect=Exception("net down")),
+            ),
+            patch("bot.handlers.router_flows.discovery.send_error", new=AsyncMock()) as mock_err,
         ):
             await discover_routers_callback(update, context)
 
-        assert update.callback_query.edit_message_text.called
+        mock_err.assert_called_once()
 
 
 class TestSavedRoutersList:
