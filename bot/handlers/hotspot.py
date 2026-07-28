@@ -9,7 +9,6 @@ from telegram.ext import ContextTypes, ConversationHandler
 from bot.handlers.constants import WAITING_STATS_DAY
 from bot.keyboards import get_back_keyboard, get_hotspot_keyboard, get_router_keyboard
 from bot.messages import (
-    HOTSPOT_STATS,
     HOTSPOT_STATS_DAY_INVALID,
     HOTSPOT_STATS_DAY_NOT_FOUND,
     HOTSPOT_STATS_NO_RESET,
