@@ -1,6 +1,5 @@
 import logging
 
-import telegram.error
 from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler

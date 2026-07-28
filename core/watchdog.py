@@ -1,5 +1,4 @@
 import logging
-import sqlite3
 import threading
 from datetime import datetime
 
@@ -213,6 +212,5 @@ def load_status_from_db() -> None:
         logger.info(f"Watchdog: loaded status for {len(all_latest)} routers from DB")
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"Watchdog: failed to load status from DB "
-            f"(error type: {type(e).__name__}): {e}"
+            f"Watchdog: failed to load status from DB (error type: {type(e).__name__}): {e}"
         )
