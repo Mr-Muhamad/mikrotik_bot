@@ -77,14 +77,10 @@ def parse_reset_day(comment: str) -> int | None:
 
 
 def _classify_limit_gb(limit_bytes: int) -> str:
-    """Return the human-readable bucket for a limit in bytes."""
-    gb = limit_bytes / _GB
-    if gb < 10:
-        return "أخرى"
-    if gb < 60:
-        bucket = int(gb // 10) * 10
-        return f"{bucket} GB"
-    return "50 GB"
+    """Return the exact human-readable bucket for a limit in bytes (dynamic)."""
+    if limit_bytes <= 0:
+        return "غير محدودة"
+    return format_bytes(limit_bytes)
 
 
 def _categorize_user(
@@ -105,12 +101,13 @@ def _categorize_user(
         try:
             limit_str = str(limit_raw)
             limit_bytes = int(parse_bytes(limit_str)) if not limit_str.isdigit() else int(limit_str)
-            categories[_classify_limit_gb(limit_bytes)] += 1
+            bucket = _classify_limit_gb(limit_bytes)
         except (ValueError, TypeError):
-            categories["أخرى"] += 1
+            bucket = "أخرى"
     else:
-        categories["أخرى"] += 1
+        bucket = "غير محدودة"
 
+    categories[bucket] = categories.get(bucket, 0) + 1
     reset_day = parse_reset_day(str(user.get("comment", "")))
     return True, reset_day
 
@@ -133,7 +130,7 @@ def get_hotspot_stats(
             **{".proplist": ".id,name,limit-bytes-total,comment,disabled"},
         )
 
-        categories = {k: 0 for k in ("10 GB", "20 GB", "30 GB", "40 GB", "50 GB", "أخرى")}
+        categories: dict[str, int] = {}
         resets_by_day: dict[int, list[tuple[str, str, str]]] = {}
         active_count = 0
         inactive_count = 0

@@ -46,24 +46,23 @@ async def _reply_or_edit(
         await update.message.reply_text(text, parse_mode=parse_mode, reply_markup=reply_markup)
 
 
-def _categories_kwargs(stats: RouterOSRow) -> dict[str, str]:
-    cats = cast(dict[str, str], stats["categories"])
-    return {
-        "cat_10": cats["10 GB"],
-        "cat_20": cats["20 GB"],
-        "cat_30": cats["30 GB"],
-        "cat_40": cats["40 GB"],
-        "cat_50": cats["50 GB"],
-        "cat_other": cats["أخرى"],
-    }
-
-
 def _summary_text(stats: RouterOSRow) -> str:
-    return HOTSPOT_STATS.format(
-        total=stats["total"],
-        active=stats["active"],
-        inactive=stats["inactive"],
-        **_categories_kwargs(stats),
+    cats = cast(dict[str, int], stats.get("categories", {}))
+    cat_lines = []
+    if cats:
+        for cat_name, count in cats.items():
+            cat_lines.append(f" ▫️ <code>{html.escape(str(cat_name))}</code> ❯ <b>{count}</b> مشترك")
+    else:
+        cat_lines.append(" ▫️ <i>لا توجد بيانات حجمية</i>")
+    categories_str = "\n".join(cat_lines)
+
+    return (
+        f"📊 <b>إحصائيات المستخدمين</b>\n\n"
+        f"👥 <b>إجمالي المستخدمين:</b> <code>{stats['total']}</code>\n"
+        f" └ 🟢 <b>نشط:</b> <code>{stats['active']}</code>\n"
+        f" └ 🔴 <b>معطل:</b> <code>{stats['inactive']}</code>\n\n"
+        f"📦 <b>توزيع الباقات الحجمية (للمنضمين المفعلين):</b>\n"
+        f"{categories_str}"
     )
 
 

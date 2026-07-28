@@ -68,25 +68,25 @@ class TestParseResetDay:
 
 class TestClassifyLimitGb:
     def test_below_10gb(self):
-        assert _classify_limit_gb(5_000_000_000) == "\u0623\u062e\u0631\u0649"
+        assert _classify_limit_gb(5_000_000_000) == "5.00 GB"
 
     def test_10gb_bucket(self):
-        assert _classify_limit_gb(10_000_000_000) == "10 GB"
+        assert _classify_limit_gb(10_000_000_000) == "10.00 GB"
 
     def test_20gb_bucket(self):
-        assert _classify_limit_gb(25_000_000_000) == "20 GB"
+        assert _classify_limit_gb(25_000_000_000) == "25.00 GB"
 
     def test_50gb_bucket(self):
-        assert _classify_limit_gb(55_000_000_000) == "50 GB"
+        assert _classify_limit_gb(55_000_000_000) == "55.00 GB"
 
     def test_above_60gb(self):
-        assert _classify_limit_gb(70_000_000_000) == "50 GB"
+        assert _classify_limit_gb(70_000_000_000) == "70.00 GB"
 
 
 class TestCategorizeUser:
     def test_disabled_user(self):
         user = {"disabled": "true"}
-        cats = {"10 GB": 0, "\u0623\u062e\u0631\u0649": 0}
+        cats = {}
         active, day = _categorize_user(user, cats)
         assert active is False
         assert day is None
@@ -97,18 +97,18 @@ class TestCategorizeUser:
             "limit-bytes-total": "10000000000",
             "comment": "15",
         }
-        cats = {"10 GB": 0, "20 GB": 0, "\u0623\u062e\u0631\u0649": 0}
+        cats = {}
         active, day = _categorize_user(user, cats)
         assert active is True
-        assert cats["10 GB"] == 1
+        assert cats["10.00 GB"] == 1
         assert day == 15
 
     def test_active_without_limit(self):
         user = {"disabled": "false", "limit-bytes-total": "0", "comment": ""}
-        cats = {"\u0623\u062e\u0631\u0649": 0}
+        cats = {}
         active, day = _categorize_user(user, cats)
         assert active is True
-        assert cats["\u0623\u062e\u0631\u0649"] == 1
+        assert cats["غير محدودة"] == 1
         assert day is None
 
 
