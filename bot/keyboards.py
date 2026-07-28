@@ -149,7 +149,7 @@ def get_stats_keyboard() -> InlineKeyboardMarkup:
         [
             InlineKeyboardButton("📈 رسم بياني مصور", callback_data="stats_chart"),
         ],
-        [InlineKeyboardButton("🔙 رجوع", callback_data="menu_stats")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
     ]
     return InlineKeyboardMarkup(keyboard)
 
