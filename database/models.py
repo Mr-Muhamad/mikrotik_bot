@@ -219,7 +219,7 @@ def init_db():
     # Run alembic migrations
     alembic_cfg_path = os.path.join(PROJECT_ROOT, "alembic.ini")
     alembic_cfg = Config(alembic_cfg_path)
-    # Set the script_location and sqlalchemy.url dynamically
+    # Use absolute paths to avoid os.chdir (thread-unsafe)
     alembic_dir = os.path.join(PROJECT_ROOT, "alembic")
     alembic_cfg.set_main_option("script_location", alembic_dir)
 
@@ -227,13 +227,13 @@ def init_db():
     db_uri = f"sqlite:///{DB_PATH.replace(os.sep, '/')}"
     alembic_cfg.set_main_option("sqlalchemy.url", db_uri)
 
-    # Temporarily set cwd to project root so alembic finds env.py
-    old_cwd = os.getcwd()
-    os.chdir(PROJECT_ROOT)
-    try:
-        command.upgrade(alembic_cfg, "head")
-    finally:
-        os.chdir(old_cwd)
+    # Pass version_locations as absolute path so Alembic finds versions
+    versions_dir = os.path.join(alembic_dir, "versions")
+    alembic_cfg.set_main_option(
+        "version_locations", versions_dir.replace(os.sep, "/")
+    )
+
+    command.upgrade(alembic_cfg, "head")
 
     seed_admin_roles(ADMIN_IDS)
     # Column additions (passwords, name_alias, backup_schedule, pdf_settings,

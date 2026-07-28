@@ -92,6 +92,8 @@ class MikrotikAPI:
                 self._pool.set_version(router_key, version)
                 return version
         except Exception as e:  # noqa: BLE001
+            # إبطال الكاش حتى يُعاد المحاولة في الاستدعاء التالي
+            self._pool.invalidate_version(router_key)
             # الفشل متحمَّل (نعود إلى v6)، لذا WARNING أدق من ERROR لئلا يملأ السجلات.
             logger.warning(
                 f"Failed to get version for {router_key} "

@@ -379,7 +379,7 @@ class HotspotManager:
     ) -> list[CardData]:
         """Create multiple hotspot users with optimized chunked batch insertion."""
         cards: list[CardData] = []
-        base_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
+        base_time = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         batch_comment = f"{prefix}_{base_time}" if prefix else base_time
 
         existing_names = self._get_existing_usernames(router_key)
