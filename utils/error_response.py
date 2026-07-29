@@ -11,16 +11,13 @@ from telegram.ext import ContextTypes
 
 from core.metrics import record_error
 from utils.chat_cleaner import track_msg
-from utils.tg_helpers import get_query_chat_id, get_query_message
 from utils.logging_setup import (
     COMPONENT_HANDLER,
     COMPONENT_TELEGRAM,
-    bind_context,
     get_request_id,
-    get_router_key,
     get_trace_id,
-    set_error_category,
 )
+from utils.tg_helpers import get_query_chat_id, get_query_message
 
 logger = logging.getLogger(__name__)
 
@@ -373,13 +370,11 @@ async def _notify_critical_admins(
 
     req_id = get_request_id()
     router_info = f" | router={router_key}" if router_key else ""
-    text = f"\U0001f6a8 <b>Critical Bot Error</b>\n\n"
+    text = "\U0001f6a8 <b>Critical Bot Error</b>\n\n"
     text += f"Category: <code>{category}</code>{router_info}\n"
     text += f"Ref: #{req_id}\n"
     text += f"Error: {_sanitize_error_text(str(error)[:300])}"
-    import asyncio
 
-    from utils.async_blocking import run_blocking
 
     for admin_id in ADMIN_IDS:
         try:

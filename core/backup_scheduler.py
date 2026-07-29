@@ -44,10 +44,8 @@ class BackupScheduler:
                     return
 
                 router_name = str(r.get("identity", router_key))
-                um_start = datetime.utcnow()
                 try:
                     await run_blocking(backup_service.userman_backup, router_key)
-                    um_duration = (datetime.utcnow() - um_start).total_seconds() * 1000
                     successful_routers.append(router_name)
                     await run_blocking(
                         record_backup_result,
@@ -59,7 +57,6 @@ class BackupScheduler:
                     )
                     logger.info("Scheduled backup done for %s", router_key)
                 except Exception as e:  # noqa: BLE001
-                    um_duration = (datetime.utcnow() - um_start).total_seconds() * 1000
                     logger.error(
                         "Scheduled backup failed for %s in _run_daily_backup "
                         "(error type: %s): %s",
@@ -78,11 +75,9 @@ class BackupScheduler:
                         router_name=router_name,
                     )
 
-                full_start = datetime.utcnow()
                 try:
                     full_result = await run_blocking(backup_service.full_backup, router_key)
                 except Exception as e:  # noqa: BLE001
-                    full_duration = (datetime.utcnow() - full_start).total_seconds() * 1000
                     logger.error(
                         "Scheduled full backup failed for %s in _run_daily_backup "
                         "(error type: %s): %s",
@@ -108,7 +103,6 @@ class BackupScheduler:
                         if not success
                         else "scheduled full backup ok"
                     )
-                    full_duration = (datetime.utcnow() - full_start).total_seconds() * 1000
                     if not success:
                         logger.error(
                             "Scheduled full backup failed for %s: %s",
@@ -128,45 +122,45 @@ class BackupScheduler:
                         router_name=router_name,
                     )
 
-async def _do_backup(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
-        from config import ADMIN_IDS, ROUTER_KEY_PREFIX
-        from database.models import get_saved_routers
+    async def _do_backup(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
+            from config import ADMIN_IDS, ROUTER_KEY_PREFIX
+            from database.models import get_saved_routers
 
-        trace_id = new_request_id()
-        with bind_trace_id(trace_id):
-            with bind_component(COMPONENT_BACKUP):
-                rid = new_request_id()
-                with bind_request_id(rid):
-                    failed_routers: list[str] = []
-                    successful_routers: list[str] = []
-                    routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
+            trace_id = new_request_id()
+            with bind_trace_id(trace_id):
+                with bind_component(COMPONENT_BACKUP):
+                    rid = new_request_id()
+                    with bind_request_id(rid):
+                        failed_routers: list[str] = []
+                        successful_routers: list[str] = []
+                        routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
 
-                    logger.info("Scheduled backup starting for %d routers...", len(routers))
+                        logger.info("Scheduled backup starting for %d routers...", len(routers))
 
-                    for r in routers:
-                        if not r.get("username"):
-                            continue
-                        router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
-                        await self._backup_single_router(r, router_key, failed_routers, successful_routers)
+                        for r in routers:
+                            if not r.get("username"):
+                                continue
+                            router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+                            await self._backup_single_router(r, router_key, failed_routers, successful_routers)
 
-                    if successful_routers:
-                        logger.info("Backup completed successfully for %d routers", len(successful_routers))
+                        if successful_routers:
+                            logger.info("Backup completed successfully for %d routers", len(successful_routers))
 
-                    if failed_routers and context.bot:
-                        for admin_id in ADMIN_IDS:
-                            try:
-                                await context.bot.send_message(
-                                    admin_id,
-                                    f"\u26a0\uFE0F فشل الباكوب الآلي لـ {len(failed_routers)} روتر:\n"
-                                    + "\n".join(f"\u2022 {r}" for r in failed_routers),
-                                )
-                            except (OSError, ConnectionError) as e:
-                                logger.warning(
-                                    "Failed to notify admin %s about backup failures: %s",
-                                    admin_id,
-                                    e,
-                                    extra={"component": COMPONENT_BACKUP},
-                                )
+                        if failed_routers and context.bot:
+                            for admin_id in ADMIN_IDS:
+                                try:
+                                    await context.bot.send_message(
+                                        admin_id,
+                                        f"\u26a0\uFE0F فشل الباكوب الآلي لـ {len(failed_routers)} روتر:\n"
+                                        + "\n".join(f"\u2022 {r}" for r in failed_routers),
+                                    )
+                                except (OSError, ConnectionError) as e:
+                                    logger.warning(
+                                        "Failed to notify admin %s about backup failures: %s",
+                                        admin_id,
+                                        e,
+                                        extra={"component": COMPONENT_BACKUP},
+                                    )
 
     async def _do_expiry_check(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
         """فحص يومي لاشتراكات Hotspot المشارفة على الانتهاء وإرسال تنبيه للمشرفين."""

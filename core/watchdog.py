@@ -9,7 +9,6 @@ from core.mikrotik_client import RouterOSRow
 from core.stats import stats_manager
 from database.repositories.router_health import get_all_latest_health, record_health
 from utils.logging_setup import COMPONENT_SERVICE, bind_component
-from utils.request_id import new_request_id
 
 logger = logging.getLogger(__name__)
 

@@ -12,7 +12,7 @@ from librouteros.exceptions import LibRouterosError
 from config import DEFAULT_API_PORT, FILE_SERVER_PORT, FILE_SERVER_SECRET, ROUTER_KEY_PREFIX
 from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
-from utils.log_helpers import log_api_call, log_router_command
+from utils.log_helpers import log_api_call
 
 logger = logging.getLogger(__name__)
 
@@ -218,16 +218,16 @@ class MikrotikAPI:
             return list(cmd_path(cmd, **kwargs))
         return list(cmd_path(cmd))
 
-def _debug_log(self, method: str, command: str, kwargs: dict[str, object]):
-    """Logs kwargs with hidden passwords and structured component tag."""
-    if kwargs:
-        sanitized = {
-            k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()
-        }
-        logger.debug(
-            "%s %s kwargs=%s", method, command, sanitized,
-            extra={"component": "ROUTER"},
-        )
+    def _debug_log(self, method: str, command: str, kwargs: dict[str, object]):
+        """Logs kwargs with hidden passwords and structured component tag."""
+        if kwargs:
+            sanitized = {
+                k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()
+            }
+            logger.debug(
+                "%s %s kwargs=%s", method, command, sanitized,
+                extra={"component": "ROUTER"},
+            )
 
     # ──────────────────────────────────────────────────────────────
     #  Core execution template
@@ -344,86 +344,86 @@ def _debug_log(self, method: str, command: str, kwargs: dict[str, object]):
     #  Connection test (independent — uses raw librouteros connect)
     # ──────────────────────────────────────────────────────────────
 
-def test_connection(
-        self, ip: str, username: str, password: str, port: int = DEFAULT_API_PORT
-    ) -> tuple[bool, str, str]:
-        api = None
-        start = time.monotonic()
-        # Fast reachability check (2 seconds) before full MikroTik authentication
-        import socket
+    def test_connection(
+            self, ip: str, username: str, password: str, port: int = DEFAULT_API_PORT
+        ) -> tuple[bool, str, str]:
+            api = None
+            start = time.monotonic()
+            # Fast reachability check (2 seconds) before full MikroTik authentication
+            import socket
 
-        try:
-            with socket.create_connection((ip, port), timeout=2.0):
-                pass
-        except OSError as e:
-            duration_ms = (time.monotonic() - start) * 1000
-            log_api_call(ip, "tcp_connect", duration_ms, False, error=e, component="ROUTER")
-            logger.warning(
-                f"Fast port check failed for {ip}:{port} - {e}",
-                extra={"component": "ROUTER"},
-            )
-            return False, f"Port {port} closed/unreachable", ""
-
-        try:
-            api = connect(
-                username=username,
-                password=password,
-                host=ip,
-                port=port,
-                encoding="utf-8",
-                timeout=API_TIMEOUT,
-            )
-            duration_ms = (time.monotonic() - start) * 1000
-            result = list(api.path("system", "resource")("print"))
-            version = str(result[0].get("version", "unknown")) if result else "unknown"
-            identity_result = list(api.path("system", "identity")("print"))
-            identity = str(identity_result[0].get("name", ip)) if identity_result else ip
-            log_api_call(ip, "connect", duration_ms, True, component="ROUTER")
-            return True, version, identity
-        except LibRouterosError as e:
-            duration_ms = (time.monotonic() - start) * 1000
-            log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
-            logger.error(
-                f"test_connection LibRouterosError for {ip}:{port}: {e}",
-                extra={"component": "ROUTER"},
-            )
-            return False, self._classify_connect_failure(e, ip, port), ""
-        except OSError as e:
-            # مهلة الاتصال أو رفضه متوقّفان عند فحص راوترات تختبرية/غير موجودة
-            # (مثل عناوين TEST-NET المحجوزة)؛ نسجّلها كـ WARNING لتقليل الضوضاء.
-            duration_ms = (time.monotonic() - start) * 1000
-            log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
-            if self._is_timeout_error(e):
+            try:
+                with socket.create_connection((ip, port), timeout=2.0):
+                    pass
+            except OSError as e:
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(ip, "tcp_connect", duration_ms, False, error=e, component="ROUTER")
                 logger.warning(
-                    f"test_connection timeout for {ip}:{port}: {e}",
+                    f"Fast port check failed for {ip}:{port} - {e}",
                     extra={"component": "ROUTER"},
                 )
-            else:
+                return False, f"Port {port} closed/unreachable", ""
+
+            try:
+                api = connect(
+                    username=username,
+                    password=password,
+                    host=ip,
+                    port=port,
+                    encoding="utf-8",
+                    timeout=API_TIMEOUT,
+                )
+                duration_ms = (time.monotonic() - start) * 1000
+                result = list(api.path("system", "resource")("print"))
+                version = str(result[0].get("version", "unknown")) if result else "unknown"
+                identity_result = list(api.path("system", "identity")("print"))
+                identity = str(identity_result[0].get("name", ip)) if identity_result else ip
+                log_api_call(ip, "connect", duration_ms, True, component="ROUTER")
+                return True, version, identity
+            except LibRouterosError as e:
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
                 logger.error(
-                    f"test_connection OSError for {ip}:{port}: {e}",
+                    f"test_connection LibRouterosError for {ip}:{port}: {e}",
                     extra={"component": "ROUTER"},
                 )
-            ssl_hint = self._probe_api_ssl(ip, username, password)
-            return False, self._classify_connect_failure(e, ip, port, ssl_hint), ""
-        except Exception as e:  # noqa: BLE001
-            duration_ms = (time.monotonic() - start) * 1000
-            log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
-            logger.error(
-                f"test_connection unexpected error for {ip}:{port} "
-                f"(error type: {type(e).__name__}): {e}",
-                extra={"component": "ROUTER"},
-            )
-            return False, self._classify_connect_failure(e, ip, port), ""
-        finally:
-            if api:
-                try:
-                    api.close()
-                except Exception as e:  # noqa: BLE001
-                    logger.debug(
-                        f"Error closing test connection for {ip} "
-                        f"(error type: {type(e).__name__}): {e}",
+                return False, self._classify_connect_failure(e, ip, port), ""
+            except OSError as e:
+                # مهلة الاتصال أو رفضه متوقّفان عند فحص راوترات تختبرية/غير موجودة
+                # (مثل عناوين TEST-NET المحجوزة)؛ نسجّلها كـ WARNING لتقليل الضوضاء.
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
+                if self._is_timeout_error(e):
+                    logger.warning(
+                        f"test_connection timeout for {ip}:{port}: {e}",
                         extra={"component": "ROUTER"},
                     )
+                else:
+                    logger.error(
+                        f"test_connection OSError for {ip}:{port}: {e}",
+                        extra={"component": "ROUTER"},
+                    )
+                ssl_hint = self._probe_api_ssl(ip, username, password)
+                return False, self._classify_connect_failure(e, ip, port, ssl_hint), ""
+            except Exception as e:  # noqa: BLE001
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
+                logger.error(
+                    f"test_connection unexpected error for {ip}:{port} "
+                    f"(error type: {type(e).__name__}): {e}",
+                    extra={"component": "ROUTER"},
+                )
+                return False, self._classify_connect_failure(e, ip, port), ""
+            finally:
+                if api:
+                    try:
+                        api.close()
+                    except Exception as e:  # noqa: BLE001
+                        logger.debug(
+                            f"Error closing test connection for {ip} "
+                            f"(error type: {type(e).__name__}): {e}",
+                            extra={"component": "ROUTER"},
+                        )
 
     def _is_timeout_error(self, exc: Exception) -> bool:
         """يتحقق ما إذا كان الخطأ مهلة اتصال (winerror/errno 10060 أو نص timed out)."""

@@ -171,27 +171,22 @@ def bind_context(
     error_category: str | None = None,
 ):
     """Bind multiple context values for the duration of the block."""
-    tokens = []
-    if request_id is not None:
-        tokens.append(_request_id_var.set(request_id))
-    if component is not None:
-        tokens.append(_component_var.set(component))
-    if trace_id is not None:
-        tokens.append(_trace_id_var.set(trace_id))
-    if user_id is not None:
-        tokens.append(_user_id_var.set(user_id))
-    if chat_id is not None:
-        tokens.append(_chat_id_var.set(chat_id))
-    if router_key is not None:
-        tokens.append(_router_key_var.set(router_key))
-    if command is not None:
-        tokens.append(_command_var.set(command))
-    if success is not None:
-        tokens.append(_success_var.set(success))
-    if duration_ms is not None:
-        tokens.append(_duration_ms_var.set(duration_ms))
-    if error_category is not None:
-        tokens.append(_error_category_var.set(error_category))
+    _bindings = [
+        (request_id, _request_id_var.set),
+        (component, _component_var.set),
+        (trace_id, _trace_id_var.set),
+        (user_id, _user_id_var.set),
+        (chat_id, _chat_id_var.set),
+        (router_key, _router_key_var.set),
+        (command, _command_var.set),
+        (success, _success_var.set),
+        (duration_ms, _duration_ms_var.set),
+        (error_category, _error_category_var.set),
+    ]
+    tokens: list[object] = []
+    for value, setter in _bindings:
+        if value is not None:
+            tokens.append(setter(value))
     try:
         yield
     finally:
