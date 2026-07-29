@@ -32,12 +32,13 @@ from bot.router_selector import cleanup_state, nav_set, set_selected_router
 from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.exceptions import RouterAlreadyExistsError
 from core.mikrotik_api import mikrotik_api
-from database.models import (
-    log_action,
+from database.repositories.audit_logs import log_action
+from database.repositories.routers import (
+    get_router_by_ip,
+    save_manual_router,
     update_router_identity,
     update_router_last_seen,
 )
-from database.repositories.routers import get_router_by_ip, save_manual_router
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback

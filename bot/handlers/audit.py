@@ -28,8 +28,8 @@ from bot.messages import (
 )
 from bot.router_selector import nav_set
 from core.mikrotik_client import RouterOSRow
-from database.models import (
-    UTC_TIMESTAMP_FORMAT,
+from database.models import UTC_TIMESTAMP_FORMAT
+from database.repositories.audit_logs import (
     get_distinct_log_actions,
     get_distinct_log_admins,
     get_distinct_log_routers,

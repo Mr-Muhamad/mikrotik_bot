@@ -43,7 +43,7 @@ from bot.router_selector import (
 )
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_client import RouterOSRow
-from database.models import log_action
+from database.repositories.audit_logs import log_action
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback

@@ -36,7 +36,7 @@ from bot.router_selector import (
 from core.card_models import CardSystem, serialize_cards
 from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
-from database.models import save_card_batch
+from database.repositories.card_batches import save_card_batch
 from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking

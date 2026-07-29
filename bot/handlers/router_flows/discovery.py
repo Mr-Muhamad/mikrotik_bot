@@ -31,10 +31,10 @@ from bot.router_selector import cleanup_state, nav_set, set_selected_router
 from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
 from core.network_scanner import discover_routers
-from database.models import (
+from database.repositories.audit_logs import log_action
+from database.repositories.routers import (
     get_router_by_ip,
     get_router_display_name,
-    log_action,
     save_discovered_router,
     update_router_credentials,
 )

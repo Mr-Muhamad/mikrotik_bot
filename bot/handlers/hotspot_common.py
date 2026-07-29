@@ -21,7 +21,7 @@ from bot.messages import (
 from bot.router_selector import cleanup_state, get_selected_router
 from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
-from database.models import log_action
+from database.repositories.audit_logs import log_action
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import reply_final, send_step
 from utils.error_response import send_error

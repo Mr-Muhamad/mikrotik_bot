@@ -27,13 +27,14 @@ from bot.messages import (
 from bot.router_selector import cleanup_state, nav_set
 from core.card_models import deserialize_cards
 from core.mikrotik_client import RouterOSRow
-from database.models import (
+from database.repositories.card_batches import (
     get_card_batch,
+    get_card_batches_count,
     get_sales_summary,
     list_card_batches,
+    search_card_batches,
     update_batch_payment,
 )
-from database.repositories.card_batches import search_card_batches
 from database.repositories.pdf_settings import get_pdf_settings
 from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only
@@ -118,8 +119,6 @@ async def _show_batches_page(update: Update, context: ContextTypes.DEFAULT_TYPE,
     page_size = 10
     offset = page * page_size
     try:
-        from database.models import get_card_batches_count
-
         total = await run_blocking(get_card_batches_count, router_key)
         batches = await run_blocking(list_card_batches, router_key, page_size, offset)
     except (ValueError, OSError) as e:

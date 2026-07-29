@@ -56,7 +56,8 @@ from bot.router_selector import (
 from core.card_models import CardData, serialize_cards
 from core.profile_sync import profile_sync
 from core.userman_manager import userman_manager
-from database.models import log_action, save_card_batch
+from database.repositories.audit_logs import log_action
+from database.repositories.card_batches import save_card_batch
 from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking

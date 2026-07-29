@@ -2,7 +2,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from core.mikrotik_client import RouterOSRow
 from core.network_probe import DiscoveredRouter
-from database.models import get_router_display_name
+from database.repositories.routers import get_router_display_name
 from utils.pagination import Paginator
 
 # Type aliases for keyboard construction

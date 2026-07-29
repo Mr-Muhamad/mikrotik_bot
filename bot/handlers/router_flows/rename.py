@@ -15,11 +15,11 @@ from bot.messages import (
 from bot.router_selector import cleanup_state, nav_set
 from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
-from database.models import (
+from database.repositories.audit_logs import log_action
+from database.repositories.routers import (
     get_router_by_id,
     get_router_display_name,
     get_saved_routers,
-    log_action,
     update_router_alias,
 )
 from utils.admin_decorator import admin_only, require_role

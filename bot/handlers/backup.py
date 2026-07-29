@@ -48,7 +48,8 @@ from bot.router_selector import cleanup_state, nav_set, set_current_action
 from core.backup.files import resolve_local_backup_file
 from core.backup_scheduler import backup_scheduler
 from core.backup_service import backup_service
-from database.models import get_backup_schedule, log_action, record_backup_result
+from database.repositories.audit_logs import log_action
+from database.repositories.backups import get_backup_schedule, record_backup_result
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import is_duplicate_callback, safe_answer_callback

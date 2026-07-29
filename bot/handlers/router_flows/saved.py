@@ -31,12 +31,12 @@ from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
 from core.watchdog import check_router_health
-from database.models import (
+from database.repositories.audit_logs import log_action
+from database.repositories.routers import (
     delete_router,
     get_router_by_id,
     get_router_display_name,
     get_saved_routers,
-    log_action,
     update_router_identity,
     update_router_last_seen,
 )

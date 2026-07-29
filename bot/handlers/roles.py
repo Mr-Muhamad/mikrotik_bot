@@ -5,7 +5,8 @@ from telegram import Message, Update
 from telegram.ext import ContextTypes
 
 from config import ADMIN_IDS
-from database.models import list_admin_roles, log_action, set_admin_role
+from database.repositories.admin_roles import list_admin_roles, set_admin_role
+from database.repositories.audit_logs import log_action
 from utils.admin_decorator import ROLE_LABELS, ROLE_LEVELS, admin_only, require_role
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import safe_edit_or_send
@@ -209,7 +210,8 @@ async def assign_router_command(update: Update, context: ContextTypes.DEFAULT_TY
     الاستخدام: /assign_router <operator_id>
     """
     from bot.keyboards import get_operator_router_assignment_keyboard
-    from database.models import get_operator_routers, get_saved_routers
+    from database.repositories.operator_permissions import get_operator_routers
+    from database.repositories.routers import get_saved_routers
 
     parts = (update.message.text or "").split()
     if len(parts) < 2:
@@ -243,8 +245,11 @@ async def assign_router_command(update: Update, context: ContextTypes.DEFAULT_TY
 async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """معالجة callback إسناد راوتر لمشغّل."""
     from bot.keyboards import get_operator_router_assignment_keyboard
-    from database.models import get_operator_routers, get_saved_routers
-    from database.repositories.operator_permissions import assign_router_to_operator
+    from database.repositories.operator_permissions import (
+        assign_router_to_operator,
+        get_operator_routers,
+    )
+    from database.repositories.routers import get_saved_routers
     from utils.callback_utils import safe_answer_callback
 
     query = update.callback_query
@@ -267,7 +272,6 @@ async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAUL
         await send_error(update, context, e, log_extra="op_assign_router")
         return
 
-    # تحديث الـ keyboard
     all_routers = get_saved_routers(active_only=True)
     assigned = get_operator_routers(operator_id)
     keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)
@@ -279,8 +283,11 @@ async def op_assign_router_callback(update: Update, context: ContextTypes.DEFAUL
 async def op_revoke_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """معالجة callback سحب راوتر من مشغّل."""
     from bot.keyboards import get_operator_router_assignment_keyboard
-    from database.models import get_operator_routers, get_saved_routers
-    from database.repositories.operator_permissions import revoke_router_from_operator
+    from database.repositories.operator_permissions import (
+        get_operator_routers,
+        revoke_router_from_operator,
+    )
+    from database.repositories.routers import get_saved_routers
     from utils.callback_utils import safe_answer_callback
 
     query = update.callback_query
@@ -302,7 +309,6 @@ async def op_revoke_router_callback(update: Update, context: ContextTypes.DEFAUL
         await send_error(update, context, e, log_extra="op_revoke_router")
         return
 
-    # تحديث الـ keyboard
     all_routers = get_saved_routers(active_only=True)
     assigned = get_operator_routers(operator_id)
     keyboard = get_operator_router_assignment_keyboard(operator_id, all_routers, assigned)

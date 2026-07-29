@@ -125,7 +125,7 @@ async def _execute_usage_query(
         context.user_data["usage_router"] = router_key
         return WAITING_USAGE_QUERY
 
-    from database.models import log_action
+    from database.repositories.audit_logs import log_action
 
     target_user = str(users[0].get("name", search_term))
     await run_blocking(log_action, "usage_report", target_user, router_key, update.effective_user.id)
@@ -222,7 +222,7 @@ async def usage_select_callback(update: Update, context: ContextTypes.DEFAULT_TY
         return ConversationHandler.END
 
     name = str(selected.get("name", "—"))
-    from database.models import log_action
+    from database.repositories.audit_logs import log_action
     await run_blocking(log_action, "usage_report", name, router_key, update.effective_user.id)
 
     await _show_usage_report(update, context, selected, router_key)

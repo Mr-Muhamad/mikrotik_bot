@@ -16,7 +16,8 @@ from bot.messages import (
 from bot.router_selector import get_selected_router
 from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
-from database.models import get_router_by_id, log_action
+from database.repositories.audit_logs import log_action
+from database.repositories.routers import get_router_by_id
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import is_duplicate_callback, safe_answer_callback

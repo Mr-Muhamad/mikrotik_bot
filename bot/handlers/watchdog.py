@@ -37,7 +37,8 @@ from core.watchdog import (
     get_router_status_detail,
     record_check_result,
 )
-from database.models import get_last_backup, get_saved_routers
+from database.repositories.backups import get_last_backup
+from database.repositories.routers import get_saved_routers
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback

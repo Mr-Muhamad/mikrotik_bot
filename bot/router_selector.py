@@ -12,7 +12,7 @@ from telegram.ext import ContextTypes
 from bot.keyboards import get_router_keyboard
 from bot.messages import NO_ROUTER_SELECTED
 from core.mikrotik_client import RouterOSRow
-from database.models import get_user_session, save_user_session
+from database.repositories.user_sessions import get_user_session, save_user_session
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +175,7 @@ def get_user_routers(user_id: int) -> list[RouterOSRow]:
     - إن لم يملك روترات: قائمة فارغة.
     """
     from config import ADMIN_IDS
-    from database.models import get_saved_routers
+    from database.repositories.routers import get_saved_routers
 
     if user_id in ADMIN_IDS:
         return get_saved_routers(active_only=True)

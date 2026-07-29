@@ -31,7 +31,7 @@ from bot.handlers.router_flows.saved import (
     saved_routers_list,
 )
 from core.network_scanner import discover_routers
-from database.models import get_router_by_ip
+from database.repositories.routers import get_router_by_ip
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import schedule_delete
 
