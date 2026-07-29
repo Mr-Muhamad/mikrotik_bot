@@ -5,7 +5,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.handlers.constants import WAITING_USAGE_QUERY
-from bot.keyboards import get_back_keyboard
+from bot.keyboards import get_back_keyboard, get_cancel_keyboard
 from bot.messages import (
     NO_ROUTER_SELECTED,
     USAGE_BYTES_IN,
@@ -34,7 +34,7 @@ from core.hotspot_manager import hotspot_manager
 from core.mikrotik_client import RouterOSRow
 from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
-from utils.chat_cleaner import send_step
+from utils.chat_cleaner import safe_edit_or_send, send_step
 from utils.error_response import send_error
 from utils.formatters import format_bytes
 
@@ -66,7 +66,10 @@ async def usage_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_step(update, context, NO_ROUTER_SELECTED)
         return ConversationHandler.END
     context.user_data["usage_router"] = router_key
-    await send_step(update, context, USAGE_PROMPT)
+    if query:
+        await safe_edit_or_send(query, context, USAGE_PROMPT, get_cancel_keyboard())
+    else:
+        await send_step(update, context, USAGE_PROMPT, get_cancel_keyboard())
     return WAITING_USAGE_QUERY
 
 
@@ -82,7 +85,7 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         WAITING_USAGE_QUERY if not found, ConversationHandler.END on success.
     """
     search_term = update.message.text.strip()
-    router_key = context.user_data.get("usage_router")
+    router_key = context.user_data.get("usage_router") or get_selected_router(update.effective_user.id)
 
     if not router_key:
         await send_step(update, context, USAGE_NO_ROUTER)
@@ -96,8 +99,12 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
     if not users:
-        await send_step(update, context, USER_NOT_FOUND)
+        await send_step(update, context, USER_NOT_FOUND + "\n\n" + USAGE_PROMPT, get_cancel_keyboard())
         return WAITING_USAGE_QUERY
+
+    from database.models import log_action
+    target_user = str(users[0].get("name", search_term))
+    await run_blocking(log_action, "usage_report", target_user, router_key, update.effective_user.id)
 
     await _show_usage_report(update, context, users[0], router_key)
     return ConversationHandler.END
