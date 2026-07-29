@@ -78,35 +78,7 @@ def get_uptime() -> float:
     return time.time() - _bot_start_time
 
 
-def _append_latency_lines(
-    label: str,
-    description: str,
-    latencies: list[float],
-    lines: list[str],
-) -> None:
-    """Append Prometheus percentile lines for a latency list."""
-    if not latencies:
-        return
-    sorted_vals = sorted(latencies)
-    n = len(sorted_vals)
-    p50 = sorted_vals[int(n * 0.50)]
-    p90 = sorted_vals[int(n * 0.90)]
-    p99 = sorted_vals[min(int(n * 0.99), n - 1)]
-    lines.extend(
-        [
-            "",
-            f"# HELP {label} {description}",
-            f"# TYPE {label} summary",
-            f'{label}{{quantile="0.5"}} {p50:.4f}',
-            f'{label}{{quantile="0.9"}} {p90:.4f}',
-            f'{label}{{quantile="0.99"}} {p99:.4f}',
-            f"{label}_sum {sum(sorted_vals):.4f}",
-            f"{label}_count {n}",
-        ]
-    )
-
-
-def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:
+def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:  # noqa: C901
     """Generate Prometheus metrics in text format."""
     if pool_metrics is None:
         pool_metrics = {}
@@ -133,27 +105,70 @@ def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:
     for router, count in sorted(_mikrotik_requests_total.items()):
         lines.append(f'bot_mikrotik_requests_total{{router="{router}"}} {count}')
 
-    _append_latency_lines(
-        "bot_mikrotik_request_duration_seconds",
-        "MikroTik request latency",
-        _request_latencies,
-        lines,
-    )
-    _append_latency_lines(
-        "bot_mikrotik_api_duration_seconds",
-        "MikroTik API latency",
-        _mikrotik_api_latencies,
-        lines,
-    )
+    # Latency percentiles (simple calculation)
+    if _request_latencies:
+        sorted_latencies = sorted(_request_latencies)
+        n = len(sorted_latencies)
+        p50 = sorted_latencies[int(n * 0.50)]
+        p90 = sorted_latencies[int(n * 0.90)]
+        p99 = sorted_latencies[min(int(n * 0.99), n - 1)]
 
+        lines.extend(
+            [
+                "",
+                "# HELP bot_mikrotik_request_duration_seconds MikroTik request latency",
+                "# TYPE bot_mikrotik_request_duration_seconds summary",
+                f'bot_mikrotik_request_duration_seconds{{quantile="0.5"}} {p50:.4f}',
+                f'bot_mikrotik_request_duration_seconds{{quantile="0.9"}} {p90:.4f}',
+                f'bot_mikrotik_request_duration_seconds{{quantile="0.99"}} {p99:.4f}',
+                f"bot_mikrotik_request_duration_seconds_sum {sum(sorted_latencies):.4f}",
+                f"bot_mikrotik_request_duration_seconds_count {n}",
+            ]
+        )
+
+    # MikroTik API latency percentiles
+    if _mikrotik_api_latencies:
+        sorted_api_latencies = sorted(_mikrotik_api_latencies)
+        n = len(sorted_api_latencies)
+        p50 = sorted_api_latencies[int(n * 0.50)]
+        p90 = sorted_api_latencies[int(n * 0.90)]
+        p99 = sorted_api_latencies[min(int(n * 0.99), n - 1)]
+
+        lines.extend(
+            [
+                "",
+                "# HELP bot_mikrotik_api_duration_seconds MikroTik API latency",
+                "# TYPE bot_mikrotik_api_duration_seconds summary",
+                f'bot_mikrotik_api_duration_seconds{{quantile="0.5"}} {p50:.4f}',
+                f'bot_mikrotik_api_duration_seconds{{quantile="0.9"}} {p90:.4f}',
+                f'bot_mikrotik_api_duration_seconds{{quantile="0.99"}} {p99:.4f}',
+                f"bot_mikrotik_api_duration_seconds_sum {sum(sorted_api_latencies):.4f}",
+                f"bot_mikrotik_api_duration_seconds_count {n}",
+            ]
+        )
+
+    # Backup duration percentiles
     if _backup_latencies:
         backup_durations = [d for _, d in _backup_latencies]
-        _append_latency_lines(
-            "bot_backup_duration_seconds",
-            "Backup operation latency",
-            backup_durations,
-            lines,
-        )
+        if backup_durations:
+            sorted_backup = sorted(backup_durations)
+            n = len(sorted_backup)
+            p50 = sorted_backup[int(n * 0.50)]
+            p90 = sorted_backup[int(n * 0.90)]
+            p99 = sorted_backup[min(int(n * 0.99), n - 1)]
+
+            lines.extend(
+                [
+                    "",
+                    "# HELP bot_backup_duration_seconds Backup operation latency",
+                    "# TYPE bot_backup_duration_seconds summary",
+                    f'bot_backup_duration_seconds{{quantile="0.5"}} {p50:.4f}',
+                    f'bot_backup_duration_seconds{{quantile="0.9"}} {p90:.4f}',
+                    f'bot_backup_duration_seconds{{quantile="0.99"}} {p99:.4f}',
+                    f"bot_backup_duration_seconds_sum {sum(sorted_backup):.4f}",
+                    f"bot_backup_duration_seconds_count {n}",
+                ]
+            )
 
     # Error count by component and category
     lines.extend(

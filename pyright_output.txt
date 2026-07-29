@@ -1,0 +1,62 @@
+d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\connection_pool.py
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\connection_pool.py:96:21 - error: Argument of type "str | int | float | bool | None" cannot be assigned to parameter "router_key" of type "str" in function "log_api_call"
+    Type "str | int | float | bool | None" is not assignable to type "str"
+      "float" is not assignable to "str" (reportArgumentType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\connection_pool.py:109:21 - error: Argument of type "str | int | float | bool | None" cannot be assigned to parameter "router_key" of type "str" in function "log_api_call"
+    Type "str | int | float | bool | None" is not assignable to type "str"
+      "float" is not assignable to "str" (reportArgumentType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\connection_pool.py:125:13 - error: Argument of type "str | int | float | bool | None" cannot be assigned to parameter "router_key" of type "str" in function "log_api_call"
+    Type "str | int | float | bool | None" is not assignable to type "str"
+      "float" is not assignable to "str" (reportArgumentType)
+d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\metrics.py
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\metrics.py:64:30 - error: Argument of type "tuple[str, float]" cannot be assigned to parameter "object" of type "float" in function "append"
+    "tuple[str, float]" is not assignable to "float" (reportArgumentType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\metrics.py:152:43 - error: "float" is not iterable
+    "__iter__" method not defined (reportGeneralTypeIssues)
+d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\mikrotik_api.py
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\core\mikrotik_api.py:258:49 - error: Argument of type "Api" cannot be assigned to parameter "api" of type "_RouterOSApi" in function "_call_command"
+    "Api" is incompatible with protocol "_RouterOSApi"
+      "path" is an incompatible type
+        Type "(*path: str) -> Path" is not assignable to type "(*args: str) -> _RouterOSApiPath"
+          Function return type "Path" is incompatible with type "_RouterOSApiPath"
+            "Path" is incompatible with protocol "_RouterOSApiPath" (reportArgumentType)
+d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\error_response.py
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\error_response.py:314:9 - error: Result of async function call is not used; use "await" or assign result to variable (reportUnusedCoroutine)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\error_response.py:382:17 - error: Argument of type "None" cannot be assigned to parameter "update" of type "Update" in function "send_text"
+    "None" is not assignable to "Update" (reportArgumentType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\error_response.py:382:23 - error: Argument of type "None" cannot be assigned to parameter "context" of type "DEFAULT_TYPE" in function "send_text"
+    "None" is not assignable to "CallbackContext[ExtBot[None], ADict, ADict, ADict]" (reportArgumentType)
+d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\handler_registry.py
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\handler_registry.py:280:32 - error: Type annotation is missing for parameter "update" (reportMissingParameterType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\handler_registry.py:280:40 - error: Type annotation is missing for parameter "context" (reportMissingParameterType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\handler_registry.py:282:26 - error: Object of type "object" is not callable
+    Attribute "__call__" is unknown (reportCallIssue)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\handler_registry.py:352:42 - error: Type annotation is missing for parameter "update" (reportMissingParameterType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\handler_registry.py:352:50 - error: Type annotation is missing for parameter "context" (reportMissingParameterType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\handler_registry.py:357:39 - error: Argument of type "HandlerFunc" cannot be assigned to parameter "callback" of type "HandlerCallback[object, Unknown, None]" in function "add_error_handler"
+    Type "HandlerFunc" is not assignable to type "HandlerCallback[object, Unknown, None]"
+      Function return type "Awaitable[object]" is incompatible with type "Coroutine[Any, Any, None]"
+        "Awaitable[object]" is not assignable to "Coroutine[Any, Any, None]" (reportArgumentType)
+d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\log_helpers.py
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\log_helpers.py:199:55 - error: Argument of type "BaseException" cannot be assigned to parameter "error" of type "Exception" in function "_classify_error"
+    "BaseException" is not assignable to "Exception" (reportArgumentType)
+d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\logging_setup.py
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\logging_setup.py:202:2 - error: No overloads for "contextmanager" match the provided arguments (reportCallIssue)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\logging_setup.py:202:2 - error: Argument of type "(*, component: str | None = None, request_id: str | None = None, trace_id: str | None = None, user_id: int | None = None, chat_id: int | None = None, router_key: str | None = None, command: str | None = None) -> None" cannot be assigned to parameter "func" of type "(**_P@contextmanager) -> Iterator[_T_co@contextmanager]" in function "contextmanager"
+    Type "(*, component: str | None = None, request_id: str | None = None, trace_id: str | None = None, user_id: int | None = None, chat_id: int | None = None, router_key: str | None = None, command: str | None = None) -> None" is not assignable to type "(**_P@contextmanager) -> Iterator[_T_co@contextmanager]"
+      Function return type "None" is incompatible with type "Iterator[_T_co@contextmanager]"
+        "None" is incompatible with protocol "Iterator[_T_co@contextmanager]"
+          "__next__" is not present
+          "__iter__" is not present (reportArgumentType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\logging_setup.py:202:2 - error: Untyped function decorator obscures type of function; ignoring decorator (reportUntypedFunctionDecorator)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\logging_setup.py:212:6 - error: Return type of generator function must be compatible with "Generator[Any, Any, Any]"
+    "Generator[Any, Any, Any]" is not assignable to "None" (reportInvalidTypeForm)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\logging_setup.py:234:9 - error: Return type of generator function must be compatible with "Generator[None, Any, Any]"
+    "Generator[None, Unknown, Unknown]" is not assignable to "None" (reportReturnType)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\logging_setup.py:237:19 - error: Cannot access attribute "reset" for class "object"
+    Attribute "reset" is unknown (reportAttributeAccessIssue)
+d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\request_id.py
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\request_id.py:25:5 - error: Import "get_request_id" is not accessed (reportUnusedImport)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\request_id.py:26:5 - error: Import "get_trace_id" is not accessed (reportUnusedImport)
+  d:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\request_id.py:27:5 - error: Import "new_request_id" is not accessed (reportUnusedImport)
+25 errors, 0 warnings, 0 informations
