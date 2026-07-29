@@ -25,19 +25,18 @@ class TestUsermanBackup:
     @patch(f"{MODULE}.mikrotik_api")
     @patch(f"{MODULE}.sanitize_router_name", return_value="Router1")
     def test_userman_backup_success(
-        self, _sanitize, mock_api, _cleanup_r, _cleanup_l, _makedirs, svc
+        self, _sanitize, mock_api, _cleanup_r, _cleanup_l, _makedirs, svc, tmp_path
     ):
         mock_api.get_router_name.return_value = "Router1"
         mock_api.get_userman_base_path.return_value = "/user-manager"
-        mock_api.download_file_from_router.return_value = True
-
-        result = svc.userman_backup("rk1", backup_root="/b")
+        with patch(f"{MODULE}.download_backup_file", return_value=(True, "http")) as mock_dl:
+            result = svc.userman_backup("rk1", backup_root=str(tmp_path))
 
         assert result["success"] is True
         assert result["downloaded"] == [result["filename"]]
         assert "warning" not in result
         mock_api.execute_long.assert_called_once()
-        mock_api.download_file_from_router.assert_called_once()
+        mock_dl.assert_called_once()
         _cleanup_r.assert_called_once()
         _cleanup_l.assert_called_once()
 
@@ -47,13 +46,12 @@ class TestUsermanBackup:
     @patch(f"{MODULE}.mikrotik_api")
     @patch(f"{MODULE}.sanitize_router_name", return_value="R")
     def test_userman_backup_download_fails_adds_warning(
-        self, _s, mock_api, _cr, _cl, _md, svc
+        self, _s, mock_api, _cr, _cl, _md, svc, tmp_path
     ):
         mock_api.get_router_name.return_value = "R"
         mock_api.get_userman_base_path.return_value = "/um"
-        mock_api.download_file_from_router.return_value = False
-
-        result = svc.userman_backup("rk", backup_root="/b")
+        with patch(f"{MODULE}.download_backup_file", return_value=(False, "")):
+            result = svc.userman_backup("rk", backup_root=str(tmp_path))
 
         assert result["success"] is True
         assert result["downloaded"] == []
@@ -83,14 +81,13 @@ class TestUsermanBackup:
     def test_userman_backup_default_backup_root(self, _s, mock_api, _cr, _cl, _md, svc):
         mock_api.get_router_name.return_value = "R"
         mock_api.get_userman_base_path.return_value = "/um"
-        mock_api.download_file_from_router.return_value = True
-
-        with patch(f"{MODULE}.backup_files") as bf:
-            bf.BACKUP_DIR = "/default"
-            result = svc.userman_backup("rk")
+        with patch(f"{MODULE}.download_backup_file", return_value=(True, "http")):
+            with patch(f"{MODULE}.backup_files") as bf:
+                bf.BACKUP_DIR = "/default"
+                result = svc.userman_backup("rk")
 
         assert result["success"] is True
-        _md.assert_called_once_with(os.path.join("/default", "userman"), exist_ok=True)
+        _md.assert_called_once_with(os.path.join("/default", "R", "userman"), exist_ok=True)
 
     @patch(f"{MODULE}.os.makedirs")
     @patch(f"{MODULE}.cleanup_old_files")
@@ -100,9 +97,9 @@ class TestUsermanBackup:
     def test_userman_backup_cleanup_error_on_partial_file(
         self, _s, mock_api, _cr, _cl, _md, svc, tmp_path
     ):
-        userman_dir = tmp_path / "userman"
-        userman_dir.mkdir()
-        fake_file = userman_dir / f"{PREFIX}R_20260101_000000.umb"
+        rdir = tmp_path / "R" / "userman"
+        rdir.mkdir(parents=True)
+        fake_file = rdir / f"{PREFIX}R_20260101_000000.umb"
         fake_file.write_text("partial")
         mock_api.get_router_name.return_value = "R"
         mock_api.get_userman_base_path.side_effect = Exception("boom")
@@ -222,3 +219,19 @@ class TestListLocalUsermanBackups:
             with patch(f"{MODULE}.os.path.isdir", return_value=False):
                 result = UserManagerBackupService.list_local_userman_backups()
         assert result == []
+
+    def test_list_with_router_key(self, tmp_path):
+        rdir = tmp_path / "MyTestRouter" / "userman"
+        rdir.mkdir(parents=True)
+        (rdir / f"{PREFIX}MyTestRouter_20260101.umb").write_text("x")
+        (rdir / f"{PREFIX}MyTestRouter_20260102.umb").write_text("y")
+        (rdir / "Other_file.txt").write_text("z")
+
+        with patch(f"{MODULE}.mikrotik_api") as mock_api:
+            mock_api.get_router_name.return_value = "MyTestRouter"
+            result = UserManagerBackupService.list_local_userman_backups(
+                router_key="rk_test", backup_root=str(tmp_path)
+            )
+
+        assert len(result) == 2
+        assert all(f["filename"].startswith(PREFIX) for f in result)

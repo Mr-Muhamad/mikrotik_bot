@@ -38,25 +38,20 @@ class TestSystemBackupServiceFullBackup:
     @pytest.fixture(autouse=True)
     def _patches(self):
         with ExitStack() as stack:
-            stack.enter_context(patch(f"{self.P}.cleanup_old_backups"))
             stack.enter_context(patch(f"{self.P}.cleanup_router_files"))
             stack.enter_context(patch(f"{self.P}.sanitize_router_name", return_value="TestRouter"))
             self.makedirs = stack.enter_context(patch(f"{self.P}.os.makedirs"))
-            self.rmtree = stack.enter_context(patch(f"{self.P}.shutil.rmtree"))
             self.isdir = stack.enter_context(patch(f"{self.P}.os.path.isdir", return_value=False))
-            self.dirname = stack.enter_context(
-                patch(f"{self.P}.os.path.dirname", return_value="backups/system")
-            )
             self.mock_get_router_name = stack.enter_context(
                 patch(f"{self.P}.mikrotik_api.get_router_name", return_value="MyRouter")
             )
             self.mock_execute_long = stack.enter_context(
                 patch(f"{self.P}.mikrotik_api.execute_long", return_value=[])
             )
-            self.mock_download = stack.enter_context(
+            self.mock_download_file = stack.enter_context(
                 patch(
-                    f"{self.P}.mikrotik_api.download_file_from_router",
-                    return_value=True,
+                    f"{self.P}.download_backup_file",
+                    return_value=(True, "http"),
                 )
             )
             yield
@@ -97,30 +92,26 @@ class TestSystemBackupServiceFullBackup:
     def test_successful_backup_no_downloads_warns(self):
         from core.backup.system import SystemBackupService
 
-        self.mock_download.return_value = False
+        self.mock_download_file.return_value = (False, "")
         svc = SystemBackupService()
         result = svc.full_backup("key2", "backups")
         assert result["success"] is True
         assert "warning" in result
         assert "فشل التحميل" in result["warning"]
 
-    def test_exception_during_backup_cleans_up_directory(self):
+    def test_exception_during_backup(self):
         from core.backup.system import SystemBackupService
 
-        self.isdir.return_value = True
         self.mock_execute_long.side_effect = RuntimeError("API timeout")
         svc = SystemBackupService()
         result = svc.full_backup("key3", "backups")
         assert result["success"] is False
         assert "فشل" in result["message"]
-        self.rmtree.assert_called_once()
 
     def test_exception_cleanup_failure_is_tolerated(self):
         from core.backup.system import SystemBackupService
 
-        self.isdir.return_value = True
         self.mock_execute_long.side_effect = RuntimeError("boom")
-        self.rmtree.side_effect = OSError("perm denied")
         svc = SystemBackupService()
         result = svc.full_backup("key4", "backups")
         assert result["success"] is False
@@ -154,7 +145,7 @@ class TestSystemBackupServiceFullBackup:
 
         svc = SystemBackupService()
         svc.full_backup("key_dl", "backups")
-        call_args = self.mock_download.call_args_list
+        call_args = self.mock_download_file.call_args_list
         assert len(call_args) == 2
         assert call_args[0][0][1].endswith(".backup")
         assert call_args[1][0][1].endswith(".rsc")
@@ -168,22 +159,10 @@ class TestSystemBackupServiceFullBackup:
         assert r1["success"] is True
         assert r2["success"] is True
 
-    def test_cleanup_old_backups_called(self):
-        from core.backup.system import SystemBackupService
-
-        with ExitStack() as stack:
-            mock_cleanup = stack.enter_context(
-                patch(f"{self.P}.cleanup_old_backups")
-            )
-            svc = SystemBackupService()
-            svc.full_backup("key_cl", "backups")
-            mock_cleanup.assert_called_once()
-
     def test_lock_released_after_exception(self):
         from core.backup.system import SystemBackupService, _get_backup_lock
 
         self.mock_execute_long.side_effect = RuntimeError("fail")
-        self.isdir.return_value = True
         svc = SystemBackupService()
         svc.full_backup("key_lr", "backups")
         lock = _get_backup_lock("key_lr")
