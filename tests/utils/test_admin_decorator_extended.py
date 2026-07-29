@@ -18,6 +18,7 @@ from utils.admin_decorator import (
 @pytest.fixture(autouse=True)
 def _clear_rate_limit():
     _rate_limit_data.clear()
+    _rate_limit_data["_test_enforce_rate_limit"] = True
     yield
     _rate_limit_data.clear()
 

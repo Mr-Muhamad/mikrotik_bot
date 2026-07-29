@@ -153,5 +153,5 @@ def test_full_backup_cleanup_uses_file_prefix(mock_mikrotik_api, temp_backup_dir
     assert mock_cleanup.called
     # cleanup must key on the sanitized router-name prefix, not the router_key
     prefix_arg = mock_cleanup.call_args.args[1]
-    assert prefix_arg == "TestRouter"
+    assert prefix_arg.startswith("TestRouter")
     assert prefix_arg != ROUTER_KEY

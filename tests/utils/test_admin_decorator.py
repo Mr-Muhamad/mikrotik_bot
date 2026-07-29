@@ -39,6 +39,7 @@ def _ctx():
 def _clear_rate_limit():
     """Reset rate limit cache between tests."""
     _rate_limit_data.clear()
+    _rate_limit_data["_test_enforce_rate_limit"] = True
     yield
     _rate_limit_data.clear()
 

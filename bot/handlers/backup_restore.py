@@ -36,6 +36,7 @@ from bot.messages import (
     USERMAN_RESTORE_SUCCESS,
 )
 from bot.router_selector import cleanup_state, get_selected_router, nav_set
+from core.backup.files import resolve_userman_backup_file
 from core.backup_service import (
     backup_restore,
     backup_service,
@@ -268,6 +269,12 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
     if not router_key:
         await query.edit_message_text(ROUTER_NO_CREDENTIALS)
         return ConversationHandler.END
+
+    if not tar_path and tar_filename:
+        try:
+            tar_path = resolve_userman_backup_file(tar_filename)
+        except (ValueError, OSError):
+            tar_path = ""
 
     if not tar_path or not os.path.isfile(tar_path):
         await query.edit_message_text(USERMAN_RESTORE_FAILED.format(error=BACKUP_RESTORE_NOT_FOUND))

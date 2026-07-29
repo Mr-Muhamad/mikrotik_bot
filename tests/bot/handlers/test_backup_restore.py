@@ -639,7 +639,7 @@ class TestUsermanRestoreExecute:
             ),
         ):
             result = await backup_restore_module.userman_restore_execute(update, ctx)
-        assert result is None
+        assert result == END
 
     @pytest.mark.asyncio
     async def test_file_not_found(self):

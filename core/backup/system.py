@@ -7,6 +7,7 @@ from typing import cast
 
 from core.backup import files as backup_files
 from core.backup.files import (
+    cleanup_old_backups,
     cleanup_router_files,
     download_backup_file,
     sanitize_router_name,
@@ -28,28 +29,7 @@ def _get_backup_lock(router_key: str) -> threading.RLock:
         return _BACKUP_LOCKS[router_key]
 
 
-def _cleanup_old_files(directory: str, prefix: str, keep: int = MAX_LOCAL_BACKUPS) -> int:
-    sys_extensions = (".backup", ".rsc")
-    if not os.path.isdir(directory):
-        return 0
-    files = []
-    for entry in os.listdir(directory):
-        full = os.path.join(directory, entry)
-        if os.path.isfile(full) and entry.startswith(prefix) and entry.endswith(sys_extensions):
-            files.append((os.path.getmtime(full), full))
-    if len(files) <= keep:
-        return 0
-    files.sort()
-    deleted = 0
-    for _, path in files[:-keep]:
-        try:
-            os.remove(path)
-            deleted += 1
-        except OSError as e:
-            logger.warning(f"Failed to delete old system backup {path}: {e}")
-    if deleted:
-        logger.info(f"Cleaned up {deleted} old system backup(s) with prefix {prefix} in {directory}")
-    return deleted
+
 
 
 class SystemBackupService:
@@ -104,7 +84,7 @@ class SystemBackupService:
 
             cleanup_router_files(router_key, f"{file_prefix}_")
             cleanup_router_files(router_key, f"{file_prefix}_export_")
-            _cleanup_old_files(backup_dir, f"{file_prefix}_")
+            cleanup_old_backups(backup_dir, f"{file_prefix}_")
 
             warning = ""
             if downloaded:

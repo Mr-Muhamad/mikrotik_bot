@@ -84,8 +84,9 @@ class TestEmptyFilters:
             "admin_label": None,
             "action": None,
             "since_days": None,
+            "search_text": None,
         }
-        assert len(result) == 5
+        assert len(result) == 6
 
 
 class TestGetFilters:

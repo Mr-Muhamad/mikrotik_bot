@@ -256,14 +256,14 @@ class TestGetBatchesKeyboard:
     def test_empty_batches(self):
         m = get_batches_keyboard([], page=0, total=0, page_size=10)
         assert isinstance(m, InlineKeyboardMarkup)
-        # Only the back button row
-        assert _row_count(m) == 1
+        # Search row + back button row
+        assert _row_count(m) == 2
 
     def test_single_page_no_nav(self):
         batches = [{"id": 1, "name": "A", "count": 5}]
         m = get_batches_keyboard(batches, page=0, total=1, page_size=10)
-        # 1 batch row + 1 back row
-        assert _row_count(m) == 2
+        # 1 batch row + 1 search row + 1 back row
+        assert _row_count(m) == 3
         assert "batch_sel:1" in _btns(m)
 
     def test_multi_page_shows_next(self):

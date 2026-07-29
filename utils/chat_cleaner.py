@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 # Type alias for the bot context used across this module
 type _CleanerContext = CallbackContext[ExtBot[None], RouterOSRow, RouterOSRow, RouterOSRow]
 type _Update = Update
-type _CallbackQuery = CallbackQuery
+
 
 DELETE_DELAY = 120  # دقيقتين — وقت مناسب للمستخدم للقراءة والتفاعل
 MAX_TRACKED_MSGS = 200

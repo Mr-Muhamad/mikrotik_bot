@@ -153,9 +153,8 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
 
     if has_console and has_file:
         for handler in root.handlers:
-            if isinstance(handler, logging.StreamHandler) and handler.stream is sys.stdout:
-                if handler.level != level:
-                    handler.setLevel(level)
+            if isinstance(handler, logging.StreamHandler) and handler.stream is sys.stdout and handler.level != level:
+                handler.setLevel(level)
         return
 
     if root.level == logging.NOTSET:
