@@ -105,6 +105,8 @@ class TestReportCommand:
             mock_stats = stack.enter_context(
                 patch(f"{P}.stats_manager")
             )
+            mock_stats.get_hotspot_stats.return_value = {}
+            mock_stats.format_hotspot_stats.return_value = ""
             mock_stats.format_hotspot_usage_report.return_value = (
                 "Report Text"
             )

@@ -54,8 +54,8 @@ from utils.tg_helpers import get_from_user_id
 logger = logging.getLogger(__name__)
 
 
-@require_role("admin")
 @admin_only
+@require_role("admin")
 async def backup_restore_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """List available backups on the selected router."""
     cleanup_state(update.effective_user.id, context.user_data)
@@ -102,8 +102,8 @@ async def backup_restore_start(update: Update, context: ContextTypes.DEFAULT_TYP
     await send_step(update, context, text, keyboard)
 
 
-@require_role("admin")
 @admin_only
+@require_role("admin")
 async def backup_restore_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show confirmation dialog for selected backup."""
     query = update.callback_query
@@ -121,8 +121,8 @@ async def backup_restore_select(update: Update, context: ContextTypes.DEFAULT_TY
     await edit_clean(query, context, text, keyboard)
 
 
-@require_role("admin")
 @admin_only
+@require_role("admin")
 async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Execute backup restore after confirmation."""
     query = update.callback_query
@@ -171,8 +171,8 @@ async def backup_restore_confirm(update: Update, context: ContextTypes.DEFAULT_T
 # ─── USERMAN RESTORE ───────────────────────────────────────────
 
 
-@require_role("admin")
 @admin_only
+@require_role("admin")
 async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """List saved User Manager tar backups for restore."""
     cleanup_state(update.effective_user.id, context.user_data)
@@ -210,8 +210,8 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
     await send_step(update, context, text, keyboard)
 
 
-@require_role("admin")
 @admin_only
+@require_role("admin")
 async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show confirmation dialog for selected userman backup."""
     query = update.callback_query
@@ -248,8 +248,8 @@ def _format_restore_summary(result: RouterOSRow) -> str:
     return "، ".join(parts) if parts else BACKUP_RESTORE_NONE
 
 
-@require_role("admin")
 @admin_only
+@require_role("admin")
 async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Execute User Manager restore from selected tar file."""
     query = update.callback_query

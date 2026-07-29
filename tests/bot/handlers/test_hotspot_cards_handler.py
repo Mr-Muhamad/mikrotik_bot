@@ -10,6 +10,7 @@ from bot.handlers.constants import (
     WAITING_HOTSPOT_CARD_COUNT,
     WAITING_HOTSPOT_CARD_LENGTH,
     WAITING_HOTSPOT_CARD_PREFIX,
+    WAITING_HOTSPOT_CARD_PRICE,
     WAITING_HOTSPOT_CARD_PROFILE,
     WAITING_HOTSPOT_CARD_TYPE,
     WAITING_HOTSPOT_CARD_UPTIME,
@@ -154,7 +155,7 @@ class TestHotspotCardsPrefix:
         u = make_mock_update(user_id=ADMIN_ID, text="guest_")
         c = make_mock_context()
         result = await hotspot_cards_prefix(u, c)
-        assert result == WAITING_HOTSPOT_CARD_TYPE
+        assert result == WAITING_HOTSPOT_CARD_PRICE
         assert c.user_data["hs_card_prefix"] == "guest_"
 
 
@@ -167,7 +168,7 @@ class TestHotspotCardsSkipPrefix:
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_skip_prefix")
         c = make_mock_context()
         result = await hotspot_cards_skip_prefix(u, c)
-        assert result == WAITING_HOTSPOT_CARD_TYPE
+        assert result == WAITING_HOTSPOT_CARD_PRICE
         assert c.user_data["hs_card_prefix"] == ""
 
 
