@@ -47,7 +47,7 @@ from database.models import log_action
 from utils.admin_decorator import admin_only, require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
-from utils.chat_cleaner import edit_clean, send_step
+from utils.chat_cleaner import edit_clean, safe_edit_or_send, send_step
 from utils.error_response import send_error
 from utils.tg_helpers import get_from_user_id
 
@@ -89,7 +89,10 @@ async def backup_restore_start(update: Update, context: ContextTypes.DEFAULT_TYP
 
     if not backups:
         text = BACKUP_RESTORE_NO_BACKUPS
-        await send_step(update, context, text, get_back_keyboard("menu_backup"))
+        if query:
+            await safe_edit_or_send(query, context, text, get_back_keyboard("menu_backup"))
+        else:
+            await send_step(update, context, text, get_back_keyboard("menu_backup"))
         return ConversationHandler.END
 
     context.user_data["restore_backup_list"] = backups
@@ -194,7 +197,10 @@ async def userman_restore_start(update: Update, context: ContextTypes.DEFAULT_TY
 
     if not tar_files:
         text = USERMAN_RESTORE_NO_BACKUPS
-        await send_step(update, context, text, get_back_keyboard("menu_backup"))
+        if query:
+            await safe_edit_or_send(query, context, text, get_back_keyboard("menu_backup"))
+        else:
+            await send_step(update, context, text, get_back_keyboard("menu_backup"))
         return ConversationHandler.END
 
     context.user_data["userman_restore_list"] = tar_files

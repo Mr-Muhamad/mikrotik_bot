@@ -268,10 +268,10 @@ class TestHotspotAddComment:
             "bot.handlers.hotspot_add.execute_add_user",
             new=AsyncMock(return_value=(True, None)),
         ):
-            with patch("bot.handlers.hotspot_add.reply_final", new=AsyncMock()) as mock_reply:
+            with patch("bot.handlers.hotspot_add.send_step", new=AsyncMock()) as mock_send:
                 result = await hotspot_add_comment(u, c)
-        assert result == ConversationHandler.END
-        mock_reply.assert_called_once()
+        assert result == WAITING_USERNAME
+        mock_send.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_duplicate_reprompts_username(self):
@@ -504,7 +504,7 @@ class TestSkipComment:
             new=AsyncMock(return_value=(True, None)),
         ):
             result = await skip_comment(u, c)
-        assert result == ConversationHandler.END
+        assert result == WAITING_USERNAME
 
     @pytest.mark.asyncio
     async def test_skip_duplicate(self):

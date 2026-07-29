@@ -7,7 +7,10 @@ re-exports these repositories at import time).
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC
+
+logger = logging.getLogger(__name__)
 
 _LogRow = dict[str, str | int | float | bytes | None]
 
