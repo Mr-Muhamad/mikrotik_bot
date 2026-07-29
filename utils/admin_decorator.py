@@ -113,8 +113,12 @@ def admin_only(func: Callable[..., Awaitable[object]]):
         if _is_group_chat(update):
             return
 
-        from bot.router_selector import get_selected_router
-        router_key = get_selected_router(user_id) or "None"
+        from utils.request_id import request_id_scope
+
+        rid = str(getattr(update, "update_id", None) or f"req_{int(time.time()*1000)}")
+        with request_id_scope(rid):
+            from bot.router_selector import get_selected_router
+            router_key = get_selected_router(user_id) or "None"
 
         if update.callback_query:
             logger.info(
