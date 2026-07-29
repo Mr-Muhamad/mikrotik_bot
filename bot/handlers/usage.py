@@ -66,6 +66,13 @@ async def usage_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await send_step(update, context, NO_ROUTER_SELECTED)
         return ConversationHandler.END
     context.user_data["usage_router"] = router_key
+
+    # Check if a search query parameter was passed with command (e.g. /usage my_user)
+    if context.args:
+        search_term = " ".join(context.args).strip()
+        if search_term:
+            return await _execute_usage_query(update, context, search_term, router_key)
+
     if query:
         await safe_edit_or_send(query, context, USAGE_PROMPT, get_cancel_keyboard())
     else:
@@ -86,7 +93,15 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     search_term = update.message.text.strip()
     router_key = context.user_data.get("usage_router") or get_selected_router(update.effective_user.id)
+    return await _execute_usage_query(update, context, search_term, router_key)
 
+
+async def _execute_usage_query(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    search_term: str,
+    router_key: str | None,
+) -> int:
     if not router_key:
         await send_step(update, context, USAGE_NO_ROUTER)
         return ConversationHandler.END
@@ -103,6 +118,7 @@ async def usage_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return WAITING_USAGE_QUERY
 
     from database.models import log_action
+
     target_user = str(users[0].get("name", search_term))
     await run_blocking(log_action, "usage_report", target_user, router_key, update.effective_user.id)
 
