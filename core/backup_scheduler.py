@@ -137,7 +137,7 @@ class BackupScheduler:
         from config import ADMIN_IDS, ROUTER_KEY_PREFIX
         from core.hotspot_manager import hotspot_manager
         from core.messages_expiry import EXPIRY_ALERT_HEADER, EXPIRY_ALERT_USER_ROW
-        from database.models import get_saved_routers
+        from database.models import get_saved_routers, log_action
 
         routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
         days = 3
@@ -177,12 +177,13 @@ class BackupScheduler:
                         f"Failed to notify admin {admin_id} about expiry "
                         f"(error type: {type(e).__name__}): {e}"
                     )
+            log_action("expiry_check_alert", "", router_name, 0)
 
     async def _do_stats_snapshot(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
         """حفظ snapshot يومي لإحصائيات كل راوتر في قاعدة البيانات."""
         from config import ROUTER_KEY_PREFIX
         from core.stats import stats_manager
-        from database.models import get_saved_routers
+        from database.models import get_saved_routers, log_action
         from database.repositories.stats_snapshots import save_snapshot
 
         routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
@@ -190,6 +191,7 @@ class BackupScheduler:
             if not r.get("username"):
                 continue
             router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+            router_name = str(r.get("identity", router_key))
             try:
                 raw = await run_blocking(stats_manager.get_hotspot_stats, router_key)
                 if not raw:
@@ -202,6 +204,7 @@ class BackupScheduler:
                 }
                 await run_blocking(save_snapshot, router_key, snapshot_data)
                 logger.info(f"Stats snapshot saved for {router_key}")
+                log_action("stats_snapshot", "", router_name, 0)
             except Exception as e:  # noqa: BLE001
                 logger.warning(
                     f"Stats snapshot failed for {router_key} "

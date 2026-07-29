@@ -404,8 +404,14 @@ async def go_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ConversationHandler.END.
     """
     query = update.callback_query
-    await safe_answer_callback(query)
-    target = nav_get(context)
-    handler = resolve_nav_target(target)
-    await handler(update, context)
+    if query:
+        await safe_answer_callback(query)
+    try:
+        cleanup_state(update.effective_user.id, context.user_data)
+        target = nav_get(context)
+        handler = resolve_nav_target(target)
+        await handler(update, context)
+    except Exception as e:
+        logger.error(f"go_back navigation error: {e}", exc_info=True)
+        await internal_main_menu(update, context)
     return ConversationHandler.END

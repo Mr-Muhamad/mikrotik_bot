@@ -12,7 +12,7 @@ from librouteros.exceptions import LibRouterosError
 from config import DEFAULT_API_PORT, FILE_SERVER_PORT, FILE_SERVER_SECRET, ROUTER_KEY_PREFIX
 from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
-from database.models import get_router_by_id, get_router_display_name
+from database.models import get_router_by_id, get_router_display_name, log_action
 
 logger = logging.getLogger(__name__)
 
@@ -254,11 +254,17 @@ class MikrotikAPI:
 
     def execute(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse:
         """الأمر العادي — مهلة 30 ثانية، يعيد المحاولة عند الخطأ."""
-        return self._execute_with_retry(router_key, command, API_TIMEOUT, **kwargs)
+        result = self._execute_with_retry(router_key, command, API_TIMEOUT, **kwargs)
+        router_name = self.get_router_name(router_key)
+        log_action(command, "", router_name, 0)
+        return result
 
     def execute_long(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse:
         """أمر طويل — مهلة 120 ثانية، يعيد المحاولة عند الخطأ."""
-        return self._execute_with_retry(router_key, command, LONG_TIMEOUT, **kwargs)
+        result = self._execute_with_retry(router_key, command, LONG_TIMEOUT, **kwargs)
+        router_name = self.get_router_name(router_key)
+        log_action(command, "", router_name, 0)
+        return result
 
     def execute_non_blocking(self, router_key: str, command: str, **kwargs: object) -> None:
         """أمر غير متزامن — لا يعيد المحاولة، يسجل الخطأ ويتجاوزه."""
@@ -267,6 +273,8 @@ class MikrotikAPI:
                 self._debug_log("execute_non_blocking", command, kwargs)
                 self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
                 logger.info(f"Non-blocking command sent: {command}")
+                router_name = self.get_router_name(router_key)
+                log_action(command, "", router_name, 0)
         except Exception as e:  # noqa: BLE001
             logger.info(
                 f"Non-blocking command failed "
