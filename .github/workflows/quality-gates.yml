@@ -24,6 +24,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      - name: Create Dummy .env for CI
+        run: |
+          echo "BOT_TOKEN=ci_dummy_token" > .env
+          echo "ADMIN_IDS=123456" >> .env
+          echo "ENCRYPTION_KEY=MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=" >> .env
+
       - name: Ruff
         run: ruff check .
 

@@ -20,3 +20,5 @@ fonts/*.ttf
 logs/
 scratch/
 scripts/Activate.ps1/
+node_modules/
+
