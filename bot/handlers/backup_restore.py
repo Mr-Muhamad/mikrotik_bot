@@ -19,7 +19,6 @@ from bot.messages import (
     BACKUP_RESTORE_CONFIRM,
     BACKUP_RESTORE_FAILED,
     BACKUP_RESTORE_IN_PROGRESS,
-    BACKUP_RESTORE_INVALID_NAME,
     BACKUP_RESTORE_NO_BACKUPS,
     BACKUP_RESTORE_NONE,
     BACKUP_RESTORE_NOT_FOUND,
@@ -40,7 +39,6 @@ from bot.router_selector import cleanup_state, get_selected_router, nav_set
 from core.backup_service import (
     backup_restore,
     backup_service,
-    resolve_userman_backup_file,
 )
 from core.mikrotik_client import RouterOSRow
 from database.models import log_action

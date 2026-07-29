@@ -480,6 +480,9 @@ BACKUP_DL_NOT_LOCAL = "⚠️ الملف غير موجود محلياً"
 BACKUP_DL_TOO_LARGE = "⚠️ الملف كبير جداً للإرسال عبر تليجرام (أكبر من 50MB)"
 BACKUP_DL_SEND_FAIL = "❌ فشل إرسال الملف"
 BACKUP_DL_SEND_SUCCESS = "✅ تم إرسال الملف"
+BACKUP_DL_FTP_FALLBACK = "📡 تم التحميل عبر FTP (قد يكون أبطأ)"
+BACKUP_DL_NO_BOT_HOST = "⚠️ BOT_HOST غير مضبوط في ملف .env\nالنسخة ما زالت على الراوتر، يمكن استعادتها لاحقاً"
+BACKUP_DL_DOWNLOAD_HINT = "\n\n📥 استخدم الأزرار أدناه لتحميل الملفات:"
 
 # ─── AUDIT STRINGS ──────────────────────────────────────────────
 AUDIT_SUBMENU_ROUTER = "🔍 اختر الراوتر"

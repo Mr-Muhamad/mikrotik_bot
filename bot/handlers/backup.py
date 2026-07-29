@@ -7,6 +7,7 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.handlers.handler_utils import get_query_message
 from bot.keyboards import (
+    get_backup_download_keyboard,
     get_backup_keyboard,
     get_nav_back_keyboard,
     get_schedule_keyboard,
@@ -14,6 +15,8 @@ from bot.keyboards import (
 from bot.messages import (
     BACKUP_ALREADY_IN_PROGRESS,
     BACKUP_BACKGROUND_NOTIFY,
+    BACKUP_DL_DOWNLOAD_HINT,
+    BACKUP_DL_FTP_FALLBACK,
     BACKUP_DL_INVALID_LINK,
     BACKUP_DL_NOT_LOCAL,
     BACKUP_DL_SEND_FAIL,
@@ -42,7 +45,7 @@ from bot.messages import (
 )
 from bot.router_selector import cleanup_state, nav_set, set_current_action
 from config import BACKUP_DIR
-from core.backup.files import resolve_local_backup_file, resolve_userman_backup_file
+from core.backup.files import resolve_local_backup_file
 from core.backup_scheduler import backup_scheduler
 from core.backup_service import backup_service
 from database.models import get_backup_schedule, log_action, record_backup_result
@@ -101,14 +104,35 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
             if result["success"]:
                 downloaded_raw = result.get("downloaded", [])
                 downloaded = cast(list[str], downloaded_raw)
+                created_files = cast(list[str], result.get("created_files", []))
+                local_path = str(result.get("local_path", ""))
+                warning = str(result.get("warning", ""))
+
                 lines = [BACKUP_SUCCESS_FULL.format(message=result["message"])]
                 if downloaded:
                     lines.append(BACKUP_DOWNLOADED_LOCAL.format(count=len(downloaded)))
-                else:
+                if warning:
+                    lines.append(warning)
+                if not downloaded and created_files:
                     lines.append(BACKUP_ONLY_ON_ROUTER)
 
                 text = "\n".join(lines)
-                await context.bot.send_message(chat_id=chat_id, text=text)
+
+                user_data = context.application.user_data
+                if user_id in user_data:
+                    user_data[user_id]["backup_downloaded_list"] = downloaded or created_files
+                    user_data[user_id]["backup_local_path"] = local_path
+
+                reply_markup = None
+                if downloaded or created_files:
+                    text += BACKUP_DL_DOWNLOAD_HINT
+                    reply_markup = get_backup_download_keyboard(
+                        downloaded or created_files, "full", local_path
+                    )
+
+                await context.bot.send_message(
+                    chat_id=chat_id, text=text, reply_markup=reply_markup
+                )
                 logger.info(f"Background full backup succeeded for router {router_key}")
             else:
                 await context.bot.send_message(
@@ -128,12 +152,37 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                 file_name=result.get("filename", ""),
             )
             if result["success"]:
+                downloaded_raw = result.get("downloaded", [])
+                downloaded = cast(list[str], downloaded_raw)
+                created_files = cast(list[str], result.get("created_files", []))
+                local_path = str(result.get("local_path", ""))
+                warning = str(result.get("warning", ""))
                 filename = result.get("filename", "backup.tar")
+
                 lines = [
                     BACKUP_SUCCESS_USERMAN.format(message=result["message"]),
                     f"📦 {filename}",
                 ]
-                await context.bot.send_message(chat_id=chat_id, text="\n".join(lines))
+                if warning:
+                    lines.append(warning)
+
+                text = "\n".join(lines)
+
+                user_data = context.application.user_data
+                if user_id in user_data:
+                    user_data[user_id]["backup_downloaded_list"] = downloaded or created_files
+                    user_data[user_id]["backup_local_path"] = local_path
+
+                reply_markup = None
+                if downloaded or created_files:
+                    text += BACKUP_DL_DOWNLOAD_HINT
+                    reply_markup = get_backup_download_keyboard(
+                        downloaded or created_files, "userman", local_path
+                    )
+
+                await context.bot.send_message(
+                    chat_id=chat_id, text=text, reply_markup=reply_markup
+                )
                 logger.info(f"Background userman backup succeeded for router {router_key}")
             else:
                 await context.bot.send_message(
@@ -395,10 +444,8 @@ async def backup_download_file(update: Update, context: ContextTypes.DEFAULT_TYP
 
     local_path = context.user_data.get("backup_local_path", "")
     try:
-        if backup_type == "full":
+        if backup_type in ("full", "userman"):
             fpath = resolve_local_backup_file(local_path, fname)
-        elif backup_type == "userman":
-            fpath = resolve_userman_backup_file(fname, BACKUP_DIR)
         else:
             await query.answer(BACKUP_DL_UNKNOWN_TYPE, show_alert=True)
             return
