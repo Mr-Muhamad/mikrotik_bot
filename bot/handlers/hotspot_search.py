@@ -1,6 +1,5 @@
 import logging
 
-from librouteros.exceptions import LibRouterosError
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -41,7 +40,6 @@ from bot.router_selector import (
     nav_set,
     set_current_action,
 )
-from core.exceptions import MikrotikBotError
 from core.hotspot_manager import hotspot_manager
 from core.mikrotik_client import RouterOSRow
 from utils.admin_decorator import admin_only
@@ -179,7 +177,7 @@ async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFA
 async def _search_users(router_key: str, term: str) -> list[RouterOSRow]:
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, term)
-    except (LibRouterosError, OSError, MikrotikBotError):
+    except Exception:  # noqa: BLE001
         return []
     return [
         {
@@ -205,7 +203,7 @@ async def _search_hosts_by_field(router_key: str, field: str, value: str) -> lis
     """
     try:
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, value)
-    except (LibRouterosError, OSError, MikrotikBotError):
+    except Exception:  # noqa: BLE001
         return []
     value = value.lower().strip()
     return [h for h in hosts if value in str(h.get(field) or "").lower()]
