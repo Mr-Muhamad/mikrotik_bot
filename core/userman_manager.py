@@ -7,7 +7,6 @@ from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
-from database.models import log_action
 from utils.validators import sanitize_comment
 
 _CARD_TYPE_MAP = {
@@ -17,6 +16,13 @@ _CARD_TYPE_MAP = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+def _log_um_action(action: str, username: str, router_name: str, admin_id: int) -> None:
+    """Lazy-import wrapper for log_action to avoid circular imports."""
+    from database.models import log_action  # noqa: PLC0415
+
+    log_action(action, username, router_name, admin_id)
 
 
 class UserManager:
@@ -156,7 +162,7 @@ class UserManager:
             f"Created {len(cards)}/{count} User Manager cards on {router_key} (type: {card_system.name}, profile: {profile})"  # noqa: E501
         )
         router_name = mikrotik_api.get_router_name(router_key)
-        log_action("create_userman_cards", "", router_name, 0)
+        _log_um_action("create_userman_cards", "", router_name, 0)
         return cards
 
     def _create_user(
@@ -204,7 +210,7 @@ class UserManager:
         # Create the account first, never bundling the profile into the add call.
         self._api.execute(router_key, f"{base_path}/user/add", **add_params)
         router_name = mikrotik_api.get_router_name(router_key)
-        log_action("userman_user_create", username, router_name, 0)
+        _log_um_action("userman_user_create", username, router_name, 0)
 
         if not profile:
             return {
@@ -368,7 +374,7 @@ class UserManager:
             router_key, f"{base_path}/user/set", **{".id": uid, "caller-id": caller_id}
         )
         router_name = mikrotik_api.get_router_name(router_key)
-        log_action("userman_set_caller_id", username, router_name, 0)
+        _log_um_action("userman_set_caller_id", username, router_name, 0)
         logger.info(f"Set caller-id '{caller_id}' for user '{username}' on {router_key}")
 
     def list_users(self, router_key: str, limit: int = 50) -> RouterOSResponse:
@@ -447,7 +453,7 @@ class UserManager:
             raise ValueError(f"User '{username}' not found")
         result = self._api.execute(router_key, f"{base_path}/user/remove", **{".id": uid})
         router_name = mikrotik_api.get_router_name(router_key)
-        log_action("userman_user_delete", username, router_name, 0)
+        _log_um_action("userman_user_delete", username, router_name, 0)
         logger.info(f"Deleted User Manager user '{username}' on {router_key}")
         return result
 
@@ -459,7 +465,7 @@ class UserManager:
             raise ValueError(f"User '{username}' not found")
         result = self._api.execute(router_key, f"{base_path}/user/enable", **{".id": uid})
         router_name = mikrotik_api.get_router_name(router_key)
-        log_action("userman_user_enable", username, router_name, 0)
+        _log_um_action("userman_user_enable", username, router_name, 0)
         logger.info(f"Enabled User Manager user '{username}' on {router_key}")
         return result
 
@@ -471,7 +477,7 @@ class UserManager:
             raise ValueError(f"User '{username}' not found")
         result = self._api.execute(router_key, f"{base_path}/user/disable", **{".id": uid})
         router_name = mikrotik_api.get_router_name(router_key)
-        log_action("userman_user_disable", username, router_name, 0)
+        _log_um_action("userman_user_disable", username, router_name, 0)
         logger.info(f"Disabled User Manager user '{username}' on {router_key}")
         return result
 
@@ -490,7 +496,7 @@ class UserManager:
             result = self._api.execute(
                 router_key, f"{base_path}/user/reset-counters", **{".id": uid}
             )
-        log_action("userman_reset_counters", username, mikrotik_api.get_router_name(router_key), 0)
+        _log_um_action("userman_reset_counters", username, mikrotik_api.get_router_name(router_key), 0)
         logger.info(f"Reset counters for User Manager user '{username}' on {router_key}")
         return result
 
@@ -525,7 +531,7 @@ class UserManager:
             router_key, f"{base_path}/session/remove", numbers=session_id
         )
         router_name = mikrotik_api.get_router_name(router_key)
-        log_action("userman_terminate_session", session_id, router_name, 0)
+        _log_um_action("userman_terminate_session", session_id, router_name, 0)
         logger.info(f"Terminated User Manager session '{session_id}' on {router_key}")
         return result
 

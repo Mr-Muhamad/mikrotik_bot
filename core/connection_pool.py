@@ -11,7 +11,6 @@ from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.cache import TTLCache
 from core.exceptions import RouterNotFoundError
 from core.mikrotik_client import RouterOSRow
-from database.models import get_router_by_id
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +49,11 @@ class ConnectionPool:
     def get_router_info(self, router_key: str) -> RouterOSRow:
         if router_key.startswith(ROUTER_KEY_PREFIX):
             db_id = router_key.replace(ROUTER_KEY_PREFIX, "")
+            # Lazy import to break circular chain: database.models →
+            # utils.crypto → utils.chat_cleaner → core.mikrotik_client →
+            # core.__init__ → core.backup_service → ... → here
+            from database.models import get_router_by_id  # noqa: PLC0415
+
             router_cfg = get_router_by_id(int(db_id))
             if not router_cfg:
                 raise RouterNotFoundError(f"Discovered router #{db_id} not found in database")
