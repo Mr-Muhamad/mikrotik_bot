@@ -1,6 +1,6 @@
 import re
 from functools import lru_cache
-from typing import cast
+from typing import Any, cast
 
 from core.mikrotik_client import RouterOSRow
 
@@ -88,6 +88,19 @@ SENSITIVE_API_FIELDS = frozenset(
     }
 )
 
+_SENSITIVE_LOG_KEYWORDS = frozenset(
+    {
+        "password",
+        "secret",
+        "token",
+        "key",
+        "credential",
+        "auth",
+        "bearer",
+        "apikey",
+    }
+)
+
 
 def sanitize_api_response(response: list[RouterOSRow]) -> list[RouterOSRow]:
     """Remove sensitive fields from MikroTik API responses for safe logging."""
@@ -97,6 +110,26 @@ def sanitize_api_response(response: list[RouterOSRow]) -> list[RouterOSRow]:
         {k: ("***" if k in SENSITIVE_API_FIELDS else v) for k, v in item.items()}
         for item in response
     ]
+
+
+def sanitize_log_data(data: Any, max_depth: int = 3) -> Any:
+    """Recursively sanitize sensitive data from log context fields.
+
+    Masks values for keys matching sensitive patterns to prevent credentials,
+    tokens, and keys from leaking into structured logs.
+    """
+    if max_depth <= 0:
+        return "***"
+    if isinstance(data, dict):
+        return {
+            k: ("***" if any(kw in k.lower() for kw in _SENSITIVE_LOG_KEYWORDS) else sanitize_log_data(v, max_depth - 1))
+            for k, v in data.items()
+        }
+    if isinstance(data, (list, tuple)):
+        return [sanitize_log_data(item, max_depth - 1) for item in data]
+    if isinstance(data, str) and len(data) > 200:
+        return data[:200] + "..."
+    return data
 
 
 def format_user_list(users: list[RouterOSRow], max_items: int = 20) -> str:

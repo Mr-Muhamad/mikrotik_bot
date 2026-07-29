@@ -16,7 +16,7 @@ from core.backup_scheduler import backup_scheduler
 from core.mikrotik_api import mikrotik_api
 from database.models import init_db
 from utils.bot_commands import set_bot_commands
-from utils.logging_setup import configure_logging
+from utils.logging_setup import COMPONENT_SYSTEM, bind_component, configure_logging
 from utils.singleton_lock import single_instance
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 async def post_init(app: Application) -> None:  # type: ignore[reportMissingTypeArgument]
-    await set_bot_commands(app)
+    with bind_component(COMPONENT_SYSTEM):
+        await set_bot_commands(app)
     # استعادة حالة الـ watchdog من DB قبل بدء الجدولة
     from core.watchdog import load_status_from_db
 
@@ -110,23 +111,26 @@ def main():
 
         # Run polling with shutdown support
         async def run_with_shutdown():
-            assert application.updater is not None, "Updater was not initialized by PTB"
-            updater = application.updater
-            try:
-                await application.initialize()
-                await application.start()
-                await updater.start_polling()
-                await shutdown_event.wait()
-                logger.info("Shutting down polling...")
-            finally:
-                from core.backup.file_server import stop_file_server
+            from utils.logging_setup import COMPONENT_SYSTEM, bind_component
 
-                stop_file_server()
-                await updater.stop()
-                await application.stop()
-                await application.shutdown()
-                mikrotik_api.close()
-                logger.info("Graceful shutdown complete")
+            with bind_component(COMPONENT_SYSTEM):
+                assert application.updater is not None, "Updater was not initialized by PTB"
+                updater = application.updater
+                try:
+                    await application.initialize()
+                    await application.start()
+                    await updater.start_polling()
+                    await shutdown_event.wait()
+                    logger.info("Shutting down polling...")
+                finally:
+                    from core.backup.file_server import stop_file_server
+
+                    stop_file_server()
+                    await updater.stop()
+                    await application.stop()
+                    await application.shutdown()
+                    mikrotik_api.close()
+                    logger.info("Graceful shutdown complete")
 
         try:
             asyncio.run(run_with_shutdown())

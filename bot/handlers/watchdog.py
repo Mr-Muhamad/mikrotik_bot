@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import time
 from collections.abc import Mapping
 from datetime import datetime
 
@@ -43,6 +44,8 @@ from utils.admin_decorator import admin_only
 from utils.async_blocking import run_blocking
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import safe_edit_or_send, send_step
+from utils.logging_setup import COMPONENT_SERVICE, bind_component
+from utils.request_id import bind_request_id, bind_trace_id, new_request_id, new_trace_id
 
 logger = logging.getLogger(__name__)
 
@@ -210,35 +213,67 @@ async def _reply(
 
 async def _check_all_routers(context: ContextTypes.DEFAULT_TYPE):
     """Periodic job: check all saved routers concurrently and send alerts."""
-    import asyncio
+    trace_id = new_trace_id()
+    request_id = new_request_id()
+    with bind_trace_id(trace_id):
+        with bind_request_id(request_id):
+            with bind_component(COMPONENT_SERVICE):
+                routers = await run_blocking(get_saved_routers, active_only=True)
+                if not routers:
+                    return
 
-    routers = await run_blocking(get_saved_routers, active_only=True)
-    if not routers:
-        return
+                start = time.monotonic()
+                results = await asyncio.gather(
+                    *[_check_single(r, context) for r in routers],
+                    return_exceptions=True,
+                )
+                duration_ms = (time.monotonic() - start) * 1000
+                online_count = sum(1 for r in results if isinstance(r, bool) and r)
+                offline_count = sum(1 for r in results if isinstance(r, bool) and not r)
+                error_count = sum(1 for r in results if not isinstance(r, bool))
+                logger.info(
+                    "Watchdog check complete: %d routers, %d online, %d offline, %d errors, %.1fms",
+                    len(routers),
+                    online_count,
+                    offline_count,
+                    error_count,
+                    duration_ms,
+                    extra={
+                        "component": COMPONENT_SERVICE,
+                        "request_id": request_id,
+                        "trace_id": trace_id,
+                        "success": error_count == 0,
+                        "duration_ms": duration_ms,
+                    },
+                )
 
-    async def _check_single(r: RouterOSRow) -> None:
-        if not r.get("username"):
-            return
 
-        router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
-        identity = r.get("identity", router_key)
+async def _check_single(r: RouterOSRow, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Check a single router's health and send alerts on status change."""
+    if not r.get("username"):
+        return False
 
-        try:
-            result = await run_blocking(check_router_health, router_key)
-            is_online = bool(result["online"])
-        except (LibRouterosError, OSError) as e:
-            logger.error(f"Watchdog check failed for {router_key}: {e}")
-            is_online = False
+    router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+    identity = r.get("identity", router_key)
 
-        action = record_check_result(router_key, is_online)
-        if action == ALERT_WENT_OFFLINE:
-            await _notify_admins(context, WATCHDOG_OFFLINE_ALERT.format(identity=identity))
-            logger.warning(f"Router {identity} went offline")
-        elif action == ALERT_RECOVERED:
-            await _notify_admins(context, WATCHDOG_ONLINE_ALERT.format(identity=identity))
-            logger.info(f"Router {identity} recovered")
+    try:
+        result = await run_blocking(check_router_health, router_key)
+        is_online = bool(result["online"])
+    except (LibRouterosError, OSError) as e:
+        logger.error(
+            f"Watchdog check failed for {router_key}: {e}",
+            extra={"component": COMPONENT_SERVICE},
+        )
+        return False
 
-    await asyncio.gather(*[_check_single(r) for r in routers])
+    action = record_check_result(router_key, is_online)
+    if action == ALERT_WENT_OFFLINE:
+        await _notify_admins(context, WATCHDOG_OFFLINE_ALERT.format(identity=identity))
+        logger.warning(f"Router {identity} went offline", extra={"component": COMPONENT_SERVICE})
+    elif action == ALERT_RECOVERED:
+        await _notify_admins(context, WATCHDOG_ONLINE_ALERT.format(identity=identity))
+        logger.info(f"Router {identity} recovered", extra={"component": COMPONENT_SERVICE})
+    return is_online
 
 
 async def _notify_admins(context: ContextTypes.DEFAULT_TYPE, text: str):

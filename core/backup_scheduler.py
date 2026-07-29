@@ -5,6 +5,8 @@ from telegram.ext import CallbackContext, JobQueue
 
 from core.mikrotik_client import RouterOSRow
 from utils.async_blocking import run_blocking
+from utils.logging_setup import COMPONENT_BACKUP, bind_component, new_request_id
+from utils.request_id import bind_request_id, bind_trace_id
 
 logger = logging.getLogger(__name__)
 
@@ -26,111 +28,145 @@ class BackupScheduler:
         from core.mikrotik_api import mikrotik_api
         from database.models import record_backup_result
 
-        is_healthy, health_msg = await run_blocking(
-            mikrotik_api.check_connection_health, router_key
-        )
-        if not is_healthy:
-            logger.warning(f"Router {router_key} is not healthy ({health_msg}), skipping backup")
-            failed_routers.append(str(r.get("identity", router_key)) + " (غير متصل)")
-            return
+        trace_id = new_request_id()
+        with bind_trace_id(trace_id):
+            with bind_component(COMPONENT_BACKUP):
+                is_healthy, health_msg = await run_blocking(
+                    mikrotik_api.check_connection_health, router_key
+                )
+                if not is_healthy:
+                    logger.warning(
+                        "Router %s is not healthy (%s), skipping backup",
+                        router_key,
+                        health_msg,
+                    )
+                    failed_routers.append(str(r.get("identity", router_key)) + " (غير متصل)")
+                    return
 
-        router_name = str(r.get("identity", router_key))
-        try:
-            await run_blocking(backup_service.userman_backup, router_key)
-            successful_routers.append(router_name)
-            await run_blocking(
-                record_backup_result,
-                router_key,
-                "userman",
-                True,
-                "scheduled backup ok",
-                router_name=router_name,
-            )
-            logger.info(f"Scheduled backup done for {router_key}")
-        except Exception as e:  # noqa: BLE001
-            logger.error(
-                f"Scheduled backup failed for {router_key} in _run_daily_backup "
-                f"(error type: {type(e).__name__}): {e}",
-                exc_info=True,
-            )
-            failed_routers.append(str(router_name))
-            await run_blocking(
-                record_backup_result,
-                router_key,
-                "userman",
-                False,
-                str(e),
-                router_name=router_name,
-            )
+                router_name = str(r.get("identity", router_key))
+                um_start = datetime.utcnow()
+                try:
+                    await run_blocking(backup_service.userman_backup, router_key)
+                    um_duration = (datetime.utcnow() - um_start).total_seconds() * 1000
+                    successful_routers.append(router_name)
+                    await run_blocking(
+                        record_backup_result,
+                        router_key,
+                        "userman",
+                        True,
+                        "scheduled backup ok",
+                        router_name=router_name,
+                    )
+                    logger.info("Scheduled backup done for %s", router_key)
+                except Exception as e:  # noqa: BLE001
+                    um_duration = (datetime.utcnow() - um_start).total_seconds() * 1000
+                    logger.error(
+                        "Scheduled backup failed for %s in _run_daily_backup "
+                        "(error type: %s): %s",
+                        router_key,
+                        type(e).__name__,
+                        e,
+                        extra={"component": COMPONENT_BACKUP},
+                    )
+                    failed_routers.append(str(router_name))
+                    await run_blocking(
+                        record_backup_result,
+                        router_key,
+                        "userman",
+                        False,
+                        str(e),
+                        router_name=router_name,
+                    )
 
-        try:
-            full_result = await run_blocking(backup_service.full_backup, router_key)
-        except Exception as e:  # noqa: BLE001
-            logger.error(
-                f"Scheduled full backup failed for {router_key} in _run_daily_backup "
-                f"(error type: {type(e).__name__}): {e}",
-                exc_info=True,
-            )
-            failed_routers.append(f"{router_name} (باكوب كامل)")
-            await run_blocking(
-                record_backup_result,
-                router_key,
-                "full",
-                False,
-                str(e),
-                router_name=router_name,
-            )
-        else:
-            success = full_result.get("success")
-            default_msg = "scheduled full backup failed"
-            msg = (
-                full_result.get("message", default_msg)
-                if not success
-                else "scheduled full backup ok"
-            )
-            if not success:
-                logger.error(f"Scheduled full backup failed for {router_key}: {msg}")
-                failed_routers.append(f"{router_name} (باكوب كامل)")
-            else:
-                logger.info(f"Scheduled full backup done for {router_key}")
-            await run_blocking(
-                record_backup_result,
-                router_key,
-                "full",
-                success,
-                str(msg),
-                router_name=router_name,
-            )
+                full_start = datetime.utcnow()
+                try:
+                    full_result = await run_blocking(backup_service.full_backup, router_key)
+                except Exception as e:  # noqa: BLE001
+                    full_duration = (datetime.utcnow() - full_start).total_seconds() * 1000
+                    logger.error(
+                        "Scheduled full backup failed for %s in _run_daily_backup "
+                        "(error type: %s): %s",
+                        router_key,
+                        type(e).__name__,
+                        e,
+                        extra={"component": COMPONENT_BACKUP},
+                    )
+                    failed_routers.append(f"{router_name} (باكوب كامل)")
+                    await run_blocking(
+                        record_backup_result,
+                        router_key,
+                        "full",
+                        False,
+                        str(e),
+                        router_name=router_name,
+                    )
+                else:
+                    success = full_result.get("success")
+                    default_msg = "scheduled full backup failed"
+                    msg = (
+                        full_result.get("message", default_msg)
+                        if not success
+                        else "scheduled full backup ok"
+                    )
+                    full_duration = (datetime.utcnow() - full_start).total_seconds() * 1000
+                    if not success:
+                        logger.error(
+                            "Scheduled full backup failed for %s: %s",
+                            router_key,
+                            msg,
+                            extra={"component": COMPONENT_BACKUP},
+                        )
+                        failed_routers.append(f"{router_name} (باكوب كامل)")
+                    else:
+                        logger.info("Scheduled full backup done for %s", router_key)
+                    await run_blocking(
+                        record_backup_result,
+                        router_key,
+                        "full",
+                        success,
+                        str(msg),
+                        router_name=router_name,
+                    )
 
-    async def _do_backup(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
+async def _do_backup(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
         from config import ADMIN_IDS, ROUTER_KEY_PREFIX
         from database.models import get_saved_routers
 
-        failed_routers: list[str] = []
-        successful_routers: list[str] = []
-        routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
+        trace_id = new_request_id()
+        with bind_trace_id(trace_id):
+            with bind_component(COMPONENT_BACKUP):
+                rid = new_request_id()
+                with bind_request_id(rid):
+                    failed_routers: list[str] = []
+                    successful_routers: list[str] = []
+                    routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
 
-        logger.info(f"Scheduled backup starting for {len(routers)} routers...")
+                    logger.info("Scheduled backup starting for %d routers...", len(routers))
 
-        for r in routers:
-            if not r.get("username"):
-                continue
-            router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
-            await self._backup_single_router(r, router_key, failed_routers, successful_routers)
+                    for r in routers:
+                        if not r.get("username"):
+                            continue
+                        router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+                        await self._backup_single_router(r, router_key, failed_routers, successful_routers)
 
-        if successful_routers:
-            logger.info(f"Backup completed successfully for {len(successful_routers)} routers")
+                    if successful_routers:
+                        logger.info("Backup completed successfully for %d routers", len(successful_routers))
 
-        if failed_routers and context.bot:
-            for admin_id in ADMIN_IDS:
-                try:
-                    await context.bot.send_message(
-                        admin_id,
-                        f"⚠️ فشل الباكوب الآلي لـ {len(failed_routers)} روتر:\n"
-                        + "\n".join(f"• {r}" for r in failed_routers),
-                    )
-                except (OSError, ConnectionError) as e:
-                    logger.warning(f"Failed to notify admin {admin_id} about backup failures: {e}")
+                    if failed_routers and context.bot:
+                        for admin_id in ADMIN_IDS:
+                            try:
+                                await context.bot.send_message(
+                                    admin_id,
+                                    f"\u26a0\uFE0F فشل الباكوب الآلي لـ {len(failed_routers)} روتر:\n"
+                                    + "\n".join(f"\u2022 {r}" for r in failed_routers),
+                                )
+                            except (OSError, ConnectionError) as e:
+                                logger.warning(
+                                    "Failed to notify admin %s about backup failures: %s",
+                                    admin_id,
+                                    e,
+                                    extra={"component": COMPONENT_BACKUP},
+                                )
 
     async def _do_expiry_check(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
         """فحص يومي لاشتراكات Hotspot المشارفة على الانتهاء وإرسال تنبيه للمشرفين."""
@@ -139,50 +175,66 @@ class BackupScheduler:
         from core.messages_expiry import EXPIRY_ALERT_HEADER, EXPIRY_ALERT_USER_ROW
         from database.models import get_saved_routers, log_action
 
-        routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
-        days = 3
+        trace_id = new_request_id()
+        with bind_trace_id(trace_id):
+            with bind_component(COMPONENT_BACKUP):
+                rid = new_request_id()
+                with bind_request_id(rid):
+                    routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
+                    days = 3
 
-        for r in routers:
-            if not r.get("username"):
-                continue
-            router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
-            router_name = str(r.get("identity", router_key))
-            try:
-                expiring = await run_blocking(hotspot_manager.get_expiring_users, router_key, days)
-            except Exception as e:  # noqa: BLE001
-                logger.warning(
-                    f"Expiry check failed for {router_key} "
-                    f"(error type: {type(e).__name__}): {e}"
-                )
-                continue
+                    for r in routers:
+                        if not r.get("username"):
+                            continue
+                        router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+                        router_name = str(r.get("identity", router_key))
+                        try:
+                            expiring = await run_blocking(hotspot_manager.get_expiring_users, router_key, days)
+                        except Exception as e:  # noqa: BLE001
+                            logger.warning(
+                                "Expiry check failed for %s "
+                                "(error type: %s): %s",
+                                router_key,
+                                type(e).__name__,
+                                e,
+                                extra={"component": COMPONENT_BACKUP},
+                            )
+                            continue
 
-            if not expiring:
-                continue
+                        if not expiring:
+                            continue
 
-            header = EXPIRY_ALERT_HEADER.format(router_name=router_name, days=days)
-            rows = [
-                EXPIRY_ALERT_USER_ROW.format(
-                    name=u["name"],
-                    profile=u["profile"],
-                    remaining_days=u["remaining_days"],
-                )
-                for u in expiring
-            ]
-            message = header + "\n".join(rows)
-            for admin_id in ADMIN_IDS:
-                try:
-                    await context.bot.send_message(admin_id, message, parse_mode="HTML")
-                except Exception as e:  # noqa: BLE001
-                    logger.warning(
-                        f"Failed to notify admin {admin_id} about expiry "
-                        f"(error type: {type(e).__name__}): {e}"
-                    )
-            try:
-                log_action("expiry_check_alert", "", router_name, 0)
-            except Exception as e:  # noqa: BLE001
-                logger.warning(
-                    f"Failed to log expiry check alert for {router_key}: {e}"
-                )
+                        header = EXPIRY_ALERT_HEADER.format(router_name=router_name, days=days)
+                        rows = [
+                            EXPIRY_ALERT_USER_ROW.format(
+                                name=u["name"],
+                                profile=u["profile"],
+                                remaining_days=u["remaining_days"],
+                            )
+                            for u in expiring
+                        ]
+                        message = header + "\n".join(rows)
+                        for admin_id in ADMIN_IDS:
+                            try:
+                                await context.bot.send_message(admin_id, message, parse_mode="HTML")
+                            except Exception as e:  # noqa: BLE001
+                                logger.warning(
+                                    "Failed to notify admin %s about expiry "
+                                    "(error type: %s): %s",
+                                    admin_id,
+                                    type(e).__name__,
+                                    e,
+                                    extra={"component": COMPONENT_BACKUP},
+                                )
+                        try:
+                            log_action("expiry_check_alert", "", router_name, 0)
+                        except Exception as e:  # noqa: BLE001
+                            logger.warning(
+                                "Failed to log expiry check alert for %s: %s",
+                                router_key,
+                                e,
+                                extra={"component": COMPONENT_BACKUP},
+                            )
 
     async def _do_stats_snapshot(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
         """حفظ snapshot يومي لإحصائيات كل راوتر في قاعدة البيانات."""
@@ -191,35 +243,47 @@ class BackupScheduler:
         from database.models import get_saved_routers, log_action
         from database.repositories.stats_snapshots import save_snapshot
 
-        routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
-        for r in routers:
-            if not r.get("username"):
-                continue
-            router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
-            router_name = str(r.get("identity", router_key))
-            try:
-                raw = await run_blocking(stats_manager.get_hotspot_stats, router_key)
-                if not raw:
-                    continue
-                snapshot_data: dict[str, int] = {
-                    "active_users": int(raw.get("active_users", 0) or 0),
-                    "total_users": int(raw.get("total_users", 0) or 0),
-                    "bytes_in": 0,
-                    "bytes_out": 0,
-                }
-                await run_blocking(save_snapshot, router_key, snapshot_data)
-                logger.info(f"Stats snapshot saved for {router_key}")
-                try:
-                    log_action("stats_snapshot", "", router_name, 0)
-                except Exception as e:  # noqa: BLE001
-                    logger.warning(
-                        f"Failed to log stats snapshot for {router_key}: {e}"
-                    )
-            except Exception as e:  # noqa: BLE001
-                logger.warning(
-                    f"Stats snapshot failed for {router_key} "
-                    f"(error type: {type(e).__name__}): {e}"
-                )
+        trace_id = new_request_id()
+        with bind_trace_id(trace_id):
+            with bind_component(COMPONENT_BACKUP):
+                rid = new_request_id()
+                with bind_request_id(rid):
+                    routers: list[RouterOSRow] = await run_blocking(get_saved_routers, active_only=True)
+                    for r in routers:
+                        if not r.get("username"):
+                            continue
+                        router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
+                        router_name = str(r.get("identity", router_key))
+                        try:
+                            raw = await run_blocking(stats_manager.get_hotspot_stats, router_key)
+                            if not raw:
+                                continue
+                            snapshot_data: dict[str, int] = {
+                                "active_users": int(raw.get("active_users", 0) or 0),
+                                "total_users": int(raw.get("total_users", 0) or 0),
+                                "bytes_in": 0,
+                                "bytes_out": 0,
+                            }
+                            await run_blocking(save_snapshot, router_key, snapshot_data)
+                            logger.info("Stats snapshot saved for %s", router_key)
+                            try:
+                                log_action("stats_snapshot", "", router_name, 0)
+                            except Exception as e:  # noqa: BLE001
+                                logger.warning(
+                                    "Failed to log stats snapshot for %s: %s",
+                                    router_key,
+                                    e,
+                                    extra={"component": COMPONENT_BACKUP},
+                                )
+                        except Exception as e:  # noqa: BLE001
+                            logger.warning(
+                                "Stats snapshot failed for %s "
+                                "(error type: %s): %s",
+                                router_key,
+                                type(e).__name__,
+                                e,
+                                extra={"component": COMPONENT_BACKUP},
+                            )
 
     def start_daily(
         self,

@@ -1,6 +1,7 @@
 import logging
 import re
 from collections.abc import Callable
+from dataclasses import dataclass
 
 import telegram.error
 from librouteros.exceptions import LibRouterosError
@@ -8,8 +9,18 @@ from telegram import InlineKeyboardMarkup, Message, ReplyKeyboardMarkup, Update
 from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
+from core.metrics import record_error
 from utils.chat_cleaner import track_msg
 from utils.tg_helpers import get_query_chat_id, get_query_message
+from utils.logging_setup import (
+    COMPONENT_HANDLER,
+    COMPONENT_TELEGRAM,
+    bind_context,
+    get_request_id,
+    get_router_key,
+    get_trace_id,
+    set_error_category,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -138,6 +149,60 @@ def classify_error(error: Exception) -> str:
     return CATEGORY_GENERAL
 
 
+@dataclass
+class ErrorContext:
+    """Structured context for error logging and notifications."""
+
+    router_key: str | None = None
+    command: str | None = None
+    user_id: int | None = None
+    chat_id: int | None = None
+    request_id: str | None = None
+    trace_id: str | None = None
+    attempt: int | None = None
+    duration_ms: float | None = None
+
+
+def log_error(
+    error: Exception,
+    component: str = COMPONENT_HANDLER,
+    context: ErrorContext | None = None,
+) -> None:
+    """Log an error with structured fields including error_category.
+
+    Uses the existing request_id, component, and trace_id ContextVars
+    for correlation, and additionally attaches any fields from the
+    provided ErrorContext dataclass.
+    """
+    category = classify_error(error)
+    extra: dict[str, object] = {
+        "component": component,
+        "request_id": get_request_id(),
+        "trace_id": (context.trace_id if context else get_trace_id()),
+        "error_category": category,
+    }
+    if context:
+        if context.router_key:
+            extra["router_key"] = context.router_key
+        if context.command:
+            extra["command"] = context.command
+        if context.user_id is not None:
+            extra["user_id"] = context.user_id
+        if context.chat_id is not None:
+            extra["chat_id"] = context.chat_id
+        if context.duration_ms is not None:
+            extra["duration_ms"] = context.duration_ms
+        if context.attempt is not None:
+            extra["attempt"] = context.attempt
+
+    logger.error(
+        f"{category}: {_sanitize_error_text(str(error)[:200])}"
+        f" | type={type(error).__name__}",
+        extra=extra,
+        exc_info=True,
+    )
+
+
 def format_error_message(error: Exception, router_key: str | None = None) -> str:
     from utils.logging_setup import get_request_id
 
@@ -189,10 +254,14 @@ async def _dispatch_message(
         if is_benign_telegram_error(send_err):
             logger.debug(
                 f"Benign Telegram error (ignored in _dispatch_message): "
-                f"{_sanitize_error_text(str(send_err))} | type={type(send_err).__name__}"
+                f"{_sanitize_error_text(str(send_err))} | type={type(send_err).__name__}",
+                extra={"component": COMPONENT_TELEGRAM},
             )
             return
-        logger.error(f"{error_label}: {_sanitize_error_text(str(send_err))}")
+        logger.error(
+            f"{error_label}: {_sanitize_error_text(str(send_err))}",
+            extra={"component": COMPONENT_TELEGRAM},
+        )
 
 
 async def send_error(
@@ -203,17 +272,49 @@ async def send_error(
     log_extra: str = "",
     reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | None = None,
     chat_id: int | None = None,
+    error_context: ErrorContext | None = None,
 ) -> None:
+    from utils.logging_setup import get_trace_id
+
     error_text = _sanitize_error_text(str(error))
     # الأخطاء الحميدة (مثل "Message is not modified") شائعة أثناء تعديل الرسائل
     # ولا تستدعي تنبيهاً للمستخدم أو سجلاً على مستوى الخطأ.
     if is_benign_telegram_error(error):
-        logger.debug(f"Benign Telegram error (ignored): {error_text} | type={type(error).__name__}")
+        logger.debug(
+            f"Benign Telegram error (ignored): {error_text} | type={type(error).__name__}",
+            extra={"component": COMPONENT_HANDLER},
+        )
         return
     effective_router_key = router_key or get_router_key_from_context(context)
+    category = classify_error(error)
     text = format_error_message(error, effective_router_key)
     log_msg = f"{log_extra}: {error_text}" if log_extra else error_text
-    logger.error(f"{log_msg} | type={type(error).__name__}")
+    extra: dict[str, object] = {
+        "component": COMPONENT_HANDLER,
+        "request_id": get_request_id(),
+        "trace_id": get_trace_id(),
+        "error_category": category,
+        "router_key": effective_router_key,
+    }
+    if error_context:
+        if error_context.command:
+            extra["command"] = error_context.command
+        if error_context.user_id is not None:
+            extra["user_id"] = error_context.user_id
+        if error_context.chat_id is not None:
+            extra["chat_id"] = error_context.chat_id
+        if error_context.duration_ms is not None:
+            extra["duration_ms"] = error_context.duration_ms
+    logger.error(
+        f"ERROR [{category}]: {log_msg}",
+        extra=extra,
+        exc_info=True,
+    )
+    # Track error in metrics
+    record_error(category, COMPONENT_HANDLER)
+    # Critical error notifications to Telegram admins for connection/auth/storage issues
+    if category in (CATEGORY_CONNECTION, CATEGORY_AUTH, CATEGORY_STORAGE):
+        _notify_critical_admins(error, category, effective_router_key, text)
     target_id = chat_id or _get_chat_id(update)
     if target_id is None:
         return
@@ -259,3 +360,33 @@ def get_router_key_from_context(
         return default
     key = user_data.get("selected_router") or user_data.get("router_key")
     return key if isinstance(key, str) and key else default
+
+
+async def _notify_critical_admins(
+    error: Exception,
+    category: str,
+    router_key: str | None,
+    user_message: str,
+) -> None:
+    """Notify Telegram admins about critical errors (connection/auth/storage)."""
+    from config import ADMIN_IDS
+
+    req_id = get_request_id()
+    router_info = f" | router={router_key}" if router_key else ""
+    text = f"\U0001f6a8 <b>Critical Bot Error</b>\n\n"
+    text += f"Category: <code>{category}</code>{router_info}\n"
+    text += f"Ref: #{req_id}\n"
+    text += f"Error: {_sanitize_error_text(str(error)[:300])}"
+    import asyncio
+
+    from utils.async_blocking import run_blocking
+
+    for admin_id in ADMIN_IDS:
+        try:
+            await send_text(
+                None, None, text, chat_id=admin_id
+            )
+        except Exception:
+            logger.exception(
+                f"Failed to notify admin {admin_id} about critical error {category}"
+            )

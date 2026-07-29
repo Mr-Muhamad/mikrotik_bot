@@ -41,6 +41,7 @@ from telegram.ext import (
     filters,
 )
 
+from utils.logging_setup import COMPONENT_HANDLER, bind_component
 from utils.request_id import bind_request_id_from_update
 
 # Type alias for async callback functions registered as handlers.
@@ -275,7 +276,12 @@ def _build_handler(entry: _RegistryEntry) -> BaseHandler:  # type: ignore[type-a
     navigation_guard, requires_router_check = _load_guard()
     if requires_router_check(command, pattern, func):
         func = navigation_guard(func)
-    wrapped = bind_request_id_from_update(func)  # type: ignore[reportArgumentType]
+
+    async def _wrapped_handler(update, context):
+        with bind_component(COMPONENT_HANDLER):
+            return await func(update, context)
+
+    wrapped = bind_request_id_from_update(_wrapped_handler)
     return entry["cls"](callback=wrapped, **entry["kwargs"])  # type: ignore[reportArgumentType]
 
 
@@ -342,5 +348,10 @@ def build_application(application: Application, constants_module: ModuleType) ->
 
     # 5. Error handler
     if _registry["error_handler"]:
-        wrapped_error_handler = bind_request_id_from_update(_registry["error_handler"])
-        application.add_error_handler(wrapped_error_handler)  # type: ignore[reportArgumentType]
+
+        async def _wrapped_error_handler(update, context):
+            with bind_component(COMPONENT_HANDLER):
+                await _registry["error_handler"](update, context)
+
+        wrapped_error_handler = bind_request_id_from_update(_wrapped_error_handler)
+        application.add_error_handler(wrapped_error_handler)

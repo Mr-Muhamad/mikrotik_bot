@@ -254,6 +254,10 @@ mikrotik_bot/
 - إعداد السجلات يتم في بداية `main.py` عبر استدعاء `configure_logging(logging.INFO)` من `utils/logging_setup.py`، بدون استخدام `logging.basicConfig` لتجنب إنشاء `StreamHandler` ثانٍ بمستوى `NOTSET`. الـ console handler يُظهر `INFO` فما فوق فقط، بينما الـ file handler (`logs/mikrotik-bot.log`) يسجل `DEBUG` فما فوق بتنسيق JSON.
 - المكتبات المزعجة (`httpx`, `httpcore`, `apscheduler`, `PIL`, `librouteros`, `utils.chat_cleaner`) تُكبَت إلى `WARNING` عبر `setLevel()` قبل استدعاء `configure_logging()`.
 - لتتبع الطلبات، يُستخدم `request_id` عبر `ContextVar` في `utils/logging_setup.py`، ويتم حقنه تلقائياً في كل سجل عبر `RequestIdFilter` المضاف إلى الـ root logger وكل handlers.
+- **Component tagging**: يتم تتبع المكون النشط عبر `component` ContextVar باستخدام `bind_component()` من `utils/logging_setup.py`. يتم تعيينه في نقاط الدخول الرئيسية: `COMPONENT_SYSTEM` في `main.py` (post_init, run_with_shutdown)، و`COMPONENT_HANDLER` في `utils/handler_registry.py` (_build_wrapper و error handler)، و`COMPONENT_CALLBACK` في `utils/callback_utils.py`.
+- **Sanitization**: يجب عدم تسجيل أي بيانات حساسة (كلمات مرور، توكنات، مفاتيح API) في السجلات. يتم استخدام `sanitize_log_data()` من `utils/formatters.py` لتنقية بيانات الاستجابة قبل تسجيلها في السجلات، خاصة عند مستوى `ERROR` أو `WARNING`.
+- **Duration tracking**: جميع العمليات التي تتجاوز `_DEFAULT_DURATION_WARN_MS` (5 ثوانٍ) تُسجّل بتنبيه. يتم تتبع مدة تنفيذ العمليات باستخدام `duration_ms` في كل سجل منظم.
+- **Sensitive data in errors**: أي خطأ من مكتبات خارجية (مثل RouterOS API) قد يكشف بيانات حساسة يجب تنقيتها عبر `sanitize_log_data()` قبل تسجيلها أو إرسالها للمستخدم.
 
 ## الأوامر الحالية
 
@@ -521,4 +525,5 @@ py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --c
 - إعدادات الـ logging تتم حصراً في `main.py` قبل `configure_logging()`؛ لا تضف `logging.basicConfig` جديد أو `setLevel` لمكتبات غير مزعجة.
 - لا يوجد `HEALTH_CHECK_PORT` أو `aiohttp` في المشروع بعد الآن؛ تمت إزالة health check server بالكامل.
 - `WATCHDOG_FIRST_DELAY` معرّف في `config.py:54` ويُستخدم في `bot/handlers/watchdog.py:67` كمهلة أولى للـ Job. لا تستخدم `first=10` مضمّناً.
-- هناك استخدامات إنتاجية لـ `# type: ignore` في الكود: `core/connection_pool.py:101`, `core/mikrotik_api.py:217`, `bot/handlers/backup.py:82,83`, `bot/handlers/settings.py:181`, `utils/error_response.py:122`. جميعها مبررة ومعلّمة، ويُتحقق منها عبر `scripts/check_type_ignore.py`.
+- استخدم `sanitize_log_data()` من `utils/formatters.py` قبل تسجيل أي استجابة API في السجلات، خاصة عند مستوى `ERROR` أو `WARNING`.
+- يوجد استخدامات إنتاجية لـ `# type: ignore` في الكود: `core/connection_pool.py:101`, `core/mikrotik_api.py:217`, `bot/handlers/backup.py:82,83`, `bot/handlers/settings.py:181`, `utils/error_response.py:122`. جميعها مبررة ومعلّمة، ويُتحقق منها عبر `scripts/check_type_ignore.py`.

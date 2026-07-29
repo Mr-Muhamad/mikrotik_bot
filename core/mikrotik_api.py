@@ -12,6 +12,7 @@ from librouteros.exceptions import LibRouterosError
 from config import DEFAULT_API_PORT, FILE_SERVER_PORT, FILE_SERVER_SECRET, ROUTER_KEY_PREFIX
 from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
+from utils.log_helpers import log_api_call, log_router_command
 
 logger = logging.getLogger(__name__)
 
@@ -90,21 +91,28 @@ class MikrotikAPI:
         cached = self.get_cached_version(router_key)
         if cached:
             return cached
+        start = time.monotonic()
         try:
             # execute_long (120s) عوضاً عن execute (30s): جلب الإصدار حرج لاختيار
             # مسار User Manager (v6/v7)، والراوتر البطيء تحت الحمل قد يتجاوز 30s.
             result = self.execute_long(router_key, "system/resource/print")
+            duration_ms = (time.monotonic() - start) * 1000
             if result:
                 version = str(result[0].get("version", "unknown"))
                 self._pool.set_version(router_key, version)
+                log_api_call(router_key, "system/resource/print", duration_ms, True, component="ROUTER")
                 return version
+            log_api_call(router_key, "system/resource/print", duration_ms, True, component="ROUTER")
         except Exception as e:  # noqa: BLE001
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(router_key, "system/resource/print", duration_ms, False, error=e, component="ROUTER")
             # إبطال الكاش حتى يُعاد المحاولة في الاستدعاء التالي
             self._pool.invalidate_version(router_key)
-            # الفشل متحمَّل (نعود إلى v6)، لذا WARNING أدق من ERROR لئلا يملأ السجلات.
-            logger.warning(
+            # الفشل متحمَّل (نعود إلى v6)، لذا ERROR يعكس أن الجلب الفعلي فشل
+            logger.error(
                 f"Failed to get version for {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                f"(error type: {type(e).__name__}): {e}",
+                extra={"component": "ROUTER"},
             )
         return "unknown"
 
@@ -162,17 +170,24 @@ class MikrotikAPI:
 
     def check_connection_health(self, router_key: str) -> tuple[bool, str]:
         """فحص صحة الاتصال بالروتر بشكل استباقي."""
+        start = time.monotonic()
         try:
             self._throttle(router_key)
             with self._connection_ctx(router_key, timeout=API_TIMEOUT) as api:
                 result = self._call_command(api, "system/resource/print")  # type: ignore[reportArgumentType]
+                duration_ms = (time.monotonic() - start) * 1000
                 if result:
+                    log_api_call(router_key, "system/resource/print", duration_ms, True, component="ROUTER")
                     return True, "healthy"
+                log_api_call(router_key, "system/resource/print", duration_ms, True, component="ROUTER")
                 return False, "empty_response"
         except Exception as e:  # noqa: BLE001
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(router_key, "system/resource/print", duration_ms, False, error=e, component="ROUTER")
             logger.warning(
                 f"Health check failed for {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                f"(error type: {type(e).__name__}): {e}",
+                extra={"component": "ROUTER"},
             )
             return False, str(e)
 
@@ -203,11 +218,16 @@ class MikrotikAPI:
             return list(cmd_path(cmd, **kwargs))
         return list(cmd_path(cmd))
 
-    def _debug_log(self, method: str, command: str, kwargs: dict[str, object]):
-        """يسجل kwargs مع إخفاء كلمات المرور."""
-        if kwargs:
-            sanitized = {k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()}
-            logger.debug(f"{method} {command} kwargs={sanitized}")
+def _debug_log(self, method: str, command: str, kwargs: dict[str, object]):
+    """Logs kwargs with hidden passwords and structured component tag."""
+    if kwargs:
+        sanitized = {
+            k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()
+        }
+        logger.debug(
+            "%s %s kwargs=%s", method, command, sanitized,
+            extra={"component": "ROUTER"},
+        )
 
     # ──────────────────────────────────────────────────────────────
     #  Core execution template
@@ -217,6 +237,7 @@ class MikrotikAPI:
         self, router_key: str, command: str, timeout: int, **kwargs: object
     ) -> RouterOSResponse:
         """القالب الأساسي: throttle → تنفيذ → retry مع exponential backoff."""
+        start = time.monotonic()
         self._throttle(router_key)
         last_exc: Exception | None = None
         for attempt in range(1 + len(_RETRY_DELAYS)):
@@ -226,28 +247,41 @@ class MikrotikAPI:
                     delay = _RETRY_DELAYS[attempt - 1]
                     logger.warning(
                         f"Retry {attempt}/{len(_RETRY_DELAYS)} for {command} on {router_key} "
-                        f"(waiting {delay}s)..."
+                        f"(waiting {delay}s)...",
+                        extra={"component": "ROUTER"},
                     )
                     time.sleep(delay)
                 with self._connection_ctx(
                     router_key, timeout=timeout, force_reconnect=force
                 ) as api:
                     self._debug_log("_execute_with_retry", command, kwargs)
-                    return self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
+                    result = self._call_command(api, command, **kwargs)
+                    duration_ms = (time.monotonic() - start) * 1000
+                    log_api_call(router_key, command, duration_ms, True, component="ROUTER")
+                    return result
             except (LibRouterosError, ConnectionError, OSError) as e:
                 if command == "system/reboot":
-                    logger.info(f"Reboot command sent - connection may be lost: {e}")
+                    duration_ms = (time.monotonic() - start) * 1000
+                    log_api_call(router_key, command, duration_ms, True, component="ROUTER")
                     return []
                 if any(pat in str(e) for pat in NON_RETRYABLE_ERRORS):
-                    logger.debug(f"Non-retryable error for {command} on {router_key}: {e}")
+                    logger.debug(
+                        f"Non-retryable error for {command} on {router_key}: {e}",
+                        extra={"component": "ROUTER"},
+                    )
                     raise
                 last_exc = e
                 if attempt == len(_RETRY_DELAYS):
                     total = 1 + len(_RETRY_DELAYS)
+                    duration_ms = (time.monotonic() - start) * 1000
+                    log_api_call(
+                        router_key, command, duration_ms, False, error=e, component="ROUTER"
+                    )
                     logger.error(
-                        f"All {total} attempts failed for {command} on {router_key} in execute "
+                        f"All {total} attempts failed for {command} on {router_key} "
                         f"(error type: {type(e).__name__}): {e}",
                         exc_info=True,
+                        extra={"component": "ROUTER"},
                     )
                     raise
         raise last_exc  # type: ignore[misc]
@@ -260,53 +294,74 @@ class MikrotikAPI:
         """الأمر العادي — مهلة 30 ثانية، يعيد المحاولة عند الخطأ."""
         from database.models import log_action  # noqa: PLC0415
 
+        start = time.monotonic()
         result = self._execute_with_retry(router_key, command, API_TIMEOUT, **kwargs)
+        duration_ms = (time.monotonic() - start) * 1000
         router_name = self.get_router_name(router_key)
         log_action(command, "", router_name, 0)
+        log_api_call(router_key, command, duration_ms, True, component="ROUTER")
         return result
 
     def execute_long(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse:
         """أمر طويل — مهلة 120 ثانية، يعيد المحاولة عند الخطأ."""
         from database.models import log_action  # noqa: PLC0415
 
+        start = time.monotonic()
         result = self._execute_with_retry(router_key, command, LONG_TIMEOUT, **kwargs)
+        duration_ms = (time.monotonic() - start) * 1000
         router_name = self.get_router_name(router_key)
         log_action(command, "", router_name, 0)
+        log_api_call(router_key, command, duration_ms, True, component="ROUTER")
         return result
 
     def execute_non_blocking(self, router_key: str, command: str, **kwargs: object) -> None:
         """أمر غير متزامن — لا يعيد المحاولة، يسجل الخطأ ويتجاوز."""
         from database.models import log_action  # noqa: PLC0415
 
+        start = time.monotonic()
         try:
             with self._connection_ctx(router_key, timeout=API_TIMEOUT) as api:
                 self._debug_log("execute_non_blocking", command, kwargs)
                 self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
-                logger.info(f"Non-blocking command sent: {command}")
+                duration_ms = (time.monotonic() - start) * 1000
+                logger.info(
+                    f"Non-blocking command sent: {command}",
+                    extra={"component": "ROUTER"},
+                )
                 router_name = self.get_router_name(router_key)
                 log_action(command, "", router_name, 0)
+                log_api_call(router_key, command, duration_ms, True, component="ROUTER")
         except Exception as e:  # noqa: BLE001
-            logger.info(
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(router_key, command, duration_ms, False, error=e, component="ROUTER")
+            logger.warning(
                 f"Non-blocking command failed "
-                f"(error type: {type(e).__name__}): {e}"
+                f"(error type: {type(e).__name__}): {e}",
+                extra={"component": "ROUTER"},
             )
 
     # ──────────────────────────────────────────────────────────────
     #  Connection test (independent — uses raw librouteros connect)
     # ──────────────────────────────────────────────────────────────
 
-    def test_connection(
+def test_connection(
         self, ip: str, username: str, password: str, port: int = DEFAULT_API_PORT
     ) -> tuple[bool, str, str]:
         api = None
-        # Fast reachability check (2 seconds) before full Mikrotik authentication
+        start = time.monotonic()
+        # Fast reachability check (2 seconds) before full MikroTik authentication
         import socket
 
         try:
             with socket.create_connection((ip, port), timeout=2.0):
                 pass
         except OSError as e:
-            logger.warning(f"Fast port check failed for {ip}:{port} - {e}")
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(ip, "tcp_connect", duration_ms, False, error=e, component="ROUTER")
+            logger.warning(
+                f"Fast port check failed for {ip}:{port} - {e}",
+                extra={"component": "ROUTER"},
+            )
             return False, f"Port {port} closed/unreachable", ""
 
         try:
@@ -318,27 +373,45 @@ class MikrotikAPI:
                 encoding="utf-8",
                 timeout=API_TIMEOUT,
             )
+            duration_ms = (time.monotonic() - start) * 1000
             result = list(api.path("system", "resource")("print"))
             version = str(result[0].get("version", "unknown")) if result else "unknown"
             identity_result = list(api.path("system", "identity")("print"))
             identity = str(identity_result[0].get("name", ip)) if identity_result else ip
+            log_api_call(ip, "connect", duration_ms, True, component="ROUTER")
             return True, version, identity
         except LibRouterosError as e:
-            logger.error(f"test_connection LibRouterosError for {ip}:{port}: {e}")
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
+            logger.error(
+                f"test_connection LibRouterosError for {ip}:{port}: {e}",
+                extra={"component": "ROUTER"},
+            )
             return False, self._classify_connect_failure(e, ip, port), ""
         except OSError as e:
             # مهلة الاتصال أو رفضه متوقّفان عند فحص راوترات تختبرية/غير موجودة
             # (مثل عناوين TEST-NET المحجوزة)؛ نسجّلها كـ WARNING لتقليل الضوضاء.
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
             if self._is_timeout_error(e):
-                logger.warning(f"test_connection timeout for {ip}:{port}: {e}")
+                logger.warning(
+                    f"test_connection timeout for {ip}:{port}: {e}",
+                    extra={"component": "ROUTER"},
+                )
             else:
-                logger.error(f"test_connection OSError for {ip}:{port}: {e}")
+                logger.error(
+                    f"test_connection OSError for {ip}:{port}: {e}",
+                    extra={"component": "ROUTER"},
+                )
             ssl_hint = self._probe_api_ssl(ip, username, password)
             return False, self._classify_connect_failure(e, ip, port, ssl_hint), ""
         except Exception as e:  # noqa: BLE001
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
             logger.error(
                 f"test_connection unexpected error for {ip}:{port} "
-                f"(error type: {type(e).__name__}): {e}"
+                f"(error type: {type(e).__name__}): {e}",
+                extra={"component": "ROUTER"},
             )
             return False, self._classify_connect_failure(e, ip, port), ""
         finally:
@@ -348,7 +421,8 @@ class MikrotikAPI:
                 except Exception as e:  # noqa: BLE001
                     logger.debug(
                         f"Error closing test connection for {ip} "
-                        f"(error type: {type(e).__name__}): {e}"
+                        f"(error type: {type(e).__name__}): {e}",
+                        extra={"component": "ROUTER"},
                     )
 
     def _is_timeout_error(self, exc: Exception) -> bool:

@@ -8,6 +8,8 @@ from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
 from core.stats import stats_manager
 from database.repositories.router_health import get_all_latest_health, record_health
+from utils.logging_setup import COMPONENT_SERVICE, bind_component
+from utils.request_id import new_request_id
 
 logger = logging.getLogger(__name__)
 
@@ -41,56 +43,65 @@ def record_check_result(router_key: str, is_online: bool) -> str:
 
 def check_router_health(router_key: str) -> RouterOSRow:
     """Check if a router is reachable and monitor CPU/memory thresholds. Returns status dict."""
-    try:
-        res = mikrotik_api.execute(router_key, "system/resource/print")
-        cpu_load = None
-        free_mem = None
-        if res and len(res) > 0:
-            info = res[0]
-            try:
-                cpu_load = int(str(info.get("cpu-load", "0")))
-                free_mem = int(str(info.get("free-memory", "0")))
-            except (ValueError, TypeError):
-                pass
-
-        with _router_status_lock:
-            _router_status.setdefault(router_key, {})
-            _router_status[router_key]["last_ok"] = datetime.now().isoformat()
-            _router_status[router_key]["alert_sent"] = False
-            _router_status[router_key]["cpu_load"] = cpu_load
-            _router_status[router_key]["free_memory"] = free_mem
-
-        record_health(router_key, "online")
-
-        # Upstream ISP Failover & Ping Monitor
-        isp_ok = True
-        latency_ms = None
+    with bind_component(COMPONENT_SERVICE):
         try:
-            import socket
-            import time
+            res = mikrotik_api.execute(router_key, "system/resource/print")
+            cpu_load = None
+            free_mem = None
+            if res and len(res) > 0:
+                info = res[0]
+                try:
+                    cpu_load = int(str(info.get("cpu-load", "0")))
+                    free_mem = int(str(info.get("free-memory", "0")))
+                except (ValueError, TypeError):
+                    pass
 
-            start_time = time.monotonic()
-            s = socket.create_connection(("8.8.8.8", 53), timeout=2.0)
-            s.close()
-            latency_ms = round((time.monotonic() - start_time) * 1000, 1)
-        except OSError as ex:
-            logger.debug(f"ISP ping check failed: {ex}")
-            isp_ok = False
+            with _router_status_lock:
+                _router_status.setdefault(router_key, {})
+                _router_status[router_key]["last_ok"] = datetime.now().isoformat()
+                _router_status[router_key]["alert_sent"] = False
+                _router_status[router_key]["cpu_load"] = cpu_load
+                _router_status[router_key]["free_memory"] = free_mem
 
-        return {
-            "online": True,
-            "error": None,
-            "cpu_load": cpu_load,
-            "free_memory": free_mem,
-            "isp_ok": isp_ok,
-            "latency_ms": latency_ms,
-        }
-    except (LibRouterosError, ConnectionError, OSError) as e:
-        with _router_status_lock:
-            _router_status.setdefault(router_key, {})
-            _router_status[router_key]["last_fail"] = datetime.now().isoformat()
-        record_health(router_key, "offline", str(e))
-        return {"online": False, "error": str(e)}
+            record_health(router_key, "online")
+
+            # Upstream ISP Failover & Ping Monitor
+            isp_ok = True
+            latency_ms = None
+            try:
+                import socket
+                import time
+
+                start_time = time.monotonic()
+                s = socket.create_connection(("8.8.8.8", 53), timeout=2.0)
+                s.close()
+                latency_ms = round((time.monotonic() - start_time) * 1000, 1)
+            except OSError as ex:
+                logger.debug(
+                    "ISP ping check failed: %s", ex, extra={"component": COMPONENT_SERVICE}
+                )
+                isp_ok = False
+
+            return {
+                "online": True,
+                "error": None,
+                "cpu_load": cpu_load,
+                "free_memory": free_mem,
+                "isp_ok": isp_ok,
+                "latency_ms": latency_ms,
+            }
+        except (LibRouterosError, ConnectionError, OSError) as e:
+            with _router_status_lock:
+                _router_status.setdefault(router_key, {})
+                _router_status[router_key]["last_fail"] = datetime.now().isoformat()
+            record_health(router_key, "offline", str(e))
+            logger.warning(
+                "Health check failed for %s: %s",
+                router_key,
+                e,
+                extra={"component": COMPONENT_SERVICE},
+            )
+            return {"online": False, "error": str(e)}
 
 
 def get_router_status(router_key: str) -> RouterOSRow:
@@ -106,54 +117,65 @@ def get_router_status_detail(router_key: str) -> RouterOSRow:
     it is immediately considered online regardless of the cache. Otherwise, falls
     back to cache. Live data (version, users) is fetched only when online.
     """
-    has_active = mikrotik_api.has_active_connection(router_key)
+    with bind_component(COMPONENT_SERVICE):
+        has_active = mikrotik_api.has_active_connection(router_key)
 
-    with _router_status_lock:
-        status = dict(_router_status.get(router_key, {}))
+        with _router_status_lock:
+            status = dict(_router_status.get(router_key, {}))
 
-    last_ok = status.get("last_ok")
-    last_fail = status.get("last_fail")
+        last_ok = status.get("last_ok")
+        last_fail = status.get("last_fail")
 
-    def _parse_dt(val: str | None) -> datetime | None:
-        if not val:
-            return None
-        try:
-            return datetime.fromisoformat(val)
-        except (ValueError, TypeError):
-            return None
+        def _parse_dt(val: str | None) -> datetime | None:
+            if not val:
+                return None
+            try:
+                return datetime.fromisoformat(val)
+            except (ValueError, TypeError):
+                return None
 
-    last_ok_dt = _parse_dt(last_ok) if isinstance(last_ok, str) else None
-    last_fail_dt = _parse_dt(last_fail) if isinstance(last_fail, str) else None
+        last_ok_dt = _parse_dt(last_ok) if isinstance(last_ok, str) else None
+        last_fail_dt = _parse_dt(last_fail) if isinstance(last_fail, str) else None
 
-    if has_active:
-        online = True
-        if not last_ok_dt or (last_fail_dt and last_fail_dt >= last_ok_dt):
-            status["last_ok"] = datetime.now().isoformat()
-    else:
-        online = bool(last_ok_dt and (not last_fail_dt or last_ok_dt > last_fail_dt))
+        if has_active:
+            online = True
+            if not last_ok_dt or (last_fail_dt and last_fail_dt >= last_ok_dt):
+                status["last_ok"] = datetime.now().isoformat()
+        else:
+            online = bool(last_ok_dt and (not last_fail_dt or last_ok_dt > last_fail_dt))
 
-    status["online"] = online
-    status["version"] = None
-    status["active_users"] = None
+        status["online"] = online
+        status["version"] = None
+        status["active_users"] = None
 
-    if has_active:
-        try:
-            version = mikrotik_api.get_version(router_key)
+        if has_active:
+            try:
+                version = mikrotik_api.get_version(router_key)
+                status["version"] = version if version and version != "unknown" else None
+            except (LibRouterosError, ConnectionError, OSError) as ex:
+                logger.debug(
+                    "Failed to fetch version in watchdog detail for %s: %s",
+                    router_key,
+                    ex,
+                    extra={"component": COMPONENT_SERVICE},
+                )
+                status["version"] = None
+            try:
+                hotspot_stats = stats_manager.get_hotspot_stats(router_key)
+                status["active_users"] = hotspot_stats.get("active_users") if hotspot_stats else None
+            except (LibRouterosError, ConnectionError, OSError) as ex:
+                logger.debug(
+                    "Failed to fetch hotspot stats in watchdog detail for %s: %s",
+                    router_key,
+                    ex,
+                    extra={"component": COMPONENT_SERVICE},
+                )
+                status["active_users"] = None
+        else:
+            version = mikrotik_api.get_cached_version(router_key)
             status["version"] = version if version and version != "unknown" else None
-        except (LibRouterosError, ConnectionError, OSError) as ex:
-            logger.debug(f"Failed to fetch version in watchdog detail for {router_key}: {ex}")
-            status["version"] = None
-        try:
-            hotspot_stats = stats_manager.get_hotspot_stats(router_key)
-            status["active_users"] = hotspot_stats.get("active_users") if hotspot_stats else None
-        except (LibRouterosError, ConnectionError, OSError) as ex:
-            logger.debug(f"Failed to fetch hotspot stats in watchdog detail for {router_key}: {ex}")
-            status["active_users"] = None
-    else:
-        version = mikrotik_api.get_cached_version(router_key)
-        status["version"] = version if version and version != "unknown" else None
 
-    return status
+        return status
 
 
 def was_alert_sent(router_key: str) -> bool:
@@ -188,29 +210,37 @@ def load_status_from_db() -> None:
 
     يُستدعى مرة واحدة عند startup (في post_init) لاستعادة الحالة بعد restart.
     """
-    try:
-        all_latest = get_all_latest_health()
-        with _router_status_lock:
-            for router_key, row in all_latest.items():
-                is_online = row["status"] == "online"
-                checked_at_str = str(row.get("checked_at", ""))
-                # تحويل النص إلى datetime للتوافق مع get_router_status_detail
-                try:
-                    from datetime import datetime as _dt
+    with bind_component(COMPONENT_SERVICE):
+        try:
+            all_latest = get_all_latest_health()
+            with _router_status_lock:
+                for router_key, row in all_latest.items():
+                    is_online = row["status"] == "online"
+                    checked_at_str = str(row.get("checked_at", ""))
+                    # تحويل النص إلى datetime للتوافق مع get_router_status_detail
+                    try:
+                        from datetime import datetime as _dt
 
-                    checked_at = _dt.strptime(checked_at_str, "%Y-%m-%d %H:%M:%S")
-                except (ValueError, TypeError):
-                    checked_at = None
-                _last_known_status[router_key] = is_online
-                _router_status.setdefault(router_key, {})
-                if is_online and checked_at:
-                    _router_status[router_key]["last_ok"] = checked_at.isoformat()
-                elif not is_online and checked_at:
-                    _router_status[router_key]["last_fail"] = checked_at.isoformat()
-                # alert_sent يبدأ دائماً كـ False بعد restart لضمان إرسال تنبيه جديد إذا ظل offline
-                _router_status[router_key].setdefault("alert_sent", False)
-        logger.info(f"Watchdog: loaded status for {len(all_latest)} routers from DB")
-    except Exception as e:  # noqa: BLE001
-        logger.warning(
-            f"Watchdog: failed to load status from DB (error type: {type(e).__name__}): {e}"
-        )
+                        checked_at = _dt.strptime(checked_at_str, "%Y-%m-%d %H:%M:%S")
+                    except (ValueError, TypeError):
+                        checked_at = None
+                    _last_known_status[router_key] = is_online
+                    _router_status.setdefault(router_key, {})
+                    if is_online and checked_at:
+                        _router_status[router_key]["last_ok"] = checked_at.isoformat()
+                    elif not is_online and checked_at:
+                        _router_status[router_key]["last_fail"] = checked_at.isoformat()
+                    # alert_sent يبدأ دائماً كـ False بعد restart لضمان إرسال تنبيه جديد إذا ظل offline
+                    _router_status[router_key].setdefault("alert_sent", False)
+            logger.info(
+                "Watchdog: loaded status for %d routers from DB",
+                len(all_latest),
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "Watchdog: failed to load status from DB "
+                "(error type: %s): %s",
+                type(e).__name__,
+                e,
+                extra={"component": COMPONENT_SERVICE},
+            )

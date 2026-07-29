@@ -8,6 +8,9 @@ import time
 
 from telegram import CallbackQuery
 
+from utils.logging_setup import COMPONENT_TELEGRAM
+from utils.request_id import get_request_id, get_trace_id
+
 logger = logging.getLogger(__name__)
 
 _CALLBACK_DEDUP: dict[str, float] = {}
@@ -53,16 +56,47 @@ async def safe_answer_callback(
     """
     if query is None:
         return
+    start = time.monotonic()
     try:
         await query.answer(text=text, show_alert=show_alert)
     except Exception as e:  # noqa: BLE001
+        duration_ms = (time.monotonic() - start) * 1000
         error_msg = str(e)
         if "Query is too old" in error_msg or "query id is invalid" in error_msg:
             logger.debug(
-                f"Callback answer timeout (non-critical): {getattr(query, 'data', 'unknown')}"
+                f"Callback answer timeout (non-critical): {getattr(query, 'data', 'unknown')}",
+                extra={
+                    "component": COMPONENT_TELEGRAM,
+                    "request_id": get_request_id(),
+                    "trace_id": get_trace_id(),
+                    "duration_ms": duration_ms,
+                    "success": False,
+                },
             )
         else:
-            logger.warning(f"Callback answer failed (error type: {type(e).__name__}): {e}")
+            logger.warning(
+                f"Callback answer failed (error type: {type(e).__name__}): {e}",
+                extra={
+                    "component": COMPONENT_TELEGRAM,
+                    "request_id": get_request_id(),
+                    "trace_id": get_trace_id(),
+                    "duration_ms": duration_ms,
+                    "success": False,
+                    "error_category": _classify_callback_error(e),
+                },
+            )
+    else:
+        duration_ms = (time.monotonic() - start) * 1000
+        logger.debug(
+            f"Callback answered: {getattr(query, 'data', 'unknown')}",
+            extra={
+                "component": COMPONENT_TELEGRAM,
+                "request_id": get_request_id(),
+                "trace_id": get_trace_id(),
+                "duration_ms": duration_ms,
+                "success": True,
+            },
+        )
 
 
 def is_latest_message(query: CallbackQuery | None, user_data: dict[str, object] | None) -> bool:
@@ -81,3 +115,15 @@ def is_latest_message(query: CallbackQuery | None, user_data: dict[str, object] 
     if last_msg_id is not None:
         return query.message.message_id == int(str(last_msg_id))
     return True
+
+
+def _classify_callback_error(error: Exception) -> str:
+    """Classify a callback answer error for structured logging."""
+    msg = str(error).lower()
+    if "query is too old" in msg or "query id is invalid" in msg:
+        return "stale_callback"
+    if "bot was blocked" in msg or "user blocked" in msg:
+        return "user_blocked"
+    if "timeout" in msg:
+        return "timeout"
+    return "telegram_error"

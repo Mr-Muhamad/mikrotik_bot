@@ -11,6 +11,7 @@ from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.cache import TTLCache
 from core.exceptions import RouterNotFoundError
 from core.mikrotik_client import RouterOSRow
+from utils.log_helpers import log_api_call
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +82,7 @@ class ConnectionPool:
         return api
 
     def _connect_with_retry(self, router_info: RouterOSRow, timeout: int | None = None) -> Api:
+        start = time.monotonic()
         last_error: LibRouterosError | None = None
         for attempt in range(1 + MAX_RETRIES):
             with self._lock:
@@ -89,19 +91,48 @@ class ConnectionPool:
                 api = self._connect(router_info, timeout=timeout)
                 with self._lock:
                     self.successful_connections += 1
-                logger.info(f"Connected to {router_info['name']} (attempt {attempt + 1})")
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(
+                    router_info.get("name", "unknown"),
+                    "connect",
+                    duration_ms,
+                    True,
+                    component="ROUTER",
+                )
                 return api
             except LibRouterosError as e:
                 with self._lock:
                     self.failed_connections += 1
                 last_error = e
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(
+                    router_info.get("name", "unknown"),
+                    "connect",
+                    duration_ms,
+                    False,
+                    error=e,
+                    component="ROUTER",
+                )
                 logger.warning(
                     f"Connection attempt {attempt + 1}/{1 + MAX_RETRIES} "
-                    f"failed for {router_info['name']}: {e}"
+                    f"failed for {router_info['name']}: {e}",
+                    extra={"component": "ROUTER"},
                 )
                 if attempt < MAX_RETRIES:
                     time.sleep(RETRY_DELAY)
-        logger.error(f"Failed to connect to {router_info['name']} after {1 + MAX_RETRIES} attempts")
+        duration_ms = (time.monotonic() - start) * 1000
+        log_api_call(
+            router_info.get("name", "unknown"),
+            "connect",
+            duration_ms,
+            False,
+            error=last_error,
+            component="ROUTER",
+        )
+        logger.error(
+            f"Failed to connect to {router_info['name']} after {1 + MAX_RETRIES} attempts",
+            extra={"component": "ROUTER"},
+        )
         raise last_error  # type: ignore[misc]
 
     def get_connection(self, router_key: str = "router1", timeout: int | None = None) -> Api:
@@ -109,6 +140,7 @@ class ConnectionPool:
         يحصل على اتصال جاهز من الطابور، أو ينشئ اتصالاً جديداً إذا لم يتجاوز الحد.
         إذا تجاوز الحد (MAX_CONNECTIONS_PER_ROUTER)، سينتظر حتى يفرغ اتصال من الطابور.
         """
+        start = time.monotonic()
         with self._lock:
             if router_key not in self.pools:
                 self.pools[router_key] = queue.Queue(maxsize=MAX_CONNECTIONS_PER_ROUTER)
@@ -129,8 +161,12 @@ class ConnectionPool:
             try:
                 router_info = self.get_router_info(router_key)
                 api = self._connect_with_retry(router_info, timeout)
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(router_key, "get_connection", duration_ms, True, component="ROUTER")
                 return api
             except Exception:
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(router_key, "get_connection", duration_ms, False, component="ROUTER")
                 # إذا فشل إنشاء الاتصال، ننقص العداد
                 with self._lock:
                     self.active_counts[router_key] -= 1
@@ -142,7 +178,12 @@ class ConnectionPool:
                 try:
                     api.path("system", "resource")("print")
                 except (LibRouterosError, ConnectionError, OSError, TimeoutError) as e:
-                    logger.debug(f"Pooled connection stale for {router_key}, discarding: {e}")
+                    duration_ms = (time.monotonic() - start) * 1000
+                    log_api_call(router_key, "get_connection", duration_ms, False, error=e, component="ROUTER")
+                    logger.debug(
+                        f"Pooled connection stale for {router_key}, discarding: {e}",
+                        extra={"component": "ROUTER"},
+                    )
                     with self._lock:
                         if self.active_counts.get(router_key, 0) > 0:
                             self.active_counts[router_key] -= 1
@@ -152,13 +193,20 @@ class ConnectionPool:
                         pass
                     # إنشاء اتصال جديد بديلاً
                     router_info = self.get_router_info(router_key)
+                    duration_ms = (time.monotonic() - start) * 1000
+                    log_api_call(router_key, "get_connection", duration_ms, False, error=e, component="ROUTER")
                     return self._connect_with_retry(router_info, timeout)
                 with self._lock:
                     self.cache_hits += 1
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(router_key, "get_connection", duration_ms, True, component="ROUTER")
                 return api
             except queue.Empty:
+                duration_ms = (time.monotonic() - start) * 1000
+                log_api_call(router_key, "get_connection", duration_ms, False, component="ROUTER")
                 logger.error(
-                    f"Connection pool timeout for {router_key}. Too many concurrent requests."
+                    f"Connection pool timeout for {router_key}. Too many concurrent requests.",
+                    extra={"component": "ROUTER"},
                 )
                 raise TimeoutError(
                     "Connection pool timeout: too many concurrent requests to the router"
