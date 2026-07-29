@@ -167,6 +167,19 @@ def get_report_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
+def get_usage_select_keyboard(users: list[RouterOSRow]) -> InlineKeyboardMarkup:
+    """Return a keyboard with one button per user for multi-result usage selection."""
+
+    keyboard: _KeyboardLayout = []
+    for idx, user in enumerate(users):
+        name = str(user.get("name", "—"))
+        uptime = str(user.get("uptime", ""))
+        label = f"{name} — {uptime}" if uptime else name
+        keyboard.append([InlineKeyboardButton(label, callback_data=f"usage_sel_{idx}")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")])
+    return InlineKeyboardMarkup(keyboard)
+
+
 def get_batches_keyboard(
     batches: list[RouterOSRow],
     page: int = 0,
@@ -190,6 +203,7 @@ def get_batches_keyboard(
     if nav_row:
         keyboard.append(nav_row)
 
+    keyboard.append([InlineKeyboardButton("🔍 بحث", callback_data="batches_search")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")])
     return InlineKeyboardMarkup(keyboard)
 
@@ -686,6 +700,7 @@ def get_logs_filter_keyboard(
     admin_label = str(filters.get("admin_label") or filters.get("admin_id") or "الكل")
     action_label = str(filters.get("action") or "الكل")
     time_label: str = _logs_time_label(filters)
+    search_text: str = str(filters.get("search_text") or "")
 
     keyboard: _KeyboardLayout = [
         [
@@ -697,12 +712,15 @@ def get_logs_filter_keyboard(
             InlineKeyboardButton(f"🕓 مدة: {time_label}", callback_data="logs_filter_time"),
         ],
     ]
+    text_label = f"🔍 بحث: {search_text}" if search_text else "🔍 بحث نصي"
+    keyboard.append([InlineKeyboardButton(text_label, callback_data="logs_filter_text")])
     if any(
         (
             filters.get("router"),
             filters.get("admin_id"),
             filters.get("action"),
             filters.get("since_days"),
+            filters.get("search_text"),
         )
     ):
         keyboard.append([InlineKeyboardButton("🧹 مسح الفلاتر", callback_data="logs_clear")])

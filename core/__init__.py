@@ -6,10 +6,10 @@ from core.stats import stats_manager
 from core.userman_manager import userman_manager
 
 __all__ = [
-    "mikrotik_api",
-    "hotspot_manager",
-    "userman_manager",
     "backup_service",
-    "stats_manager",
+    "hotspot_manager",
+    "mikrotik_api",
     "profile_sync",
+    "stats_manager",
+    "userman_manager",
 ]

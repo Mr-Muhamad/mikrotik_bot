@@ -58,3 +58,9 @@ WAITING_USERMAN_SEARCH = WaitingState.USERMAN_SEARCH.value
 
 # مشاركة كرت WiFi للعميل
 WAITING_SHARE_RECIPIENT = WaitingState.SHARE_RECIPIENT.value
+
+# بحث في دفعات الكروت
+WAITING_BATCHES_SEARCH = WaitingState.BATCHES_SEARCH.value
+
+# بحث نصي في سجل التدقيق
+WAITING_LOGS_SEARCH = WaitingState.LOGS_SEARCH.value

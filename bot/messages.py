@@ -341,6 +341,7 @@ USAGE_DEVICE_LINE = "• {address} — {mac} — {uptime}"
 USAGE_NO_ACTIVE = "📭 لا توجد أجهزة نشطة حالياً"
 USAGE_LIMIT_LABEL = "📊 حد البيانات: {limit}"
 USAGE_NO_LIMIT = "غير محدود"
+USAGE_MULTIPLE_RESULTS = "🔍 توجد {count} نتائج. اختر المستخدم لعرض التقرير:"
 
 
 HOTSPOT_STATS = """📊 ━━━━ <b>إحصائيات الشبكة</b> ━━━━
@@ -447,6 +448,7 @@ SHARE_CARD_SUCCESS = "✅ تم إرسال بيانات الكرت للعميل �
 SHARE_CARD_FAIL = "❌ فشل الإرسال — تأكد من صحة الـ ID وأن العميل لم يحظر البوت"
 SHARE_CARD_NO_CARDS = "⚠️ لا توجد كروت في هذه الدفعة"
 SHARE_CARD_INVALID_ID = "❌ الـ ID غير صالح — أرسل رقماً صحيحاً"
+BATCHES_SEARCH_PROMPT = "🔍 أرسل كلمة البحث للبحث في الدفعات (اسم العميل، اسم الدفعة، أو البادئة):"
 
 # ─── إحصائيات تاريخية (Snapshots) ─────────────────────────────────────
 STATS_TREND_HEADER = "\n\n📈 <b>آخر 7 أيام (المستخدمون النشطون):</b>\n<pre>"
@@ -495,6 +497,8 @@ AUDIT_SUBMENU_COUNT = "{title}\n\n🔢 العدد: {count}"
 AUDIT_LIST_EMPTY = "📋 سجل التدقيق\n\n{header}\n\n{no_results}"
 AUDIT_PAGE_EMPTY = "📋 سجل التدقيق\n\n{header}\n\n📭 لا توجد سجلات في هذه الصفحة"
 AUDIT_LIST_HEADER = "📋 <b>سجل التدقيق</b> ({start}-{end} من {total})"
+LOGS_FILTER_TEXT_PROMPT = "🔍 أرسل النص للبحث في سجل التدقيق (يبحث في العملية، اسم المشرف، أو اسم الراوتر):"
+AUDIT_FILTER_ACTIVE = "<b>فلاتر نشطة:</b> {filters}"
 
 # ─── WATCHDOG STRINGS ──────────────────────────────────────────
 WATCHDOG_QUEUE_UNAVAILABLE = "❌ Job Queue غير متاح"

@@ -16,7 +16,6 @@ from bot.messages import (
     BACKUP_ALREADY_IN_PROGRESS,
     BACKUP_BACKGROUND_NOTIFY,
     BACKUP_DL_DOWNLOAD_HINT,
-    BACKUP_DL_FTP_FALLBACK,
     BACKUP_DL_INVALID_LINK,
     BACKUP_DL_NOT_LOCAL,
     BACKUP_DL_SEND_FAIL,
@@ -44,7 +43,6 @@ from bot.messages import (
     SCHEDULE_TIME_PROMPT,
 )
 from bot.router_selector import cleanup_state, nav_set, set_current_action
-from config import BACKUP_DIR
 from core.backup.files import resolve_local_backup_file
 from core.backup_scheduler import backup_scheduler
 from core.backup_service import backup_service

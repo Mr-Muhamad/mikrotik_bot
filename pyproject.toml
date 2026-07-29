@@ -6,3 +6,19 @@ python_files = ["test_*.py"]
 [tool.coverage.run]
 source = ["bot", "core", "database", "utils", "pdf"]
 omit = ["*/__pycache__/*", "*/venv/*"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["E402"]
+"database/models.py" = ["E402"]
+"tests/*" = ["E402"]
+"bot/registration_parts/*" = ["E402"]
+
+
+

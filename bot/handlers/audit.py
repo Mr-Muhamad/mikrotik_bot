@@ -3,10 +3,12 @@ from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime, timedelta
 
 from telegram import Update
-from telegram.ext import ContextTypes
+from telegram.ext import ContextTypes, ConversationHandler
 
+from bot.handlers.constants import WAITING_LOGS_SEARCH
 from bot.keyboards import (
     TIME_OPTIONS,
+    get_cancel_keyboard,
     get_logs_filter_keyboard,
     get_logs_submenu_keyboard,
 )
@@ -21,6 +23,7 @@ from bot.messages import (
     AUDIT_SUBMENU_COUNT,
     AUDIT_SUBMENU_ROUTER,
     AUDIT_SUBMENU_TIME,
+    LOGS_FILTER_TEXT_PROMPT,
     NO_RESULTS,
 )
 from bot.router_selector import nav_set
@@ -51,7 +54,7 @@ SUBMENU_TITLES = {
     "time": AUDIT_SUBMENU_TIME,
 }
 
-_FILTER_KEYS = ("router", "admin_id", "admin_label", "action", "since_days")
+_FILTER_KEYS = ("router", "admin_id", "admin_label", "action", "since_days", "search_text")
 
 
 def _empty_filters() -> RouterOSRow:
@@ -61,6 +64,7 @@ def _empty_filters() -> RouterOSRow:
         "admin_label": None,
         "action": None,
         "since_days": None,
+        "search_text": None,
     }
 
 
@@ -68,16 +72,19 @@ def _get_filters(context: ContextTypes.DEFAULT_TYPE) -> RouterOSRow:
     return context.user_data.setdefault("logs_filters", _empty_filters())
 
 
-def _build_db_filters(filters: dict[str, str | int | None]) -> dict[str, str | int | None]:
-    db_filters = {
-        "router": filters.get("router"),
-        "admin_id": filters.get("admin_id"),
-        "action": filters.get("action"),
+def _build_db_filters(filters: dict[str, object]) -> dict[str, str | int | None]:
+    db_filters: dict[str, str | int | None] = {
+        "router": str(filters["router"]) if filters.get("router") else None,
+        "admin_id": int(str(filters["admin_id"])) if filters.get("admin_id") is not None else None,
+        "action": str(filters["action"]) if filters.get("action") else None,
     }
     since_days = filters.get("since_days")
     if since_days:
-        cutoff = datetime.now(UTC) - timedelta(days=float(since_days))
+        cutoff = datetime.now(UTC) - timedelta(days=float(str(since_days)))
         db_filters["since"] = cutoff.strftime(UTC_TIMESTAMP_FORMAT)
+    search_text = filters.get("search_text")
+    if search_text:
+        db_filters["search_text"] = str(search_text)
     return db_filters
 
 
@@ -97,6 +104,9 @@ def _format_filters_short(filters: RouterOSRow) -> str:
     if since_days_val:
         label = next((name for name, days in TIME_OPTIONS if days == since_days_val), "")
         parts.append(f"🕓 {label}")
+    search_text_val = filters.get("search_text")
+    if search_text_val:
+        parts.append(f"🔎 \"{str(search_text_val)}\"")
     return " | ".join(parts) if parts else AUDIT_NO_FILTERS
 
 
@@ -183,6 +193,30 @@ async def logs_clear_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data["logs_menu"] = None
     context.user_data["logs_sub_page"] = 0
     await _show_logs_page(update, context, page=0, from_callback=True)
+
+
+@admin_only
+async def logs_filter_text_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Prompt user to enter search text for filtering logs."""
+    query = update.callback_query
+    await safe_answer_callback(query)
+    context.user_data["logs_menu"] = None
+    await query.edit_message_text(LOGS_FILTER_TEXT_PROMPT, reply_markup=get_cancel_keyboard())
+    return WAITING_LOGS_SEARCH
+
+
+@admin_only
+async def logs_search_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Receive search text, apply to log filters, and show results."""
+    search_text = (update.message.text or "").strip()
+    if not search_text:
+        await send_step(update, context, LOGS_FILTER_TEXT_PROMPT, get_cancel_keyboard())
+        return WAITING_LOGS_SEARCH
+    filters = _get_filters(context)
+    filters["search_text"] = search_text
+    context.user_data["logs_sub_page"] = 0
+    await _show_logs_page(update, context, page=0, from_callback=False)
+    return ConversationHandler.END
 
 
 @admin_only

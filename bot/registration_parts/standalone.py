@@ -15,6 +15,7 @@ from bot.handlers.audit import (
     logs_clear_callback,
     logs_command,
     logs_filter_callback,
+    logs_filter_text_callback,
     logs_page_callback,
     logs_set_callback,
     logs_subnav_callback,
@@ -39,6 +40,7 @@ from bot.handlers.batch import (
     batch_regen,
     batch_select,
     batches_command,
+    batches_search_start,
     mark_batch_paid_handler,
     show_sales_summary,
 )
@@ -99,7 +101,7 @@ from bot.handlers.routers import (
 from bot.handlers.settings import pdf_group_layout, pdf_group_misc, pdf_group_text
 from bot.handlers.stats import stats_chart_callback, stats_hotspot, stats_userman
 from bot.handlers.timeout import cmd_timeout, handle_timeout_selection
-from bot.handlers.usage import usage_start
+from bot.handlers.usage import usage_select_callback, usage_start
 from bot.handlers.userman import userman_cards_start, userman_list, userman_profiles
 from bot.handlers.watchdog import (
     watchdog_refresh,
@@ -210,6 +212,9 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["sales_summary"])(show_sales_s
 standalone(CallbackQueryHandler, pattern=PATTERNS["batches_menu"])(batches_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["logs_menu"])(logs_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["usage_start"])(usage_start)
+standalone(CallbackQueryHandler, pattern=PATTERNS["usage_sel"])(usage_select_callback)
+standalone(CallbackQueryHandler, pattern=PATTERNS["batches_search"])(batches_search_start)
+standalone(CallbackQueryHandler, pattern=PATTERNS["logs_filter_text"])(logs_filter_text_callback)
 # حظر MAC — standalone لأن unblock قد يأتي من خارج conversation
 standalone(CallbackQueryHandler, pattern=PATTERNS["unblock_mac"])(unblock_mac_handler)
 standalone(CallbackQueryHandler, pattern=PATTERNS["reports_menu"])(reports_menu)

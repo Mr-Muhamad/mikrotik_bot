@@ -141,6 +141,9 @@ CALLBACKS: dict[str, str] = {
     "card_skip_prefix": "card_skip_prefix",
     # حظر MAC
     "blocked_list": "blocked_list",
+    # بحث
+    "batches_search": "batches_search",
+    "logs_filter_text": "logs_filter_text",
 }
 
 # ── Dynamic token builders (prefix + variable) ────────────────
@@ -456,4 +459,7 @@ PATTERNS: dict[str, str] = {
     "set_timeout": r"^set_timeout:\d+$",
     "cancel_timeout": r"^cancel_timeout$",
     "stats_day": r"^stats_day_\d+$",
+    "usage_sel": r"^usage_sel_\d+$",
+    "batches_search": r"^batches_search$",
+    "logs_filter_text": r"^logs_filter_text$",
 }

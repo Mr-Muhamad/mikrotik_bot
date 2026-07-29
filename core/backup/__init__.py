@@ -18,10 +18,10 @@ __all__ = [
     "MAX_LOCAL_BACKUPS",
     "MAX_ROUTER_BACKUPS",
     "USERMAN_BACKUP_PREFIX",
-    "download_backup_file",
-    "resolve_local_backup_file",
-    "resolve_userman_backup_file",
     "BackupRestore",
     "SystemBackupService",
     "UserManagerBackupService",
+    "download_backup_file",
+    "resolve_local_backup_file",
+    "resolve_userman_backup_file",
 ]

@@ -53,10 +53,10 @@ __all__ = [
     "MAX_LOCAL_BACKUPS",
     "MAX_ROUTER_BACKUPS",
     "USERMAN_BACKUP_PREFIX",
-    "BackupService",
     "BackupRestore",
-    "backup_service",
+    "BackupService",
     "backup_restore",
+    "backup_service",
     "resolve_local_backup_file",
     "resolve_userman_backup_file",
 ]

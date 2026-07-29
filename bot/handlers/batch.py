@@ -7,10 +7,11 @@ import telegram.error
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from bot.handlers.constants import WAITING_SHARE_RECIPIENT
+from bot.handlers.constants import WAITING_BATCHES_SEARCH, WAITING_SHARE_RECIPIENT
 from bot.handlers.handler_utils import get_query_message
-from bot.keyboards import get_batch_detail_keyboard, get_batches_keyboard
+from bot.keyboards import get_batch_detail_keyboard, get_batches_keyboard, get_cancel_keyboard
 from bot.messages import (
+    BATCHES_SEARCH_PROMPT,
     MARK_PAID_FAIL,
     MARK_PAID_SUCCESS,
     PAYMENT_STATUS_LABELS,
@@ -32,6 +33,7 @@ from database.models import (
     list_card_batches,
     update_batch_payment,
 )
+from database.repositories.card_batches import search_card_batches
 from database.repositories.pdf_settings import get_pdf_settings
 from pdf.card_generator import card_generator
 from utils.admin_decorator import admin_only
@@ -65,6 +67,47 @@ async def batches_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cleanup_state(update.effective_user.id, context.user_data)
     nav_set(context, "menu_hotspot")
     await _show_batches_page(update, context, page=0)
+
+
+@admin_only
+async def batches_search_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Prompt user for search term to filter card batches."""
+    query = update.callback_query
+    await query.answer()
+    await query.edit_message_text(BATCHES_SEARCH_PROMPT, reply_markup=get_cancel_keyboard())
+    return WAITING_BATCHES_SEARCH
+
+
+@admin_only
+async def batches_search_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Search card batches by customer_name, comment_prefix, or name."""
+    search_term = (update.message.text or "").strip()
+    if not search_term:
+        await send_step(update, context, BATCHES_SEARCH_PROMPT, get_cancel_keyboard())
+        return WAITING_BATCHES_SEARCH
+
+    router_key = context.user_data.get("router_key")
+    try:
+        results = await run_blocking(search_card_batches, search_term, router_key, 20, 0)
+    except (ValueError, OSError) as e:
+        logger.error(f"batches_search failed: {e}")
+        await send_step(update, context, "❌ فشل البحث: خطأ غير متوقع")
+        return ConversationHandler.END
+
+    if not results:
+        await send_step(
+            update, context,
+            f"📭 لا توجد نتائج لـ \"{search_term}\"",
+            get_cancel_keyboard(),
+        )
+        return WAITING_BATCHES_SEARCH
+
+    text = f"🔍 نتائج البحث عن \"{search_term}\":\n\n" + "\n".join(
+        f"• {_batch_label(b)} — {b.get('created_at', '')}" for b in results
+    )
+    keyboard = get_batches_keyboard(results, page=0, total=len(results), page_size=20)
+    await send_step(update, context, text, keyboard)
+    return ConversationHandler.END
 
 
 async def _show_batches_page(update: Update, context: ContextTypes.DEFAULT_TYPE, page: int):
@@ -400,12 +443,14 @@ async def share_card_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 __all__ = [
-    "batches_command",
-    "batch_select",
-    "batch_regen",
-    "mark_batch_paid_handler",
-    "show_sales_summary",
-    "share_card_start",
-    "share_card_send",
     "batch_page_handler",
+    "batch_regen",
+    "batch_select",
+    "batches_command",
+    "batches_search_query",
+    "batches_search_start",
+    "mark_batch_paid_handler",
+    "share_card_send",
+    "share_card_start",
+    "show_sales_summary",
 ]

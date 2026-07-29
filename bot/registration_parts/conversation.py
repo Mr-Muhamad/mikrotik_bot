@@ -18,8 +18,14 @@ from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, fil
 
 logger = logging.getLogger(__name__)
 
+from bot.handlers.audit import logs_filter_text_callback, logs_search_query
 from bot.handlers.backup import schedule_enable, schedule_menu_from_conversation, schedule_set
-from bot.handlers.batch import share_card_send, share_card_start
+from bot.handlers.batch import (
+    batches_search_query,
+    batches_search_start,
+    share_card_send,
+    share_card_start,
+)
 from bot.handlers.callback_constants import PATTERNS
 
 # ─── IMPORT ALL HANDLERS USED BY CONVERSATION REGISTRATIONS ───
@@ -119,7 +125,7 @@ from bot.handlers.menus import (
     menu_userman_from_conversation,
 )
 from bot.handlers.settings import pdf_settings_option, pdf_settings_value
-from bot.handlers.usage import usage_query, usage_start
+from bot.handlers.usage import usage_query, usage_select_callback, usage_start
 from bot.handlers.userman import (
     userman_back_to_mac,
     userman_back_to_payment,
@@ -179,6 +185,8 @@ entry_point(
 entry_point(CallbackQueryHandler, pattern=PATTERNS["schedule_enable"])(schedule_enable)
 entry_point(CallbackQueryHandler, pattern=PATTERNS["hotspot_stats"])(hotspot_stats)
 entry_point(CommandHandler, command="usage")(usage_start)
+entry_point(CallbackQueryHandler, pattern=PATTERNS["batches_search"])(batches_search_start)
+entry_point(CallbackQueryHandler, pattern=PATTERNS["logs_filter_text"])(logs_filter_text_callback)
 
 # share_card flow — مشاركة كرت WiFi للعميل
 entry_point(CallbackQueryHandler, pattern=PATTERNS["share_card"])(share_card_start)
@@ -209,6 +217,8 @@ fallback(CallbackQueryHandler, pattern=PATTERNS["menu_schedule"])(schedule_menu_
 fallback(CallbackQueryHandler, pattern=PATTERNS["schedule_enable"])(schedule_enable)
 fallback(CallbackQueryHandler, pattern=PATTERNS["go_back"])(go_back)
 fallback(CommandHandler, command="usage")(usage_start)
+fallback(CallbackQueryHandler, pattern=PATTERNS["batches_search"])(batches_search_start)
+fallback(CallbackQueryHandler, pattern=PATTERNS["logs_filter_text"])(logs_filter_text_callback)
 
 
 # Catch-all fallback for stale callbacks from old messages.
@@ -374,6 +384,7 @@ state("WAITING_SCHEDULE_TIME").message(filters.TEXT & ~filters.COMMAND)(schedule
 
 # ─── PHASE 1: USAGE FLOW ───────────────────────────────────────
 
+state("WAITING_USAGE_QUERY").callback(PATTERNS["usage_sel"])(usage_select_callback)
 state("WAITING_USAGE_QUERY").message(filters.TEXT & ~filters.COMMAND)(usage_query)
 
 # hotspot stats day text & button input
@@ -381,3 +392,11 @@ from bot.handlers.hotspot import hotspot_stats_day_input  # noqa: E402
 
 state("WAITING_STATS_DAY").callback(PATTERNS["stats_day"])(hotspot_stats_day_input)
 state("WAITING_STATS_DAY").message(filters.TEXT & ~filters.COMMAND)(hotspot_stats_day_input)
+
+# ─── BATCHES SEARCH FLOW ────────────────────────────────────────
+
+state("WAITING_BATCHES_SEARCH").message(filters.TEXT & ~filters.COMMAND)(batches_search_query)
+
+# ─── LOGS FILTER TEXT FLOW ──────────────────────────────────────
+
+state("WAITING_LOGS_SEARCH").message(filters.TEXT & ~filters.COMMAND)(logs_search_query)

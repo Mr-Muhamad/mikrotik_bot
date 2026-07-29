@@ -102,6 +102,37 @@ def list_card_batches(
         return [dict(row) for row in cursor.fetchall()]
 
 
+def search_card_batches(
+    query: str,
+    router_key: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> list[RouterOSRow]:
+    """Search card batches by customer_name, comment_prefix, or name using LIKE."""
+    from database.models import get_db
+
+    like = f"%{query}%"
+    with get_db() as conn:
+        cursor = conn.cursor()
+        if router_key:
+            cursor.execute(
+                "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, "
+                "created_by, created_at FROM card_batches "
+                "WHERE router_key = ? AND (customer_name LIKE ? OR comment_prefix LIKE ? OR name LIKE ?) "
+                "ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (router_key, like, like, like, limit, offset),
+            )
+        else:
+            cursor.execute(
+                "SELECT id, router_key, name, batch_type, profile, comment_prefix, count, "
+                "created_by, created_at FROM card_batches "
+                "WHERE customer_name LIKE ? OR comment_prefix LIKE ? OR name LIKE ? "
+                "ORDER BY created_at DESC LIMIT ? OFFSET ?",
+                (like, like, like, limit, offset),
+            )
+        return [dict(row) for row in cursor.fetchall()]
+
+
 def get_card_batches_count(router_key: str | None = None) -> int:
     """Return the total number of card batches for the given router (or all)."""
     from database.models import get_db

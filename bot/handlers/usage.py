@@ -5,7 +5,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.handlers.constants import WAITING_USAGE_QUERY
-from bot.keyboards import get_back_keyboard, get_cancel_keyboard
+from bot.keyboards import get_back_keyboard, get_cancel_keyboard, get_usage_select_keyboard
 from bot.messages import (
     NO_ROUTER_SELECTED,
     USAGE_BYTES_IN,
@@ -16,6 +16,7 @@ from bot.messages import (
     USAGE_DEVICE_LINE,
     USAGE_HEADER,
     USAGE_LIMIT_LABEL,
+    USAGE_MULTIPLE_RESULTS,
     USAGE_NO_ACTIVE,
     USAGE_NO_LIMIT,
     USAGE_NO_ROUTER,
@@ -117,6 +118,13 @@ async def _execute_usage_query(
         await send_step(update, context, USER_NOT_FOUND + "\n\n" + USAGE_PROMPT, get_cancel_keyboard())
         return WAITING_USAGE_QUERY
 
+    if len(users) > 1:
+        context.user_data["usage_users"] = users
+        msg = USAGE_MULTIPLE_RESULTS.format(count=len(users))
+        await send_step(update, context, msg, get_usage_select_keyboard(users))
+        context.user_data["usage_router"] = router_key
+        return WAITING_USAGE_QUERY
+
     from database.models import log_action
 
     target_user = str(users[0].get("name", search_term))
@@ -190,4 +198,37 @@ async def _show_usage_report(
     await send_step(update, context, "\n".join(lines), get_back_keyboard("menu_hotspot"))
 
 
-__all__ = ["usage_start", "usage_query"]
+@admin_only
+async def usage_select_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle user selection from multiple usage search results."""
+    query = update.callback_query
+    await query.answer()
+    data = query.data
+    try:
+        idx = int(data.split("_")[-1])
+    except (ValueError, IndexError):
+        await send_step(update, context, "❌ اختيار غير صالح")
+        return ConversationHandler.END
+
+    users: list[RouterOSRow] | None = context.user_data.get("usage_users")
+    if not users or idx < 0 or idx >= len(users):
+        await send_step(update, context, "❌ البيانات منتهية، أعد البحث")
+        return ConversationHandler.END
+
+    selected = users[idx]
+    router_key = context.user_data.get("usage_router") or get_selected_router(update.effective_user.id)
+    if not router_key:
+        await send_step(update, context, USAGE_NO_ROUTER)
+        return ConversationHandler.END
+
+    name = str(selected.get("name", "—"))
+    from database.models import log_action
+    await run_blocking(log_action, "usage_report", name, router_key, update.effective_user.id)
+
+    await _show_usage_report(update, context, selected, router_key)
+    context.user_data.pop("usage_users", None)
+    context.user_data.pop("usage_router", None)
+    return ConversationHandler.END
+
+
+__all__ = ["usage_query", "usage_select_callback", "usage_start"]

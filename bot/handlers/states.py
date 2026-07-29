@@ -72,3 +72,9 @@ class WaitingState(IntEnum):
 
     # مشاركة كرت WiFi للعميل (53)
     SHARE_RECIPIENT = 53
+
+    # بحث في دفعات الكروت (54)
+    BATCHES_SEARCH = 54
+
+    # بحث نصي في سجل التدقيق (55)
+    LOGS_SEARCH = 55

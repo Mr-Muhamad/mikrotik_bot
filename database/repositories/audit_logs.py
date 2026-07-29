@@ -25,10 +25,11 @@ def _logs_where_clauses(
       - admin_id: exact admin_id match
       - action: exact action match
       - since: timestamp string (UTC format) lower bound
+      - search_text: LIKE match against action, username, or router_name (ANDed)
     """
     filters = filters or {}
     clauses = []
-    params = []
+    params: list[str | int | None] = []
     router = filters.get("router")
     if router:
         clauses.append("router_name = ?")
@@ -45,6 +46,11 @@ def _logs_where_clauses(
     if since:
         clauses.append("timestamp >= ?")
         params.append(since)
+    search_text = filters.get("search_text")
+    if search_text:
+        like = f"%{search_text}%"
+        clauses.append("(action LIKE ? OR username LIKE ? OR router_name LIKE ?)")
+        params.extend([like, like, like])
     return clauses, params
 
 
