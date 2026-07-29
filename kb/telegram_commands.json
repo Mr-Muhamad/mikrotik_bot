@@ -98,5 +98,21 @@
   {
     "command": "batches",
     "description": "عرض وتصدير دفعات الكروت"
+  },
+  {
+    "command": "report",
+    "description": "تقرير المبيعات"
+  },
+  {
+    "command": "sales",
+    "description": "المبيعات"
+  },
+  {
+    "command": "add_customer",
+    "description": "إضافة عميل"
+  },
+  {
+    "command": "remove_customer",
+    "description": "إزالة عميل"
   }
 ]

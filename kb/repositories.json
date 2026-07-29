@@ -1,1 +1,176 @@
-[]
+[
+  {
+    "id": "repo:admin_roles",
+    "name": "admin_roles",
+    "path": "database/repositories/admin_roles.py",
+    "table": "admin_roles",
+    "responsibility": "إدارة أدوار المشرفين (super_admin/admin/operator/viewer/customer)",
+    "functions": [
+      "ensure_admin_role(admin_id, default_role, changed_by) — إدراج دور افتراضي إن لم يوجد",
+      "seed_admin_roles(admin_ids, default_role) — تهيئة أدوار جميع المشرفين المكوّنين",
+      "get_admin_role(admin_id) — استعلام دور مشرف معين",
+      "set_admin_role(admin_id, role, changed_by) — تعيين أو تحديث دور مشرف",
+      "list_admin_roles() — عرض جميع الأدوار مع admin_id وrole وchanged_by وchanged_at",
+      "delete_admin_role(admin_id) — حذف سجل دور مشرف"
+    ],
+    "lazy_imports": ["database.models.get_db", "database.models.now_utc", "database.models.VALID_ROLES"]
+  },
+  {
+    "id": "repo:audit_logs",
+    "name": "audit_logs",
+    "path": "database/repositories/audit_logs.py",
+    "table": "logs",
+    "responsibility": "سجل التدقيق (Audit Log) لتوثيق جميع العمليات على الروترات",
+    "functions": [
+      "log_action(action, username, router_name, admin_id) — تسجيل عملية في سجل التدقيق",
+      "get_logs(limit, offset, filters) — استعلام السجلات مع ترشيح حسب router/admin_id/action/since/search_text",
+      "get_logs_count(filters) — عدد السجلات المطابقة للفلاتر (للترقيم)",
+      "get_distinct_log_actions() — قائمة الإجراءات الفريدة المسجلة",
+      "get_distinct_log_admins() — أزواج (admin_id, username) الفريدة",
+      "get_distinct_log_routers() — قائمة router_name الفريدة",
+      "cleanup_old_logs(days) — حذف السجلات الأقدم من عدد الأيام المحدد"
+    ],
+    "lazy_imports": ["database.models.get_db", "database.models.UTC_TIMESTAMP_FORMAT"]
+  },
+  {
+    "id": "repo:backups",
+    "name": "backups",
+    "path": "database/repositories/backups.py",
+    "tables": ["backup_settings", "backup_jobs"],
+    "responsibility": "إعدادات جدولة النسخ الاحتياطي وسجل نتائج النسخ",
+    "constants": "BACKUP_JOBS_RETENTION_PER_ROUTER = 50",
+    "functions": [
+      "get_backup_schedule() — استعلام إعدادات الجدولة (مفعل/ساعة/دقيقة)",
+      "save_backup_schedule(enabled, hour, minute) — تحديث إعدادات الجدولة",
+      "record_backup_result(router_key, backup_type, success, details, router_name, file_name) — تسجيل نتيجة نسخ مع تقليم تلقائي للسجلات القديمة",
+      "get_last_backup(router_key) — آخر نسخة لراوتر معين",
+      "get_recent_backups(limit) — آخر النسخ عبر جميع الروترات"
+    ],
+    "lazy_imports": ["database.models.get_db", "database.models.UTC_TIMESTAMP_FORMAT"]
+  },
+  {
+    "id": "repo:card_batches",
+    "name": "card_batches",
+    "path": "database/repositories/card_batches.py",
+    "table": "card_batches",
+    "responsibility": "دفعات كروت Hotspot/User Manager المُنشأة مع بيانات المبيعات (مشفرّة)",
+    "key_modules": ["utils.crypto.decrypt_data", "utils.crypto.encrypt_data"],
+    "functions": [
+      "save_card_batch(router_key, name, batch_type, profile, comment_prefix, cards, created_by, unit_price) — حفظ دفعة كروت جديدة (مشفرّة)",
+      "list_card_batches(router_key, limit, offset) — عرض الدفعات (بدون المحتوى المشفر)",
+      "search_card_batches(query, router_key, limit, offset) — بحث في الدفعات حسب customer_name أو comment_prefix أو name",
+      "get_card_batches_count(router_key) — إجمالي عدد الدفعات",
+      "get_card_batch(batch_id) — استرجاع دفعة واحدة مع فك تشفير البطاقات",
+      "delete_card_batch(batch_id) — حذف دفعة",
+      "update_batch_payment(batch_id, status, customer_name, price) — تحديث حالة الدفع (paid/unpaid/deferred)",
+      "get_sales_summary(days) — ملخص المبيعات (عدد الدفعات/المدفوعة/غير المدفوعة/المؤجلة/الإيرادات)"
+    ],
+    "lazy_imports": ["database.models.get_db", "database.models.now_utc"]
+  },
+  {
+    "id": "repo:chat_messages",
+    "name": "chat_messages",
+    "path": "database/repositories/chat_messages.py",
+    "table": "tracked_messages",
+    "responsibility": "تتبع رسائل البوت لتنظيفها تلقائياً عند انتهاء صلاحيتها",
+    "functions": [
+      "add_tracked_message(chat_id, message_id) — تتبع رسالة جديدة",
+      "get_tracked_messages(chat_id) — استعلام معرفات الرسائل المتعقبة لمحادثة",
+      "remove_tracked_messages(chat_id, message_ids) — إزالة رسائل من التتبع بعد حذفها",
+      "delete_stale_records(cutoff_datetime) — حذف السجلات الأقدم من تاريخ القطع"
+    ],
+    "lazy_imports": ["database.models.get_db"]
+  },
+  {
+    "id": "repo:operator_permissions",
+    "name": "operator_permissions",
+    "path": "database/repositories/operator_permissions.py",
+    "table": "operator_router_permissions",
+    "responsibility": "ربط المشغّلين (operators) بالروترات المسموح لهم بالوصول — Tenant Isolation",
+    "functions": [
+      "assign_router_to_operator(operator_id, router_id, assigned_by) — منح مشغّل صلاحية راوتر",
+      "revoke_router_from_operator(operator_id, router_id) — سحب صلاحية راوتر من مشغّل",
+      "get_operator_routers(operator_id) — قائمة router_ids المسموحة لمشغّل",
+      "is_operator_allowed(operator_id, router_id) — فحص صلاحية مشغّل على راوتر محدد"
+    ],
+    "imports": ["database.models.get_db"]
+  },
+  {
+    "id": "repo:pdf_settings",
+    "name": "pdf_settings",
+    "path": "database/repositories/pdf_settings.py",
+    "table": "pdf_settings",
+    "responsibility": "الإعدادات الوحيدة (Singleton) لتخصيص شكل PDF الكروت",
+    "constants": "PDF_ALLOWED_COLUMNS — مجموعة الأعمدة المسموح تعديلها (قائمة بيضاء)",
+    "functions": [
+      "get_pdf_settings() — استعلام الإعدادات الحالية",
+      "update_pdf_settings(**kwargs) — تحديث الإعدادات مع تحقق من القائمة البيضاء للأعمدة"
+    ],
+    "lazy_imports": ["database.models.get_db"]
+  },
+  {
+    "id": "repo:router_health",
+    "name": "router_health",
+    "path": "database/repositories/router_health.py",
+    "table": "router_health_log",
+    "responsibility": "سجل صحة الروترات (online/offline) — حالة watchdog مستمرة عبر إعادة التشغيل",
+    "functions": [
+      "record_health(router_key, status, error_msg) — حفظ نتيجة فحص صحة راوتر",
+      "get_latest_health(router_key) — آخر نتيجة فحص لراوتر",
+      "get_all_latest_health() — آخر نتيجة فحص لكل الراوترات (subquery MAX)",
+      "get_health_history(router_key, limit) — تاريخ آخر N فحص",
+      "cleanup_health_history(days) — مسح السجلات الأقدم من N يوم"
+    ],
+    "imports": ["database.models.get_db", "database.models.now_utc", "database.models.UTC_TIMESTAMP_FORMAT"]
+  },
+  {
+    "id": "repo:routers",
+    "name": "routers",
+    "path": "database/repositories/routers.py",
+    "table": "discovered_routers",
+    "responsibility": "الروترات المكتشفة والمضافة يدوياً — CRUD، تشفير كلمات المرور",
+    "functions": [
+      "save_discovered_router(ip, mac, identity, version, board, software_id, platform, uptime, port, username, password, last_seen, owner_id) — إدراج أو تحديث راوتر (UPSERT على ip_address)",
+      "save_manual_router(ip, port, username, password, alias, owner_id) — إضافة يدوية (تطرح RouterAlreadyExistsError للتكرار)",
+      "get_saved_routers(active_only, decrypt, owner_id) — استعلام الروترات مع ترشيح حسب النشاط والمالك",
+      "get_router_by_id(router_id, decrypt) — استعلام راوتر بالمعرف مع فك تشفير",
+      "get_router_by_ip(ip_address) — استعلام راوتر بعنوان IP",
+      "update_router_credentials(router_id, username, password) — تحديث بيانات الاعتماد",
+      "update_router_last_seen(router_id) — تحديث آخر ظهور",
+      "update_router_identity(router_id, identity) — تحديث الاسم (identity)",
+      "delete_router(router_id) — حذف راوتر",
+      "update_router_alias(router_id, alias) — تحديث الاسم المستعار (name_alias)",
+      "get_router_display_name(router) — استخراج اسم العرض من سجل الراوتر (alias > identity > IP)"
+    ],
+    "external_deps": ["config.DEFAULT_API_PORT", "core.mikrotik_client.RouterOSRow", "core.exceptions.RouterAlreadyExistsError"],
+    "lazy_imports": ["database.models.get_db", "database.models.encrypt_password", "database.models.decrypt_password"]
+  },
+  {
+    "id": "repo:stats_snapshots",
+    "name": "stats_snapshots",
+    "path": "database/repositories/stats_snapshots.py",
+    "table": "stats_snapshots",
+    "responsibility": "لقطات الإحصائيات اليومية لكل راوتر (تاريخ active_users/total_users/bytes)",
+    "functions": [
+      "save_snapshot(router_key, data) — حفظ أو استبدال snapshot يومي (UPSERT على router_key+snapshot_date)",
+      "get_yesterday_snapshot(router_key) — snapshot أمس",
+      "get_week_snapshots(router_key) — آخر 7 snapshots مرتبة"
+    ],
+    "imports": ["database.models.get_db"]
+  },
+  {
+    "id": "repo:user_sessions",
+    "name": "user_sessions",
+    "path": "database/repositories/user_sessions.py",
+    "table": "user_sessions",
+    "responsibility": "جلسات مستخدمي التيليجرام: الراوتر المختار، الإجراء الحالي، مهلة الخمول",
+    "functions": [
+      "get_user_session(user_id) — استعلام جلسة مستخدم",
+      "save_user_session(user_id, selected_router, current_action, action_data) — حفظ/تحديث جلسة",
+      "update_activity(user_id) — تحديث last_activity فقط",
+      "set_session_timeout(user_id, timeout_minutes) — تعيين مهلة الجلسة",
+      "clear_router_session(user_id) — مسح الراوتر المختار (عند انتهاء المهلة)"
+    ],
+    "lazy_imports": ["database.models.get_db"]
+  }
+]
