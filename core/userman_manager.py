@@ -72,10 +72,21 @@ class UserManager:
         username_length: int = 8,
         prefix: str = "",
         caller_id: str = "",
+        timestamp: str = "",
     ) -> RouterOSResponse:
         """Create multiple User Manager cards with the specified type and profile.
 
         Binds to caller-id directly during creation if provided.
+
+        Args:
+            router_key: Router identifier key.
+            count: Number of cards to generate.
+            card_system: Card system enum or string key.
+            profile: Profile name to link to each user.
+            username_length: Length of generated numeric usernames.
+            prefix: Optional prefix prepended to each username.
+            caller_id: Optional MAC address for caller-id binding.
+            timestamp: Optional custom expiry/creation timestamp string.
         """
         if isinstance(card_system, str):
             card_system = _CARD_TYPE_MAP.get(card_system)
@@ -130,6 +141,7 @@ class UserManager:
                     profile,
                     comment=batch_comment,
                     caller_id=caller_id,
+                    timestamp=timestamp,
                 )
                 cards.append(result)
                 existing.add(username)
@@ -155,6 +167,7 @@ class UserManager:
         profile: str,
         comment: str = "",
         caller_id: str = "",
+        timestamp: str = "",
     ) -> RouterOSRow:
         """Create a User Manager user and attach the selected profile.
 
@@ -164,6 +177,8 @@ class UserManager:
         read-back so a silent failure can never be reported as success:
           - v7: ``user-manager/user-profile/add user=<name> profile=<profile>``
           - v6: ``tool/user-manager/user/create-and-activate-profile ...``
+
+        A custom ``timestamp`` is appended to the comment when provided.
 
         Returns a dict carrying the link status so the caller can surface failures.
         """
@@ -175,6 +190,12 @@ class UserManager:
             add_params["password"] = password
         if comment:
             add_params["comment"] = sanitize_comment(comment)
+        if timestamp:
+            add_params["comment"] = (
+                f"{add_params.get('comment', '')} | ts:{timestamp}"
+                if add_params.get("comment")
+                else f"ts:{timestamp}"
+            )
         if caller_id:
             add_params["caller-id"] = caller_id
         if not is_v7:

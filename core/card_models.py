@@ -25,6 +25,7 @@ class CardData:
     comment: str = ""
     created_at: str = ""
     payment: str = ""
+    timestamp: str = ""
 
     @property
     def show_password(self) -> bool:
@@ -63,6 +64,7 @@ def deserialize_cards(data: str) -> list["CardData"]:
                 comment=item.get("comment", ""),
                 created_at=item.get("created_at", ""),
                 payment=item.get("payment", ""),
+                timestamp=item.get("timestamp", ""),
             )
         )
     return cards

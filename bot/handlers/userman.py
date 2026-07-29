@@ -14,6 +14,7 @@ from bot.keyboards import (
     get_back_keyboard,
     get_card_mac_keyboard,
     get_card_payment_keyboard,
+    get_card_timestamp_keyboard,
     get_card_type_keyboard,
     get_profile_keyboard,
     get_router_keyboard,
@@ -26,14 +27,17 @@ from bot.messages import (
     CHOOSE_MAC_BIND,
     CHOOSE_PAYMENT,
     CHOOSE_PROFILE,
+    CHOOSE_TIMESTAMP,
     CREATING_CARDS,
     ENTER_CARD_PREFIX,
+    ENTER_TIMESTAMP,
     ERROR_OCCURRED,
     INVALID_PROFILE,
     MAX_CARDS_EXCEEDED,
     NO_PROFILES,
     NO_PROFILES_AVAILABLE,
     NO_ROUTER_SELECTED,
+    PAYMENT_DEFERRED,
     PAYMENT_PAID,
     PAYMENT_UNPAID,
     PDF_FILE_CAPTION,
@@ -74,6 +78,7 @@ from .constants import (
     WAITING_CARD_PAYMENT,
     WAITING_CARD_PREFIX,
     WAITING_CARD_PROFILE,
+    WAITING_CARD_TIMESTAMP,
     WAITING_CARD_TYPE,
 )
 
@@ -168,22 +173,81 @@ async def userman_card_profile_selected(update: Update, context: ContextTypes.DE
 
 @admin_only
 async def userman_card_payment_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Store the payment status and show the MAC binding keyboard.
+    """Store the payment status and show the timestamp keyboard.
 
     Args:
-        update: Callback query with card_paid or card_unpaid.
+        update: Callback query with card_paid, card_unpaid, or card_deferred.
         context: Conversation context storing card_payment.
 
     Returns:
-        WAITING_CARD_MAC.
+        WAITING_CARD_TIMESTAMP.
     """
     query = update.callback_query
     await safe_answer_callback(query)
 
-    payment = PAYMENT_PAID if query.data == "card_paid" else PAYMENT_UNPAID
+    payment = (
+        PAYMENT_PAID
+        if query.data == "card_paid"
+        else PAYMENT_DEFERRED
+        if query.data == "card_deferred"
+        else PAYMENT_UNPAID
+    )
     context.user_data["card_payment"] = payment
 
-    await query.edit_message_text(CHOOSE_MAC_BIND, reply_markup=get_card_mac_keyboard())
+    await query.edit_message_text(
+        CHOOSE_TIMESTAMP, reply_markup=get_card_timestamp_keyboard()
+    )
+    return WAITING_CARD_TIMESTAMP
+
+
+@admin_only
+async def userman_card_timestamp_selected(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Handle the timestamp choice: use current time or ask for custom.
+
+    Args:
+        update: Callback query with card_timestamp_now or card_timestamp_custom.
+        context: Conversation context.
+
+    Returns:
+        WAITING_CARD_MAC or WAITING_INPUT.
+    """
+    query = update.callback_query
+    await safe_answer_callback(query)
+
+    if query.data == "card_timestamp_now":
+        context.user_data["card_timestamp"] = ""
+        await query.edit_message_text(
+            CHOOSE_MAC_BIND, reply_markup=get_card_mac_keyboard()
+        )
+        return WAITING_CARD_MAC
+
+    # card_timestamp_custom: ask for custom timestamp
+    await query.edit_message_text(
+        ENTER_TIMESTAMP, reply_markup=get_back_keyboard("card_back_to_timestamp")
+    )
+    return WAITING_CARD_TIMESTAMP
+
+
+@admin_only
+async def userman_card_timestamp_custom(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+):
+    """Store the custom timestamp and proceed to MAC binding.
+
+    Args:
+        update: Message containing the timestamp string.
+        context: Conversation context.
+
+    Returns:
+        WAITING_CARD_MAC.
+    """
+    text = update.message.text if update.message is not None else ""
+    text = text or ""
+    context.user_data["card_timestamp"] = text.strip()
+
+    await send_step(update, context, CHOOSE_MAC_BIND, get_card_mac_keyboard())
     return WAITING_CARD_MAC
 
 
@@ -219,6 +283,7 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
     profile = context.user_data.get("card_profile")
     caller_id = context.user_data.get("card_caller_id", "")
     prefix = context.user_data.get("card_prefix", "")
+    timestamp = context.user_data.get("card_timestamp", "")
 
     try:
         cards = await run_blocking(
@@ -229,6 +294,7 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
             profile,
             prefix=prefix,
             caller_id=caller_id,
+            timestamp=timestamp,
         )
 
         await run_blocking(
@@ -264,6 +330,7 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 caller_id=caller_id,
                 created_at=created_at.isoformat(timespec="seconds"),
                 payment=payment,
+                timestamp=timestamp,
                 comment=(
                     " | ".join(
                         ([batch_comment] if batch_comment else [])
@@ -446,6 +513,9 @@ async def userman_back_to_profile(update: Update, context: ContextTypes.DEFAULT_
 
 userman_back_to_payment = make_back_step(
     CHOOSE_PAYMENT, get_card_payment_keyboard, WAITING_CARD_PAYMENT
+)
+userman_back_to_timestamp = make_back_step(
+    CHOOSE_TIMESTAMP, get_card_timestamp_keyboard, WAITING_CARD_TIMESTAMP
 )
 userman_back_to_mac = make_back_step(CHOOSE_MAC_BIND, get_card_mac_keyboard, WAITING_CARD_MAC)
 userman_back_to_prefix = make_back_step(

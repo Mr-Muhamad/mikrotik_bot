@@ -58,6 +58,9 @@ class WaitingState(IntEnum):
     # Hotspot stats day text input (41)
     STATS_DAY = 41
 
+    # User Manager card timestamp step (43)
+    CARD_TIMESTAMP = 43
+
     # User Manager card payment distinction step (42)
     CARD_PAYMENT = 42
 

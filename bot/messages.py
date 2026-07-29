@@ -278,6 +278,12 @@ NO_PROFILES = "📭 لا توجد بروفايلات"
 CHOOSE_PAYMENT = "💰 اختر حالة الدفع للكروت:"
 PAYMENT_PAID = "مدفوع"
 PAYMENT_UNPAID = "غير مدفوع"
+PAYMENT_DEFERRED = "مؤجل"
+
+CHOOSE_TIMESTAMP = "⏰ هل تريد تعيين وقت إنشاء/انتهاء للكروت؟"
+CARD_TIMESTAMP_NOW = "🕐 الآن (بدون تحديد)"
+CARD_TIMESTAMP_CUSTOM = "📅 تاريخ مخصص"
+ENTER_TIMESTAMP = "⏰ أرسل التاريخ والوقت للتاريخ المخصص (مثال: 2026-08-01 12:00):"
 
 CHOOSE_MAC_BIND = """🔗 ربط الكروت بعنوان MAC (caller-id)؟
 

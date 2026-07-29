@@ -53,6 +53,9 @@ WAITING_CARD_MAC = WaitingState.CARD_MAC.value
 # User Manager card prefix step
 WAITING_CARD_PREFIX = WaitingState.CARD_PREFIX.value
 
+# User Manager card timestamp step
+WAITING_CARD_TIMESTAMP = WaitingState.CARD_TIMESTAMP.value
+
 # User Manager search
 WAITING_USERMAN_SEARCH = WaitingState.USERMAN_SEARCH.value
 

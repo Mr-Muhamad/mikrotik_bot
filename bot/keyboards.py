@@ -324,6 +324,16 @@ def get_card_payment_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(keyboard)
 
 
+def get_card_timestamp_keyboard() -> InlineKeyboardMarkup:
+    """Return the timestamp choice keyboard for User Manager cards."""
+    keyboard = [
+        [InlineKeyboardButton("🕐 الآن (بدون تحديد)", callback_data="card_timestamp_now")],
+        [InlineKeyboardButton("📅 تاريخ مخصص", callback_data="card_timestamp_custom")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data="card_back_to_payment")],
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+
 def get_card_mac_keyboard() -> InlineKeyboardMarkup:
     """Return the MAC-binding choice keyboard for User Manager cards."""
     keyboard = [

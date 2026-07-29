@@ -131,6 +131,7 @@ from bot.handlers.userman import (
     userman_back_to_payment,
     userman_back_to_prefix,
     userman_back_to_profile,
+    userman_back_to_timestamp,
     userman_back_to_type,
     userman_card_count,
     userman_card_mac_selected,
@@ -138,6 +139,8 @@ from bot.handlers.userman import (
     userman_card_prefix,
     userman_card_profile_selected,
     userman_card_skip_prefix,
+    userman_card_timestamp_custom,
+    userman_card_timestamp_selected,
     userman_card_type_selected,
     userman_cards_start,
 )
@@ -360,6 +363,10 @@ state("WAITING_CARD_PROFILE").message(filters.TEXT & ~filters.COMMAND)(reprompt_
 
 state("WAITING_CARD_PAYMENT").callback(PATTERNS["card_back_to_profile"])(userman_back_to_profile)
 state("WAITING_CARD_PAYMENT").callback(PATTERNS["card_payment"])(userman_card_payment_selected)
+
+state("WAITING_CARD_TIMESTAMP").callback(PATTERNS["card_back_to_timestamp"])(userman_back_to_timestamp)
+state("WAITING_CARD_TIMESTAMP").callback(PATTERNS["card_timestamp"])(userman_card_timestamp_selected)
+state("WAITING_CARD_TIMESTAMP").message(filters.TEXT & ~filters.COMMAND)(userman_card_timestamp_custom)
 
 state("WAITING_CARD_MAC").callback(PATTERNS["card_back_to_payment"])(userman_back_to_payment)
 state("WAITING_CARD_MAC").callback(PATTERNS["card_mac_choice"])(userman_card_mac_selected)

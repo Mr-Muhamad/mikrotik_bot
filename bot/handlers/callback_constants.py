@@ -139,6 +139,9 @@ CALLBACKS: dict[str, str] = {
     "card_back_to_mac": "card_back_to_mac",
     "card_back_to_prefix": "card_back_to_prefix",
     "card_skip_prefix": "card_skip_prefix",
+    "card_back_to_timestamp": "card_back_to_timestamp",
+    "card_timestamp_now": "card_timestamp_now",
+    "card_timestamp_custom": "card_timestamp_custom",
     # حظر MAC
     "blocked_list": "blocked_list",
     # بحث
@@ -436,7 +439,7 @@ PATTERNS: dict[str, str] = {
     "edit_profile": r"^edit_profile_\d+$",
     "hs_card_profile": r"^hs_card_profile_\d+$",
     "card_profile": r"^card_profile_\d+$",
-    "card_payment": r"^(card_paid|card_unpaid)$",
+    "card_payment": r"^(card_paid|card_unpaid|card_deferred)$",
     "card_mac_choice": r"^(card_bind_known|card_no_bind)$",
     "card_back_to_type": r"^card_back_to_type$",
     "card_back_to_profile": r"^card_back_to_profile$",
@@ -444,6 +447,8 @@ PATTERNS: dict[str, str] = {
     "card_back_to_mac": r"^card_back_to_mac$",
     "card_back_to_prefix": r"^card_back_to_prefix$",
     "card_skip_prefix": r"^card_skip_prefix$",
+    "card_back_to_timestamp": r"^card_back_to_timestamp$",
+    "card_timestamp": r"^(card_timestamp_now|card_timestamp_custom)$",
     # حظر MAC — من الأكثر تحديداً للأعم
     "block_mac": r"^block_mac:[0-9A-Fa-f:]+$",
     "unblock_mac": r"^unblock_mac:[0-9A-Fa-f:]+$",
