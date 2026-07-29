@@ -120,6 +120,10 @@ def admin_only(func: Callable[..., Awaitable[object]]):
             logger.info(
                 f"📥 [ACTION INCOMING] User: {user_id} ({user.full_name}) | Router: {router_key} | Button: '{update.callback_query.data}' | Handler: {func.__name__}"
             )
+            try:
+                await update.callback_query.answer()
+            except telegram.error.TelegramError:
+                pass
         elif update.message and update.message.text:
             text_preview = update.message.text[:30] + ("..." if len(update.message.text) > 30 else "")
             logger.info(
