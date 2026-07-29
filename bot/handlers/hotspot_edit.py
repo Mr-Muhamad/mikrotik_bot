@@ -552,6 +552,41 @@ def _transform_renewal_day(new_value: str, user_data: RouterOSRow) -> str | None
     return f"{name_prefix}/{day_num}"
 
 
+async def _apply_edit_success_result(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    user_data: dict[str, object],
+    new_value: str,
+    api_field: str,
+    field: str,
+    user_name: str,
+    router_key: str,
+    user_id: int,
+) -> str:
+    """Apply the edit on the router, log it, and send the success step.
+
+    Returns:
+        WAITING_EDIT_VALUE.
+    """
+    await run_blocking(hotspot_manager.edit_user, router_key, user_id, **{api_field: new_value})
+    await run_blocking(log_action, f"edit_{field}", str(user_name), router_key, update.effective_user.id)
+
+    user_data[api_field] = new_value
+
+    kick_msg = ""
+    if field == "bytes" and user_name:
+        kicked = await run_blocking(hotspot_manager.kick_user, router_key, user_name)
+        if kicked:
+            kick_msg = HOTSPOT_EDIT_KICK_COUNT_INLINE.format(count=len(kicked))
+
+    is_disabled = str(user_data.get("disabled", "no")).lower() in ("yes", "true", "1")
+    text = HOTSPOT_EDIT_SUCCESS.format(kick_msg=kick_msg) + EDIT_SELECT_FIELD.format(
+        format_hotspot_user(user_data)
+    )
+    await send_step(update, context, text, get_edit_field_keyboard(is_disabled=is_disabled))
+    return WAITING_EDIT_VALUE
+
+
 @admin_only
 async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Validate and apply the new value for the selected edit field.
@@ -604,29 +639,10 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     try:
         user_name = user_data.get("name", "") or user_id
-        logger.info(
-            "hotspot_edit_value: user=%s, field=%s on router=%s",
-            user_id,
-            field,
-            router_key,
+        return await _apply_edit_success_result(
+            update, context, user_data, new_value, api_field,
+            field, user_name, router_key, user_id,
         )
-        await run_blocking(hotspot_manager.edit_user, router_key, user_id, **{api_field: new_value})
-        await run_blocking(log_action, f"edit_{field}", str(user_name), router_key, update.effective_user.id)
-
-        user_data[api_field] = new_value
-
-        kick_msg = ""
-        if field == "bytes" and user_name:
-            kicked = await run_blocking(hotspot_manager.kick_user, router_key, user_name)
-            if kicked:
-                kick_msg = HOTSPOT_EDIT_KICK_COUNT_INLINE.format(count=len(kicked))
-
-        is_disabled = str(user_data.get("disabled", "no")).lower() in ("yes", "true", "1")
-        text = HOTSPOT_EDIT_SUCCESS.format(kick_msg=kick_msg) + EDIT_SELECT_FIELD.format(
-            format_hotspot_user(user_data)
-        )
-        await send_step(update, context, text, get_edit_field_keyboard(is_disabled=is_disabled))
-        return WAITING_EDIT_VALUE
     except Exception as e:  # noqa: BLE001
         logger.error(f"hotspot_edit_value failed (error type: {type(e).__name__}): {e}")
         await send_error(

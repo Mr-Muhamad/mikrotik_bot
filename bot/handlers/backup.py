@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import cast
 
 import telegram.error
 from telegram import Update
@@ -75,9 +76,56 @@ def _set_backup_running(router_key: str, state: bool):
         _BACKUP_LOCKS.pop(router_key, None)
 
 
+async def _finish_backup_result(
+    context: ContextTypes.DEFAULT_TYPE,
+    chat_id: int,
+    user_id: int,
+    router_key: str,
+    b_type: str,
+    result: dict[str, object],
+    success_msg: str,
+    failure_msg: str,
+    filename: str | None = None,
+) -> None:
+    """Handle common backup success/failure messaging and user-data update."""
+    downloaded_raw = result.get("downloaded", [])
+    downloaded = cast(list[str], downloaded_raw)
+    created_files = cast(list[str], result.get("created_files", []))
+    local_path = str(result.get("local_path", ""))
+    warning = str(result.get("warning", ""))
+
+    lines = [success_msg]
+    if downloaded:
+        lines.append(BACKUP_DOWNLOADED_LOCAL.format(count=len(downloaded)))
+    if filename:
+        lines.append(f"📦 {filename}")
+    if warning:
+        lines.append(warning)
+    if not downloaded and created_files:
+        lines.append(BACKUP_ONLY_ON_ROUTER)
+
+    text = "\n".join(lines)
+
+    app_user_data = context.application.user_data
+    if user_id in app_user_data:
+        app_user_data[user_id]["backup_downloaded_list"] = downloaded or created_files
+        app_user_data[user_id]["backup_local_path"] = local_path
+
+    reply_markup = None
+    if downloaded or created_files:
+        text += BACKUP_DL_DOWNLOAD_HINT
+        reply_markup = get_backup_download_keyboard(
+            downloaded or created_files, b_type, local_path
+        )
+
+    await context.bot.send_message(
+        chat_id=chat_id, text=text, reply_markup=reply_markup
+    )
+    logger.info(f"Background {b_type} backup succeeded for router {router_key}")
+
+
 async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
     job = context.job
-    from typing import cast
 
     job_data = cast("dict[str, object]", job.data)
     router_key = str(job_data["router_key"])
@@ -100,38 +148,11 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                 file_name=result.get("local_path", ""),
             )
             if result["success"]:
-                downloaded_raw = result.get("downloaded", [])
-                downloaded = cast(list[str], downloaded_raw)
-                created_files = cast(list[str], result.get("created_files", []))
-                local_path = str(result.get("local_path", ""))
-                warning = str(result.get("warning", ""))
-
-                lines = [BACKUP_SUCCESS_FULL.format(message=result["message"])]
-                if downloaded:
-                    lines.append(BACKUP_DOWNLOADED_LOCAL.format(count=len(downloaded)))
-                if warning:
-                    lines.append(warning)
-                if not downloaded and created_files:
-                    lines.append(BACKUP_ONLY_ON_ROUTER)
-
-                text = "\n".join(lines)
-
-                user_data = context.application.user_data
-                if user_id in user_data:
-                    user_data[user_id]["backup_downloaded_list"] = downloaded or created_files
-                    user_data[user_id]["backup_local_path"] = local_path
-
-                reply_markup = None
-                if downloaded or created_files:
-                    text += BACKUP_DL_DOWNLOAD_HINT
-                    reply_markup = get_backup_download_keyboard(
-                        downloaded or created_files, "full", local_path
-                    )
-
-                await context.bot.send_message(
-                    chat_id=chat_id, text=text, reply_markup=reply_markup
+                await _finish_backup_result(
+                    context, chat_id, user_id, router_key, "full", result,
+                    BACKUP_SUCCESS_FULL.format(message=result["message"]),
+                    BACKUP_FAILED_FULL.format(message=result["message"]),
                 )
-                logger.info(f"Background full backup succeeded for router {router_key}")
             else:
                 await context.bot.send_message(
                     chat_id=chat_id, text=BACKUP_FAILED_FULL.format(message=result["message"])
@@ -150,38 +171,12 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                 file_name=result.get("filename", ""),
             )
             if result["success"]:
-                downloaded_raw = result.get("downloaded", [])
-                downloaded = cast(list[str], downloaded_raw)
-                created_files = cast(list[str], result.get("created_files", []))
-                local_path = str(result.get("local_path", ""))
-                warning = str(result.get("warning", ""))
-                filename = result.get("filename", "backup.tar")
-
-                lines = [
+                await _finish_backup_result(
+                    context, chat_id, user_id, router_key, "userman", result,
                     BACKUP_SUCCESS_USERMAN.format(message=result["message"]),
-                    f"📦 {filename}",
-                ]
-                if warning:
-                    lines.append(warning)
-
-                text = "\n".join(lines)
-
-                user_data = context.application.user_data
-                if user_id in user_data:
-                    user_data[user_id]["backup_downloaded_list"] = downloaded or created_files
-                    user_data[user_id]["backup_local_path"] = local_path
-
-                reply_markup = None
-                if downloaded or created_files:
-                    text += BACKUP_DL_DOWNLOAD_HINT
-                    reply_markup = get_backup_download_keyboard(
-                        downloaded or created_files, "userman", local_path
-                    )
-
-                await context.bot.send_message(
-                    chat_id=chat_id, text=text, reply_markup=reply_markup
+                    BACKUP_FAILED_USERMAN.format(message=result["message"]),
+                    filename=result.get("filename", "backup.tar"),
                 )
-                logger.info(f"Background userman backup succeeded for router {router_key}")
             else:
                 await context.bot.send_message(
                     chat_id=chat_id,

@@ -112,6 +112,92 @@ async def _send_reply(update: Update, text: str):
         await update.message.reply_text(text)
 
 
+def _log_action_incoming(update: Update, router_key: str, func_name: str) -> None:
+    """Log an incoming handler action for observability."""
+    user_id = update.effective_user.id
+    user_full_name = update.effective_user.full_name
+    if update.callback_query:
+        logger.info(
+            "📥 [ACTION INCOMING] User: %s (%s) | Router: %s | Button: '%s' | Handler: %s",
+            user_id, user_full_name, router_key,
+            update.callback_query.data, func_name,
+        )
+    elif update.message and update.message.text:
+        text_preview = update.message.text[:30] + (
+            "..." if len(update.message.text) > 30 else ""
+        )
+        logger.info(
+            "📥 [ACTION INCOMING] User: %s (%s) | Router: %s | Input: '%s' | Handler: %s",
+            user_id, user_full_name, router_key, text_preview, func_name,
+        )
+
+
+def _handle_rate_limited(update: Update, func_name: str) -> None:
+    user_id = update.effective_user.id
+    logger.warning("RATE LIMITED: User: %s | Handler: %s", user_id, func_name)
+    if update.callback_query:
+        try:
+            update.callback_query.answer(text="⏳", show_alert=False)
+        except telegram.error.TelegramError:
+            pass
+
+
+async def _execute_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    func: Callable[..., Awaitable[object]],
+    user_id: int,
+    router_key: str,
+) -> object | None:
+    """Execute a decorated handler with timing, logging, and activity tracking."""
+    start_time = time.perf_counter()
+    try:
+        res = await func(update, context)
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        logger.info(
+            "✅ [ACTION SUCCESS] User: %s | Router: %s | Handler: %s | Time: %.1fms",
+            user_id, router_key, func.__name__, elapsed_ms,
+        )
+    except Exception as e:
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        logger.exception(
+            "❌ [ACTION FAILED] User: %s | Router: %s | Handler: %s | Error: %s | Time: %.1fms",
+            user_id, router_key, func.__name__, e, elapsed_ms,
+        )
+        raise
+    from database.repositories.user_sessions import update_activity
+    update_activity(user_id)
+    return res
+
+
+def _is_authorized(user_id: int) -> bool:
+    """Return True if the user is a known admin (by ID or stored DB role)."""
+    if user_id in ADMIN_IDS:
+        return True
+    from database.models import get_admin_role
+    if get_admin_role(user_id):
+        return True
+    return False
+
+
+def _check_role_level(user_id: int, min_level: int, func_name: str, update: Update) -> bool:
+    """Return True if the user meets the minimum role level. Logs and replies on failure."""
+    from database.models import get_admin_role
+    db_role = get_admin_role(user_id)
+    if user_id not in ADMIN_IDS and db_role is None:
+        logger.warning("UNAUTHORIZED ACCESS: user_id=%s, function=%s", user_id, func_name)
+        return False
+    role = "super_admin" if user_id in ADMIN_IDS else (db_role or "admin")
+    if ROLE_LEVELS.get(role, 0) < min_level:
+        logger.warning(
+            "INSUFFICIENT ROLE: user_id=%s, role=%s, required=%s, function=%s",
+            user_id, role, min_level, func_name,
+        )
+        _send_reply(update, INSUFFICIENT_ROLE_MSG)
+        return False
+    return True
+
+
 def admin_only(func: Callable[..., Awaitable[object]]):
     @wraps(func)
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -132,57 +218,17 @@ def admin_only(func: Callable[..., Awaitable[object]]):
 
             router_key = get_selected_router(user_id) or "None"
 
-            if update.callback_query:
-                logger.info(
-                    f"📥 [ACTION INCOMING] User: {user_id} ({user.full_name}) | Router: {router_key} | Button: '{update.callback_query.data}' | Handler: {func.__name__}"
-                )
-            elif update.message and update.message.text:
-                text_preview = update.message.text[:30] + ("..." if len(update.message.text) > 30 else "")
-                logger.info(
-                    f"📥 [ACTION INCOMING] User: {user_id} ({user.full_name}) | Router: {router_key} | Input: '{text_preview}' | Handler: {func.__name__}"
-                )
-
-            if user_id not in ADMIN_IDS:
-                from database.models import get_admin_role
-
-                role = get_admin_role(user_id)
-                if not role:
-                    chat_id = update.effective_chat.id if update.effective_chat else "unknown"
-                    logger.warning(
-                        f"UNAUTHORIZED ACCESS: user_id={user_id}, "
-                        f"function={func.__name__}, "
-                        f"chat_id={chat_id}"
-                    )
-                    await _send_reply(update, ADMIN_ONLY_MSG)
-                    return
+            _log_action_incoming(update, router_key, func.__name__)
 
             if not _check_rate_limit(user_id, func.__name__):
-                logger.warning(f"RATE LIMITED: User: {user_id} | Handler: {func.__name__}")
-                if update.callback_query:
-                    try:
-                        await update.callback_query.answer(text="⏳", show_alert=False)
-                    except telegram.error.TelegramError:
-                        pass
+                _handle_rate_limited(update, func.__name__)
                 return
 
-            start_time = time.perf_counter()
-            try:
-                res = await func(update, context)
-                elapsed_ms = (time.perf_counter() - start_time) * 1000
-                logger.info(
-                    f"✅ [ACTION SUCCESS] User: {user_id} | Router: {router_key} | Handler: {func.__name__} | Time: {elapsed_ms:.1f}ms"
-                )
-            except Exception as e:
-                elapsed_ms = (time.perf_counter() - start_time) * 1000
-                logger.exception(
-                    f"❌ [ACTION FAILED] User: {user_id} | Router: {router_key} | Handler: {func.__name__} | Error: {e} | Time: {elapsed_ms:.1f}ms",
-                )
-                raise
+            if not _is_authorized(user_id):
+                await _send_reply(update, ADMIN_ONLY_MSG)
+                return
 
-            from database.repositories.user_sessions import update_activity
-
-            update_activity(user_id)
-            return res
+            return await _execute_handler(update, context, func, user_id, router_key)
 
     return wrapper
 
@@ -223,99 +269,16 @@ def require_role(min_role: str):
 
                 router_key = get_selected_router(user_id) or "None"
 
-                if update.callback_query:
-                    logger.info(
-                        "📥 [ACTION INCOMING] User: %s (%s) | "
-                        "Router: %s | Button: '%s' | Handler: %s",
-                        user_id,
-                        user.full_name,
-                        router_key,
-                        update.callback_query.data,
-                        func.__name__,
-                    )
-                elif update.message and update.message.text:
-                    text_preview = update.message.text[:30] + (
-                        "..." if len(update.message.text) > 30 else ""
-                    )
-                    logger.info(
-                        "📥 [ACTION INCOMING] User: %s (%s) | "
-                        "Router: %s | Input: '%s' | Handler: %s",
-                        user_id,
-                        user.full_name,
-                        router_key,
-                        text_preview,
-                        func.__name__,
-                    )
+                _log_action_incoming(update, router_key, func.__name__)
 
                 if not _check_rate_limit(user_id, func.__name__):
-                    logger.warning(
-                        "RATE LIMITED: User: %s | Handler: %s", user_id, func.__name__
-                    )
-                    if update.callback_query:
-                        try:
-                            await update.callback_query.answer(text="⏳", show_alert=False)
-                        except telegram.error.TelegramError:
-                            pass
+                    _handle_rate_limited(update, func.__name__)
                     return
 
-                from database.models import get_admin_role
-
-                db_role = get_admin_role(user_id)
-                if user_id not in ADMIN_IDS and db_role is None:
-                    logger.warning(
-                        "UNAUTHORIZED ACCESS: user_id=%s, function=%s",
-                        user_id,
-                        func.__name__,
-                    )
-                    await _send_reply(update, ADMIN_ONLY_MSG)
+                if not _check_role_level(user_id, min_level, func.__name__, update):
                     return
 
-                role = (
-                    "super_admin"
-                    if user_id in ADMIN_IDS
-                    else (db_role or "admin")
-                )
-
-                if ROLE_LEVELS.get(role, 0) < min_level:
-                    logger.warning(
-                        "INSUFFICIENT ROLE: user_id=%s, role=%s, "
-                        "required=%s, function=%s",
-                        user_id,
-                        role,
-                        min_role,
-                        func.__name__,
-                    )
-                    await _send_reply(update, INSUFFICIENT_ROLE_MSG)
-                    return
-
-                start_time = time.perf_counter()
-                try:
-                    res = await func(update, context)
-                    elapsed_ms = (time.perf_counter() - start_time) * 1000
-                    logger.info(
-                        "✅ [ACTION SUCCESS] User: %s | Router: %s | Handler: %s | Time: %.1fms",
-                        user_id,
-                        router_key,
-                        func.__name__,
-                        elapsed_ms,
-                    )
-                except Exception as e:
-                    elapsed_ms = (time.perf_counter() - start_time) * 1000
-                    logger.exception(
-                        "❌ [ACTION FAILED] User: %s | Router: %s | "
-                        "Handler: %s | Error: %s | Time: %.1fms",
-                        user_id,
-                        router_key,
-                        func.__name__,
-                        e,
-                        elapsed_ms,
-                    )
-                    raise
-
-                from database.repositories.user_sessions import update_activity
-
-                update_activity(user_id)
-                return res
+                return await _execute_handler(update, context, func, user_id, router_key)
 
         return wrapper
 

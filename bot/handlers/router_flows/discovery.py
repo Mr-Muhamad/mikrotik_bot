@@ -145,6 +145,74 @@ async def disc_enter_username(update: Update, context: ContextTypes.DEFAULT_TYPE
     return WAITING_DISC_PASSWORD
 
 
+async def _process_discovered_connection(
+    context: ContextTypes.DEFAULT_TYPE,
+    update: Update,
+    status_msg,  # Message
+    ip: str,
+    username: str,
+    password: str,
+    identity,
+    version,  # str | None
+) -> None:
+    """Handle a successful connection: save/update router and send result."""
+    router_db = await run_blocking(get_router_by_ip, ip)
+    is_update = router_db is not None
+    if is_update:
+        router_id = router_db["id"]
+        await run_blocking(update_router_credentials, router_id, username, password)
+    else:
+        router_id = await run_blocking(
+            save_discovered_router,
+            ip=ip,
+            username=username,
+            password=password,
+            identity=identity,
+            version=version,
+            last_seen=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            owner_id=update.effective_user.id if update.effective_user else 0,
+        )
+    router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
+    if update.effective_user:
+        set_selected_router(update.effective_user.id, router_key)
+
+    from core.router_info import detect_router_system
+    from core.watchdog import check_router_health
+
+    await run_blocking(check_router_health, router_key)
+    await run_blocking(detect_router_system, router_key)
+    await run_blocking(
+        log_action, "connect_discovered", ip, identity,
+        update.effective_user.id if update.effective_user else 0,
+    )
+    success_msg = (
+        ROUTER_UPDATED.format(identity, version, ip)
+        if is_update
+        else DISCOVERY_SUCCESS.format(identity, version, ip)
+    )
+    await status_msg.edit_text(
+        success_msg,
+        reply_markup=get_main_keyboard(),
+    )
+    if update.effective_user:
+        reset_rate_limit(update.effective_user.id)
+
+
+async def _process_login_failure(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    status_msg,
+    conn_result,
+) -> None:
+    """Handle a failed connection attempt: show error and schedule deletion."""
+    error_msg = conn_result
+    await status_msg.edit_text(
+        f"{DISCOVERY_FAILED}\n\n{error_msg}", reply_markup=get_router_keyboard()
+    )
+    if update.effective_chat:
+        await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
+
+
 @admin_only
 async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Test the connection with provided credentials and save or update the router.
@@ -181,53 +249,12 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
         )
         if success:
             version = conn_result
-            router_db = await run_blocking(get_router_by_ip, ip)
-            is_update = router_db is not None
-            if is_update:
-                router_id = router_db["id"]
-                await run_blocking(update_router_credentials, router_id, username, password)
-            else:
-                router_id = await run_blocking(
-                    save_discovered_router,
-                    ip=ip,
-                    username=username,
-                    password=password,
-                    identity=identity,
-                    version=version,
-                    last_seen=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    owner_id=update.effective_user.id if update.effective_user else 0,
-                )
-            router_key = f"{ROUTER_KEY_PREFIX}{router_id}"
-            if update.effective_user:
-                set_selected_router(update.effective_user.id, router_key)
-
-            # Deferred inner imports to avoid circular import dependency between bot.handlers and core
-            from core.router_info import detect_router_system
-            from core.watchdog import check_router_health
-
-            await run_blocking(check_router_health, router_key)
-            await run_blocking(detect_router_system, router_key)
-            await run_blocking(
-                log_action, "connect_discovered", ip, identity, update.effective_user.id if update.effective_user else 0
+            await _process_discovered_connection(
+                context, update, status_msg, ip, username, password,
+                identity, version,
             )
-            success_msg = (
-                ROUTER_UPDATED.format(identity, version, ip)
-                if is_update
-                else DISCOVERY_SUCCESS.format(identity, version, ip)
-            )
-            await status_msg.edit_text(
-                success_msg,
-                reply_markup=get_main_keyboard(),
-            )
-            if update.effective_user:
-                reset_rate_limit(update.effective_user.id)
         else:
-            error_msg = conn_result
-            await status_msg.edit_text(
-                f"{DISCOVERY_FAILED}\n\n{error_msg}", reply_markup=get_router_keyboard()
-            )
-            if update.effective_chat:
-                await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
+            await _process_login_failure(update, context, status_msg, conn_result)
     except (LibRouterosError, OSError, ConnectionError) as e:
         logger.warning(f"Connection/RouterOS error during disc_enter_password for {ip}: {e}")
         await send_error(

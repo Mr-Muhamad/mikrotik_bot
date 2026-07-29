@@ -283,7 +283,7 @@ class PortScanProbe:
             writer.close()
             try:
                 await writer.wait_closed()
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: S110, BLE001
                 # Broad catch: may be closed already, mock objects in tests,
                 # or other StreamWriter edge cases. This is just cleanup.
                 pass
