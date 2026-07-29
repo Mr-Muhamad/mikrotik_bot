@@ -177,7 +177,12 @@ class BackupScheduler:
                         f"Failed to notify admin {admin_id} about expiry "
                         f"(error type: {type(e).__name__}): {e}"
                     )
-            log_action("expiry_check_alert", "", router_name, 0)
+            try:
+                log_action("expiry_check_alert", "", router_name, 0)
+            except Exception as e:  # noqa: BLE001
+                logger.warning(
+                    f"Failed to log expiry check alert for {router_key}: {e}"
+                )
 
     async def _do_stats_snapshot(self, context: CallbackContext) -> None:  # type: ignore[reportMissingTypeArgument]
         """حفظ snapshot يومي لإحصائيات كل راوتر في قاعدة البيانات."""
@@ -204,7 +209,12 @@ class BackupScheduler:
                 }
                 await run_blocking(save_snapshot, router_key, snapshot_data)
                 logger.info(f"Stats snapshot saved for {router_key}")
-                log_action("stats_snapshot", "", router_name, 0)
+                try:
+                    log_action("stats_snapshot", "", router_name, 0)
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(
+                        f"Failed to log stats snapshot for {router_key}: {e}"
+                    )
             except Exception as e:  # noqa: BLE001
                 logger.warning(
                     f"Stats snapshot failed for {router_key} "

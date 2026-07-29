@@ -190,8 +190,8 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                     text=BACKUP_FAILED_USERMAN.format(message=result["message"]),
                 )
                 logger.warning(f"Background userman backup failed for router {router_key}: {result.get('message')}")
-    except (ValueError, OSError) as e:
-        logger.error(f"Background backup failed for {router_key}: {e}")
+    except Exception as e:  # noqa: BLE001
+        logger.exception(f"Background backup failed for {router_key}: {e}")
         try:
             await context.bot.send_message(
                 chat_id=chat_id,
@@ -221,7 +221,13 @@ async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await safe_answer_callback(query)
     if query is None:
         return
-    router_key = context.user_data["router_key"]
+    router_key = context.user_data.get("router_key")
+    if not router_key:
+        await query.edit_message_text(
+            BACKUP_ONLY_ON_ROUTER,
+            reply_markup=get_backup_keyboard(),
+        )
+        return
 
     if _is_backup_running(router_key):
         await query.edit_message_text(
@@ -262,7 +268,13 @@ async def backup_userman(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     query = update.callback_query
     await safe_answer_callback(query)
-    router_key = context.user_data["router_key"]
+    router_key = context.user_data.get("router_key")
+    if not router_key:
+        await query.edit_message_text(
+            BACKUP_ONLY_ON_ROUTER,
+            reply_markup=get_backup_keyboard(),
+        )
+        return
 
     if _is_backup_running(router_key):
         await query.edit_message_text(
