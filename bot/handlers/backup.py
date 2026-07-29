@@ -1,5 +1,6 @@
 import logging
 import os
+from collections.abc import Mapping
 from typing import cast
 
 import telegram.error
@@ -82,7 +83,7 @@ async def _finish_backup_result(
     user_id: int,
     router_key: str,
     b_type: str,
-    result: dict[str, object],
+    result: Mapping[str, object],
     success_msg: str,
     failure_msg: str,
     filename: str | None = None,
@@ -175,7 +176,7 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                     context, chat_id, user_id, router_key, "userman", result,
                     BACKUP_SUCCESS_USERMAN.format(message=result["message"]),
                     BACKUP_FAILED_USERMAN.format(message=result["message"]),
-                    filename=result.get("filename", "backup.tar"),
+                    filename=cast("str | None", result.get("filename", "backup.tar")),
                 )
             else:
                 await context.bot.send_message(

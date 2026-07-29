@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 from librouteros.exceptions import LibRouterosError
-from telegram import Update
+from telegram import Message, Update
 from telegram.error import TelegramError
 from telegram.ext import ContextTypes, ConversationHandler
 
@@ -148,12 +148,12 @@ async def disc_enter_username(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def _process_discovered_connection(
     context: ContextTypes.DEFAULT_TYPE,
     update: Update,
-    status_msg,  # Message
+    status_msg: Message,
     ip: str,
     username: str,
     password: str,
-    identity,
-    version,  # str | None
+    identity: str,
+    version: str | None,
 ) -> None:
     """Handle a successful connection: save/update router and send result."""
     router_db = await run_blocking(get_router_by_ip, ip)
@@ -201,8 +201,8 @@ async def _process_discovered_connection(
 async def _process_login_failure(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-    status_msg,
-    conn_result,
+    status_msg: Message,
+    conn_result: str,
 ) -> None:
     """Handle a failed connection attempt: show error and schedule deletion."""
     error_msg = conn_result

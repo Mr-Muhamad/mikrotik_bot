@@ -555,14 +555,14 @@ def _transform_renewal_day(new_value: str, user_data: RouterOSRow) -> str | None
 async def _apply_edit_success_result(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-    user_data: dict[str, object],
+    user_data: RouterOSRow,
     new_value: str,
     api_field: str,
     field: str,
     user_name: str,
     router_key: str,
-    user_id: int,
-) -> str:
+    user_id: str,
+) -> str | int:
     """Apply the edit on the router, log it, and send the success step.
 
     Returns:
@@ -638,7 +638,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
         new_value = transformed
 
     try:
-        user_name = user_data.get("name", "") or user_id
+        user_name = str(user_data.get("name", "") or user_id)
         return await _apply_edit_success_result(
             update, context, user_data, new_value, api_field,
             field, user_name, router_key, user_id,
