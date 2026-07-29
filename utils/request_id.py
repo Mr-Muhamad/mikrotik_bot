@@ -28,6 +28,17 @@ from utils.logging_setup import (
     new_trace_id,
 )
 
+__all__ = [
+    "bind_request_id",
+    "bind_trace_id",
+    "get_request_id",
+    "get_trace_id",
+    "new_request_id",
+    "new_trace_id",
+    "request_id_scope",
+    "trace_id_scope",
+]
+
 HandlerFunc = Callable[..., Awaitable[object]]
 
 

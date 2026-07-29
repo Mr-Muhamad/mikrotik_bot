@@ -34,7 +34,7 @@ _error_count_total: dict[str, dict[str, int]] = defaultdict(
 # Latency tracking (simple list for now, can be improved with histogram buckets)
 _request_latencies: list[float] = []
 _mikrotik_api_latencies: list[float] = []
-_backup_latencies: list[float] = []
+_backup_latencies: list[tuple[str, float]] = []
 
 
 def record_message_type(message_type: str) -> None:

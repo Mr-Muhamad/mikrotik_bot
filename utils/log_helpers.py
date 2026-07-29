@@ -196,6 +196,6 @@ class TimedOperation:
         for key, value in self._context_fields.items():
             extra[key] = value
         if exc_type is not None and exc_val is not None:
-            extra["error_category"] = _classify_error(exc_val)
+            extra["error_category"] = _classify_error(exc_val)  # type: ignore[arg-type]
         level = logging.ERROR if not success else logging.INFO
         logger.log(level, "%s %.1fms", self._operation_name, self._duration_ms, extra=extra)

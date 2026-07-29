@@ -31,11 +31,13 @@ from collections.abc import Awaitable, Callable
 from types import ModuleType
 from typing import TypedDict
 
+from telegram import Update
 from telegram.ext import (
     Application,
     BaseHandler,
     CallbackQueryHandler,
     CommandHandler,
+    ContextTypes,
     ConversationHandler,
     MessageHandler,
     filters,
@@ -277,9 +279,9 @@ def _build_handler(entry: _RegistryEntry) -> BaseHandler:  # type: ignore[type-a
     if requires_router_check(command, pattern, func):
         func = navigation_guard(func)
 
-    async def _wrapped_handler(update, context):
+    async def _wrapped_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with bind_component(COMPONENT_HANDLER):
-            return await func(update, context)
+            return await func(update, context)  # type: ignore[reportCallIssue]
 
     wrapped = bind_request_id_from_update(_wrapped_handler)
     return entry["cls"](callback=wrapped, **entry["kwargs"])  # type: ignore[reportArgumentType]
@@ -349,9 +351,9 @@ def build_application(application: Application, constants_module: ModuleType) ->
     # 5. Error handler
     if _registry["error_handler"]:
 
-        async def _wrapped_error_handler(update, context):
+        async def _wrapped_error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             with bind_component(COMPONENT_HANDLER):
-                await _registry["error_handler"](update, context)
+                await _registry["error_handler"](update, context)  # type: ignore[reportCallIssue]
 
         wrapped_error_handler = bind_request_id_from_update(_wrapped_error_handler)
-        application.add_error_handler(wrapped_error_handler)
+        application.add_error_handler(wrapped_error_handler)  # type: ignore[reportArgumentType]

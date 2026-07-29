@@ -255,7 +255,7 @@ class MikrotikAPI:
                     router_key, timeout=timeout, force_reconnect=force
                 ) as api:
                     self._debug_log("_execute_with_retry", command, kwargs)
-                    result = self._call_command(api, command, **kwargs)
+                    result = self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
                     duration_ms = (time.monotonic() - start) * 1000
                     log_api_call(router_key, command, duration_ms, True, component="ROUTER")
                     return result

@@ -93,7 +93,7 @@ class ConnectionPool:
                     self.successful_connections += 1
                 duration_ms = (time.monotonic() - start) * 1000
                 log_api_call(
-                    router_info.get("name", "unknown"),
+                    str(router_info.get("name", "unknown")),
                     "connect",
                     duration_ms,
                     True,
@@ -106,7 +106,7 @@ class ConnectionPool:
                 last_error = e
                 duration_ms = (time.monotonic() - start) * 1000
                 log_api_call(
-                    router_info.get("name", "unknown"),
+                    str(router_info.get("name", "unknown")),
                     "connect",
                     duration_ms,
                     False,
@@ -122,7 +122,7 @@ class ConnectionPool:
                     time.sleep(RETRY_DELAY)
         duration_ms = (time.monotonic() - start) * 1000
         log_api_call(
-            router_info.get("name", "unknown"),
+            str(router_info.get("name", "unknown")),
             "connect",
             duration_ms,
             False,

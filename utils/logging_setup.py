@@ -17,6 +17,7 @@ import sys
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime
+from typing import Any, Generator
 from uuid import uuid4
 
 # Production configuration from environment
@@ -169,7 +170,7 @@ def bind_context(  # noqa: C901
     success: bool | None = None,
     duration_ms: float | None = None,
     error_category: str | None = None,
-):
+) -> Generator[None, Any, None]:
     """Bind multiple context values for the duration of the block."""
     tokens = []
     if request_id is not None:
@@ -209,13 +210,13 @@ def bind_log_context(
     chat_id: int | None = None,
     router_key: str | None = None,
     command: str | None = None,
-) -> None:
+) -> Generator[None, Any, None]:
     """Lightweight context binding for structured log fields.
 
     Only binds the fields that are explicitly provided (non-None), leaving
     all other ContextVars unchanged.
     """
-    tokens: list[object] = []
+    tokens: list[Any] = []
     if component is not None:
         tokens.append(_component_var.set(component))
     if request_id is not None:

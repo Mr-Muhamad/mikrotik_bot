@@ -311,7 +311,7 @@ async def send_error(
     record_error(category, COMPONENT_HANDLER)
     # Critical error notifications to Telegram admins for connection/auth/storage issues
     if category in (CATEGORY_CONNECTION, CATEGORY_AUTH, CATEGORY_STORAGE):
-        _notify_critical_admins(error, category, effective_router_key, text)
+        await _notify_critical_admins(update, context, error, category, effective_router_key, text)
     target_id = chat_id or _get_chat_id(update)
     if target_id is None:
         return
@@ -360,6 +360,8 @@ def get_router_key_from_context(
 
 
 async def _notify_critical_admins(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
     error: Exception,
     category: str,
     router_key: str | None,
@@ -375,11 +377,10 @@ async def _notify_critical_admins(
     text += f"Ref: #{req_id}\n"
     text += f"Error: {_sanitize_error_text(str(error)[:300])}"
 
-
     for admin_id in ADMIN_IDS:
         try:
             await send_text(
-                None, None, text, chat_id=admin_id
+                update, context, text, chat_id=admin_id
             )
         except Exception:
             logger.exception(
