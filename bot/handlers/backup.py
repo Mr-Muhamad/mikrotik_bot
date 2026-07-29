@@ -201,7 +201,6 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
         _set_backup_running(router_key, False)
 
 
-@admin_only
 @require_role("operator")
 async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Queue a full system backup as a background job.
@@ -252,7 +251,6 @@ async def backup_full(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-@admin_only
 @require_role("operator")
 async def backup_userman(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Queue a User Manager backup as a background job.
@@ -347,7 +345,6 @@ async def schedule_menu_from_conversation(update: Update, context: ContextTypes.
 
 
 @require_role("operator")
-@admin_only
 async def schedule_enable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Prompt user to enter a daily backup time (HH:MM).
 
@@ -368,7 +365,6 @@ async def schedule_enable(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @require_role("operator")
-@admin_only
 async def schedule_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Parse HH:MM input and start daily backup scheduler.
 
@@ -409,7 +405,6 @@ async def schedule_set(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-@admin_only
 @require_role("operator")
 async def schedule_disable(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Stop the daily backup scheduler.

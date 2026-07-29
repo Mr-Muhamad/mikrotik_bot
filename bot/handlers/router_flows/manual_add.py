@@ -65,7 +65,6 @@ def _confirm_keyboard():
 
 
 @require_role("admin")
-@admin_only
 async def manual_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Initiate the manual router add flow and prompt for the IP address.
 
@@ -232,7 +231,6 @@ async def manual_add_alias(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @require_role("admin")
-@admin_only
 async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Save the router to DB, test the connection, and set it as selected.
 
