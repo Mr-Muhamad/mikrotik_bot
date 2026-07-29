@@ -65,11 +65,18 @@ def resolve_local_backup_file(parent_dir: str, filename: str) -> str:
     return safe_join_file(parent_dir, filename, BACKUP_FILE_EXTENSIONS)
 
 
-def resolve_userman_backup_file(filename: str, backup_root: str | None = None) -> str:
+def resolve_userman_backup_file(
+    filename: str,
+    backup_root: str | None = None,
+    router_name: str | None = None,
+) -> str:
     if not filename.startswith(USERMAN_BACKUP_PREFIX):
         raise ValueError("اسم نسخة User Manager غير صالح")
     backup_root = backup_root or BACKUP_DIR
-    userman_dir = os.path.join(backup_root, "userman")
+    if router_name:
+        userman_dir = os.path.join(backup_root, sanitize_router_name(router_name), "userman")
+    else:
+        userman_dir = os.path.join(backup_root, "userman")
     return safe_join_file(userman_dir, filename, (".tar", ".umb"))
 
 
@@ -138,6 +145,32 @@ def cleanup_old_files(parent_dir: str, prefix: str, keep: int = MAX_LOCAL_BACKUP
     if deleted:
         logger.info(f"Cleaned up {deleted} old tar(s) with prefix {prefix} in {parent_dir}")
     return deleted
+
+
+def download_backup_file(router_key: str, remote_name: str, local_dir: str) -> tuple[bool, str]:
+    """
+    Download a backup file from router to local_dir.
+
+    Tries HTTP push first, then FTP as fallback.
+
+    Returns:
+        (success, method) where method = ``"http"``, ``"ftp"``, or ``""``.
+    """
+    # 1. Try HTTP push (router pushes file to bot's file server)
+    if mikrotik_api.download_file_from_router(router_key, remote_name, local_dir):
+        return True, "http"
+
+    # 2. FTP fallback
+    try:
+        from core.backup.ftp import download_files_via_ftp  # noqa: PLC0415 - avoid circular import
+
+        downloaded = download_files_via_ftp(router_key, local_dir, [remote_name])
+        if remote_name in downloaded:
+            return True, "ftp"
+    except Exception:  # noqa: BLE001 - catch-all safe: FTP is best-effort fallback
+        logger.debug("FTP fallback failed for %s on %s", remote_name, router_key, exc_info=True)
+
+    return False, ""
 
 
 def cleanup_router_files(

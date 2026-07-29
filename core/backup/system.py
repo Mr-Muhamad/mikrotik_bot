@@ -1,6 +1,5 @@
 import logging
 import os
-import shutil
 import threading
 import uuid
 from datetime import UTC, datetime
@@ -8,8 +7,8 @@ from typing import cast
 
 from core.backup import files as backup_files
 from core.backup.files import (
-    cleanup_old_backups,
     cleanup_router_files,
+    download_backup_file,
     sanitize_router_name,
 )
 from core.mikrotik_api import mikrotik_api
@@ -19,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 _BACKUP_LOCKS: dict[str, threading.RLock] = {}
 _BACKUP_LOCKS_GUARD = threading.Lock()
+MAX_LOCAL_BACKUPS = 10
 
 
 def _get_backup_lock(router_key: str) -> threading.RLock:
@@ -26,6 +26,30 @@ def _get_backup_lock(router_key: str) -> threading.RLock:
         if router_key not in _BACKUP_LOCKS:
             _BACKUP_LOCKS[router_key] = threading.RLock()
         return _BACKUP_LOCKS[router_key]
+
+
+def _cleanup_old_files(directory: str, prefix: str, keep: int = MAX_LOCAL_BACKUPS) -> int:
+    sys_extensions = (".backup", ".rsc")
+    if not os.path.isdir(directory):
+        return 0
+    files = []
+    for entry in os.listdir(directory):
+        full = os.path.join(directory, entry)
+        if os.path.isfile(full) and entry.startswith(prefix) and entry.endswith(sys_extensions):
+            files.append((os.path.getmtime(full), full))
+    if len(files) <= keep:
+        return 0
+    files.sort()
+    deleted = 0
+    for _, path in files[:-keep]:
+        try:
+            os.remove(path)
+            deleted += 1
+        except OSError as e:
+            logger.warning(f"Failed to delete old system backup {path}: {e}")
+    if deleted:
+        logger.info(f"Cleaned up {deleted} old system backup(s) with prefix {prefix} in {directory}")
+    return deleted
 
 
 class SystemBackupService:
@@ -51,7 +75,7 @@ class SystemBackupService:
         file_prefix = sanitize_router_name(router_name)
         ts = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         suffix = f"{ts}_{uuid.uuid4().hex[:8]}"
-        backup_dir = os.path.join(backup_root, "system", f"{file_prefix}_{suffix}")
+        backup_dir = os.path.join(backup_root, file_prefix, "system")
         os.makedirs(backup_dir, exist_ok=True)
 
         try:
@@ -67,30 +91,46 @@ class SystemBackupService:
             )
 
             downloaded = []
+            methods: list[str] = []
             for fname in [
                 f"{file_prefix}_{suffix}.backup",
                 f"{file_prefix}_export_{suffix}.rsc",
             ]:
-                if mikrotik_api.download_file_from_router(router_key, fname, backup_dir):
+                success, method = download_backup_file(router_key, fname, backup_dir)
+                if success:
                     downloaded.append(fname)
+                    if method:
+                        methods.append(method)
+
             cleanup_router_files(router_key, f"{file_prefix}_")
             cleanup_router_files(router_key, f"{file_prefix}_export_")
+            _cleanup_old_files(backup_dir, f"{file_prefix}_")
 
-            parent = os.path.dirname(backup_dir)
-            cleanup_old_backups(parent, file_prefix)
+            warning = ""
+            if downloaded:
+                if "ftp" in methods and "http" not in methods:
+                    warning = "تم التحميل عبر FTP (قد يكون أبطأ)"
+                elif not methods:
+                    pass
+            else:
+                warning = "تم إنشاء الملفات على الراوتر لكن فشل التحميل المحلي"
+                logger.warning(
+                    f"Full backup created on router but download failed for {router_key}"
+                )
 
             result = {
                 "success": True,
                 "message": f"تم الباكوب الكامل لـ {router_name}",
                 "timestamp": ts,
                 "local_path": backup_dir,
-                "downloaded": str(downloaded),
+                "downloaded": downloaded,
+                "created_files": [
+                    f"{file_prefix}_{suffix}.backup",
+                    f"{file_prefix}_export_{suffix}.rsc",
+                ],
             }
-            if not downloaded:
-                result["warning"] = "تم إنشاء الملفات على الراوتر لكن فشل التحميل المحلي"
-                logger.warning(
-                    f"Full backup created on router but FTP download failed for {router_key}"
-                )
+            if warning:
+                result["warning"] = warning
             logger.info(f"Full backup completed for {router_name}")
             return cast(RouterOSRow, result)
         except Exception as e:  # noqa: BLE001
@@ -98,11 +138,4 @@ class SystemBackupService:
                 f"Full backup failed for {router_name} "
                 f"(error type: {type(e).__name__}): {e}"
             )
-            if os.path.isdir(backup_dir):
-                try:
-                    shutil.rmtree(backup_dir)
-                except OSError as cleanup_err:
-                    logger.warning(
-                        f"Failed to cleanup partial backup directory {backup_dir}: {cleanup_err}"
-                    )
             return cast(RouterOSRow, {"success": False, "message": f"فشل نسخ إحتياطى: {str(e)}"})

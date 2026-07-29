@@ -221,8 +221,14 @@ async def userman_restore_select(update: Update, context: ContextTypes.DEFAULT_T
 
     idx = int(query.data.split(":")[-1]) if query.data else 0
     tar_files = context.user_data.get("userman_restore_list", [])
-    tar_filename = tar_files[idx].get("filename", "") if 0 <= idx < len(tar_files) else ""
+    if 0 <= idx < len(tar_files):
+        tar_filename = tar_files[idx].get("filename", "")
+        tar_path = tar_files[idx].get("path", "")
+    else:
+        tar_filename = ""
+        tar_path = ""
     context.user_data["userman_restore_tar"] = tar_filename
+    context.user_data["userman_restore_tar_path"] = tar_path
 
     text = USERMAN_RESTORE_CONFIRM.format(name=tar_filename)
     keyboard = get_userman_restore_confirm_keyboard()
@@ -258,21 +264,14 @@ async def userman_restore_execute(update: Update, context: ContextTypes.DEFAULT_
     await safe_answer_callback(query)
 
     tar_filename = context.user_data.get("userman_restore_tar", "")
+    tar_path = context.user_data.get("userman_restore_tar_path", "")
     router_key = get_selected_router(get_from_user_id(query))
 
     if not router_key:
         await query.edit_message_text(ROUTER_NO_CREDENTIALS)
         return ConversationHandler.END
 
-    try:
-        tar_path = resolve_userman_backup_file(tar_filename)
-    except ValueError:
-        await query.edit_message_text(
-            USERMAN_RESTORE_FAILED.format(error=BACKUP_RESTORE_INVALID_NAME)
-        )
-        return
-
-    if not os.path.isfile(tar_path):
+    if not tar_path or not os.path.isfile(tar_path):
         await query.edit_message_text(USERMAN_RESTORE_FAILED.format(error=BACKUP_RESTORE_NOT_FOUND))
         return ConversationHandler.END
 

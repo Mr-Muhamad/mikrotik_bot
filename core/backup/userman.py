@@ -8,6 +8,7 @@ from core.backup.files import (
     USERMAN_BACKUP_PREFIX,
     cleanup_old_files,
     cleanup_router_files,
+    download_backup_file,
     sanitize_router_name,
 )
 from core.mikrotik_api import mikrotik_api
@@ -20,10 +21,11 @@ class UserManagerBackupService:
     def userman_backup(self, router_key: str, backup_root: str | None = None) -> RouterOSRow:
         backup_root = backup_root or backup_files.BACKUP_DIR
         router_name = mikrotik_api.get_router_name(router_key)
-        file_prefix = f"{USERMAN_BACKUP_PREFIX}{sanitize_router_name(router_name)}"
+        router_safe = sanitize_router_name(router_name)
+        file_prefix = f"{USERMAN_BACKUP_PREFIX}{router_safe}"
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         umb_filename = f"{file_prefix}_{timestamp}.umb"
-        userman_dir = os.path.join(backup_root, "userman")
+        userman_dir = os.path.join(backup_root, router_safe, "userman")
         os.makedirs(userman_dir, exist_ok=True)
         umb_path = os.path.join(userman_dir, umb_filename)
 
@@ -35,25 +37,38 @@ class UserManagerBackupService:
                 **{"name": umb_filename, "overwrite": "yes"},
             )
 
-            downloaded = []
-            if mikrotik_api.download_file_from_router(router_key, umb_filename, userman_dir):
+            downloaded: list[str] = []
+            success, method = download_backup_file(router_key, umb_filename, userman_dir)
+            if success:
                 downloaded.append(umb_filename)
+            else:
+                logger.warning(
+                    f"User Manager backup file {umb_filename} not downloaded for {router_key}"
+                )
             cleanup_router_files(router_key, f"{file_prefix}_")
             cleanup_old_files(userman_dir, file_prefix)
+
+            warning = ""
+            if downloaded:
+                if method == "ftp":
+                    warning = "تم التحميل عبر FTP (قد يكون أبطأ)"
+            else:
+                warning = "تم إنشاء الملف على الراوتر لكن فشل التحميل المحلي"
+                logger.warning(
+                    f"User Manager backup created on router but download failed for {router_key}"
+                )
 
             result = {
                 "success": True,
                 "message": f"تم باكوب User Manager لـ {router_name}",
                 "timestamp": timestamp,
-                "local_path": umb_path,
+                "local_path": userman_dir,
                 "filename": umb_filename,
                 "downloaded": downloaded,
+                "created_files": [umb_filename],
             }
-            if not downloaded:
-                result["warning"] = "تم إنشاء الملف على الراوتر لكن فشل التحميل المحلي"
-                logger.warning(
-                    f"User Manager backup created on router but HTTP download failed for {router_key}"  # noqa: E501
-                )
+            if warning:
+                result["warning"] = warning
             logger.info(f"User Manager backup completed for {router_name}: {umb_filename}")
             return cast(RouterOSRow, result)
         except Exception as e:  # noqa: BLE001
@@ -107,20 +122,23 @@ class UserManagerBackupService:
     def list_local_userman_backups(
         router_key: str = "", backup_root: str | None = None
     ) -> list[RouterOSRow]:
-        # Handle positional parameter where single positional argument might be backup_root
         if router_key and (os.path.isdir(router_key) or "/" in router_key or "\\" in router_key):
             backup_root = router_key
             router_key = ""
 
         backup_root = backup_root or backup_files.BACKUP_DIR
-        userman_dir = os.path.join(backup_root, "userman")
+
+        if not router_key:
+            userman_dir = os.path.join(backup_root, "userman")
+            prefix = USERMAN_BACKUP_PREFIX
+        else:
+            router_name = mikrotik_api.get_router_name(router_key)
+            router_safe = sanitize_router_name(router_name)
+            userman_dir = os.path.join(backup_root, router_safe, "userman")
+            prefix = f"{USERMAN_BACKUP_PREFIX}{router_safe}"
+
         if not os.path.isdir(userman_dir):
             return []
-
-        prefix = USERMAN_BACKUP_PREFIX
-        if router_key:
-            router_name = mikrotik_api.get_router_name(router_key)
-            prefix = f"{USERMAN_BACKUP_PREFIX}{sanitize_router_name(router_name)}"
 
         files = []
         for entry in os.listdir(userman_dir):

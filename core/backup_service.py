@@ -38,8 +38,10 @@ class BackupService:
         return UserManagerBackupService.list_local_userman_backups(router_key=router_key, backup_root=BACKUP_DIR)
 
 
-def resolve_userman_backup_file(filename: str) -> str:
-    return _resolve_userman_backup_file(filename, backup_root=BACKUP_DIR)
+def resolve_userman_backup_file(filename: str, router_name: str = "") -> str:
+    return _resolve_userman_backup_file(
+        filename, backup_root=BACKUP_DIR, router_name=router_name or None
+    )
 
 
 backup_service = BackupService()
