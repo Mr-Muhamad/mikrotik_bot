@@ -141,28 +141,32 @@ def get_userman_keyboard() -> InlineKeyboardMarkup:
 
 def get_stats_keyboard() -> InlineKeyboardMarkup:
     """Return the statistics submenu keyboard."""
+    from bot.handlers.callback_constants import CALLBACKS
+
     keyboard = [
         [
-            InlineKeyboardButton("📡 ملخص سريع", callback_data="stats_hotspot"),
-            InlineKeyboardButton("🎫 User Manager", callback_data="stats_userman"),
+            InlineKeyboardButton("📡 ملخص سريع", callback_data=CALLBACKS["stats_hotspot"]),
+            InlineKeyboardButton("🎫 User Manager", callback_data=CALLBACKS["stats_userman"]),
         ],
         [
-            InlineKeyboardButton("📈 رسم بياني مصور", callback_data="stats_chart"),
+            InlineKeyboardButton("📈 رسم بياني مصور", callback_data=CALLBACKS["stats_chart"]),
         ],
-        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
+        [InlineKeyboardButton("🔙 رجوع", callback_data=CALLBACKS["main_menu"])],
     ]
     return InlineKeyboardMarkup(keyboard)
 
 
 def get_report_keyboard() -> InlineKeyboardMarkup:
     """Return the Hotspot usage report keyboard with export and refresh options."""
+    from bot.handlers.callback_constants import CALLBACKS
+
     keyboard = [
         [
-            InlineKeyboardButton("📊 ملف إكسيل منسق (.xlsx)", callback_data="report_excel"),
-            InlineKeyboardButton("📄 نص مجرد (CSV)", callback_data="report_csv"),
+            InlineKeyboardButton("📊 ملف إكسيل منسق (.xlsx)", callback_data=CALLBACKS["report_excel"]),
+            InlineKeyboardButton("📄 نص مجرد (CSV)", callback_data=CALLBACKS["report_csv"]),
         ],
-        [InlineKeyboardButton("🔄 تحديث بيانات", callback_data="report_refresh")],
-        [InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")],
+        [InlineKeyboardButton("🔄 تحديث بيانات", callback_data=CALLBACKS["report_refresh"])],
+        [InlineKeyboardButton("🔙 رجوع", callback_data=CALLBACKS["main_menu"])],
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -737,7 +741,7 @@ def get_logs_filter_keyboard(
 
     nav_buttons: _KeyboardRow = []
     if has_prev:
-        nav_buttons.append(InlineKeyboardButton("◀️ السابس", callback_data=f"logs_page_{page - 1}"))
+        nav_buttons.append(InlineKeyboardButton("◀️ السابق", callback_data=f"logs_page_{page - 1}"))
     if has_next:
         nav_buttons.append(InlineKeyboardButton("التالي ▶️", callback_data=f"logs_page_{page + 1}"))
     if nav_buttons:

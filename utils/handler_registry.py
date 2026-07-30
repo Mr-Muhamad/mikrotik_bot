@@ -43,7 +43,12 @@ from telegram.ext import (
     filters,
 )
 
-from utils.logging_setup import COMPONENT_HANDLER, bind_component
+from utils.logging_setup import (
+    COMPONENT_HANDLER,
+    bind_component,
+    set_chat_id,
+    set_user_id,
+)
 from utils.request_id import bind_request_id_from_update
 
 # Type alias for async callback functions registered as handlers.
@@ -281,6 +286,10 @@ def _build_handler(entry: _RegistryEntry) -> BaseHandler:  # type: ignore[type-a
 
     async def _wrapped_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         with bind_component(COMPONENT_HANDLER):
+            if update.effective_user:
+                set_user_id(update.effective_user.id)
+            if update.effective_chat:
+                set_chat_id(update.effective_chat.id)
             return await func(update, context)  # type: ignore[reportCallIssue]
 
     wrapped = bind_request_id_from_update(_wrapped_handler)

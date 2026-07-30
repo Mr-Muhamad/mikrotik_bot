@@ -16,6 +16,7 @@ import logging
 import os
 import re
 import sqlite3
+import time
 import warnings
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -43,11 +44,19 @@ def _get_connection():
 def get_db():
     """Context manager for database connections with automatic commit/rollback."""
     conn = _get_connection()
+    start = time.perf_counter()
     try:
         yield conn
         conn.commit()
-    except Exception:
+        elapsed = (time.perf_counter() - start) * 1000
+        # Lazy import to avoid circular dependency
+        from utils.log_helpers import log_db_operation  # noqa: PLC0415
+        log_db_operation("commit", "conn", elapsed, success=True)
+    except Exception as e:
         conn.rollback()
+        elapsed = (time.perf_counter() - start) * 1000
+        from utils.log_helpers import log_db_operation  # noqa: PLC0415
+        log_db_operation("rollback", "conn", elapsed, success=False, error=e)
         raise
     finally:
         conn.close()

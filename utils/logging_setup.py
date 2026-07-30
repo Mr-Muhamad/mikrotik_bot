@@ -197,7 +197,7 @@ def bind_context(  # noqa: C901
         yield
     finally:
         for token in tokens:
-            token.reset()
+            token.var.reset(token)
 
 
 @contextmanager
@@ -235,7 +235,7 @@ def bind_log_context(
         yield
     finally:
         for token in tokens:
-            token.reset()
+            token.var.reset(token)
 
 
 def _json_serializer(obj: object) -> str:

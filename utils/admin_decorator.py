@@ -10,6 +10,12 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from config import ADMIN_IDS
+from utils.error_response import classify_error
+from utils.logging_setup import (
+    bind_context,
+    set_command,
+    set_router_key,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -154,16 +160,19 @@ async def _execute_handler(
     try:
         res = await func(update, context)
         elapsed_ms = (time.perf_counter() - start_time) * 1000
-        logger.info(
-            "✅ [ACTION SUCCESS] User: %s | Router: %s | Handler: %s | Time: %.1fms",
-            user_id, router_key, func.__name__, elapsed_ms,
-        )
+        with bind_context(success=True, duration_ms=elapsed_ms):
+            logger.info(
+                "✅ [ACTION SUCCESS] User: %s | Router: %s | Handler: %s | Time: %.1fms",
+                user_id, router_key, func.__name__, elapsed_ms,
+            )
     except Exception as e:
         elapsed_ms = (time.perf_counter() - start_time) * 1000
-        logger.exception(
-            "❌ [ACTION FAILED] User: %s | Router: %s | Handler: %s | Error: %s | Time: %.1fms",
-            user_id, router_key, func.__name__, e, elapsed_ms,
-        )
+        category = classify_error(e)
+        with bind_context(success=False, duration_ms=elapsed_ms, error_category=category):
+            logger.exception(
+                "❌ [ACTION FAILED] User: %s | Router: %s | Handler: %s | Error: %s | Time: %.1fms",
+                user_id, router_key, func.__name__, e, elapsed_ms,
+            )
         raise
     from database.repositories.user_sessions import update_activity
     update_activity(user_id)
@@ -218,6 +227,8 @@ def admin_only(func: Callable[..., Awaitable[object]]):
             from bot.router_selector import get_selected_router
 
             router_key = get_selected_router(user_id) or "None"
+            set_router_key(router_key)
+            set_command(func.__name__)
 
             _log_action_incoming(update, router_key, func.__name__)
 
@@ -269,6 +280,8 @@ def require_role(min_role: str):
                 from bot.router_selector import get_selected_router
 
                 router_key = get_selected_router(user_id) or "None"
+                set_router_key(router_key)
+                set_command(func.__name__)
 
                 _log_action_incoming(update, router_key, func.__name__)
 
