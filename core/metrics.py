@@ -51,6 +51,16 @@ _telegram_requests_total: dict[str, dict[str, int]] = defaultdict(lambda: defaul
 # Telegram API durations per handler/method
 _telegram_request_durations: dict[str, list[float]] = defaultdict(list)
 
+# Component-level total operations (success/fail per component)
+_component_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+# Error timestamps per component for sliding-window rate calculation
+_ERROR_TIMESTAMPS_WINDOW = 200
+_error_timestamps_per_component: dict[str, list[float]] = defaultdict(list)
+
+# Health thresholds
+_ERROR_RATE_WARN = 0.10  # 10% error rate triggers degraded
+_ERROR_RATE_CRIT = 0.25  # 25% error rate triggers critical
+
 
 def record_message_type(message_type: str) -> None:
     """Record a message of given type."""
@@ -72,6 +82,56 @@ def record_mikrotik_request(router_key: str, duration_seconds: float) -> None:
 def record_error(error_category: str, component: str) -> None:
     """Record an error occurrence by category and component."""
     _error_count_total[component][error_category] += 1
+
+
+def record_component_result(component: str, success: bool) -> None:
+    """Record a component operation result for error-rate calculation.
+
+    Tracks total operations (success/fail) per component and maintains a
+    sliding window of error timestamps for threshold-based health checks.
+    """
+    if success:
+        _component_total[component]["success"] += 1
+    else:
+        _component_total[component]["fail"] += 1
+        ts = _error_timestamps_per_component[component]
+        ts.append(time.time())
+        # Trim sliding window
+        if len(ts) > _ERROR_TIMESTAMPS_WINDOW:
+            ts.pop(0)
+
+
+def get_error_rate(component: str) -> float:
+    """Calculate error rate for a component over the recent sliding window.
+
+    Returns fraction of failed operations vs total operations (0.0 to 1.0).
+    Returns 0.0 if no operations recorded for this component.
+    """
+    totals = _component_total.get(component)
+    if not totals:
+        return 0.0
+    total = totals["success"] + totals["fail"]
+    if total == 0:
+        return 0.0
+    return totals["fail"] / total
+
+
+def get_health_status() -> int:
+    """Determine overall bot health based on component error rates.
+
+    Returns:
+        0 = healthy
+        1 = degraded (any component exceeds WARN threshold)
+        2 = critical (any component exceeds CRIT threshold)
+    """
+    degraded = False
+    for component in list(_component_total):
+        rate = get_error_rate(component)
+        if rate >= _ERROR_RATE_CRIT:
+            return 2
+        if rate >= _ERROR_RATE_WARN:
+            degraded = True
+    return 1 if degraded else 0
 
 
 def record_backup_duration(backup_type: str, duration_seconds: float) -> None:
@@ -384,6 +444,32 @@ def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:  # noqa: C
                     lines.append(
                         f'bot_telegram_handler_duration_seconds_count{{handler="{handler}"}} {n}'
                     )
+
+    # Health status gauge
+    health_status = get_health_status()
+    lines.extend(
+        [
+            "",
+            "# HELP bot_health_status Overall bot health (0=healthy, 1=degraded, 2=critical)",
+            "# TYPE bot_health_status gauge",
+            f"bot_health_status {health_status}",
+        ]
+    )
+
+    # Error rate per component
+    if _component_total:
+        lines.extend(
+            [
+                "",
+                "# HELP bot_error_rate Error rate (failures / total) per component",
+                "# TYPE bot_error_rate gauge",
+            ]
+        )
+        for component in sorted(_component_total):
+            rate = get_error_rate(component)
+            lines.append(
+                f'bot_error_rate{{component="{component}"}} {rate:.4f}'
+            )
 
     # Connection pool metrics
     if pool_metrics:
