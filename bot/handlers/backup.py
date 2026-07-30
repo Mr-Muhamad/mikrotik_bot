@@ -123,7 +123,7 @@ async def _finish_backup_result(
     await context.bot.send_message(
         chat_id=chat_id, text=text, reply_markup=reply_markup
     )
-    logger.info(f"Background {b_type} backup succeeded for router {router_key}")
+    logger.info("Background %s backup succeeded for router %s", b_type, router_key)
 
 
 async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
@@ -135,7 +135,7 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
     user_id = int(job_data["user_id"])  # type: ignore[arg-type]
     b_type = str(job_data["type"])
 
-    logger.info(f"Starting background {b_type} backup for router {router_key} (user={user_id})")
+    logger.info("Starting background %s backup for router %s (user=%s)", b_type, router_key, user_id)
 
     try:
         if b_type == "full":
@@ -159,7 +159,7 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                 await context.bot.send_message(
                     chat_id=chat_id, text=BACKUP_FAILED_FULL.format(message=result["message"])
                 )
-                logger.warning(f"Background full backup failed for router {router_key}: {result.get('message')}")
+                logger.warning("Background full backup failed for router %s: %s", router_key, result.get("message"))
 
         elif b_type == "userman":
             result = await run_blocking(backup_service.userman_backup, router_key)
@@ -184,9 +184,9 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                     chat_id=chat_id,
                     text=BACKUP_FAILED_USERMAN.format(message=result["message"]),
                 )
-                logger.warning(f"Background userman backup failed for router {router_key}: {result.get('message')}")
+                logger.warning("Background userman backup failed for router %s: %s", router_key, result.get("message"))
     except Exception as e:  # noqa: BLE001
-        logger.exception(f"Background backup failed for {router_key}: {e}")
+        logger.exception("Background backup failed for %s: %s", router_key, e)
         try:
             await context.bot.send_message(
                 chat_id=chat_id,
@@ -452,7 +452,7 @@ async def backup_download_file(update: Update, context: ContextTypes.DEFAULT_TYP
             await query.answer(BACKUP_DL_UNKNOWN_TYPE, show_alert=True)
             return
     except ValueError:
-        logger.warning(f"Rejected unsafe backup download filename: {fname!r}")
+        logger.warning("Rejected unsafe backup download filename: %r", fname)
         await query.answer(BACKUP_DL_INVALID_LINK, show_alert=True)
         return
 
@@ -477,5 +477,5 @@ async def backup_download_file(update: Update, context: ContextTypes.DEFAULT_TYP
             )
         await query.answer(BACKUP_DL_SEND_SUCCESS, show_alert=False)
     except (telegram.error.TelegramError, OSError, ValueError) as e:
-        logger.error(f"Failed to send backup file {fname}: {e}")
+        logger.error("Failed to send backup file %s: %s", fname, e)
         await query.answer(BACKUP_DL_SEND_FAIL, show_alert=True)

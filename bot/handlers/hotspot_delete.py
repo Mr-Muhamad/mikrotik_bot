@@ -92,7 +92,7 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
         )
         return WAITING_INPUT
     except Exception as e:  # noqa: BLE001
-        logger.error(f"hotspot_delete_select failed (error type: {type(e).__name__}): {e}")
+        logger.error("hotspot_delete_select failed (error type: %s): %s", type(e).__name__, e)
         await send_error(
             update,
             context,
@@ -156,7 +156,7 @@ async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     logger.warning("Failed to kick user '%s' after delete: %s", username, kick_err)
             await edit_clean(query, context, SUCCESS_DELETE, get_hotspot_keyboard())
         except Exception as e:  # noqa: BLE001
-            logger.error(f"confirm_callback delete failed (error type: {type(e).__name__}): {e}")
+            logger.error("confirm_callback delete failed (error type: %s): %s", type(e).__name__, e)
             await send_error(
                 update,
                 context,

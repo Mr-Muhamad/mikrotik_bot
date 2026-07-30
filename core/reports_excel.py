@@ -165,8 +165,11 @@ def build_sales_excel_report(
 
     # Data Rows
     for idx, b in enumerate(batches, start=4):
+        b_id = b.get("id")
+        if not b_id:
+            raise ValueError("ID is required for batch export")
         row_values = [
-            b.get("id", ""),
+            b_id,
             b.get("name", ""),
             b.get("profile", ""),
             b.get("batch_type", ""),

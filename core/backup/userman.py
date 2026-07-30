@@ -3,6 +3,8 @@ import os
 from datetime import UTC, datetime
 from typing import cast
 
+from librouteros.exceptions import TrapError
+
 from core.backup import files as backup_files
 from core.backup.files import (
     USERMAN_BACKUP_PREFIX,
@@ -13,6 +15,7 @@ from core.backup.files import (
 )
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +46,7 @@ class UserManagerBackupService:
                 downloaded.append(umb_filename)
             else:
                 logger.warning(
-                    f"User Manager backup file {umb_filename} not downloaded for {router_key}"
+                    "User Manager backup file %s not downloaded for %s", umb_filename, router_key
                 )
             cleanup_router_files(router_key, f"{file_prefix}_")
             cleanup_old_files(userman_dir, file_prefix)
@@ -55,7 +58,7 @@ class UserManagerBackupService:
             else:
                 warning = "تم إنشاء الملف على الراوتر لكن فشل التحميل المحلي"
                 logger.warning(
-                    f"User Manager backup created on router but download failed for {router_key}"
+                    "User Manager backup created on router but download failed for %s", router_key
                 )
 
             result = {
@@ -69,19 +72,30 @@ class UserManagerBackupService:
             }
             if warning:
                 result["warning"] = warning
-            logger.info(f"User Manager backup completed for {router_name}: {umb_filename}")
+            logger.info("User Manager backup completed for %s: %s", router_name, umb_filename)
             return cast(RouterOSRow, result)
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"User Manager backup failed for {router_name} "
-                f"(error type: {type(e).__name__}): {e}"
+                "User Manager backup failed for %s (error type: %s): %s",
+                router_name, type(e).__name__, sanitize_log_data(str(e)),
             )
             if os.path.isfile(umb_path):
                 try:
                     os.remove(umb_path)
                 except OSError as cleanup_err:
-                    logger.warning(f"Failed to cleanup partial file {umb_path}: {cleanup_err}")
-            return cast(RouterOSRow, {"success": False, "message": f"فشل الباكوب: {str(e)}"})
+                    logger.warning("Failed to cleanup partial file %s: %s", umb_path, cleanup_err)
+            return cast(RouterOSRow, {"success": False, "message": f"فشل الباكوب: {sanitize_log_data(str(e))}"})
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "User Manager backup failed for %s (error type: %s): %s",
+                router_name, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            if os.path.isfile(umb_path):
+                try:
+                    os.remove(umb_path)
+                except OSError as cleanup_err:
+                    logger.warning("Failed to cleanup partial file %s: %s", umb_path, cleanup_err)
+            return cast(RouterOSRow, {"success": False, "message": f"فشل الباكوب: {sanitize_log_data(str(e))}"})
 
     def userman_restore(
         self, router_key: str, umb_path: str, backup_root: str | None = None
@@ -109,14 +123,20 @@ class UserManagerBackupService:
                 "success": True,
                 "message": f"تمت استعادة User Manager لـ {router_name} من ملف {filename}",
             }
-            logger.info(f"User Manager restore completed for {router_name}: {filename}")
+            logger.info("User Manager restore completed for %s: %s", router_name, filename)
             return cast(RouterOSRow, result)
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"User Manager restore failed for {router_name} "
-                f"(error type: {type(e).__name__}): {e}"
+                "User Manager restore failed for %s (error type: %s): %s",
+                router_name, type(e).__name__, sanitize_log_data(str(e)),
             )
-            return cast(RouterOSRow, {"success": False, "message": f"فشل الاستعادة: {str(e)}"})
+            return cast(RouterOSRow, {"success": False, "message": f"فشل الاستعادة: {sanitize_log_data(str(e))}"})
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "User Manager restore failed for %s (error type: %s): %s",
+                router_name, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return cast(RouterOSRow, {"success": False, "message": f"فشل الاستعادة: {sanitize_log_data(str(e))}"})
 
     @staticmethod
     def list_local_userman_backups(

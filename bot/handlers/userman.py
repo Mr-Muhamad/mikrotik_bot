@@ -310,7 +310,7 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
             try:
                 await context.bot.delete_message(chat_id=chat_id, message_id=status_msg.message_id)
             except TelegramError as e:
-                logger.debug(f"Failed to delete status message: {e}")
+                logger.debug("Failed to delete status message: %s", e)
 
         # لا نعرض بيانات الدخول (يوزر/باسورد) في الدردشة؛ الملف PDF هو المخرج الرسمي.
         payment = context.user_data.get("card_payment", "")
@@ -401,7 +401,7 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 created_by=update.effective_user.id if update.effective_user else None,
             )
         except sqlite3.Error as e:
-            logger.warning(f"Failed to persist userman card batch: {e}")
+            logger.warning("Failed to persist userman card batch: %s", e)
 
     except (LibRouterosError, OSError) as e:
         await send_error(

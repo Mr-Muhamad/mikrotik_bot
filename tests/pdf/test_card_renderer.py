@@ -155,10 +155,10 @@ class TestCardRendererDraw:
     def test_draw_credentials_username_only(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
-        # Empty password → show_password returns False (it's a property)
+        # Same username/password → show_password returns False
         card = CardData(
             username="abc",
-            password="",
+            password="abc",
             card_number=1,
             profile="default",
         )

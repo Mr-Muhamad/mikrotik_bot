@@ -231,7 +231,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         await update.message.delete()
     except TelegramError as e:
-        logger.debug(f"Failed to delete password message: {e}")
+        logger.debug("Failed to delete password message: %s", e)
 
     ip = context.user_data.get("disc_ip")
     if not ip:
@@ -256,7 +256,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
         else:
             await _process_login_failure(update, context, status_msg, conn_result)
     except (LibRouterosError, OSError, ConnectionError) as e:
-        logger.warning(f"Connection/RouterOS error during disc_enter_password for {ip}: {e}")
+        logger.warning("Connection/RouterOS error during disc_enter_password for %s: %s", ip, e)
         await send_error(
             update,
             context,
@@ -267,7 +267,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
         if update.effective_chat:
             await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
     except Exception as e:  # noqa: BLE001 - catch-all handler for unexpected runtime errors before ending conversation
-        logger.exception(f"Unexpected error in disc_enter_password: {e}")
+        logger.exception("Unexpected error in disc_enter_password: %s", e)
         await send_error(
             update,
             context,

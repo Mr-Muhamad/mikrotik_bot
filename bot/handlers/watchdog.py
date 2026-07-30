@@ -261,7 +261,7 @@ async def _check_single(r: RouterOSRow, context: ContextTypes.DEFAULT_TYPE) -> b
         is_online = bool(result["online"])
     except (LibRouterosError, OSError) as e:
         logger.error(
-            f"Watchdog check failed for {router_key}: {e}",
+            "Watchdog check failed for %s: %s", router_key, e,
             extra={"component": COMPONENT_SERVICE},
         )
         return False
@@ -269,10 +269,10 @@ async def _check_single(r: RouterOSRow, context: ContextTypes.DEFAULT_TYPE) -> b
     action = record_check_result(router_key, is_online)
     if action == ALERT_WENT_OFFLINE:
         await _notify_admins(context, WATCHDOG_OFFLINE_ALERT.format(identity=identity))
-        logger.warning(f"Router {identity} went offline", extra={"component": COMPONENT_SERVICE})
+        logger.warning("Router %s went offline", identity, extra={"component": COMPONENT_SERVICE})
     elif action == ALERT_RECOVERED:
         await _notify_admins(context, WATCHDOG_ONLINE_ALERT.format(identity=identity))
-        logger.info(f"Router {identity} recovered", extra={"component": COMPONENT_SERVICE})
+        logger.info("Router %s recovered", identity, extra={"component": COMPONENT_SERVICE})
     return is_online
 
 
@@ -291,14 +291,14 @@ async def _notify_admins(context: ContextTypes.DEFAULT_TYPE, text: str):
                 if isinstance(e.retry_after, timedelta)
                 else float(e.retry_after)
             )
-            logger.warning(f"Rate limited by Telegram, waiting {delay}s for admin {admin_id}")
+            logger.warning("Rate limited by Telegram, waiting %ss for admin %s", delay, admin_id)
             await asyncio.sleep(delay)
             try:
                 await context.bot.send_message(admin_id, text, parse_mode="HTML")
             except TelegramError as retry_err:
-                logger.error(f"Failed to notify admin {admin_id} after RetryAfter: {retry_err}")
+                logger.error("Failed to notify admin %s after RetryAfter: %s", admin_id, retry_err)
         except TelegramError as e:
-            logger.warning(f"Failed to notify admin {admin_id}: {e}")
+            logger.warning("Failed to notify admin %s: %s", admin_id, e)
 
 
 # Public alias — external callers (e.g. main.py) should use this name.

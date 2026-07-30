@@ -7,11 +7,12 @@ import time
 from typing import Protocol
 
 from librouteros import connect
-from librouteros.exceptions import LibRouterosError
+from librouteros.exceptions import LibRouterosError, TrapError
 
 from config import DEFAULT_API_PORT, FILE_SERVER_PORT, FILE_SERVER_SECRET, ROUTER_KEY_PREFIX
 from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
+from utils.formatters import sanitize_log_data
 from utils.log_helpers import log_api_call
 
 logger = logging.getLogger(__name__)
@@ -103,15 +104,22 @@ class MikrotikAPI:
                 log_api_call(router_key, "system/resource/print", duration_ms, True, component="ROUTER")
                 return version
             log_api_call(router_key, "system/resource/print", duration_ms, True, component="ROUTER")
+        except (TrapError, ConnectionError, OSError) as e:
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(router_key, "system/resource/print", duration_ms, False, error=e, component="ROUTER")
+            self._pool.invalidate_version(router_key)
+            logger.exception(
+                "Failed to get version for %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+                extra={"component": "ROUTER"},
+            )
         except Exception as e:  # noqa: BLE001
             duration_ms = (time.monotonic() - start) * 1000
             log_api_call(router_key, "system/resource/print", duration_ms, False, error=e, component="ROUTER")
-            # إبطال الكاش حتى يُعاد المحاولة في الاستدعاء التالي
             self._pool.invalidate_version(router_key)
-            # الفشل متحمَّل (نعود إلى v6)، لذا ERROR يعكس أن الجلب الفعلي فشل
-            logger.error(
-                f"Failed to get version for {router_key} "
-                f"(error type: {type(e).__name__}): {e}",
+            logger.exception(
+                "Failed to get version for %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
                 extra={"component": "ROUTER"},
             )
         return "unknown"
@@ -123,7 +131,7 @@ class MikrotikAPI:
     def get_userman_base_path(self, router_key: str = "router1") -> str:
         version = self.get_version(router_key)
         if not version or version == "unknown":
-            logger.warning(f"Unknown RouterOS version for {router_key}, defaulting to v6 API path")
+            logger.warning("Unknown RouterOS version for %s, defaulting to v6 API path", router_key)
             return "tool/user-manager"
         try:
             major = int(version.split(".")[0])
@@ -181,12 +189,21 @@ class MikrotikAPI:
                     return True, "healthy"
                 log_api_call(router_key, "system/resource/print", duration_ms, True, component="ROUTER")
                 return False, "empty_response"
+        except (TrapError, ConnectionError, OSError) as e:
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(router_key, "system/resource/print", duration_ms, False, error=e, component="ROUTER")
+            logger.warning(
+                "Health check failed for %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+                extra={"component": "ROUTER"},
+            )
+            return False, str(e)
         except Exception as e:  # noqa: BLE001
             duration_ms = (time.monotonic() - start) * 1000
             log_api_call(router_key, "system/resource/print", duration_ms, False, error=e, component="ROUTER")
             logger.warning(
-                f"Health check failed for {router_key} "
-                f"(error type: {type(e).__name__}): {e}",
+                "Health check failed for %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
                 extra={"component": "ROUTER"},
             )
             return False, str(e)
@@ -246,8 +263,8 @@ class MikrotikAPI:
                 if force:
                     delay = _RETRY_DELAYS[attempt - 1]
                     logger.warning(
-                        f"Retry {attempt}/{len(_RETRY_DELAYS)} for {command} on {router_key} "
-                        f"(waiting {delay}s)...",
+                        "Retry %d/%d for %s on %s (waiting %ss)...",
+                        attempt, len(_RETRY_DELAYS), command, router_key, delay,
                         extra={"component": "ROUTER"},
                     )
                     time.sleep(delay)
@@ -266,7 +283,8 @@ class MikrotikAPI:
                     return []
                 if any(pat in str(e) for pat in NON_RETRYABLE_ERRORS):
                     logger.debug(
-                        f"Non-retryable error for {command} on {router_key}: {e}",
+                        "Non-retryable error for %s on %s: %s",
+                        command, router_key, sanitize_log_data(str(e)),
                         extra={"component": "ROUTER"},
                     )
                     raise
@@ -278,8 +296,8 @@ class MikrotikAPI:
                         router_key, command, duration_ms, False, error=e, component="ROUTER"
                     )
                     logger.error(
-                        f"All {total} attempts failed for {command} on {router_key} "
-                        f"(error type: {type(e).__name__}): {e}",
+                        "All %d attempts failed for %s on %s (error type: %s): %s",
+                        total, command, router_key, type(e).__name__, sanitize_log_data(str(e)),
                         exc_info=True,
                         extra={"component": "ROUTER"},
                     )
@@ -325,18 +343,26 @@ class MikrotikAPI:
                 self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
                 duration_ms = (time.monotonic() - start) * 1000
                 logger.info(
-                    f"Non-blocking command sent: {command}",
+                    "Non-blocking command sent: %s", command,
                     extra={"component": "ROUTER"},
                 )
                 router_name = self.get_router_name(router_key)
                 log_action(command, "", router_name, 0)
                 log_api_call(router_key, command, duration_ms, True, component="ROUTER")
+        except (TrapError, ConnectionError, OSError) as e:
+            duration_ms = (time.monotonic() - start) * 1000
+            log_api_call(router_key, command, duration_ms, False, error=e, component="ROUTER")
+            logger.warning(
+                "Non-blocking command failed (error type: %s): %s",
+                type(e).__name__, sanitize_log_data(str(e)),
+                extra={"component": "ROUTER"},
+            )
         except Exception as e:  # noqa: BLE001
             duration_ms = (time.monotonic() - start) * 1000
             log_api_call(router_key, command, duration_ms, False, error=e, component="ROUTER")
             logger.warning(
-                f"Non-blocking command failed "
-                f"(error type: {type(e).__name__}): {e}",
+                "Non-blocking command failed (error type: %s): %s",
+                type(e).__name__, sanitize_log_data(str(e)),
                 extra={"component": "ROUTER"},
             )
 
@@ -359,7 +385,7 @@ class MikrotikAPI:
                 duration_ms = (time.monotonic() - start) * 1000
                 log_api_call(ip, "tcp_connect", duration_ms, False, error=e, component="ROUTER")
                 logger.warning(
-                    f"Fast port check failed for {ip}:{port} - {e}",
+                    "Fast port check failed for %s:%s - %s", ip, port, e,
                     extra={"component": "ROUTER"},
                 )
                 return False, f"Port {port} closed/unreachable", ""
@@ -384,7 +410,8 @@ class MikrotikAPI:
                 duration_ms = (time.monotonic() - start) * 1000
                 log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
                 logger.error(
-                    f"test_connection LibRouterosError for {ip}:{port}: {e}",
+                    "test_connection LibRouterosError for %s:%s: %s", ip, port,
+                    sanitize_log_data(str(e)),
                     extra={"component": "ROUTER"},
                 )
                 return False, self._classify_connect_failure(e, ip, port), ""
@@ -395,12 +422,14 @@ class MikrotikAPI:
                 log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
                 if self._is_timeout_error(e):
                     logger.warning(
-                        f"test_connection timeout for {ip}:{port}: {e}",
+                        "test_connection timeout for %s:%s: %s", ip, port,
+                        sanitize_log_data(str(e)),
                         extra={"component": "ROUTER"},
                     )
                 else:
                     logger.error(
-                        f"test_connection OSError for {ip}:{port}: {e}",
+                        "test_connection OSError for %s:%s: %s", ip, port,
+                        sanitize_log_data(str(e)),
                         extra={"component": "ROUTER"},
                     )
                 ssl_hint = self._probe_api_ssl(ip, username, password)
@@ -408,9 +437,9 @@ class MikrotikAPI:
             except Exception as e:  # noqa: BLE001
                 duration_ms = (time.monotonic() - start) * 1000
                 log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
-                logger.error(
-                    f"test_connection unexpected error for {ip}:{port} "
-                    f"(error type: {type(e).__name__}): {e}",
+                logger.exception(
+                    "test_connection unexpected error for %s:%s (error type: %s): %s",
+                    ip, port, type(e).__name__, sanitize_log_data(str(e)),
                     extra={"component": "ROUTER"},
                 )
                 return False, self._classify_connect_failure(e, ip, port), ""
@@ -418,10 +447,16 @@ class MikrotikAPI:
                 if api:
                     try:
                         api.close()
+                    except (ConnectionError, OSError) as e:
+                        logger.debug(
+                            "Error closing test connection for %s (error type: %s): %s",
+                            ip, type(e).__name__, sanitize_log_data(str(e)),
+                            extra={"component": "ROUTER"},
+                        )
                     except Exception as e:  # noqa: BLE001
                         logger.debug(
-                            f"Error closing test connection for {ip} "
-                            f"(error type: {type(e).__name__}): {e}",
+                            "Error closing test connection for %s (error type: %s): %s",
+                            ip, type(e).__name__, sanitize_log_data(str(e)),
                             extra={"component": "ROUTER"},
                         )
 
@@ -534,7 +569,7 @@ class MikrotikAPI:
         try:
             serve_name = prepare_serve_file(local_path, remote_name)
         except OSError as e:
-            logger.error(f"Failed to stage file for upload: {e}")
+            logger.error("Failed to stage file for upload: %s", e)
             return False
 
         url = f"http://{bot_host}:{FILE_SERVER_PORT}/files/{serve_name}"
@@ -548,12 +583,18 @@ class MikrotikAPI:
                     "http-header-field": f"Authorization: Bearer {FILE_SERVER_SECRET}",
                 },
             )
-            logger.info(f"Router fetched {remote_name} from {url}")
+            logger.info("Router fetched %s from %s", remote_name, url)
             return True
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Router failed to fetch {remote_name} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Router failed to fetch %s (error type: %s): %s",
+                remote_name, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return False
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Router failed to fetch %s (error type: %s): %s",
+                remote_name, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False
         finally:
@@ -585,7 +626,7 @@ class MikrotikAPI:
                     ),
                 },
             )
-            logger.info(f"Router pushed {remote_name} to {url}")
+            logger.info("Router pushed %s to %s", remote_name, url)
 
             from config import BACKUP_DIR
 
@@ -598,12 +639,18 @@ class MikrotikAPI:
 
                 shutil.move(src, dest)
                 return True
-            logger.warning(f"File {remote_name} not found in upload dir after push")
+            logger.warning("File %s not found in upload dir after push", remote_name)
+            return False
+        except (TrapError, ConnectionError, OSError) as e:
+            logger.error(
+                "Router failed to push %s (error type: %s): %s",
+                remote_name, type(e).__name__, sanitize_log_data(str(e)),
+            )
             return False
         except Exception as e:  # noqa: BLE001
-            logger.error(
-                f"Router failed to push {remote_name} "
-                f"(error type: {type(e).__name__}): {e}"
+            logger.exception(
+                "Router failed to push %s (error type: %s): %s",
+                remote_name, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False
 
@@ -620,19 +667,30 @@ class MikrotikAPI:
             )
             try:
                 probe.close()
+            except (ConnectionError, OSError) as e:
+                logger.debug(
+                    "Error closing api-ssl probe for %s (error type: %s): %s",
+                    ip, type(e).__name__, sanitize_log_data(str(e)),
+                )
             except Exception as e:  # noqa: BLE001
                 logger.debug(
-                    f"Error closing api-ssl probe for {ip} "
-                    f"(error type: {type(e).__name__}): {e}"
+                    "Error closing api-ssl probe for %s (error type: %s): %s",
+                    ip, type(e).__name__, sanitize_log_data(str(e)),
                 )
             return (
                 "\n\n💡 لاحظت أن منفذ 8729 (api-ssl) مفتوح على الراوتر. البوت يستخدم حالياً "
                 "8728 (api النصّي) حسب إعدادات الأمان. إن رغبت باستخدام SSL راجع المسؤول."
             )
+        except (ConnectionError, OSError) as e:
+            logger.debug(
+                "api-ssl probe failed for %s (error type: %s): %s",
+                ip, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return ""
         except Exception as e:  # noqa: BLE001
             logger.debug(
-                f"api-ssl probe failed for {ip} "
-                f"(error type: {type(e).__name__}): {e}"
+                "api-ssl probe failed for %s (error type: %s): %s",
+                ip, type(e).__name__, sanitize_log_data(str(e)),
             )
             return ""
 

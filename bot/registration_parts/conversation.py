@@ -242,7 +242,7 @@ async def _unhandled_callback_handler(update: Update, context: ContextTypes.DEFA
                 reply_markup=get_main_keyboard(),
             )
         except Exception as e:  # noqa: BLE001
-            logger.debug(f"Handling stale callback message edit skip: {e}")
+            logger.debug("Handling stale callback message edit skip: %s", e)
 
 
 fallback(CallbackQueryHandler, pattern=r"^.*$")(_unhandled_callback_handler)

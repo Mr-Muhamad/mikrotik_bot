@@ -161,7 +161,8 @@ def get_hotspot_stats(
         }
     except (LibRouterosError, ConnectionError, OSError) as e:
         logger.error(
-            f"Error getting hotspot stats in get_hotspot_stats (router='{router_key}', day={day}): {e}",
+            "Error getting hotspot stats in get_hotspot_stats (router='%s', day=%s): %s",
+            router_key, day, e,
             exc_info=True,
         )
         return None

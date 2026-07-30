@@ -7,7 +7,6 @@ from telegram.ext import ConversationHandler
 
 from bot.handlers.constants import (
     WAITING_CARD_COUNT,
-    WAITING_CARD_MAC,
     WAITING_CARD_PAYMENT,
     WAITING_CARD_PREFIX,
     WAITING_CARD_PROFILE,

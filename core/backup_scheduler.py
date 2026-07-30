@@ -7,6 +7,7 @@ from telegram.ext import CallbackContext, JobQueue
 from core.metrics import record_action, record_backup_duration
 from core.mikrotik_client import RouterOSRow
 from utils.async_blocking import run_blocking
+from utils.formatters import sanitize_log_data
 from utils.logging_setup import COMPONENT_BACKUP, bind_component, new_request_id
 from utils.request_id import bind_request_id, bind_trace_id
 
@@ -71,7 +72,7 @@ class BackupScheduler:
                         "(error type: %s): %s",
                         router_key,
                         type(e).__name__,
-                        e,
+                        sanitize_log_data(str(e)),
                         extra={"component": COMPONENT_BACKUP},
                     )
                     failed_routers.append(str(router_name))
@@ -80,7 +81,7 @@ class BackupScheduler:
                         router_key,
                         "userman",
                         False,
-                        str(e),
+                        sanitize_log_data(str(e)),
                         router_name=router_name,
                     )
 
@@ -96,7 +97,7 @@ class BackupScheduler:
                         "(error type: %s): %s",
                         router_key,
                         type(e).__name__,
-                        e,
+                        sanitize_log_data(str(e)),
                         extra={"component": COMPONENT_BACKUP},
                     )
                     failed_routers.append(f"{router_name} (باكوب كامل)")
@@ -105,7 +106,7 @@ class BackupScheduler:
                         router_key,
                         "full",
                         False,
-                        str(e),
+                        sanitize_log_data(str(e)),
                         router_name=router_name,
                     )
                 else:
@@ -350,7 +351,7 @@ class BackupScheduler:
             from database.models import save_backup_schedule
 
             save_backup_schedule(True, hour, minute)
-        logger.info(f"Backup scheduler started, next run daily at {hour:02d}:{minute:02d}")
+        logger.info("Backup scheduler started, next run daily at %02d:%02d", hour, minute)
 
     def stop(self, job_queue: JobQueue, persist: bool = True) -> None:  # type: ignore[reportMissingTypeArgument]
         self._running = False

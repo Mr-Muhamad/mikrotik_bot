@@ -25,7 +25,7 @@ def assign_router_to_operator(operator_id: int, router_id: int, assigned_by: int
             )
         return True
     except sqlite3.Error as e:
-        logger.warning(f"Failed to assign router {router_id} to operator {operator_id}: {e}")
+        logger.warning("Failed to assign router %d to operator %d: %s", router_id, operator_id, e)
         return False
 
 
@@ -42,7 +42,7 @@ def revoke_router_from_operator(operator_id: int, router_id: int) -> bool:
             )
         return cursor.rowcount > 0
     except sqlite3.Error as e:
-        logger.warning(f"Failed to revoke router {router_id} from operator {operator_id}: {e}")
+        logger.warning("Failed to revoke router %d from operator %d: %s", router_id, operator_id, e)
         return False
 
 
@@ -59,7 +59,7 @@ def get_operator_routers(operator_id: int) -> list[int]:
             ).fetchall()
         return [row["router_id"] for row in rows]
     except sqlite3.Error as e:
-        logger.warning(f"Failed to get routers for operator {operator_id}: {e}")
+        logger.warning("Failed to get routers for operator %d: %s", operator_id, e)
         return []
 
 
@@ -77,6 +77,7 @@ def is_operator_allowed(operator_id: int, router_id: int) -> bool:
         return row is not None
     except sqlite3.Error as e:
         logger.warning(
-            f"Failed to check permission for operator {operator_id}, router {router_id}: {e}"
+            "Failed to check permission for operator %d, router %d: %s",
+            operator_id, router_id, e,
         )
         return False

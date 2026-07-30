@@ -93,7 +93,7 @@ def main():
                 mikrotik_api.close()
                 logger.info("Connection pool cleaned up")
             except (OSError, RuntimeError) as e:
-                logger.error(f"Error during pool cleanup: {e}")
+                logger.error("Error during pool cleanup: %s", e)
 
         atexit.register(_cleanup_pool)
 
@@ -103,7 +103,7 @@ def main():
         shutdown_event = asyncio.Event()
 
         def signal_handler(signum: int, frame: FrameType | None) -> None:
-            logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+            logger.info("Received signal %d, initiating graceful shutdown...", signum)
             shutdown_event.set()
 
         signal.signal(signal.SIGTERM, signal_handler)

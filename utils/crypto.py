@@ -20,7 +20,7 @@ def _get_key() -> Fernet:
         logger.info("Encryption key loaded successfully from environment")
         return _key
     except Exception as e:
-        logger.error(f"Invalid ENCRYPTION_KEY format: {e}")
+        logger.error("Invalid ENCRYPTION_KEY format: %s", e)
         raise ValueError("ENCRYPTION_KEY in .env is invalid. Fix or remove it.") from e
 
 
@@ -43,7 +43,7 @@ def decrypt_password(token: str) -> str:
         f = _get_key()
         return f.decrypt(token.encode()).decode()
     except (InvalidToken, ValueError, RuntimeError) as e:
-        logger.error(f"Failed to decrypt password token: {e}")
+        logger.error("Failed to decrypt password token: %s", e)
         return ""
 
 
@@ -64,5 +64,5 @@ def decrypt_data(token: str) -> str:
     try:
         return _get_key().decrypt(token.encode()).decode()
     except (InvalidToken, ValueError, RuntimeError) as e:
-        logger.error(f"Failed to decrypt data token: {e}")
+        logger.error("Failed to decrypt data token: %s", e)
         return ""

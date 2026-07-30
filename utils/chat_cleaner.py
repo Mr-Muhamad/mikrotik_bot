@@ -144,8 +144,8 @@ async def _delete_message_ids(
             return 1
         except Exception as e:  # noqa: BLE001
             logger.debug(
-                f"Failed to delete message {message_ids[0]} in chat {chat_id} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Failed to delete message %s in chat %s (error type: %s): %s",
+                message_ids[0], chat_id, type(e).__name__, e,
             )
             return 0
 
@@ -155,8 +155,8 @@ async def _delete_message_ids(
             return len(message_ids)
     except Exception as e:  # noqa: BLE001
         logger.debug(
-            f"Batched delete failed for chat {chat_id} "
-            f"(error type: {type(e).__name__}): {e}"
+            "Batched delete failed for chat %s (error type: %s): %s",
+            chat_id, type(e).__name__, e,
         )
 
     deleted = 0
@@ -166,8 +166,8 @@ async def _delete_message_ids(
             deleted += 1
         except Exception as e:  # noqa: BLE001
             logger.debug(
-                f"Failed to delete message {mid} in chat {chat_id} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Failed to delete message %s in chat %s (error type: %s): %s",
+                mid, chat_id, type(e).__name__, e,
             )
         # Throttle to prevent FloodWait when deleting many individual messages
         await asyncio.sleep(0.05)
@@ -209,7 +209,7 @@ async def _delete_job(context: _CleanerContext) -> None:
         )
         _stats["messages_deleted"] += 1
     except Exception as e:  # noqa: BLE001
-        logger.debug(f"Delete failed (error type: {type(e).__name__}): {e}")
+        logger.debug("Delete failed (error type: %s): %s", type(e).__name__, e)
 
 
 async def delete_now(context: _CleanerContext, chat_id: int, message_id: int) -> None:
@@ -218,7 +218,7 @@ async def delete_now(context: _CleanerContext, chat_id: int, message_id: int) ->
         await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
         _stats["messages_deleted"] += 1
     except Exception as e:  # noqa: BLE001
-        logger.debug(f"delete_now failed (error type: {type(e).__name__}): {e}")
+        logger.debug("delete_now failed (error type: %s): %s", type(e).__name__, e)
 
 
 def track_message(context: _CleanerContext, chat_id: int, message_id: int) -> None:
@@ -299,7 +299,7 @@ async def safe_edit_or_send(
             return edited
         return None
     except Exception as e:  # noqa: BLE001
-        logger.debug(f"edit_or_send failed with benign error: {e}")
+        logger.debug("edit_or_send failed with benign error: %s", e)
         if _is_benign_edit_error(e):
             prev = context.user_data.pop("last_msg", None)
             if prev is not None:
@@ -335,8 +335,7 @@ async def edit_clean(
         )
     except Exception as e:  # noqa: BLE001
         if _is_benign_edit_error(e):
-            # المحتوى لم يتغير أو الرسالة محذوفة — حالة حميدة، نتجاهلها بصمت
-            logger.debug(f"edit_clean benign skip: {e}")
+            logger.debug("edit_clean benign skip: %s", e)
             return None
         raise
     if isinstance(edited, Message) and message is not None:
@@ -369,7 +368,7 @@ async def safe_edit_plain(
         edited = await query.edit_message_text(text=text, reply_markup=reply_markup)
     except Exception as e:  # noqa: BLE001
         if _is_benign_edit_error(e):
-            logger.debug(f"safe_edit_plain benign skip: {e}")
+            logger.debug("safe_edit_plain benign skip: %s", e)
             return None
         raise
     if isinstance(edited, Message) and message is not None:
@@ -447,7 +446,7 @@ async def run_background_cleanup(context: _CleanerContext) -> None:
     # Also cleanup old router health logs
     cleaned_health = cleanup_health_history(days=7)
     if cleaned_health > 0:
-        logger.debug(f"Cleaned {cleaned_health} old router health records.")
+        logger.debug("Cleaned %d old router health records.", cleaned_health)
 
 
 def get_cleanup_stats() -> _Stats:

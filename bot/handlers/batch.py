@@ -91,7 +91,7 @@ async def batches_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
     try:
         results = await run_blocking(search_card_batches, search_term, router_key, 20, 0)
     except (ValueError, OSError) as e:
-        logger.error(f"batches_search failed: {e}")
+        logger.error("batches_search failed: %s", e)
         await send_step(update, context, "❌ فشل البحث: خطأ غير متوقع")
         return ConversationHandler.END
 
@@ -122,7 +122,7 @@ async def _show_batches_page(update: Update, context: ContextTypes.DEFAULT_TYPE,
         total = await run_blocking(get_card_batches_count, router_key)
         batches = await run_blocking(list_card_batches, router_key, page_size, offset)
     except (ValueError, OSError) as e:
-        logger.error(f"Failed to list batches: {e}")
+        logger.error("Failed to list batches: %s", e)
         await send_step(update, context, "❌ فشل جلب الدفعات: خطأ غير متوقع")
         return
 
@@ -182,7 +182,7 @@ async def batch_select(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         batch = await run_blocking(get_card_batch, batch_id)
     except (ValueError, OSError) as e:
-        logger.error(f"Failed to load batch {batch_id}: {e}")
+        logger.error("Failed to load batch %s: %s", batch_id, e)
         await query.edit_message_text("❌ فشل تحميل الدفعة.", reply_markup=get_batches_keyboard([]))
         return
 
@@ -258,7 +258,7 @@ async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         batch = await run_blocking(get_card_batch, batch_id)
     except (ValueError, OSError) as e:
-        logger.error(f"Failed to load batch {batch_id}: {e}")
+        logger.error("Failed to load batch %s: %s", batch_id, e)
         await query.answer("❌ فشل تحميل الدفعة", show_alert=True)
         return
 
@@ -289,7 +289,7 @@ async def batch_regen(update: Update, context: ContextTypes.DEFAULT_TYPE):
             os.remove(pdf_path)
         await query.answer("✅ تم إعادة توليد PDF", show_alert=False)
     except (OSError, ValueError) as e:
-        logger.error(f"Failed to regenerate batch PDF {batch_id}: {e}")
+        logger.error("Failed to regenerate batch PDF %s: %s", batch_id, e)
         await query.answer("❌ فشل توليد PDF", show_alert=True)
 
 
@@ -341,7 +341,7 @@ async def show_sales_summary(update: Update, context: ContextTypes.DEFAULT_TYPE)
     try:
         summary = await run_blocking(get_sales_summary, days)
     except (ValueError, OSError) as e:
-        logger.error(f"Failed to get sales summary: {e}")
+        logger.error("Failed to get sales summary: %s", e)
         summary = {
             "total_batches": 0,
             "paid_count": 0,
@@ -387,7 +387,7 @@ async def share_card_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         batch = await run_blocking(get_card_batch, batch_id)
     except (ValueError, OSError) as e:
-        logger.error(f"share_card_send: failed to load batch {batch_id}: {e}")
+        logger.error("share_card_send: failed to load batch %s: %s", batch_id, e)
         await update.message.reply_text(SHARE_CARD_FAIL)
         return ConversationHandler.END
 
@@ -435,7 +435,7 @@ async def share_card_send(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         await update.message.reply_text(SHARE_CARD_SUCCESS)
     except telegram.error.TelegramError as e:
-        logger.warning(f"share_card_send: failed to send to {recipient_id}: {e}")
+        logger.warning("share_card_send: failed to send to %s: %s", recipient_id, e)
         await update.message.reply_text(SHARE_CARD_FAIL)
 
     return ConversationHandler.END

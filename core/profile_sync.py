@@ -1,7 +1,10 @@
 import logging
 
+from librouteros.exceptions import TrapError
+
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +26,19 @@ class ProfileSync:
             base_path = self._api.get_userman_base_path(router_key)
             results = self._api.execute(router_key, f"{base_path}/profile/print")
             return [str(r.get("name", "")) for r in results if r.get("name")]
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Error fetching user manager profiles in get_userman_profiles (router='{router_key}') "
-                f"(error type: {type(e).__name__}): {e}",
+                "Error fetching user manager profiles in get_userman_profiles (router='%s') "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
                 exc_info=True,
+            )
+            return []
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Error fetching user manager profiles in get_userman_profiles (router='%s') "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return []
 

@@ -192,10 +192,19 @@ def upgrade() -> None:
     )
     # Insert default singleton rows for settings tables
     op.execute(
-        "INSERT OR IGNORE INTO pdf_settings (id, margin_top, margin_bottom, margin_left, margin_right, border_width, card_width, card_height, spacing_x, spacing_y, cards_per_row, cards_per_page, footer_text, header_text, brand_name, hotspot_dns, show_qr, label_spacing_single, label_spacing_dual, value_max_font_single, value_max_font_dual) VALUES (1, 10, 10, 10, 10, 1.0, 90.0, 54.0, 5.0, 5.0, 4, 40, '', '', '', '', 1, 1.0, 1.0, 12, 11)"
+        "INSERT OR IGNORE INTO pdf_settings "
+        "(id, margin_top, margin_bottom, margin_left, margin_right, "
+        "border_width, card_width, card_height, spacing_x, spacing_y, "
+        "cards_per_row, cards_per_page, footer_text, header_text, "
+        "brand_name, hotspot_dns, show_qr, label_spacing_single, "
+        "label_spacing_dual, value_max_font_single, value_max_font_dual) "
+        "VALUES (1, 10, 10, 10, 10, 1.0, 90.0, 54.0, 5.0, 5.0, "
+        "4, 40, '', '', '', '', 1, 1.0, 1.0, 12, 11)"
     )
     op.execute(
-        "INSERT OR IGNORE INTO backup_settings (id, schedule_enabled, schedule_hour, schedule_minute) VALUES (1, 0, 3, 0)"
+        "INSERT OR IGNORE INTO backup_settings "
+        "(id, schedule_enabled, schedule_hour, schedule_minute) "
+        "VALUES (1, 0, 3, 0)"
     )
 
 

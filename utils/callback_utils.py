@@ -8,6 +8,7 @@ import time
 
 from telegram import CallbackQuery
 
+from utils.formatters import sanitize_log_data
 from utils.logging_setup import COMPONENT_TELEGRAM
 from utils.request_id import get_request_id, get_trace_id
 
@@ -64,7 +65,8 @@ async def safe_answer_callback(
         error_msg = str(e)
         if "Query is too old" in error_msg or "query id is invalid" in error_msg:
             logger.debug(
-                f"Callback answer timeout (non-critical): {getattr(query, 'data', 'unknown')}",
+                "Callback answer timeout (non-critical): %s",
+                getattr(query, "data", "unknown"),
                 extra={
                     "component": COMPONENT_TELEGRAM,
                     "request_id": get_request_id(),
@@ -75,7 +77,8 @@ async def safe_answer_callback(
             )
         else:
             logger.warning(
-                f"Callback answer failed (error type: {type(e).__name__}): {e}",
+                "Callback answer failed (error type: %s): %s",
+                type(e).__name__, sanitize_log_data(str(e)),
                 extra={
                     "component": COMPONENT_TELEGRAM,
                     "request_id": get_request_id(),
@@ -88,7 +91,8 @@ async def safe_answer_callback(
     else:
         duration_ms = (time.monotonic() - start) * 1000
         logger.debug(
-            f"Callback answered: {getattr(query, 'data', 'unknown')}",
+            "Callback answered: %s",
+            getattr(query, "data", "unknown"),
             extra={
                 "component": COMPONENT_TELEGRAM,
                 "request_id": get_request_id(),

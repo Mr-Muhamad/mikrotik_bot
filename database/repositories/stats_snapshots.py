@@ -41,7 +41,7 @@ def save_snapshot(router_key: str, data: dict[str, object]) -> None:
                 ),
             )
     except sqlite3.Error as e:
-        logger.warning(f"Failed to save snapshot for {router_key}: {e}")
+        logger.warning("Failed to save snapshot for %s: %s", router_key, e)
 
 
 def get_yesterday_snapshot(router_key: str) -> RouterOSRow | None:
@@ -58,7 +58,7 @@ def get_yesterday_snapshot(router_key: str) -> RouterOSRow | None:
             ).fetchone()
             return dict(row) if row else None
     except sqlite3.Error as e:
-        logger.warning(f"Failed to get yesterday snapshot for {router_key}: {e}")
+        logger.warning("Failed to get yesterday snapshot for %s: %s", router_key, e)
         return None
 
 
@@ -77,5 +77,5 @@ def get_week_snapshots(router_key: str) -> list[RouterOSRow]:
             ).fetchall()
             return [dict(row) for row in rows]
     except sqlite3.Error as e:
-        logger.warning(f"Failed to get week snapshots for {router_key}: {e}")
+        logger.warning("Failed to get week snapshots for %s: %s", router_key, e)
         return []

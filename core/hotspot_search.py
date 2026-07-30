@@ -9,7 +9,10 @@ and return plain dicts/lists, keeping the search/kick responsibility here.
 import logging
 import re
 
+from librouteros.exceptions import TrapError
+
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +49,8 @@ def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> Rout
             "ip/hotspot/host/print",
             **{"?mac-address": search_lower, ".proplist": proplist},
         )
+    except (TrapError, ConnectionError, OSError):
+        hosts = []
     except Exception:  # noqa: BLE001
         hosts = []
 
@@ -56,6 +61,8 @@ def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> Rout
                 "ip/hotspot/host/print",
                 **{"?address": search_lower, ".proplist": proplist},
             )
+        except (TrapError, ConnectionError, OSError):
+            hosts = []
         except Exception:  # noqa: BLE001
             hosts = []
 
@@ -68,10 +75,20 @@ def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> Rout
                 user = str(h.get("user", "")).lower()
                 if search_lower in ip or search_lower in mac or search_lower in user:
                     hosts.append(h)
+        except (TrapError, ConnectionError, OSError) as e:
+            logger.warning(
+                "Error fetching all hotspot hosts in search_hosts (query='%s', router='%s') "
+                "(error type: %s): %s",
+                search_lower, router_key,
+                type(e).__name__, sanitize_log_data(str(e)),
+                exc_info=True,
+            )
         except Exception as e:  # noqa: BLE001
             logger.warning(
-                f"Error fetching all hotspot hosts in search_hosts (query='{search_lower}', router='{router_key}') "
-                f"(error type: {type(e).__name__}): {e}",
+                "Error fetching all hotspot hosts in search_hosts (query='%s', router='%s') "
+                "(error type: %s): %s",
+                search_lower, router_key,
+                type(e).__name__, sanitize_log_data(str(e)),
                 exc_info=True,
             )
 
@@ -105,10 +122,20 @@ def kick_host(api: MikrotikClient, router_key: str, mac_or_ip: str) -> tuple[boo
                 "ip/hotspot/host/print",
                 **{"?address": target, ".proplist": proplist},
             )
+    except (TrapError, ConnectionError, OSError) as e:
+        logger.warning(
+            "Error fetching host details for target '%s' in kick_host (router='%s') "
+            "(error type: %s): %s",
+            target, router_key,
+            type(e).__name__, sanitize_log_data(str(e)),
+            exc_info=True,
+        )
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"Error fetching host details for target '{target}' in kick_host (router='{router_key}') "
-            f"(error type: {type(e).__name__}): {e}",
+            "Error fetching host details for target '%s' in kick_host (router='%s') "
+            "(error type: %s): %s",
+            target, router_key,
+            type(e).__name__, sanitize_log_data(str(e)),
             exc_info=True,
         )
 
@@ -154,6 +181,11 @@ def _find_active_sessions(
             "ip/hotspot/active/print",
             **{"?user": target, ".proplist": active_proplist},
         )
+    except (TrapError, ConnectionError, OSError):
+        active = api.execute(
+            router_key, "ip/hotspot/active/print", **{".proplist": active_proplist}
+        )
+        active_sessions = [s for s in active if str(s.get("user", "")).lower() == target]
     except Exception:  # noqa: BLE001
         active = api.execute(
             router_key, "ip/hotspot/active/print", **{".proplist": active_proplist}
@@ -198,6 +230,18 @@ def _find_matched_hosts(
             )
             matched_hosts.extend(mac_hosts)
         return matched_hosts
+    except (TrapError, ConnectionError, OSError):
+        all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": host_proplist})
+        return [
+            h
+            for h in all_hosts
+            if (
+                str(h.get("user", "")).lower() == target
+                or str(h.get("mac-address", "")).lower() in macs_to_kick
+                or (is_mac_target and str(h.get("mac-address", "")).lower() == target)
+                or str(h.get("address", "")).lower() == target
+            )
+        ]
     except Exception:  # noqa: BLE001
         all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": host_proplist})
         return [

@@ -94,7 +94,7 @@ async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_T
             if msg is not None:
                 await schedule_delete(context, msg.chat_id, msg.message_id)
         except (LibRouterosError, OSError) as e:
-            logger.info(f"Reboot command sent (connection may be lost): {e}")
+            logger.info("Reboot command sent (connection may be lost): %s", e)
             await query.edit_message_text(
                 f"✅ تم بدء إعادة تشغيل {router_name}\n\n⏳ قد يستغرق الأمر 10-30 ثانية حتى يعود الراوتر متاحاً",  # noqa: E501
                 reply_markup=get_main_keyboard(),

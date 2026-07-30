@@ -77,5 +77,5 @@ async def handle_timeout_selection(update: Update, context: ContextTypes.DEFAULT
 
         await query.edit_message_text(msg)
     except (ValueError, sqlite3.Error) as e:
-        logger.error(f"Error setting timeout: {e}")
+        logger.error("Error setting timeout: %s", e)
         await query.edit_message_text(TIMEOUT_SAVE_ERROR)

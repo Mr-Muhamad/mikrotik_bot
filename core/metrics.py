@@ -336,7 +336,8 @@ def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:  # noqa: C
                         f'bot_action_duration_seconds{{router="{router}",command="{command}",quantile="0.9"}} {p90:.4f}'
                     )
                     lines.append(
-                        f'bot_action_duration_seconds{{router="{router}",command="{command}",quantile="0.99"}} {p99:.4f}'
+                        f'bot_action_duration_seconds{{router="{router}",command="{command}",'
+                        f'quantile="0.99"}} {p99:.4f}'
                     )
                     lines.append(
                         f'bot_action_duration_seconds_sum{{router="{router}",command="{command}"}} {sum(sorted_d):.4f}'
@@ -381,16 +382,20 @@ def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:  # noqa: C
                     p90 = sorted_d[int(n * 0.90)]
                     p99 = sorted_d[min(int(n * 0.99), n - 1)]
                     lines.append(
-                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",quantile="0.5"}} {p50:.4f}'
+                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",'
+                        f'quantile="0.5"}} {p50:.4f}'
                     )
                     lines.append(
-                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",quantile="0.9"}} {p90:.4f}'
+                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",'
+                        f'quantile="0.9"}} {p90:.4f}'
                     )
                     lines.append(
-                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",quantile="0.99"}} {p99:.4f}'
+                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",'
+                        f'quantile="0.99"}} {p99:.4f}'
                     )
                     lines.append(
-                        f'bot_db_query_duration_seconds_sum{{operation="{operation}",table="{table}"}} {sum(sorted_d):.4f}'
+                        f'bot_db_query_duration_seconds_sum{{operation="{operation}",'
+                        f'table="{table}"}} {sum(sorted_d):.4f}'
                     )
                     lines.append(
                         f'bot_db_query_duration_seconds_count{{operation="{operation}",table="{table}"}} {n}'

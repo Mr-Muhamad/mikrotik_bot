@@ -21,7 +21,7 @@ async def get_router_part(router_key: str | None, fmt: str = "\n📡 {}") -> str
         name = await run_blocking(mikrotik_api.get_router_name, router_key)
         return fmt.format(name) if name else ""
     except RouterNotFoundError as e:
-        logger.warning(f"Router not found while getting name for {router_key}: {e}")
+        logger.warning("Router not found while getting name for %s: %s", router_key, e)
         return ""
     except (OSError, ValueError):
         return ""

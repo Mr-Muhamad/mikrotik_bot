@@ -1,7 +1,10 @@
 import logging
 
+from librouteros.exceptions import TrapError
+
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient, RouterOSRow
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -45,11 +48,19 @@ class StatsManager:
                 "inactive_users": inactive,
                 "total_bytes": total_bytes,
             }
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Error getting hotspot stats in get_hotspot_stats (router='{router_key}') "
-                f"(error type: {type(e).__name__}): {e}",
+                "Error getting hotspot stats in get_hotspot_stats (router='%s') "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
                 exc_info=True,
+            )
+            return None
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Error getting hotspot stats in get_hotspot_stats (router='%s') "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return None
 
@@ -70,11 +81,19 @@ class StatsManager:
                 "enabled_users": enabled,
                 "disabled_users": disabled,
             }
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Error getting userman stats in get_userman_stats (router='{router_key}') "
-                f"(error type: {type(e).__name__}): {e}",
+                "Error getting userman stats in get_userman_stats (router='%s') "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
                 exc_info=True,
+            )
+            return None
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Error getting userman stats in get_userman_stats (router='%s') "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return None
 

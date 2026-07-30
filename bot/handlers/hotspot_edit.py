@@ -128,7 +128,7 @@ async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE
     try:
         user = await run_blocking(hotspot_manager.get_user, router_key, user_id)
     except Exception as e:  # noqa: BLE001
-        logger.error(f"hotspot_edit_select failed (error type: {type(e).__name__}): {e}", exc_info=True)
+        logger.error("hotspot_edit_select failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,
@@ -227,7 +227,7 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
             text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
         )
     except Exception as e:  # noqa: BLE001
-        logger.error(f"hotspot_edit_reset failed (error type: {type(e).__name__}): {e}")
+        logger.error("hotspot_edit_reset failed (error type: %s): %s", type(e).__name__, e)
         await send_error(
             update,
             context,
@@ -288,7 +288,7 @@ async def hotspot_edit_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
             msg, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
         )
     except Exception as e:  # noqa: BLE001
-        logger.error(f"hotspot_edit_kick failed (error type: {type(e).__name__}): {e}")
+        logger.error("hotspot_edit_kick failed (error type: %s): %s", type(e).__name__, e)
         await send_error(
             update,
             context,
@@ -357,7 +357,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             )
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"hotspot_edit_toggle_disabled failed (error type: {type(e).__name__}): {e}"
+                "hotspot_edit_toggle_disabled failed (error type: %s): %s", type(e).__name__, e
             )
             await send_error(
                 update,
@@ -385,7 +385,7 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             )
             return WAITING_EDIT_VALUE
         except Exception as e:  # noqa: BLE001
-            logger.error(f"hotspot_edit_field failed (error type: {type(e).__name__}): {e}")
+            logger.error("hotspot_edit_field failed (error type: %s): %s", type(e).__name__, e)
             await send_error(
                 update,
                 context,
@@ -449,7 +449,7 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_edit_field_keyboard(is_disabled=is_disabled),
         )
     except Exception as e:  # noqa: BLE001
-        logger.error(f"edit_profile_selected failed (error type: {type(e).__name__}): {e}")
+        logger.error("edit_profile_selected failed (error type: %s): %s", type(e).__name__, e)
         await send_error(
             update,
             context,
@@ -644,7 +644,7 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             field, user_name, router_key, user_id,
         )
     except Exception as e:  # noqa: BLE001
-        logger.error(f"hotspot_edit_value failed (error type: {type(e).__name__}): {e}")
+        logger.error("hotspot_edit_value failed (error type: %s): %s", type(e).__name__, e)
         await send_error(
             update,
             context,

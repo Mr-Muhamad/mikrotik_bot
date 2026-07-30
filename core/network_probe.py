@@ -83,7 +83,7 @@ def decode_mndp_packet(data: bytes) -> dict[str, str]:
                 value = bytes(payload).decode("utf-8", errors="replace")
                 parts[type_map[part_type]] = value
             except (UnicodeDecodeError, AttributeError) as e:
-                logger.debug(f"Failed to decode MNDP part {part_type}: {e}")
+                logger.debug("Failed to decode MNDP part %s: %s", part_type, e)
         elif part_type == MNDP_TYPE_UPTIME and len(payload) >= 4:
             seconds = struct.unpack("<I", bytes(payload[:4]))[0]
             days, remainder = divmod(seconds, 86400)
@@ -94,7 +94,7 @@ def decode_mndp_packet(data: bytes) -> dict[str, str]:
             try:
                 parts["ipv4"] = socket.inet_ntop(socket.AF_INET, bytes(payload))
             except (OSError, ValueError) as e:
-                logger.debug(f"Failed to parse ipv4 in MNDP: {e}")
+                logger.debug("Failed to parse ipv4 in MNDP: %s", e)
     return parts
 
 
@@ -226,12 +226,18 @@ class ARPTableProbe:
                 result = self._run(["ip", "neigh"], capture_output=True, text=True, timeout=10)
                 entries = parse_arp_table_linux(result.stdout)
             else:
-                logger.info(f"ARP table probe not supported on {self._system}")
+                logger.info("ARP table probe not supported on %s", self._system)
                 return []
-        except Exception as e:  # noqa: BLE001
+        except (PermissionError, OSError, subprocess.TimeoutExpired) as e:
             logger.error(
-                f"Failed to parse ARP table "
-                f"(error type: {type(e).__name__}): {e}"
+                "Failed to parse ARP table (error type: %s): %s",
+                type(e).__name__, e,
+            )
+            return []
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Failed to parse ARP table (error type: %s): %s",
+                type(e).__name__, e,
             )
             return []
         return [{"ip": ip, "mac": mac, "source": "arp"} for ip, mac in entries.items()]
@@ -374,7 +380,7 @@ class MNDPListenerProbe:
                 last_send = now
                 logger.debug("MNDP refresh packet sent")
             except OSError as send_err:
-                logger.error(f"Failed to send MNDP refresh: {send_err}")
+                logger.error("Failed to send MNDP refresh: %s", send_err)
         return last_send
 
     def _process_packet(
@@ -423,7 +429,7 @@ class MNDPListenerProbe:
             sock = self._setup_socket()
             start_time = time.time()
             last_send = 0.0
-            logger.info(f"MNDP single-socket discovery started (timeout: {self._timeout}s)")
+            logger.info("MNDP single-socket discovery started (timeout: %ss)", self._timeout)
 
             while time.time() - start_time <= self._timeout:
                 last_send = self._send_broadcast(sock, last_send)
@@ -433,16 +439,16 @@ class MNDPListenerProbe:
                 except TimeoutError:
                     continue
                 except OSError as e:
-                    logger.error(f"MNDP recv error: {e}")
+                    logger.error("MNDP recv error: %s", e)
                     continue
 
         except PermissionError as e:
-            logger.warning(f"MNDP requires admin privileges (run as Administrator): {e}")
+            logger.warning("MNDP requires admin privileges (run as Administrator): %s", e)
             raise
         except Exception as e:  # noqa: BLE001
             logger.error(
-                f"Failed to start MNDP listener "
-                f"(error type: {type(e).__name__}): {e}"
+                "Failed to start MNDP listener (error type: %s): %s",
+                type(e).__name__, e,
             )
         finally:
             if sock:
@@ -451,7 +457,7 @@ class MNDPListenerProbe:
                 except OSError:
                     pass
 
-        logger.info(f"MNDP single-socket discovery finished: {len(discovered)} devices")
+        logger.info("MNDP single-socket discovery finished: %d devices", len(discovered))
         return list(discovered.values())
 
 

@@ -54,10 +54,10 @@ def _setup_arabic_support() -> str:
                 try:
                     pdfmetrics.registerFont(TTFont(font_name, font_path))
                     _arabic_font = font_name
-                    logger.info(f"Loaded Arabic font: {font_name}")
+                    logger.info("Loaded Arabic font: %s", font_name)
                     break
                 except (OSError, ValueError) as e:
-                    logger.warning(f"Failed to load font {font_file}: {e}")
+                    logger.warning("Failed to load font %s: %s", font_file, e)
 
         if _arabic_font is None:
             _arabic_font = "Helvetica"
@@ -90,7 +90,7 @@ def _arabic_text(text: str | None) -> str:
         result = _bidi_display(reshaped)
         return cast(str, result)
     except (ValueError, UnicodeEncodeError, UnicodeDecodeError) as e:
-        logger.debug(f"Arabic text reshaping failed, using raw text: {e}")
+        logger.debug("Arabic text reshaping failed, using raw text: %s", e)
         return str(text)
 
 
@@ -208,7 +208,10 @@ class CardRenderer:
         """Draw username and password fields with dynamic font sizing."""
         card = _normalize_card(card)
         username = str(card.get("username", ""))
-        password = str(card.get("password", ""))
+        password_raw = card.get("password")
+        if not password_raw:
+            raise ValueError("Password is required for card generation")
+        password = str(password_raw)
         show_password = card.get("show_password", False)
 
         data_top = y + height - 10.5 * mm

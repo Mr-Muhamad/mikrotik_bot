@@ -867,7 +867,10 @@ def get_operator_router_assignment_keyboard(
             continue
         rid_int: int = int(raw_rid)
         name: str = str(r.get("name_alias") or r.get("identity") or str(rid_int))
-        ip: str = str(r.get("ip_address", ""))
+        ip_raw = r.get("ip_address")
+        if not ip_raw:
+            raise ValueError("IP address is required for router listing")
+        ip: str = str(ip_raw)
         label_name: str = f"{name} ({ip})" if ip else name
         if rid_int in assigned_router_ids:
             label: str = f"✅ {label_name}"

@@ -55,10 +55,10 @@ async def set_bot_commands(app: Application) -> None:  # type: ignore[reportMiss
             await app.bot.set_my_commands(commands, scope=PRIVATE)
             await app.bot.set_my_commands(commands, scope=GROUP)
             logger.info(
-                f"✅ Set {len(commands)} bot commands for private+group (attempt {attempt})"
+                "✅ Set %d bot commands for private+group (attempt %d)", len(commands), attempt
             )
             return
         except telegram.error.TelegramError as e:
-            logger.warning(f"⚠️ Attempt {attempt}/3 — set_bot_commands failed: {e}")
+            logger.warning("⚠️ Attempt %d/3 — set_bot_commands failed: %s", attempt, e)
             if attempt < 3:
                 await asyncio.sleep(2**attempt)

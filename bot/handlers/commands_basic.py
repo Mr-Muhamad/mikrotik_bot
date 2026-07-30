@@ -183,12 +183,12 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             await update.message.delete()
         except telegram.error.TelegramError as e:
-            logger.debug(f"Failed to delete user message: {e}")
+            logger.debug("Failed to delete user message: %s", e)
         if last_msg_id:
             try:
                 await context.bot.delete_message(chat_id=chat_id, message_id=last_msg_id)
             except telegram.error.TelegramError as e:
-                logger.debug(f"Failed to delete last message {last_msg_id}: {e}")
+                logger.debug("Failed to delete last message %s: %s", last_msg_id, e)
         if router_key:
             await send_and_track(
                 context,
@@ -225,10 +225,10 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     error_msg = str(error) if error else ""
 
     if any(msg in error_msg for msg in _NON_CRITICAL):
-        logger.debug(f"Non-critical Telegram error ignored: {error_msg}")
+        logger.debug("Non-critical Telegram error ignored: %s", error_msg)
         return
 
-    logger.exception(f"Unhandled error: {error}")
+    logger.exception("Unhandled error: %s", error)
     if update and update.effective_chat:
         try:
             await send_and_track(
@@ -237,7 +237,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "❌ حدث خطأ غير متوقع.\nاستخدم /cancel للخروج من الوضع الحالي\nأو /start للعودة للقائمة.",  # noqa: E501
             )
         except telegram.error.TelegramError as e:
-            logger.debug(f"Failed to send error message: {e}")
+            logger.debug("Failed to send error message: %s", e)
     elif error:
         try:
             from config import ADMIN_IDS
@@ -256,7 +256,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode="HTML",
                 )
         except telegram.error.TelegramError as send_admin_err:
-            logger.debug(f"Failed to notify admin of background error: {send_admin_err}")
+            logger.debug("Failed to notify admin of background error: %s", send_admin_err)
 
     if update and update.effective_user:
         clear_action(update.effective_user.id)
@@ -270,7 +270,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await update.message.delete()
     except telegram.error.TelegramError as e:
-        logger.debug(f"Failed to delete help command message: {e}")
+        logger.debug("Failed to delete help command message: %s", e)
 
 
 # ─── CLEAN CHAT ──────────────────────────────────────────────
@@ -284,7 +284,7 @@ async def clean_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             await update.message.delete()
         except telegram.error.TelegramError as e:
-            logger.debug(f"Failed to delete clean command message: {e}")
+            logger.debug("Failed to delete clean command message: %s", e)
     msg = await context.bot.send_message(chat_id, CLEAN_DONE)
     await schedule_delete(context, chat_id, msg.message_id, 3)
 
@@ -302,7 +302,7 @@ async def sync_commands(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await update.message.delete()
     except telegram.error.TelegramError as e:
-        logger.debug(f"Failed to delete sync command message: {e}")
+        logger.debug("Failed to delete sync command message: %s", e)
 
 
 # ─── METRICS ───────────────────────────────────────────────
@@ -346,7 +346,7 @@ async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ImportError:
         logger.warning("psutil is not installed. Server health metrics disabled.")
     except (OSError, ValueError, AttributeError) as e:
-        logger.error(f"Failed to fetch system metrics: {e}")
+        logger.error("Failed to fetch system metrics: %s", e)
 
     text = (
         METRICS_HEADER
@@ -371,7 +371,7 @@ async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             await update.message.delete()
         except telegram.error.TelegramError as e:
-            logger.debug(f"Failed to delete metrics command message: {e}")
+            logger.debug("Failed to delete metrics command message: %s", e)
     await schedule_delete(context, chat_id, msg.message_id, 30)
 
 

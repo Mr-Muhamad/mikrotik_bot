@@ -6,10 +6,13 @@ import threading
 from datetime import datetime
 from typing import cast
 
+from librouteros.exceptions import TrapError
+
 from core.cache import TTLCache
 from core.card_models import CardData, CardSystem
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
+from utils.formatters import sanitize_log_data
 from utils.validators import sanitize_comment
 
 logger = logging.getLogger(__name__)
@@ -107,11 +110,19 @@ class HotspotManager:
                 **{"?name": name, ".proplist": ".id"},
             )
             return len(users) > 0
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Failed to check user existence for '{name}' in user_exists (router='{router_key}') "
-                f"(error type: {type(e).__name__}): {e}",
+                "Failed to check user existence for '%s' in user_exists (router='%s') "
+                "(error type: %s): %s",
+                name, router_key, type(e).__name__, sanitize_log_data(str(e)),
                 exc_info=True,
+            )
+            return False
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Failed to check user existence for '%s' in user_exists (router='%s') "
+                "(error type: %s): %s",
+                name, router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False
 
@@ -151,7 +162,7 @@ class HotspotManager:
 
         result = self._api.execute(router_key, "ip/hotspot/user/add", **params)
         self.invalidate_users_cache(router_key)
-        logger.info(f"Added hotspot user '{name}' on {router_key}")
+        logger.info("Added hotspot user '%s' on %s", name, router_key)
         return result
 
     def edit_user(self, router_key: str, user_id: str, **kwargs: object) -> RouterOSResponse:
@@ -176,7 +187,7 @@ class HotspotManager:
 
         result = self._api.execute(router_key, "ip/hotspot/user/set", **params)
         self.invalidate_users_cache(router_key)
-        logger.info(f"Edited hotspot user {user_id} on {router_key}")
+        logger.info("Edited hotspot user %s on %s", user_id, router_key)
         return result
 
     def reset_user_counters(self, router_key: str, user_id: str) -> RouterOSResponse:
@@ -185,28 +196,28 @@ class HotspotManager:
             router_key, "ip/hotspot/user/reset-counters", **{"numbers": user_id}
         )
         self.invalidate_users_cache(router_key)
-        logger.info(f"Reset counters for hotspot user {user_id} on {router_key}")
+        logger.info("Reset counters for hotspot user %s on %s", user_id, router_key)
         return result
 
     def enable_user(self, router_key: str, user_id: str) -> RouterOSResponse:
         """Enable a hotspot user by its .id."""
         result = self._api.execute(router_key, "ip/hotspot/user/enable", **{"numbers": user_id})
         self.invalidate_users_cache(router_key)
-        logger.info(f"Enabled hotspot user {user_id} on {router_key}")
+        logger.info("Enabled hotspot user %s on %s", user_id, router_key)
         return result
 
     def disable_user(self, router_key: str, user_id: str) -> RouterOSResponse:
         """Disable a hotspot user by its .id."""
         result = self._api.execute(router_key, "ip/hotspot/user/disable", **{"numbers": user_id})
         self.invalidate_users_cache(router_key)
-        logger.info(f"Disabled hotspot user {user_id} on {router_key}")
+        logger.info("Disabled hotspot user %s on %s", user_id, router_key)
         return result
 
     def delete_user(self, router_key: str, user_id: str) -> RouterOSResponse:
         """Delete a hotspot user by its .id."""
         result = self._api.execute(router_key, "ip/hotspot/user/remove", **{".id": user_id})
         self.invalidate_users_cache(router_key)
-        logger.info(f"Deleted hotspot user {user_id} on {router_key}")
+        logger.info("Deleted hotspot user %s on %s", user_id, router_key)
         return result
 
     def search_users(self, router_key: str, search_term: str) -> RouterOSResponse:
@@ -226,7 +237,10 @@ class HotspotManager:
                     "ip/hotspot/user/print",
                     **{
                         f"?{field}": f"*{search}*",
-                        ".proplist": ".id,name,profile,disabled,limit-uptime,limit-bytes-total,comment,bytes-in,bytes-out,uptime,password",
+                        ".proplist": (
+                            ".id,name,profile,disabled,limit-uptime,limit-bytes-total,"
+                            "comment,bytes-in,bytes-out,uptime,password"
+                        ),
                     },
                 )
                 for user in batch:
@@ -234,10 +248,17 @@ class HotspotManager:
                     if uid and str(uid) not in seen:
                         seen.add(str(uid))
                         results.append(user)
+            except (TrapError, ConnectionError, OSError) as e:
+                logger.debug(
+                    "API-side filtered search for '%s' on %s failed "
+                    "(error type: %s): %s",
+                    search, field, type(e).__name__, sanitize_log_data(str(e)),
+                )
             except Exception as e:  # noqa: BLE001
                 logger.debug(
-                    f"API-side filtered search for '{search}' on {field} failed "
-                    f"(error type: {type(e).__name__}): {e}"
+                    "API-side filtered search for '%s' on %s failed "
+                    "(error type: %s): %s",
+                    search, field, type(e).__name__, sanitize_log_data(str(e)),
                 )
 
         if not results:
@@ -310,11 +331,19 @@ class HotspotManager:
             results = self._api.execute(router_key, "ip/hotspot/user/profile/print")
             self._profiles_cache.set(router_key, results)
             return results
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Failed to fetch hotspot profiles in get_profiles (router='{router_key}') "
-                f"(error type: {type(e).__name__}): {e}",
+                "Failed to fetch hotspot profiles in get_profiles (router='%s') "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
                 exc_info=True,
+            )
+            return []
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Failed to fetch hotspot profiles in get_profiles (router='%s') "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return []
 
@@ -368,7 +397,8 @@ class HotspotManager:
                 prepared_users.append((card_item, user_params))
             except ValueError as e:
                 logger.error(
-                    f"Card preparation error at index {i} in _prepare_card_users: {e}",
+                    "Card preparation error at index %d in _prepare_card_users: %s",
+                    i, e,
                     exc_info=True,
                 )
                 break
@@ -418,16 +448,25 @@ class HotspotManager:
                     try:
                         self._api.execute(router_key, "ip/hotspot/user/add", **user_params)
                         cards.append(card_item)
-                    except Exception as e:  # noqa: BLE001
+                    except (TrapError, ConnectionError, OSError) as e:
                         logger.error(
-                            f"Failed to add hotspot card user '{card_item.username}' in generate_cards (router='{router_key}') "
-                            f"(error type: {type(e).__name__}): {e}",
+                            "Failed to add hotspot card user '%s' in generate_cards (router='%s') "
+                            "(error type: %s): %s",
+                            card_item.username, router_key,
+                            type(e).__name__, sanitize_log_data(str(e)),
                             exc_info=True,
+                        )
+                    except Exception as e:  # noqa: BLE001
+                        logger.exception(
+                            "Failed to add hotspot card user '%s' in generate_cards (router='%s') "
+                            "(error type: %s): %s",
+                            card_item.username, router_key,
+                            type(e).__name__, sanitize_log_data(str(e)),
                         )
 
             self.invalidate_users_cache(router_key)
             logger.info(
-                f"Created {len(cards)}/{count} hotspot cards on {router_key} in batch"
+                "Created %d/%d hotspot cards on %s in batch", len(cards), count, router_key
             )
             return cards
 
@@ -528,18 +567,36 @@ class HotspotManager:
                         try:
                             self.delete_user(router_key, uid)
                             purged += 1
+                        except (TrapError, ConnectionError, OSError) as ex:
+                            logger.warning(
+                                "Failed to purge user %s in purge_expired_users (router='%s') "
+                                "(error type: %s): %s",
+                                uid, router_key,
+                                type(ex).__name__, sanitize_log_data(str(ex)),
+                                exc_info=True,
+                            )
                         except Exception as ex:  # noqa: BLE001
                             logger.warning(
-                                f"Failed to purge user {uid} in purge_expired_users (router='{router_key}') "
-                                f"(error type: {type(ex).__name__}): {ex}",
+                                "Failed to purge user %s in purge_expired_users (router='%s') "
+                                "(error type: %s): %s",
+                                uid, router_key,
+                                type(ex).__name__, sanitize_log_data(str(ex)),
                                 exc_info=True,
                             )
             return purged
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Failed to purge expired users on {router_key} in purge_expired_users "
-                f"(error type: {type(e).__name__}): {e}",
+                "Failed to purge expired users on %s in purge_expired_users "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
                 exc_info=True,
+            )
+            return 0
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Failed to purge expired users on %s in purge_expired_users "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return 0
 

@@ -53,20 +53,20 @@ async def discover_routers(
     try:
         mndp_probe = MNDPListenerProbe(timeout=mndp_timeout)
         mndp_results = await mndp_probe.discover()
-        logger.info(f"MNDP found {len(mndp_results)} devices")
+        logger.info("MNDP found %d devices", len(mndp_results))
     except PermissionError:
         logger.warning("MNDP requires Administrator privileges, falling back to ARP/Port scan")
     except OSError as e:
-        logger.warning(f"MNDP discovery error: {e}")
+        logger.warning("MNDP discovery error: %s", e)
 
     # 2. ARP Table Probe
     arp_results: list[RouterOSRow] = []
     try:
         arp_probe = ARPTableProbe()
         arp_results = arp_probe.discover()
-        logger.info(f"ARP probe found {len(arp_results)} dynamic entries")
+        logger.info("ARP probe found %d dynamic entries", len(arp_results))
     except OSError as e:
-        logger.warning(f"ARP probe error: {e}")
+        logger.warning("ARP probe error: %s", e)
 
     # 3. Port Scan Probe on candidate IPs from ARP
     port_results: list[RouterOSRow] = []
@@ -75,9 +75,9 @@ async def discover_routers(
         try:
             port_probe = PortScanProbe(ips=candidate_ips, port=8728, timeout=1.5)
             port_results = await port_probe.discover()
-            logger.info(f"Port scan found {len(port_results)} reachable API ports")
+            logger.info("Port scan found %d reachable API ports", len(port_results))
         except OSError as e:
-            logger.warning(f"Port scan error: {e}")
+            logger.warning("Port scan error: %s", e)
 
     # Merge results from all probes
     routers = merge_probe_results(arp_results, port_results, mndp_results)
@@ -85,5 +85,5 @@ async def discover_routers(
     if progress_callback:
         await progress_callback(f"تم العثور على {len(routers)} روتر MikroTik على الشبكة")
 
-    logger.info(f"Multi-strategy discovery finished: {len(routers)} routers found")
+    logger.info("Multi-strategy discovery finished: %d routers found", len(routers))
     return routers

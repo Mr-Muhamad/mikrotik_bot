@@ -84,7 +84,7 @@ async def report_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         router_name = await run_blocking(mikrotik_api.get_router_name, router_key)
         stats = await run_blocking(stats_manager.get_hotspot_stats, router_key)
     except (LibRouterosError, OSError, MikrotikBotError) as e:
-        logger.error(f"Report generation failed: {e}")
+        logger.error("Report generation failed: %s", e)
         await send_error(update, context, e, router_key=router_key, log_extra="report_gen")
         return
 
@@ -134,7 +134,7 @@ async def report_export_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
         await query.answer("✅ تم إرسال ملف CSV", show_alert=False)
     except (OSError, telegram.error.TelegramError) as e:
-        logger.error(f"CSV export failed: {e}")
+        logger.error("CSV export failed: %s", e)
         await query.answer("❌ فشل تصدير CSV", show_alert=True)
     finally:
         try:
@@ -173,7 +173,7 @@ async def report_export_excel(update: Update, context: ContextTypes.DEFAULT_TYPE
                 caption="📊 تقرير استخدام الشبكة المنسق (.xlsx)",
             )
     except (OSError, telegram.error.TelegramError) as e:
-        logger.error(f"Excel export failed: {e}")
+        logger.error("Excel export failed: %s", e)
         await send_error(
             update,
             context,

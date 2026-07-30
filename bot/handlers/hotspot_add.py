@@ -254,7 +254,7 @@ async def hotspot_add_bytes(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         get_hotspot_add_session(context.user_data).bytes_total = validate_bytes_input(bytes_input)
     except ValueError as e:
-        logger.warning(f"hotspot_add_bytes invalid input: {bytes_input}: {e}")
+        logger.warning("hotspot_add_bytes invalid input: %s: %s", bytes_input, e)
         await send_step(
             update,
             context,

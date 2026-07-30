@@ -91,4 +91,7 @@ def clear_router_session(user_id: int):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        timed_execute(cursor, "UPDATE user_sessions SET selected_router='' WHERE user_id=?", (user_id,), "write", "user_sessions")
+        timed_execute(
+            cursor, "UPDATE user_sessions SET selected_router='' WHERE user_id=?",
+            (user_id,), "write", "user_sessions",
+        )

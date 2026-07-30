@@ -412,6 +412,6 @@ async def go_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
         handler = resolve_nav_target(target)
         await handler(update, context)
     except Exception as e:
-        logger.error(f"go_back navigation error: {e}", exc_info=True)
+        logger.error("go_back navigation error: %s", e, exc_info=True)
         await internal_main_menu(update, context)
     return ConversationHandler.END

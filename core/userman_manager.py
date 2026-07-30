@@ -3,10 +3,13 @@ import secrets
 import string
 from datetime import datetime
 
+from librouteros.exceptions import TrapError
+
 from core.cache import TTLCache
 from core.card_models import CardSystem
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
+from utils.formatters import sanitize_log_data
 from utils.validators import sanitize_comment
 
 _CARD_TYPE_MAP = {
@@ -110,11 +113,18 @@ class UserManager:
                     **{".proplist": "name,username"},
                 )
             }
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.warning(
-                f"Failed to fetch existing User Manager users for "
-                f"deduplication on {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Failed to fetch existing User Manager users for "
+                "deduplication on %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            existing = set()
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Failed to fetch existing User Manager users for "
+                "deduplication on %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             existing = set()
 
@@ -151,15 +161,21 @@ class UserManager:
                 )
                 cards.append(result)
                 existing.add(username)
-            except Exception as e:  # noqa: BLE001
+            except (TrapError, ConnectionError, OSError) as e:
                 logger.error(
-                    f"Card {i + 1}/{count} failed on {router_key} in create_cards "
-                    f"(error type: {type(e).__name__}): {e}",
+                    "Card %d/%d failed on %s in create_cards (error type: %s): %s",
+                    i + 1, count, router_key, type(e).__name__, sanitize_log_data(str(e)),
                     exc_info=True,
+                )
+            except Exception as e:  # noqa: BLE001
+                logger.exception(
+                    "Card %d/%d failed on %s in create_cards (error type: %s): %s",
+                    i + 1, count, router_key, type(e).__name__, sanitize_log_data(str(e)),
                 )
 
         logger.info(
-            f"Created {len(cards)}/{count} User Manager cards on {router_key} (type: {card_system.name}, profile: {profile})"  # noqa: E501
+            "Created %d/%d User Manager cards on %s (type: %s, profile: %s)",
+            len(cards), count, router_key, card_system.name, profile,
         )
         router_name = mikrotik_api.get_router_name(router_key)
         _log_um_action("create_userman_cards", "", router_name, 0)
@@ -254,10 +270,18 @@ class UserManager:
                 user=username,
                 profile=profile,
             )
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.warning(
-                f"User '{username}' was created on {router_key} but profile "
-                f"'{profile}' could not be linked (error type: {type(e).__name__}): {e}"
+                "User '%s' was created on %s but profile "
+                "'%s' could not be linked (error type: %s): %s",
+                username, router_key, profile, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return False, str(e)
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "User '%s' was created on %s but profile "
+                "'%s' could not be linked (error type: %s): %s",
+                username, router_key, profile, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False, str(e)
         return self._verify_profile_link(router_key, base_path, username, profile)
@@ -284,10 +308,18 @@ class UserManager:
                 numbers=username,
                 customer="admin",
             )
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.warning(
-                f"User '{username}' was created on {router_key} but profile "
-                f"'{profile}' could not be activated (error type: {type(e).__name__}): {e}"
+                "User '%s' was created on %s but profile "
+                "'%s' could not be activated (error type: %s): %s",
+                username, router_key, profile, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return False, str(e)
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "User '%s' was created on %s but profile "
+                "'%s' could not be activated (error type: %s): %s",
+                username, router_key, profile, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False, str(e)
         return self._verify_profile_link(router_key, base_path, username, profile)
@@ -317,10 +349,16 @@ class UserManager:
                 if link_user is not None and str(link_user) == str(username):
                     return True, None
             return False, "profile link not found after attach"
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.warning(
-                f"Could not verify profile link for '{username}' on {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Could not verify profile link for '%s' on %s (error type: %s): %s",
+                username, router_key, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return False, f"verify failed: {e}"
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Could not verify profile link for '%s' on %s (error type: %s): %s",
+                username, router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False, f"verify failed: {e}"
 
@@ -340,10 +378,15 @@ class UserManager:
             for user in results or []:
                 if str(user.get(field)) == str(username):
                     return str(user.get(".id", ""))
+        except (TrapError, ConnectionError, OSError) as e:
+            logger.debug(
+                "API filter failed in _get_user_id for %s (error type: %s): %s",
+                username, type(e).__name__, sanitize_log_data(str(e)),
+            )
         except Exception as e:  # noqa: BLE001
             logger.debug(
-                f"API filter failed in _get_user_id for {username} "
-                f"(error type: {type(e).__name__}): {e}"
+                "API filter failed in _get_user_id for %s (error type: %s): %s",
+                username, type(e).__name__, sanitize_log_data(str(e)),
             )
 
         # Fallback to full list if filter not supported
@@ -352,10 +395,15 @@ class UserManager:
             for user in results or []:
                 if str(user.get(field)) == str(username):
                     return str(user.get(".id", ""))
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.warning(
-                f"Error checking user by field '{field}' "
-                f"(error type: {type(e).__name__}): {e}"
+                "Error checking user by field '%s' (error type: %s): %s",
+                field, type(e).__name__, sanitize_log_data(str(e)),
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Error checking user by field '%s' (error type: %s): %s",
+                field, type(e).__name__, sanitize_log_data(str(e)),
             )
         return None
 
@@ -367,7 +415,7 @@ class UserManager:
         base_path = self._api.get_userman_base_path(router_key)
         uid = self._get_user_id(router_key, username)
         if not uid:
-            logger.error(f"Cannot find .id for User Manager user '{username}' to set caller-id")
+            logger.error("Cannot find .id for User Manager user '%s' to set caller-id", username)
             return
 
         self._api.execute(
@@ -375,7 +423,7 @@ class UserManager:
         )
         router_name = mikrotik_api.get_router_name(router_key)
         _log_um_action("userman_set_caller_id", username, router_name, 0)
-        logger.info(f"Set caller-id '{caller_id}' for user '{username}' on {router_key}")
+        logger.info("Set caller-id '%s' for user '%s' on %s", caller_id, username, router_key)
 
     def list_users(self, router_key: str, limit: int = 50) -> RouterOSResponse:
         """Return up to limit User Manager users from the router.
@@ -454,7 +502,7 @@ class UserManager:
         result = self._api.execute(router_key, f"{base_path}/user/remove", **{".id": uid})
         router_name = mikrotik_api.get_router_name(router_key)
         _log_um_action("userman_user_delete", username, router_name, 0)
-        logger.info(f"Deleted User Manager user '{username}' on {router_key}")
+        logger.info("Deleted User Manager user '%s' on %s", username, router_key)
         return result
 
     def enable_user(self, router_key: str, username: str) -> RouterOSResponse:
@@ -466,7 +514,7 @@ class UserManager:
         result = self._api.execute(router_key, f"{base_path}/user/enable", **{".id": uid})
         router_name = mikrotik_api.get_router_name(router_key)
         _log_um_action("userman_user_enable", username, router_name, 0)
-        logger.info(f"Enabled User Manager user '{username}' on {router_key}")
+        logger.info("Enabled User Manager user '%s' on %s", username, router_key)
         return result
 
     def disable_user(self, router_key: str, username: str) -> RouterOSResponse:
@@ -478,7 +526,7 @@ class UserManager:
         result = self._api.execute(router_key, f"{base_path}/user/disable", **{".id": uid})
         router_name = mikrotik_api.get_router_name(router_key)
         _log_um_action("userman_user_disable", username, router_name, 0)
-        logger.info(f"Disabled User Manager user '{username}' on {router_key}")
+        logger.info("Disabled User Manager user '%s' on %s", username, router_key)
         return result
 
     def reset_user_counters(self, router_key: str, username: str) -> RouterOSResponse:
@@ -497,7 +545,7 @@ class UserManager:
                 router_key, f"{base_path}/user/reset-counters", **{".id": uid}
             )
         _log_um_action("userman_reset_counters", username, mikrotik_api.get_router_name(router_key), 0)
-        logger.info(f"Reset counters for User Manager user '{username}' on {router_key}")
+        logger.info("Reset counters for User Manager user '%s' on %s", username, router_key)
         return result
 
     def get_active_sessions(self, router_key: str) -> RouterOSResponse:
@@ -532,7 +580,7 @@ class UserManager:
         )
         router_name = mikrotik_api.get_router_name(router_key)
         _log_um_action("userman_terminate_session", session_id, router_name, 0)
-        logger.info(f"Terminated User Manager session '{session_id}' on {router_key}")
+        logger.info("Terminated User Manager session '%s' on %s", session_id, router_key)
         return result
 
     def format_card(self, card: RouterOSRow, index: int) -> str:

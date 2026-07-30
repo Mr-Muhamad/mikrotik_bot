@@ -5,6 +5,8 @@ import uuid
 from datetime import UTC, datetime
 from typing import cast
 
+from librouteros.exceptions import TrapError
+
 from core.backup import files as backup_files
 from core.backup.files import (
     cleanup_old_backups,
@@ -14,6 +16,7 @@ from core.backup.files import (
 )
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +98,7 @@ class SystemBackupService:
             else:
                 warning = "تم إنشاء الملفات على الراوتر لكن فشل التحميل المحلي"
                 logger.warning(
-                    f"Full backup created on router but download failed for {router_key}"
+                    "Full backup created on router but download failed for %s", router_key
                 )
 
             result = {
@@ -111,11 +114,17 @@ class SystemBackupService:
             }
             if warning:
                 result["warning"] = warning
-            logger.info(f"Full backup completed for {router_name}")
+            logger.info("Full backup completed for %s", router_name)
             return cast(RouterOSRow, result)
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Full backup failed for {router_name} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Full backup failed for %s (error type: %s): %s",
+                router_name, type(e).__name__, sanitize_log_data(str(e)),
             )
-            return cast(RouterOSRow, {"success": False, "message": f"فشل نسخ إحتياطى: {str(e)}"})
+            return cast(RouterOSRow, {"success": False, "message": f"فشل نسخ إحتياطى: {sanitize_log_data(str(e))}"})
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Full backup failed for %s (error type: %s): %s",
+                router_name, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return cast(RouterOSRow, {"success": False, "message": f"فشل نسخ إحتياطى: {sanitize_log_data(str(e))}"})

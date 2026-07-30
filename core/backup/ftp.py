@@ -2,9 +2,12 @@ import ftplib
 import logging
 import os
 
+from librouteros.exceptions import TrapError
+
 from core.backup.files import get_ftp_port
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +34,16 @@ def get_router_ftp_info(router_key: str, ftp_port: int) -> RouterOSRow | None:
             "password": info["password"],
             "port": ftp_port,
         }
+    except (TrapError, ConnectionError, OSError) as e:
+        logger.warning(
+            "Cannot get FTP info for %s (error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
+        )
+        return None
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"Cannot get FTP info for {router_key} "
-            f"(error type: {type(e).__name__}): {e}"
+            "Cannot get FTP info for %s (error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
         return None
 
@@ -43,7 +52,7 @@ def download_files_via_ftp(router_key: str, backup_dir: str, files_to_get: list[
     ftp_port = get_ftp_port(router_key)
     ftp_info = get_router_ftp_info(router_key, ftp_port)
     if not ftp_info:
-        logger.warning(f"FTP download skipped for {router_key}: no credentials")
+        logger.warning("FTP download skipped for %s: no credentials", router_key)
         return []
 
     downloaded = []
@@ -57,7 +66,7 @@ def download_files_via_ftp(router_key: str, backup_dir: str, files_to_get: list[
         ftp.connect(host, port, timeout=10)
         ftp.set_pasv(True)
         ftp.login(user, password)
-        logger.info(f"FTP connected to {ftp_info['host']}:{ftp_info['port']} (passive mode)")
+        logger.info("FTP connected to %s:%s (passive mode)", ftp_info["host"], ftp_info["port"])
 
         for fname in files_to_get:
             local_path = os.path.join(backup_dir, fname)
@@ -65,13 +74,13 @@ def download_files_via_ftp(router_key: str, backup_dir: str, files_to_get: list[
                 with open(local_path, "wb") as file_handle:
                     ftp.retrbinary(f"RETR {fname}", file_handle.write)
                 downloaded.append(fname)
-                logger.info(f"FTP downloaded: {fname}")
+                logger.info("FTP downloaded: %s", fname)
             except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
-                logger.warning(f"FTP download failed for {fname}: {e}")
+                logger.warning("FTP download failed for %s: %s", fname, e)
 
         ftp.quit()
     except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
-        logger.error(f"FTP connection failed for {ftp_info['host']}:{ftp_info['port']}: {e}")
+        logger.error("FTP connection failed for %s:%s: %s", ftp_info["host"], ftp_info["port"], e)
 
     return downloaded
 
@@ -80,7 +89,7 @@ def upload_file_via_ftp(router_key: str, local_path: str, remote_name: str) -> b
     ftp_port = get_ftp_port(router_key)
     ftp_info = get_router_ftp_info(router_key, ftp_port)
     if not ftp_info:
-        logger.warning(f"FTP upload skipped for {router_key}: no credentials")
+        logger.warning("FTP upload skipped for %s: no credentials", router_key)
         return False
 
     try:
@@ -93,14 +102,14 @@ def upload_file_via_ftp(router_key: str, local_path: str, remote_name: str) -> b
         ftp.connect(host, port, timeout=10)
         ftp.set_pasv(True)
         ftp.login(user, password)
-        logger.info(f"FTP connected to {ftp_info['host']}:{ftp_info['port']} (passive mode)")
+        logger.info("FTP connected to %s:%s (passive mode)", ftp_info["host"], ftp_info["port"])
 
         with open(local_path, "rb") as file_handle:
             ftp.storbinary(f"STOR {remote_name}", file_handle)
-        logger.info(f"FTP uploaded: {remote_name}")
+        logger.info("FTP uploaded: %s", remote_name)
 
         ftp.quit()
         return True
     except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
-        logger.error(f"FTP upload failed for {ftp_info['host']}:{ftp_info['port']}: {e}")
+        logger.error("FTP upload failed for %s:%s: %s", ftp_info["host"], ftp_info["port"], e)
         return False

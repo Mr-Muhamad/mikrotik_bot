@@ -146,7 +146,7 @@ async def execute_add_user(
         )
         return True, None
     except (LibRouterosError, OSError, MikrotikBotError) as e:
-        logger.exception(f"execute_add_user failed: {e}")
+        logger.exception("execute_add_user failed: %s", e)
         if "already have user" in str(e):
             context.user_data.pop("hotspot_add_session", None)
             return False, "duplicate"

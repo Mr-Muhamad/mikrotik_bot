@@ -296,7 +296,7 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 reply_markup=get_router_keyboard(),
             )
     except Exception as e:  # noqa: BLE001
-        logger.warning(f"manual_add confirm test connection failed for {ip}: {e}")
+        logger.warning("manual_add confirm test connection failed for %s: %s", ip, e)
         await run_blocking(log_action, "add_router_manual", ip, "offline", query.from_user.id)
         await query.edit_message_text(
             MANUAL_ADD_CONN_FAILED.format("تعذّر الاتصال للتحقق"),

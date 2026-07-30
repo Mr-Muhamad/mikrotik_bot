@@ -43,7 +43,7 @@ async def fetch_profiles(
     if use_cache:
         cached = profile_cache.get(cache_key)
         if cached is not None:
-            logger.debug(f"Profile cache hit for {cache_key}")
+            logger.debug("Profile cache hit for %s", cache_key)
             return cached
 
     try:
@@ -52,7 +52,7 @@ async def fetch_profiles(
         else:
             raw = await run_blocking(hotspot_manager.get_profiles, router_key)
     except (LibRouterosError, OSError) as e:
-        logger.warning(f"fetch_profiles({source}) failed for {router_key}: {e}")
+        logger.warning("fetch_profiles(%s) failed for %s: %s", source, router_key, e)
         return []
 
     # توحيد الشكل: list[str]

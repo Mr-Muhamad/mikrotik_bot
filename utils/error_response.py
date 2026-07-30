@@ -193,8 +193,8 @@ def log_error(
             extra["attempt"] = context.attempt
 
     logger.error(
-        f"{category}: {_sanitize_error_text(str(error)[:200])}"
-        f" | type={type(error).__name__}",
+        "%s: %s | type=%s",
+        category, _sanitize_error_text(str(error)[:200]), type(error).__name__,
         extra=extra,
         exc_info=True,
     )
@@ -256,13 +256,14 @@ async def _dispatch_message(
     except telegram.error.TelegramError as send_err:
         if is_benign_telegram_error(send_err):
             logger.debug(
-                f"Benign Telegram error (ignored in _dispatch_message): "
-                f"{_sanitize_error_text(str(send_err))} | type={type(send_err).__name__}",
+                "Benign Telegram error (ignored in _dispatch_message): %s | type=%s",
+                _sanitize_error_text(str(send_err)), type(send_err).__name__,
                 extra={"component": COMPONENT_TELEGRAM},
             )
             return
         logger.error(
-            f"{error_label}: {_sanitize_error_text(str(send_err))}",
+            "%s: %s",
+            error_label, _sanitize_error_text(str(send_err)),
             extra={"component": COMPONENT_TELEGRAM},
         )
 
@@ -284,7 +285,8 @@ async def send_error(
     # ولا تستدعي تنبيهاً للمستخدم أو سجلاً على مستوى الخطأ.
     if is_benign_telegram_error(error):
         logger.debug(
-            f"Benign Telegram error (ignored): {error_text} | type={type(error).__name__}",
+            "Benign Telegram error (ignored): %s | type=%s",
+            error_text, type(error).__name__,
             extra={"component": COMPONENT_HANDLER},
         )
         return
@@ -309,7 +311,8 @@ async def send_error(
         if error_context.duration_ms is not None:
             extra["duration_ms"] = error_context.duration_ms
     logger.error(
-        f"ERROR [{category}]: {log_msg}",
+        "ERROR [%s]: %s",
+        category, log_msg,
         extra=extra,
         exc_info=True,
     )
@@ -390,5 +393,5 @@ async def _notify_critical_admins(
             )
         except Exception:
             logger.exception(
-                f"Failed to notify admin {admin_id} about critical error {category}"
+                "Failed to notify admin %d about critical error %s", admin_id, category
             )

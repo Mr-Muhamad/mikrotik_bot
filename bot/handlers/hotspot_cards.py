@@ -522,7 +522,7 @@ async def _create_cards(
                 unit_price=unit_price,
             )
         except sqlite3.Error as e:
-            logger.warning(f"Failed to persist card batch: {e}")
+            logger.warning("Failed to persist card batch: %s", e)
 
         pdf_path = await run_blocking(card_generator.generate_pdf, cards)
 

@@ -7,10 +7,12 @@ import csv
 import io
 import logging
 
+from librouteros.exceptions import TrapError
+
 from core.hotspot_expiry import parse_renewal_day_from_comment
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
-from utils.formatters import format_bytes
+from utils.formatters import format_bytes, sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +30,19 @@ def generate_hotspot_users_csv(router_key: str) -> str:
                 )
             },
         )
-    except Exception as e:  # noqa: BLE001
+    except (TrapError, ConnectionError, OSError) as e:
         logger.error(
-            f"Failed to fetch hotspot users for CSV export on {router_key} in export_hotspot_users_csv "
-            f"(error type: {type(e).__name__}): {e}",
+            "Failed to fetch hotspot users for CSV export on %s in export_hotspot_users_csv "
+            "(error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
             exc_info=True,
+        )
+        return ""
+    except Exception as e:  # noqa: BLE001
+        logger.exception(
+            "Failed to fetch hotspot users for CSV export on %s in export_hotspot_users_csv "
+            "(error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
         return ""
 

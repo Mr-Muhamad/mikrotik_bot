@@ -8,7 +8,10 @@ handle and returns a plain list of dicts.
 import logging
 import re
 
+from librouteros.exceptions import TrapError
+
 from core.mikrotik_client import MikrotikClient, RouterOSRow
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +32,8 @@ def _parse_uptime_to_seconds(raw: str) -> int:
         return d * 86400 + h * 3600 + mn * 60 + s
     except Exception as e:  # noqa: BLE001
         logger.debug(
-            f"Failed to parse uptime '{raw}' "
-            f"(error type: {type(e).__name__}): {e}"
+            "Failed to parse uptime '%s' (error type: %s): %s",
+            raw, type(e).__name__, sanitize_log_data(str(e)),
         )
         return 0
 
@@ -67,10 +70,16 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
                 uname = str(sess.get("user", ""))
                 uptime_secs = _parse_uptime_to_seconds(str(sess.get("uptime", "")))
                 active_map[uname] = active_map.get(uname, 0) + uptime_secs
+        except (TrapError, ConnectionError, OSError) as e:
+            logger.warning(
+                "Failed to fetch active sessions for %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            active_map = {}
         except Exception as e:  # noqa: BLE001
             logger.warning(
-                f"Failed to fetch active sessions for {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Failed to fetch active sessions for %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             active_map = {}
 
@@ -97,10 +106,15 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
                         "uptime_used_secs": used_secs,
                     }
                 )
+    except (TrapError, ConnectionError, OSError) as e:
+        logger.warning(
+            "get_expiring_users failed for %s (error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
+        )
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"get_expiring_users failed for {router_key} "
-            f"(error type: {type(e).__name__}): {e}"
+            "get_expiring_users failed for %s (error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
     return sorted(result, key=lambda x: float(x["remaining_days"] or 0))
 
@@ -164,9 +178,14 @@ def get_custom_expiring_users(
                         "profile": user.get("profile", "—"),
                     }
                 )
+    except (TrapError, ConnectionError, OSError) as e:
+        logger.warning(
+            "get_custom_expiring_users failed for %s (error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
+        )
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"get_custom_expiring_users failed for {router_key} "
-            f"(error type: {type(e).__name__}): {e}"
+            "get_custom_expiring_users failed for %s (error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
     return sorted(result, key=lambda x: int(x.get("days_left", 0) or 0))

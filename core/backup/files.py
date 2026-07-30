@@ -114,9 +114,9 @@ def cleanup_old_backups(parent_dir: str, router_key: str, keep: int = MAX_LOCAL_
             shutil.rmtree(path)
             deleted += 1
         except OSError as e:
-            logger.warning(f"Failed to delete old backup {path}: {e}")
+            logger.warning("Failed to delete old backup %s: %s", path, e)
     if deleted:
-        logger.info(f"Cleaned up {deleted} old backup(s) for {router_key} in {parent_dir}")
+        logger.info("Cleaned up %d old backup(s) for %s in %s", deleted, router_key, parent_dir)
     return deleted
 
 
@@ -141,9 +141,9 @@ def cleanup_old_files(parent_dir: str, prefix: str, keep: int = MAX_LOCAL_BACKUP
             os.remove(path)
             deleted += 1
         except OSError as e:
-            logger.warning(f"Failed to delete old tar {path}: {e}")
+            logger.warning("Failed to delete old tar %s: %s", path, e)
     if deleted:
-        logger.info(f"Cleaned up {deleted} old tar(s) with prefix {prefix} in {parent_dir}")
+        logger.info("Cleaned up %d old tar(s) with prefix %s in %s", deleted, prefix, parent_dir)
     return deleted
 
 
@@ -195,9 +195,9 @@ def cleanup_router_files(
             try:
                 mikrotik_api.execute(router_key, "file/remove", **{".id": item.get(".id")})
                 deleted += 1
-                logger.debug(f"Removed old router file: {name}")
+                logger.debug("Removed old router file: %s", name)
             except (LibRouterosError, OSError) as e:
-                logger.debug(f"Failed to remove router file {name}: {e}")
+                logger.debug("Failed to remove router file %s: %s", name, e)
     except (LibRouterosError, OSError) as e:
-        logger.warning(f"Failed to list router files for cleanup: {e}")
+        logger.warning("Failed to list router files for cleanup: %s", e)
     return deleted

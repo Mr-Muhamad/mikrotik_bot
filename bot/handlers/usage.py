@@ -110,7 +110,7 @@ async def _execute_usage_query(
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, search_term)
     except Exception as e:
-        logger.error(f"Usage search failed: {e}", exc_info=True)
+        logger.error("Usage search failed: %s", e, exc_info=True)
         await send_error(update, context, e, router_key=router_key, log_extra="usage_search")
         return ConversationHandler.END
 

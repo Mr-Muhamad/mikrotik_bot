@@ -219,12 +219,12 @@ def get_selected_router(user_id: int) -> str | None:
             if diff > timeout_mins:
                 # Session expired
                 logger.info(
-                    f"User {user_id} session expired after {diff:.1f} minutes of inactivity."
+                    "User %s session expired after %.1f minutes of inactivity.", user_id, diff
                 )
                 clear_router_session(user_id)
                 return None
         except (ValueError, TypeError) as e:
-            logger.warning(f"Failed to parse last_activity for user {user_id}: {e}")
+            logger.warning("Failed to parse last_activity for user %s: %s", user_id, e)
     return router_key
 
 
@@ -309,7 +309,7 @@ async def _fast_reachability_check(router_key: str) -> bool:
         _REACHABILITY_CACHE[router_key] = (True, now)
         return True
     except (TimeoutError, OSError) as e:
-        logger.warning(f"Fast reachability check failed for {router_key}: {e}")
+        logger.warning("Fast reachability check failed for %s: %s", router_key, e)
         _REACHABILITY_CACHE[router_key] = (False, now)
         return False
 

@@ -1,8 +1,11 @@
 import logging
 
+from librouteros.exceptions import TrapError
+
 from core.backup.files import is_valid_router_backup_name, sanitize_router_name
 from core.mikrotik_api import mikrotik_api
 from core.mikrotik_client import RouterOSRow
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +38,16 @@ class BackupRestore:
                     )
             backups.sort(key=lambda x: x["name"], reverse=True)
             return backups
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Failed to list backups on {router_key} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Failed to list backups on %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return []
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Failed to list backups on %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return []
 
@@ -58,14 +67,20 @@ class BackupRestore:
             else:
                 return {"success": False, "message": "نوع ملف غير معروف"}
 
-            logger.info(f"Restored backup {backup_name} on {router_name}")
+            logger.info("Restored backup %s on %s", backup_name, router_name)
             return {
                 "success": True,
                 "message": f"تمت استعادة النسخة الاحتياطية {backup_name} بنجاح",
             }
-        except Exception as e:  # noqa: BLE001
+        except (TrapError, ConnectionError, OSError) as e:
             logger.error(
-                f"Failed to restore {backup_name} on {router_name} "
-                f"(error type: {type(e).__name__}): {e}"
+                "Failed to restore %s on %s (error type: %s): %s",
+                backup_name, router_name, type(e).__name__, sanitize_log_data(str(e)),
             )
-            return {"success": False, "message": f"فشل الاستعادة: {str(e)}"}
+            return {"success": False, "message": f"فشل الاستعادة: {sanitize_log_data(str(e))}"}
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Failed to restore %s on %s (error type: %s): %s",
+                backup_name, router_name, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return {"success": False, "message": f"فشل الاستعادة: {sanitize_log_data(str(e))}"}

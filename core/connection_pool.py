@@ -114,8 +114,8 @@ class ConnectionPool:
                     component="ROUTER",
                 )
                 logger.warning(
-                    f"Connection attempt {attempt + 1}/{1 + MAX_RETRIES} "
-                    f"failed for {router_info['name']}: {e}",
+                    "Connection attempt %d/%d failed for %s: %s",
+                    attempt + 1, 1 + MAX_RETRIES, router_info['name'], e,
                     extra={"component": "ROUTER"},
                 )
                 if attempt < MAX_RETRIES:
@@ -130,7 +130,8 @@ class ConnectionPool:
             component="ROUTER",
         )
         logger.error(
-            f"Failed to connect to {router_info['name']} after {1 + MAX_RETRIES} attempts",
+            "Failed to connect to %s after %d attempts",
+            router_info['name'], 1 + MAX_RETRIES,
             extra={"component": "ROUTER"},
         )
         raise last_error  # type: ignore[misc]
@@ -181,7 +182,8 @@ class ConnectionPool:
                     duration_ms = (time.monotonic() - start) * 1000
                     log_api_call(router_key, "get_connection", duration_ms, False, error=e, component="ROUTER")
                     logger.debug(
-                        f"Pooled connection stale for {router_key}, discarding: {e}",
+                        "Pooled connection stale for %s, discarding: %s",
+                        router_key, e,
                         extra={"component": "ROUTER"},
                     )
                     with self._lock:
@@ -205,7 +207,8 @@ class ConnectionPool:
                 duration_ms = (time.monotonic() - start) * 1000
                 log_api_call(router_key, "get_connection", duration_ms, False, component="ROUTER")
                 logger.error(
-                    f"Connection pool timeout for {router_key}. Too many concurrent requests.",
+                    "Connection pool timeout for %s. Too many concurrent requests.",
+                    router_key,
                     extra={"component": "ROUTER"},
                 )
                 raise TimeoutError(
@@ -224,7 +227,7 @@ class ConnectionPool:
             try:
                 api.close()
             except (LibRouterosError, OSError) as e:
-                logger.debug(f"Error closing broken connection for {router_key}: {e}")
+                logger.debug("Error closing broken connection for %s: %s", router_key, e)
         else:
             with self._lock:
                 if router_key in self.pools:
@@ -275,7 +278,7 @@ class ConnectionPool:
                 try:
                     api.close()
                 except (LibRouterosError, OSError) as e:
-                    logger.debug(f"Error closing connection for {router_key}: {e}")
+                    logger.debug("Error closing connection for %s: %s", router_key, e)
                 finally:
                     if self.active_counts.get(router_key, 0) > 0:
                         self.active_counts[router_key] -= 1

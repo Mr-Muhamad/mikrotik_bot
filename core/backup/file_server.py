@@ -34,7 +34,7 @@ class _FileRequestHandler(BaseHTTPRequestHandler):
     """Handle POST /upload (receive from router) and GET /files/<name> (serve to router)."""
 
     def log_message(self, format: str, *args: object) -> None:
-        logger.debug(f"FileServer: {format % args}")
+        logger.debug("FileServer: %s", format % args)
 
     # ── Authentication ───────────────────────────────────────
     def _check_auth(self) -> bool:
@@ -80,7 +80,7 @@ class _FileRequestHandler(BaseHTTPRequestHandler):
         with open(dest, "wb") as fh:
             fh.write(body)
 
-        logger.info(f"FileServer: received {filename} ({len(body)} bytes) from {router_key}")
+        logger.info("FileServer: received %s (%d bytes) from %s", filename, len(body), router_key)
         self.send_response(200)
         self.send_header("Content-Type", "text/plain")
         self.end_headers()
@@ -121,7 +121,7 @@ class _FileRequestHandler(BaseHTTPRequestHandler):
                     break
                 self.wfile.write(chunk)
 
-        logger.info(f"FileServer: served {filename} ({file_size} bytes)")
+        logger.info("FileServer: served %s (%d bytes)", filename, file_size)
 
 
 def start_file_server() -> None:
@@ -133,7 +133,7 @@ def start_file_server() -> None:
     _server = _ThreadingHTTPServer(("0.0.0.0", FILE_SERVER_PORT), _FileRequestHandler)
     _server_thread = threading.Thread(target=_server.serve_forever, daemon=True)
     _server_thread.start()
-    logger.info(f"File server started on port {FILE_SERVER_PORT}")
+    logger.info("File server started on port %d", FILE_SERVER_PORT)
 
 
 def stop_file_server() -> None:
@@ -169,4 +169,4 @@ def cleanup_serve_file(filename: str) -> None:
         if os.path.isfile(path):
             os.remove(path)
     except OSError as e:
-        logger.warning(f"Failed to cleanup serve file {filename}: {e}")
+        logger.warning("Failed to cleanup serve file %s: %s", filename, e)

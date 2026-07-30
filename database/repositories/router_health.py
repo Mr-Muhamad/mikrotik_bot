@@ -28,8 +28,8 @@ def record_health(router_key: str, status: str, error_msg: str = "") -> None:
             )
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"Failed to record health for {router_key} "
-            f"(error type: {type(e).__name__}): {e}"
+            "Failed to record health for %s (error type: %s): %s",
+            router_key, type(e).__name__, e,
         )
 
 
@@ -53,8 +53,8 @@ def get_latest_health(router_key: str) -> RouterOSRow | None:
             return dict(row) if row else None
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"Failed to get latest health for {router_key} "
-            f"(error type: {type(e).__name__}): {e}"
+            "Failed to get latest health for %s (error type: %s): %s",
+            router_key, type(e).__name__, e,
         )
         return None
 
@@ -82,7 +82,10 @@ def get_all_latest_health() -> dict[str, RouterOSRow]:
             rows = cursor.fetchall()
             return {row["router_key"]: dict(row) for row in rows}
     except Exception as e:  # noqa: BLE001
-        logger.warning(f"Failed to get all latest health (error type: {type(e).__name__}): {e}")
+        logger.warning(
+            "Failed to get all latest health (error type: %s): %s",
+            type(e).__name__, e,
+        )
         return {}
 
 
@@ -106,8 +109,8 @@ def get_health_history(router_key: str, limit: int = 10) -> list[RouterOSRow]:
             return [dict(row) for row in rows]
     except Exception as e:  # noqa: BLE001
         logger.warning(
-            f"Failed to get health history for {router_key} "
-            f"(error type: {type(e).__name__}): {e}"
+            "Failed to get health history for %s (error type: %s): %s",
+            router_key, type(e).__name__, e,
         )
         return []
 
@@ -125,8 +128,14 @@ def cleanup_health_history(days: int = 7) -> int:
     try:
         with get_db() as conn:
             cursor = conn.cursor()
-            timed_execute(cursor, "DELETE FROM router_health_log WHERE checked_at < ?", (cutoff_text,), "write", "router_health_log")
+            timed_execute(
+                cursor, "DELETE FROM router_health_log WHERE checked_at < ?",
+                (cutoff_text,), "write", "router_health_log",
+            )
             return cursor.rowcount
     except Exception as e:  # noqa: BLE001
-        logger.warning(f"Failed to cleanup health history (error type: {type(e).__name__}): {e}")
+        logger.warning(
+            "Failed to cleanup health history (error type: %s): %s",
+            type(e).__name__, e,
+        )
         return 0

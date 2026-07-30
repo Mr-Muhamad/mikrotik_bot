@@ -309,7 +309,7 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     updated += 1
             except (LibRouterosError, OSError) as e:
                 logger.warning(
-                    f"refresh_routers: connection failed for {r.get('identity', r['ip_address'])}: {e}"  # noqa: E501
+                    "refresh_routers: connection failed for %s: %s", r.get("identity", r["ip_address"]), e  # noqa: E501
                 )
 
         routers = await run_blocking(get_saved_routers, active_only=True)

@@ -167,7 +167,10 @@ def get_router_by_id(router_id: int, decrypt: bool = True) -> RouterOSRow | None
 
     with get_db() as conn:
         cursor = conn.cursor()
-        timed_execute(cursor, "SELECT * FROM discovered_routers WHERE id = ?", (router_id,), "read", "discovered_routers")
+        timed_execute(
+            cursor, "SELECT * FROM discovered_routers WHERE id = ?",
+            (router_id,), "read", "discovered_routers",
+        )
         row = cursor.fetchone()
         if row:
             d = dict(row)
@@ -182,7 +185,10 @@ def get_router_by_ip(ip_address: str) -> RouterOSRow | None:
 
     with get_db() as conn:
         cursor = conn.cursor()
-        timed_execute(cursor, "SELECT * FROM discovered_routers WHERE ip_address = ?", (ip_address,), "read", "discovered_routers")
+        timed_execute(
+            cursor, "SELECT * FROM discovered_routers WHERE ip_address = ?",
+            (ip_address,), "read", "discovered_routers",
+        )
         row = cursor.fetchone()
         if row:
             d = dict(row)

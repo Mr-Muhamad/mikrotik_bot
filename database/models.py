@@ -97,7 +97,7 @@ def _add_column_if_missing(cursor: sqlite3.Cursor, table_name: str, column_def: 
     if _column_exists(cursor, table_name, column_name):
         return
     cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_def}")
-    logger.info(f"Added {table_name} column: {column_def}")
+    logger.info("Added %s column: %s", table_name, column_def)
 
 
 def create_indexes() -> None:
@@ -129,7 +129,7 @@ def create_indexes() -> None:
             try:
                 cursor.execute(idx)
             except sqlite3.Error as e:
-                logger.debug(f"Index creation skipped: {e}")
+                logger.debug("Index creation skipped: %s", e)
 
 
 def migrate_passwords():
@@ -153,7 +153,7 @@ def migrate_passwords():
                 )
                 updated += 1
         if updated:
-            logger.info(f"Migrated {updated} plaintext passwords to encrypted")
+            logger.info("Migrated %d plaintext passwords to encrypted", updated)
 
 
 def migrate_add_name_alias():

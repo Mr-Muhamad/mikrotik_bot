@@ -177,7 +177,8 @@ class TestDeleteStaleRecords:
         with patch("database.repositories.chat_messages.logger") as mock_log:
             delete_stale_records("2021-01-01 00:00:00")
         mock_log.info.assert_called_once()
-        assert "Purged 2 stale" in mock_log.info.call_args[0][0]
+        assert mock_log.info.call_args[0][0] == "Purged %d stale tracked messages from database."
+        assert mock_log.info.call_args[0][1] == 2
 
     def test_logs_error_on_failure(self):
         from database.repositories.chat_messages import delete_stale_records

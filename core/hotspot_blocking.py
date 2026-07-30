@@ -6,7 +6,10 @@ stays separate from firewall address-list manipulation.
 
 import logging
 
+from librouteros.exceptions import TrapError
+
 from core.mikrotik_client import MikrotikClient, RouterOSRow
+from utils.formatters import sanitize_log_data
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +29,7 @@ def block_mac(
 
     is_valid, normalized_mac = validate_mac(mac)
     if not is_valid:
-        logger.warning(f"Invalid MAC address format rejected in block_mac: {mac!r}")
+        logger.warning("Invalid MAC address format rejected in block_mac: %r", mac)
         return False
     mac = normalized_mac
 
@@ -41,13 +44,19 @@ def block_mac(
             list="hotspot_blocked",
             comment=safe_comment,
         )
-        logger.info(f"Blocked MAC {mac} on {router_key}")
+        logger.info("Blocked MAC %s on %s", mac, router_key)
         return True
-    except Exception as e:  # noqa: BLE001
+    except (TrapError, ConnectionError, OSError) as e:
         logger.error(
-            f"Failed to block MAC {mac} on {router_key} in block_mac "
-            f"(error type: {type(e).__name__}): {e}",
+            "Failed to block MAC %s on %s in block_mac (error type: %s): %s",
+            mac, router_key, type(e).__name__, sanitize_log_data(str(e)),
             exc_info=True,
+        )
+        return False
+    except Exception as e:  # noqa: BLE001
+        logger.exception(
+            "Failed to block MAC %s on %s in block_mac (error type: %s): %s",
+            mac, router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
         return False
 
@@ -64,7 +73,7 @@ def unblock_mac(api: MikrotikClient, router_key: str, mac: str) -> bool:
             **{"?list": "hotspot_blocked", "?address": mac},
         )
         if not entries:
-            logger.info(f"MAC {mac} not found in blocked list on {router_key}")
+            logger.info("MAC %s not found in blocked list on %s", mac, router_key)
             return False
         entry_id = entries[0].get(".id")
         if not entry_id:
@@ -74,13 +83,19 @@ def unblock_mac(api: MikrotikClient, router_key: str, mac: str) -> bool:
             "ip/firewall/address-list/remove",
             **{".id": entry_id},
         )
-        logger.info(f"Unblocked MAC {mac} on {router_key}")
+        logger.info("Unblocked MAC %s on %s", mac, router_key)
         return True
-    except Exception as e:  # noqa: BLE001
+    except (TrapError, ConnectionError, OSError) as e:
         logger.error(
-            f"Failed to unblock MAC {mac} on {router_key} in unblock_mac "
-            f"(error type: {type(e).__name__}): {e}",
+            "Failed to unblock MAC %s on %s in unblock_mac (error type: %s): %s",
+            mac, router_key, type(e).__name__, sanitize_log_data(str(e)),
             exc_info=True,
+        )
+        return False
+    except Exception as e:  # noqa: BLE001
+        logger.exception(
+            "Failed to unblock MAC %s on %s in unblock_mac (error type: %s): %s",
+            mac, router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
         return False
 
@@ -105,10 +120,16 @@ def get_blocked_macs(api: MikrotikClient, router_key: str) -> list[RouterOSRow]:
             for e in entries
             if isinstance(e, dict)  # type: ignore[reportUnnecessaryIsInstance]
         ]
-    except Exception as e:  # noqa: BLE001
+    except (TrapError, ConnectionError, OSError) as e:
         logger.error(
-            f"Failed to fetch blocked MACs on {router_key} in get_blocked_macs "
-            f"(error type: {type(e).__name__}): {e}",
+            "Failed to fetch blocked MACs on %s in get_blocked_macs (error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
             exc_info=True,
+        )
+        return []
+    except Exception as e:  # noqa: BLE001
+        logger.exception(
+            "Failed to fetch blocked MACs on %s in get_blocked_macs (error type: %s): %s",
+            router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
         return []

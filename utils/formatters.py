@@ -122,7 +122,11 @@ def sanitize_log_data(data: Any, max_depth: int = 3) -> Any:
         return "***"
     if isinstance(data, dict):
         return {
-            k: ("***" if any(kw in k.lower() for kw in _SENSITIVE_LOG_KEYWORDS) else sanitize_log_data(v, max_depth - 1))
+            k: (
+                "***"
+                if any(kw in k.lower() for kw in _SENSITIVE_LOG_KEYWORDS)
+                else sanitize_log_data(v, max_depth - 1)
+            )
             for k, v in data.items()
         }
     if isinstance(data, (list, tuple)):
