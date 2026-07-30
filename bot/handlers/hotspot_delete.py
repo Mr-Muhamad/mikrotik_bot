@@ -38,7 +38,6 @@ logger = logging.getLogger(__name__)
 
 
 @require_role("operator")
-@admin_only
 async def hotspot_delete_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start the delete-user flow and prompt for a username search query.
 

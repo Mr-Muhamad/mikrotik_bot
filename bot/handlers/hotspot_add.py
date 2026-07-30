@@ -69,7 +69,6 @@ logger = logging.getLogger(__name__)
 
 
 @require_role("operator")
-@admin_only
 async def hotspot_add_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start the add-user flow and prompt for a username.
 

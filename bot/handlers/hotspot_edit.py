@@ -70,7 +70,6 @@ FIELD_API_KEYS = {
 
 
 @require_role("operator")
-@admin_only
 async def hotspot_edit_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start the edit-user flow and prompt for a username search query.
 

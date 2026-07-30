@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 
 @require_role("admin")
-@admin_only
 async def reboot_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show reboot confirmation for the currently selected router.
 
@@ -59,7 +58,6 @@ async def reboot_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @require_role("admin")
-@admin_only
 async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Execute or cancel the reboot based on user confirmation.
 
@@ -107,7 +105,6 @@ async def reboot_router_callback(update: Update, context: ContextTypes.DEFAULT_T
 
 
 @require_role("admin")
-@admin_only
 async def reboot_saved_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show reboot confirmation for a specific saved router by ID.
 

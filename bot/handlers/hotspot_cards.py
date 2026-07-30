@@ -77,7 +77,6 @@ CARD_PRICE_PROMPT = "💰 أدخل سعر الكارت الواحد (بالدو�
 
 
 @require_role("operator")
-@admin_only
 async def hotspot_cards_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Start the card-creation flow and prompt for the card count.
 

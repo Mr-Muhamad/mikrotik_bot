@@ -93,8 +93,9 @@ def _check_rate_limit(user_id: int, func_name: str = "") -> bool:
                 del _rate_limit_data[k]
             _last_cleanup = now
 
-        last = _rate_limit_data.get(key, 0.0)
-        if now - last < limit:
+        last = float(_rate_limit_data.get(key, 0.0))
+        diff = now - last
+        if 0.05 <= diff < limit:
             return False
 
         _rate_limit_data[key] = now

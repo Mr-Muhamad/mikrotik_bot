@@ -32,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 
 @require_role("operator")
-@admin_only
 async def rename_router_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Begin rename flow by prompting for a new router name.
 
