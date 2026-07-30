@@ -245,6 +245,70 @@ def admin_only(func: Callable[..., Awaitable[object]]):
     return wrapper
 
 
+NOT_OWNER_MSG = "⛔ غير مصرح لك بالوصول إلى هذا الراوتر."
+
+
+def _extract_router_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int | None:
+    """Extract router ID from callback data's trailing _id or context user_data."""
+    import re
+
+    if update.callback_query and update.callback_query.data:
+        match = re.search(r"_(\d+)$", update.callback_query.data)
+        if match:
+            return int(match.group(1))
+
+    router_key = context.user_data.get("router_key")
+    if router_key:
+        from config import ROUTER_KEY_PREFIX
+
+        if router_key.startswith(ROUTER_KEY_PREFIX):
+            try:
+                return int(router_key[len(ROUTER_KEY_PREFIX) :])
+            except ValueError:
+                pass
+    return None
+
+
+def require_ownership(func: Callable[..., Awaitable[object]]):
+    """Ensure the router being operated on belongs to the current user.
+
+    Extracts router_id from callback data or context, loads the router from DB,
+    and verifies that owner_id matches the user. Super admins (ADMIN_IDS) are
+    exempt.
+
+    Apply INNER to @admin_only / @require_role so auth runs first.
+    """
+
+    @wraps(func)
+    async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user = update.effective_user
+        if not user:
+            return
+        user_id = user.id
+        if user_id in ADMIN_IDS:
+            return await func(update, context)
+
+        router_id = _extract_router_id(update, context)
+        if router_id is not None:
+            from database.repositories.routers import get_router_by_id
+
+            router = get_router_by_id(router_id, decrypt=False)
+            if router:
+                owner_id = router.get("owner_id")
+                if owner_id and owner_id != user_id:
+                    logger.warning(
+                        "OWNERSHIP VIOLATION: user=%s, router_id=%s, owner=%s",
+                        user_id,
+                        router_id,
+                        owner_id,
+                    )
+                    await _send_reply(update, NOT_OWNER_MSG)
+                    return
+        return await func(update, context)
+
+    return wrapper
+
+
 def require_role(min_role: str):
     """Allow only admins whose role level meets the requested minimum.
 

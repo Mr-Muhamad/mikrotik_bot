@@ -9,10 +9,12 @@ from bot.router_selector import require_router
 from config import ADMIN_IDS
 from utils.admin_decorator import (
     ADMIN_ONLY_MSG,
+    NOT_OWNER_MSG,
     RATE_LIMIT_WINDOW,
     _check_rate_limit,
     _rate_limit_data,
     admin_only,
+    require_ownership,
 )
 
 
@@ -215,3 +217,96 @@ class TestRequireRouter:
         assert result is None
         u.callback_query.answer.assert_called_once()
         u.callback_query.edit_message_text.assert_called_once()
+
+
+# ─── require_ownership tests ────────────────────────────────────
+
+
+class TestRequireOwnership:
+    @pytest.mark.asyncio
+    async def test_admin_bypasses_ownership_check(self):
+        @require_ownership
+        async def handler(update, context):
+            return "ok"
+
+        admin_id = next(iter(ADMIN_IDS))
+        u = _update(user_id=admin_id)
+        c = _ctx()
+        result = await handler(u, c)
+        assert result == "ok"
+
+    @pytest.mark.asyncio
+    async def test_non_admin_owner_callback_passes(self):
+        @require_ownership
+        async def handler(update, context):
+            return "ok"
+
+        with patch("database.repositories.routers.get_router_by_id") as mock_get:
+            mock_get.return_value = {"id": 1, "owner_id": 42, "password": ""}
+            u = _update(user_id=42, has_message=False, has_callback=True)
+            u.callback_query.data = "connect_router_1"
+            c = _ctx()
+            result = await handler(u, c)
+            assert result == "ok"
+
+    @pytest.mark.asyncio
+    async def test_non_owner_callback_blocked(self):
+        @require_ownership
+        async def handler(update, context):
+            return "ok"
+
+        with patch("database.repositories.routers.get_router_by_id") as mock_get:
+            mock_get.return_value = {"id": 1, "owner_id": 42, "password": ""}
+            u = _update(user_id=100, has_message=False, has_callback=True)
+            u.callback_query.data = "connect_router_1"
+            c = _ctx()
+            result = await handler(u, c)
+            assert result is None
+            u.callback_query.answer.assert_called_once()
+            u.callback_query.edit_message_text.assert_called_once_with(NOT_OWNER_MSG)
+
+    @pytest.mark.asyncio
+    async def test_non_owner_message_blocked(self):
+        @require_ownership
+        async def handler(update, context):
+            return "ok"
+
+        with patch("database.repositories.routers.get_router_by_id") as mock_get:
+            mock_get.return_value = {"id": 1, "owner_id": 42, "password": ""}
+            u = _update(user_id=100, has_message=True, has_callback=False)
+            c = _ctx()
+            c.user_data["router_key"] = "discovered_1"
+            result = await handler(u, c)
+            assert result is None
+            u.message.reply_text.assert_called_once_with(NOT_OWNER_MSG)
+
+    @pytest.mark.asyncio
+    async def test_no_router_id_passes_through(self):
+        @require_ownership
+        async def handler(update, context):
+            return "ok"
+
+        u = _update(user_id=100, has_message=True, has_callback=True)
+        u.callback_query.data = "some_other_action"
+        c = _ctx()
+        result = await handler(u, c)
+        assert result == "ok"
+
+    @pytest.mark.asyncio
+    async def test_extract_router_id_from_callback_data(self):
+        from utils.admin_decorator import _extract_router_id
+
+        u = _update(has_message=False, has_callback=True)
+        u.callback_query.data = "connect_router_42"
+        c = _ctx()
+        assert _extract_router_id(u, c) == 42
+
+    @pytest.mark.asyncio
+    async def test_extract_router_id_from_user_data(self):
+        from utils.admin_decorator import _extract_router_id
+
+        u = _update(has_message=True, has_callback=False)
+        u.message.text = "/somecommand"
+        c = _ctx()
+        c.user_data["router_key"] = "discovered_7"
+        assert _extract_router_id(u, c) == 7

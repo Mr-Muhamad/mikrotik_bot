@@ -22,6 +22,9 @@ _ALLOWED_EXTENSIONS = (".backup", ".rsc", ".umb", ".tar")
 # Maximum upload size: 100 MB
 _MAX_UPLOAD_BYTES = 100 * 1024 * 1024
 
+# Bind address: default to loopback for security; override via env for containerised deployments.
+FILE_SERVER_HOST = os.getenv("FILE_SERVER_HOST", "127.0.0.1")
+
 class _ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     """Handle requests in separate threads so one slow upload doesn't block others."""
 
@@ -130,7 +133,7 @@ def start_file_server() -> None:
     if _server is not None:
         return
 
-    _server = _ThreadingHTTPServer(("0.0.0.0", FILE_SERVER_PORT), _FileRequestHandler)
+    _server = _ThreadingHTTPServer((FILE_SERVER_HOST, FILE_SERVER_PORT), _FileRequestHandler)
     _server_thread = threading.Thread(target=_server.serve_forever, daemon=True)
     _server_thread.start()
     logger.info("File server started on port %d", FILE_SERVER_PORT)

@@ -40,7 +40,7 @@ from database.repositories.routers import (
     update_router_identity,
     update_router_last_seen,
 )
-from utils.admin_decorator import admin_only, require_role, reset_rate_limit
+from utils.admin_decorator import admin_only, require_ownership, require_role, reset_rate_limit
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import edit_clean
 from utils.error_response import send_error
@@ -143,6 +143,7 @@ async def saved_router_selected(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 @admin_only
+@require_ownership
 async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Connect to a saved router using stored credentials and set it as selected.
 
@@ -211,7 +212,7 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 @require_role("admin")
-@admin_only
+@require_ownership
 async def delete_router_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Show confirmation dialog before deleting a saved router.
 
@@ -242,7 +243,7 @@ async def delete_router_confirm(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 @require_role("admin")
-@admin_only
+@require_ownership
 async def delete_router_execute(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Delete the router from DB or cancel based on user confirmation.
 
