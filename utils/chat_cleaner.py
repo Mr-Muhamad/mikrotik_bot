@@ -299,7 +299,7 @@ async def safe_edit_or_send(
             return edited
         return None
     except Exception as e:  # noqa: BLE001
-        str(e)
+        logger.debug(f"edit_or_send failed with benign error: {e}")
         if _is_benign_edit_error(e):
             prev = context.user_data.pop("last_msg", None)
             if prev is not None:

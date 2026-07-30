@@ -11,6 +11,10 @@ from telegram.ext import ContextTypes
 # Ensure root directory is in sys.path
 sys.path.insert(0, os.path.abspath("."))
 
+# Import standalone BEFORE conversation so _registry["standalone"] is populated
+# (mirrors the ordering contract in bot/registrations.py)
+import bot.registration_parts.standalone  # noqa: F401  # pyright: ignore[reportUnusedImport]
+
 from bot.registration_parts.conversation import _unhandled_callback_handler
 from utils.callback_utils import is_latest_message
 from utils.handler_registry import _registry
