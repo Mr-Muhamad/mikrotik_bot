@@ -41,6 +41,11 @@ _action_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 # Action durations per router+command (for average tracking)
 _action_durations: dict[str, list[float]] = defaultdict(list)
 
+# Database query counters per operation+table
+_db_query_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+# Database query durations per operation+table
+_db_query_durations: dict[str, list[float]] = defaultdict(list)
+
 
 def record_message_type(message_type: str) -> None:
     """Record a message of given type."""
@@ -88,6 +93,18 @@ def record_action(router_key: str, command: str, success: bool, duration_ms: flo
     _action_durations[key].append(duration_ms)
     if len(_action_durations[key]) > 1000:
         _action_durations[key].pop(0)
+
+
+def record_db_query(operation: str, table: str, success: bool, duration_ms: float) -> None:
+    """Record a database query with timing for a specific operation and table."""
+    key = f"{operation}:{table}"
+    if success:
+        _db_query_total[key]["success"] += 1
+    else:
+        _db_query_total[key]["fail"] += 1
+    _db_query_durations[key].append(duration_ms)
+    if len(_db_query_durations[key]) > 1000:
+        _db_query_durations[key].pop(0)
 
 
 def get_uptime() -> float:
@@ -250,6 +267,57 @@ def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:  # noqa: C
                     )
                     lines.append(
                         f'bot_action_duration_seconds_count{{router="{router}",command="{command}"}} {n}'
+                    )
+
+    # Database query counters per operation+table
+    if _db_query_total:
+        lines.extend(
+            [
+                "",
+                "# HELP bot_db_queries_total Total database queries by operation and table",
+                "# TYPE bot_db_queries_total counter",
+            ]
+        )
+        for key in sorted(_db_query_total):
+            operation, table = key.split(":", 1)
+            for status in ("success", "fail"):
+                count = _db_query_total[key][status]
+                if count:
+                    lines.append(
+                        f'bot_db_queries_total{{operation="{operation}",table="{table}",status="{status}"}} {count}'
+                    )
+        # DB query duration percentiles
+        if _db_query_durations:
+            lines.extend(
+                [
+                    "",
+                    "# HELP bot_db_query_duration_seconds Database query duration by operation and table",
+                    "# TYPE bot_db_query_duration_seconds summary",
+                ]
+            )
+            for key in sorted(_db_query_durations):
+                operation, table = key.split(":", 1)
+                durations = _db_query_durations[key]
+                if durations:
+                    sorted_d = sorted(durations)
+                    n = len(sorted_d)
+                    p50 = sorted_d[int(n * 0.50)]
+                    p90 = sorted_d[int(n * 0.90)]
+                    p99 = sorted_d[min(int(n * 0.99), n - 1)]
+                    lines.append(
+                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",quantile="0.5"}} {p50:.4f}'
+                    )
+                    lines.append(
+                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",quantile="0.9"}} {p90:.4f}'
+                    )
+                    lines.append(
+                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",quantile="0.99"}} {p99:.4f}'
+                    )
+                    lines.append(
+                        f'bot_db_query_duration_seconds_sum{{operation="{operation}",table="{table}"}} {sum(sorted_d):.4f}'
+                    )
+                    lines.append(
+                        f'bot_db_query_duration_seconds_count{{operation="{operation}",table="{table}"}} {n}'
                     )
 
     # Connection pool metrics

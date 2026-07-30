@@ -11,6 +11,7 @@ from datetime import UTC, datetime
 
 from config import DEFAULT_API_PORT
 from core.mikrotik_client import RouterOSRow
+from database.execute import timed_execute
 
 
 def _utc_now() -> str:
@@ -150,7 +151,7 @@ def get_saved_routers(
 
         query += " ORDER BY added_at DESC"
 
-        cursor.execute(query, tuple(params))
+        timed_execute(cursor, query, tuple(params), "read", "discovered_routers")
         rows = cursor.fetchall()
         result = []
         for r in rows:
@@ -166,7 +167,7 @@ def get_router_by_id(router_id: int, decrypt: bool = True) -> RouterOSRow | None
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM discovered_routers WHERE id = ?", (router_id,))
+        timed_execute(cursor, "SELECT * FROM discovered_routers WHERE id = ?", (router_id,), "read", "discovered_routers")
         row = cursor.fetchone()
         if row:
             d = dict(row)
@@ -181,7 +182,7 @@ def get_router_by_ip(ip_address: str) -> RouterOSRow | None:
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM discovered_routers WHERE ip_address = ?", (ip_address,))
+        timed_execute(cursor, "SELECT * FROM discovered_routers WHERE ip_address = ?", (ip_address,), "read", "discovered_routers")
         row = cursor.fetchone()
         if row:
             d = dict(row)

@@ -116,7 +116,10 @@ def log_db_operation(
     error: Exception | None = None,
     component: str = COMPONENT_DATABASE,
 ) -> None:
-    """Log a database operation with structured fields."""
+    """Log a database operation with structured fields and update metrics."""
+    from core.metrics import record_db_query  # noqa: PLC0415 — avoid circular import
+
+    record_db_query(operation, table, success, duration_ms)
     extra: dict[str, Any] = {
         "component": component,
         "request_id": get_request_id(),

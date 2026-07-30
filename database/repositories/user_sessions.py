@@ -6,13 +6,15 @@ Isolated from the former god-object ``database.models``.
 
 from __future__ import annotations
 
+from database.execute import timed_execute
+
 
 def get_user_session(user_id: int) -> dict[str, object] | None:
     from database.models import get_db
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM user_sessions WHERE user_id = ?", (user_id,))
+        timed_execute(cursor, "SELECT * FROM user_sessions WHERE user_id = ?", (user_id,), "read", "user_sessions")
         row = cursor.fetchone()
         if row:
             return dict(row)
@@ -29,7 +31,8 @@ def save_user_session(
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute(
+        timed_execute(
+            cursor,
             """INSERT INTO user_sessions
             (user_id, selected_router, current_action, action_data, last_activity)
                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
@@ -43,6 +46,8 @@ def save_user_session(
                    action_data=excluded.action_data,
                    last_activity=CURRENT_TIMESTAMP""",
             (user_id, selected_router, current_action, action_data),
+            "write",
+            "user_sessions",
         )
 
 
@@ -52,11 +57,14 @@ def update_activity(user_id: int):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute(
+        timed_execute(
+            cursor,
             """INSERT INTO user_sessions (user_id, last_activity)
                VALUES (?, CURRENT_TIMESTAMP)
                ON CONFLICT(user_id) DO UPDATE SET last_activity=CURRENT_TIMESTAMP""",
             (user_id,),
+            "write",
+            "user_sessions",
         )
 
 
@@ -66,11 +74,14 @@ def set_session_timeout(user_id: int, timeout_minutes: int):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute(
+        timed_execute(
+            cursor,
             """INSERT INTO user_sessions (user_id, session_timeout, last_activity)
                VALUES (?, ?, CURRENT_TIMESTAMP)
                ON CONFLICT(user_id) DO UPDATE SET session_timeout=excluded.session_timeout""",
             (user_id, timeout_minutes),
+            "write",
+            "user_sessions",
         )
 
 
@@ -80,4 +91,4 @@ def clear_router_session(user_id: int):
 
     with get_db() as conn:
         cursor = conn.cursor()
-        cursor.execute("UPDATE user_sessions SET selected_router='' WHERE user_id=?", (user_id,))
+        timed_execute(cursor, "UPDATE user_sessions SET selected_router='' WHERE user_id=?", (user_id,), "write", "user_sessions")
