@@ -18,7 +18,7 @@ from config import ROUTER_KEY_PREFIX
 from core.mikrotik_api import mikrotik_api
 from database.repositories.audit_logs import log_action
 from database.repositories.routers import get_router_by_id
-from utils.admin_decorator import admin_only, require_role
+from utils.admin_decorator import require_role
 from utils.async_blocking import run_blocking
 from utils.callback_utils import is_duplicate_callback, safe_answer_callback
 from utils.chat_cleaner import clean_command, schedule_delete, send_and_track
