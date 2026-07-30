@@ -232,13 +232,19 @@ async def _dispatch_message(
         query = update.callback_query if update else None
         query_msg = get_query_message(query)
         if query is not None and query_msg is not None:
-            # edit_message_text only accepts InlineKeyboardMarkup | None
-            msg = await query.edit_message_text(
-                text=text,
-                reply_markup=(
-                    reply_markup if isinstance(reply_markup, InlineKeyboardMarkup) else None
-                ),
-            )
+            query_chat_id = get_query_chat_id(query)
+            if query_chat_id is not None and query_chat_id != target_id:
+                msg = await context.bot.send_message(
+                    chat_id=target_id, text=text, reply_markup=reply_markup,
+                )
+            else:
+                # edit_message_text only accepts InlineKeyboardMarkup | None
+                msg = await query.edit_message_text(
+                    text=text,
+                    reply_markup=(
+                        reply_markup if isinstance(reply_markup, InlineKeyboardMarkup) else None
+                    ),
+                )
         elif update and update.effective_message:
             msg = await update.effective_message.reply_text(text=text, reply_markup=reply_markup)
         else:

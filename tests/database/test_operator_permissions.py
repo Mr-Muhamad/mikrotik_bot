@@ -198,9 +198,8 @@ class TestGetUserRouters:
 
         admin_id = 12345
         with (
-            patch("database.models.get_saved_routers", return_value=self.ALL_ROUTERS),
+            patch("database.repositories.routers.get_saved_routers", return_value=self.ALL_ROUTERS),
             patch("config.ADMIN_IDS", [admin_id]),
-            patch("database.models.get_operator_routers", return_value=[]),
         ):
             result = get_user_routers(admin_id)
         assert len(result) == 3
@@ -211,7 +210,7 @@ class TestGetUserRouters:
         customer_id = 99999
         owned_routers = [self.ALL_ROUTERS[0], self.ALL_ROUTERS[2]]
         with (
-            patch("database.models.get_saved_routers", return_value=owned_routers) as mock_get,
+            patch("database.repositories.routers.get_saved_routers", return_value=owned_routers) as mock_get,
             patch("config.ADMIN_IDS", [12345]),
         ):
             result = get_user_routers(customer_id)
@@ -223,7 +222,7 @@ class TestGetUserRouters:
 
         customer_id = 99999
         with (
-            patch("database.models.get_saved_routers", return_value=[]) as mock_get,
+            patch("database.repositories.routers.get_saved_routers", return_value=[]) as mock_get,
             patch("config.ADMIN_IDS", [12345]),
         ):
             result = get_user_routers(customer_id)

@@ -522,9 +522,9 @@ class TestDebugLog:
         with patch("core.mikrotik_api.logger", logger):
             api._debug_log("execute", "user/add", {"name": "u1", "password": "secret"})
         logger.debug.assert_called_once()
-        logged = logger.debug.call_args[0][0]
-        assert "secret" not in logged
-        assert "'password': '***'" in logged
+        sanitized = logger.debug.call_args[0][3]
+        assert "secret" not in str(sanitized)
+        assert sanitized.get("password") == "***"
 
     def test_empty_kwargs(self, api):
         logger = MagicMock()
@@ -783,8 +783,8 @@ class TestDebugLogMasking:
         logger = MagicMock()
         with patch("core.mikrotik_api.logger", logger):
             api._debug_log("method", "cmd", {"user_password": "x", "secret_key": "y"})
-        logged = logger.debug.call_args[0][0]
-        assert "***" in logged
+        sanitized = logger.debug.call_args[0][3]
+        assert sanitized.get("user_password") == "***"
 
 
 class TestGetVersionEmptyResult:

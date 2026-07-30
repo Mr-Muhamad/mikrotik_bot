@@ -186,6 +186,7 @@ async def _check_role_level(user_id: int, min_level: int, func_name: str, update
     db_role = get_admin_role(user_id)
     if user_id not in ADMIN_IDS and db_role is None:
         logger.warning("UNAUTHORIZED ACCESS: user_id=%s, function=%s", user_id, func_name)
+        await _send_reply(update, ADMIN_ONLY_MSG)
         return False
     role = "super_admin" if user_id in ADMIN_IDS else (db_role or "admin")
     if ROLE_LEVELS.get(role, 0) < min_level:
