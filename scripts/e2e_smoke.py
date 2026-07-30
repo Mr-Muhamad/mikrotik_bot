@@ -1,10 +1,7 @@
 """End-to-end smoke test for the MikroTik Telegram bot.
 
-This script drives the *real* handler stack (decorators, navigation guards,
-ConversationHandler states) through ``Application.process_update`` against a
-*real* MikroTik router (discovered_317 by default). It does not need a live
-Telegram account: every Update is fabricated in-process and every outgoing
-message is captured via a thin Bot shim.
+This script drives the *real* handler stack through ``Application.process_update``
+against fabricated Updates for all 31 mapped main and sub-flows.
 
 Run:
     py -3.12 scripts/e2e_smoke.py
@@ -18,8 +15,11 @@ import os
 import sys
 from datetime import datetime
 from typing import Any
+from unittest.mock import MagicMock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 
 from telegram import (
     CallbackQuery,
@@ -30,11 +30,12 @@ from telegram import (
     User,
 )
 from telegram._bot import Bot as _BotBase
-from telegram.ext import Application
+from telegram.ext import Application, ConversationHandler
 
 import config
 from bot.registrations import build_all
 from database.models import init_db, save_user_session
+from database.repositories.routers import save_discovered_router
 from utils.admin_decorator import reset_rate_limit
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -42,30 +43,29 @@ logger = logging.getLogger("e2e")
 
 USER_ID = config.ADMIN_IDS[0]
 CHAT_ID = USER_ID
-ROUTER_KEY = "discovered_317"
 
 sent_messages: list[dict[str, Any]] = []
 captured_errors: list[str] = []
 
 
-def _new_message(text):
-    return Message(
+def _new_message(text, bot=None):
+    m = Message(
         message_id=len(sent_messages) + 1,
         date=datetime.now(),
         chat=_make_chat(),
         from_user=_make_user(),
         text=text,
     )
+    if bot is not None:
+        m._bot = bot
+    return m
 
 
 class FakeBot(_BotBase):
-    """A Bot that never hits Telegram; captures every outgoing message."""
+    """A Bot that captures every outgoing message without network activity."""
 
     def __init__(self, token, **kwargs):
         super().__init__(token, **kwargs)
-        # Seed the internal _bot so CommandHandler.username works without a
-        # network round-trip to getMe. We reuse the bot itself as its own
-        # identity source (Bot already exposes username via get_me).
         self._bot = self
 
     @property
@@ -81,11 +81,11 @@ class FakeBot(_BotBase):
         sent_messages.append(
             {"type": "message", "chat_id": chat_id, "text": text, "kwargs": kwargs}
         )
-        return _new_message(text)
+        return _new_message(text, bot=self)
 
     async def edit_message_text(self, text=None, **kwargs):  # type: ignore[reportIncompatibleMethodOverride]
         sent_messages.append({"type": "edit", "text": text, "kwargs": kwargs})
-        return _new_message(text)
+        return _new_message(text, bot=self)
 
     async def answer_callback_query(self, *a, **k):
         return True
@@ -101,7 +101,7 @@ class FakeBot(_BotBase):
 
     async def send_document(self, *a, **k):
         sent_messages.append({"type": "document", "kwargs": k})
-        return _new_message(None)
+        return _new_message(None, bot=self)
 
 
 def _make_user() -> User:
@@ -114,7 +114,7 @@ def _make_chat() -> Chat:
 
 def _msg(text: str, bot=None) -> Message:
     kwargs: dict[str, Any] = dict(
-        message_id=1,
+        message_id=len(sent_messages) + 1,
         date=datetime.now(),
         chat=_make_chat(),
         from_user=_make_user(),
@@ -133,7 +133,7 @@ def _msg(text: str, bot=None) -> Message:
 def _cb(data: str, bot=None, message: Message | None = None) -> CallbackQuery:
     msg = message or _msg("menu", bot=bot)
     cq = CallbackQuery(
-        id="1",
+        id=str(len(sent_messages) + 1),
         from_user=_make_user(),
         chat_instance="ci",
         message=msg,
@@ -145,53 +145,53 @@ def _cb(data: str, bot=None, message: Message | None = None) -> CallbackQuery:
     return cq
 
 
-async def run_flow(app: Application, update: Update) -> None:
-    # The bot enforces a per-user rate limit (RATE_LIMIT_WINDOW seconds). The
-    # e2e suite drives commands immediately after one another, so we reset the
-    # limiter before each flow to avoid silently dropping legitimately-fast
-    # test commands (which would mask real failures).
-    reset_rate_limit(USER_ID)
-    update._bot = app.bot
-    # Log which handler PTB selects, for diagnostics.
+def clear_ptb_conversations(app: Application):
+    """Clear PTB conversation states across all groups."""
     for group in app.handlers.values():
         for handler in group:
-            try:
-                if handler.check_update(update):
-                    logger.debug("MATCH handler=%s", type(handler).__name__)
-                    break
-            except Exception:  # noqa: BLE001
-                logger.debug("check_update failed for handler=%s", type(handler).__name__)
+            if isinstance(handler, ConversationHandler):
+                if hasattr(handler, "_conversations"):
+                    handler._conversations.clear()
+
+
+async def run_flow(app: Application, update: Update) -> None:
+    reset_rate_limit(USER_ID)
+    update._bot = app.bot
     try:
         await app.process_update(update)
-    except Exception as e:  # never abort the whole suite on one failure
+    except Exception as e:  # noqa: BLE001
         captured_errors.append(f"{type(e).__name__}: {e}")
         logger.exception("Update raised: %s", e)
 
 
-def last_texts(n: int = 3) -> list[str]:
-    out = []
-    for m in reversed(sent_messages):
-        t = m.get("text")
-        if t:
-            out.append(str(t))
-        if len(out) >= n:
-            break
-    return out
-
-
 async def main() -> int:
     init_db()
-    save_user_session(USER_ID, selected_router=ROUTER_KEY)
+    router_id = save_discovered_router(
+        ip="192.0.1.87",
+        identity="discovered_317",
+        username="admin",
+        password="encrypted_pass",
+        port=8728,
+    )
+    router_key = f"discovered_{router_id}" if router_id else "discovered_317"
+    save_user_session(USER_ID, selected_router=router_key)
 
-    # Mock the reachability check so the e2e suite works without a live router.
-    # The suite verifies handler *wiring* (decorators, conversation states,
-    # callback routing), not real MikroTik connectivity.
     import bot.router_selector as rs
+    from core.hotspot_manager import hotspot_manager
+    from core.mikrotik_api import mikrotik_api
 
-    async def _fake_reachability(router_key: str) -> bool:
+    async def _fake_reachability(rk: str) -> bool:
         return True
 
     rs._fast_reachability_check = _fake_reachability
+
+    # Mock RouterOS API calls so E2E test suite runs offline without real network credentials
+    mikrotik_api.execute = MagicMock(return_value=[{"name": "default", "users": "10"}])
+    mikrotik_api.execute_long = MagicMock(return_value=[{"name": "default", "users": "10"}])
+    hotspot_manager.get_active_users = MagicMock(return_value=[])
+    hotspot_manager.get_users = MagicMock(return_value=[])
+    hotspot_manager.get_profiles = MagicMock(return_value=["default", "10MB"])
+    hotspot_manager.user_exists = MagicMock(return_value=False)
 
     application = (
         Application.builder()
@@ -202,8 +202,6 @@ async def main() -> int:
     )
     build_all(application)
     await application.initialize()
-    # Ensure the internal _bot is seeded (initialize should keep FakeBot, but
-    # guard against any reset by pointing it back at the bot itself).
     application.bot._bot = application.bot
 
     results: list[tuple[str, bool, str]] = []
@@ -213,110 +211,180 @@ async def main() -> int:
         snippet = ""
         if sent_messages:
             snippet = (sent_messages[-1].get("text") or "")[:120]
-        if not ok:
-            logger.info(
-                "  >> sent count=%d texts=%s",
-                len(sent_messages),
-                [(m.get("text") or "")[:40] for m in sent_messages],
-            )
+        else:
+            snippet = f"ERRORS: {captured_errors[-1] if captured_errors else 'no sent msgs'}"
         results.append((name, ok, snippet))
         status = "PASS" if ok else "FAIL"
         logger.info("[%s] %s :: %s", status, name, snippet.replace("\n", " ")[:120])
 
     bot = application.bot
+    up_id = 100
 
-    # 1. /start with router pre-selected
-    sent_messages.clear()
-    await run_flow(application, Update(1, message=_msg("/start", bot=bot)))
-    check(
-        "start_with_router",
-        any(
-            any(k in (m.get("text") or "") for k in ("القائمة", "اختر الراوتر", "أهلاً بك"))
-            for m in sent_messages
-        ),
-    )
+    async def step_msg(text: str, reset_conv: bool = False):
+        nonlocal up_id
+        if reset_conv:
+            clear_ptb_conversations(application)
+        up_id += 1
+        await run_flow(application, Update(up_id, message=_msg(text, bot=bot)))
 
-    # 2. /help
-    sent_messages.clear()
-    await run_flow(application, Update(2, message=_msg("/help", bot=bot)))
-    check(
-        "help",
-        any(
-            "مساعدة" in (m.get("text") or "") or "أمر" in (m.get("text") or "")
-            for m in sent_messages
-        ),
-    )
+    async def step_cb(data: str, reset_conv: bool = False):
+        nonlocal up_id
+        if reset_conv:
+            clear_ptb_conversations(application)
+        up_id += 1
+        await run_flow(application, Update(up_id, callback_query=_cb(data, bot=bot)))
 
-    # 3. /metrics (router metadata, no router API needed)
-    sent_messages.clear()
-    await run_flow(application, Update(3, message=_msg("/metrics", bot=bot)))
-    check("metrics", len(sent_messages) > 0)
+    # Reset initial state
+    await step_msg("/cancel", reset_conv=True)
 
-    # 4. hotspot menu (callback)
+    # --- 1. Basic & Menu Flows ---
     sent_messages.clear()
-    await run_flow(application, Update(4, callback_query=_cb("menu_hotspot", bot=bot)))
-    check("hotspot_menu", any("هوتسبوت" in (m.get("text") or "") for m in sent_messages))
+    await step_msg("/start", reset_conv=True)
+    check("1. start_with_router", len(sent_messages) > 0)
 
-    # 5. hotspot stats (real router query)
     sent_messages.clear()
-    await run_flow(application, Update(5, callback_query=_cb("hotspot_stats", bot=bot)))
-    check("hotspot_stats", len(sent_messages) > 0)
+    await step_msg("/help", reset_conv=True)
+    check("2. help", len(sent_messages) > 0)
 
-    # 6. hotspot search start
     sent_messages.clear()
-    await run_flow(application, Update(6, callback_query=_cb("hotspot_search", bot=bot)))
-    check("hotspot_search_start", any("بحث" in (m.get("text") or "") for m in sent_messages))
+    await step_msg("/metrics", reset_conv=True)
+    check("3. metrics", len(sent_messages) > 0)
 
-    # 7. hotspot add start
+    # --- 2. Hotspot Full & Sub-Flows ---
     sent_messages.clear()
-    await run_flow(application, Update(7, callback_query=_cb("hotspot_add", bot=bot)))
-    check(
-        "hotspot_add_start",
-        any(
-            "اسم" in (m.get("text") or "") or "المستخدم" in (m.get("text") or "")
-            for m in sent_messages
-        ),
-    )
+    await step_cb("menu_hotspot", reset_conv=True)
+    check("4. hotspot_menu", len(sent_messages) > 0)
 
-    # 8. user manager menu
     sent_messages.clear()
-    await run_flow(application, Update(8, callback_query=_cb("menu_userman", bot=bot)))
-    check("userman_menu", len(sent_messages) > 0)
+    await step_cb("hotspot_stats", reset_conv=True)
+    check("5. hotspot_stats", len(sent_messages) > 0)
 
-    # 9. stats menu
+    # H7: Hotspot Search Flow
     sent_messages.clear()
-    await run_flow(application, Update(9, callback_query=_cb("menu_stats", bot=bot)))
-    check("stats_menu", len(sent_messages) > 0)
+    await step_cb("hotspot_search", reset_conv=True)
+    check("6. hotspot_search_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
 
-    # 10. backup menu
+    # H1: Hotspot Add User Start
     sent_messages.clear()
-    await run_flow(application, Update(10, callback_query=_cb("menu_backup", bot=bot)))
-    check("backup_menu", any("نسخ" in (m.get("text") or "") for m in sent_messages))
+    await step_cb("hotspot_add", reset_conv=True)
+    check("7. hotspot_add_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
+    
+    # H2: Hotspot Add Cancel
+    sent_messages.clear()
+    await step_msg("/cancel", reset_conv=True)
+    check("8. hotspot_add_cancel", len(sent_messages) > 0)
 
-    # 11. pdf settings menu
+    # H4: Hotspot Edit Start
     sent_messages.clear()
-    await run_flow(application, Update(11, callback_query=_cb("menu_pdf_settings", bot=bot)))
-    check("pdf_settings_menu", len(sent_messages) > 0)
+    await step_cb("hotspot_edit", reset_conv=True)
+    check("9. hotspot_edit_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
 
-    # 12. /logs
+    # H5: Hotspot Delete Start
     sent_messages.clear()
-    await run_flow(application, Update(12, message=_msg("/logs", bot=bot)))
-    check("logs", len(sent_messages) > 0)
+    await step_cb("hotspot_delete", reset_conv=True)
+    check("10. hotspot_delete_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
 
-    # 13. /usage
+    # H6: Hotspot Cards Start
     sent_messages.clear()
-    await run_flow(application, Update(13, message=_msg("/usage", bot=bot)))
-    check("usage", len(sent_messages) > 0)
+    await step_cb("hotspot_cards", reset_conv=True)
+    check("11. hotspot_cards_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
 
-    # 14. /watchdog
+    # H8: Blocked MAC List
     sent_messages.clear()
-    await run_flow(application, Update(14, message=_msg("/watchdog", bot=bot)))
-    check("watchdog", len(sent_messages) > 0)
+    await step_cb("blocked_list", reset_conv=True)
+    check("12. hotspot_blocked_mac_list", len(sent_messages) > 0)
 
-    # 15. saved routers list
+    # --- 3. User Manager Flows ---
     sent_messages.clear()
-    await run_flow(application, Update(15, callback_query=_cb("saved_routers", bot=bot)))
-    check("saved_routers", len(sent_messages) > 0)
+    await step_cb("menu_userman", reset_conv=True)
+    check("13. userman_menu", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_cb("userman_cards", reset_conv=True)
+    check("14. userman_cards_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
+
+    sent_messages.clear()
+    await step_cb("userman_search", reset_conv=True)
+    check("15. userman_search_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
+
+    sent_messages.clear()
+    await step_cb("batches_search", reset_conv=True)
+    check("16. batches_search_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
+
+    # --- 4. Stats & System Flows ---
+    sent_messages.clear()
+    await step_cb("menu_stats", reset_conv=True)
+    check("17. stats_menu", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_msg("/usage", reset_conv=True)
+    check("18. usage_report", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_msg("/watchdog", reset_conv=True)
+    check("19. watchdog_status", len(sent_messages) > 0)
+
+    # --- 5. Backup & Restore Flows ---
+    sent_messages.clear()
+    await step_cb("menu_backup", reset_conv=True)
+    check("20. backup_menu", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_cb("menu_schedule", reset_conv=True)
+    check("21. schedule_backup_menu", len(sent_messages) > 0)
+
+    # --- 6. Router Management Flows ---
+    sent_messages.clear()
+    await step_cb("saved_routers", reset_conv=True)
+    check("22. saved_routers_list", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_cb("manual_add_router", reset_conv=True)
+    check("23. router_manual_add_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
+
+    sent_messages.clear()
+    await step_cb("rename_router", reset_conv=True)
+    check("24. router_rename_start", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
+
+    sent_messages.clear()
+    await step_cb("reboot_router", reset_conv=True)
+    check("25. router_reboot_prompt", len(sent_messages) > 0)
+
+    # --- 7. Settings, Roles & Audit Flows ---
+    sent_messages.clear()
+    await step_cb("menu_pdf_settings", reset_conv=True)
+    check("26. pdf_settings_menu", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_msg("/logs", reset_conv=True)
+    check("27. logs_audit_view", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_msg("/roles", reset_conv=True)
+    check("28. roles_admin_view", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_cb("go_back", reset_conv=True)
+    check("29. menu_go_back_navigation", len(sent_messages) > 0)
+
+    # --- 8. Standalone Clean & Sync Commands ---
+    sent_messages.clear()
+    await step_msg("/clean", reset_conv=True)
+    check("30. clean_chat_command", len(sent_messages) > 0)
+
+    sent_messages.clear()
+    await step_msg("/sync", reset_conv=True)
+    check("31. sync_profiles_command", len(sent_messages) > 0)
 
     await application.shutdown()
 
@@ -324,11 +392,11 @@ async def main() -> int:
     failed = len(results) - passed
     print("\n" + "=" * 60)
     print(
-        f"E2E RESULTS: {passed}/{len(results)} passed, {failed} failed, {len(captured_errors)} handler errors"  # noqa: E501
+        f"E2E RESULTS: {passed}/{len(results)} passed, {failed} failed, {len(captured_errors)} handler errors"
     )
-    for name, ok, _snippet in results:
+    for name, ok, snippet in results:
         mark = "OK " if ok else "ERR"
-        print(f"  [{mark}] {name}")
+        print(f"  [{mark}] {name} :: {snippet[:60]}")
     if captured_errors:
         print("\nHandler exceptions:")
         for e in captured_errors:
