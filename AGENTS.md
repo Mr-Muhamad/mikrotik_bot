@@ -526,4 +526,5 @@ py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --c
 - لا يوجد `HEALTH_CHECK_PORT` أو `aiohttp` في المشروع بعد الآن؛ تمت إزالة health check server بالكامل.
 - `WATCHDOG_FIRST_DELAY` معرّف في `config.py:54` ويُستخدم في `bot/handlers/watchdog.py:67` كمهلة أولى للـ Job. لا تستخدم `first=10` مضمّناً.
 - استخدم `sanitize_log_data()` من `utils/formatters.py` قبل تسجيل أي استجابة API في السجلات، خاصة عند مستوى `ERROR` أو `WARNING`.
+- جميع أزرار القوائم الفرعية (مثل `hotspot_add`، `hotspot_edit`، `hotspot_delete`، `hotspot_search`، `hotspot_cards`، وما يشبهها) يجب أن تُسجَّل كـ `@standalone(CallbackQueryHandler, pattern=PATTERNS["..."])` في `bot/registration_parts/standalone.py` **بالإضافة إلى** تسجيلها كـ `entry_point`/`fallback` في الـ ConversationHandler. بدون هذا التسجيل المستقل، لن تعمل الأزرار إذا كان الـ CH في حالة لا تتطابق مع fallbacks.
 - يوجد استخدامات إنتاجية لـ `# type: ignore` في الكود: `core/connection_pool.py:101`, `core/mikrotik_api.py:217`, `bot/handlers/backup.py:82,83`, `bot/handlers/settings.py:181`, `utils/error_response.py:122`. جميعها مبررة ومعلّمة، ويُتحقق منها عبر `scripts/check_type_ignore.py`.
