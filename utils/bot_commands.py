@@ -52,10 +52,11 @@ async def set_bot_commands(app: Application) -> None:  # type: ignore[reportMiss
             await app.bot.delete_my_commands()
             await app.bot.delete_my_commands(scope=PRIVATE)
             await app.bot.delete_my_commands(scope=GROUP)
+            await app.bot.set_my_commands(commands)
             await app.bot.set_my_commands(commands, scope=PRIVATE)
             await app.bot.set_my_commands(commands, scope=GROUP)
             logger.info(
-                "✅ Set %d bot commands for private+group (attempt %d)", len(commands), attempt
+                "✅ Set %d bot commands for default+private+group (attempt %d)", len(commands), attempt
             )
             return
         except telegram.error.TelegramError as e:
