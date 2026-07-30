@@ -46,6 +46,11 @@ _db_query_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int
 # Database query durations per operation+table
 _db_query_durations: dict[str, list[float]] = defaultdict(list)
 
+# Telegram API counters per handler/method
+_telegram_requests_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+# Telegram API durations per handler/method
+_telegram_request_durations: dict[str, list[float]] = defaultdict(list)
+
 
 def record_message_type(message_type: str) -> None:
     """Record a message of given type."""
@@ -105,6 +110,17 @@ def record_db_query(operation: str, table: str, success: bool, duration_ms: floa
     _db_query_durations[key].append(duration_ms)
     if len(_db_query_durations[key]) > 1000:
         _db_query_durations[key].pop(0)
+
+
+def record_telegram_request(handler: str, success: bool, duration_ms: float) -> None:
+    """Record a Telegram handler/method call with timing."""
+    if success:
+        _telegram_requests_total[handler]["success"] += 1
+    else:
+        _telegram_requests_total[handler]["fail"] += 1
+    _telegram_request_durations[handler].append(duration_ms)
+    if len(_telegram_request_durations[handler]) > 1000:
+        _telegram_request_durations[handler].pop(0)
 
 
 def get_uptime() -> float:
@@ -318,6 +334,55 @@ def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:  # noqa: C
                     )
                     lines.append(
                         f'bot_db_query_duration_seconds_count{{operation="{operation}",table="{table}"}} {n}'
+                    )
+
+    # Telegram request counters per handler
+    if _telegram_requests_total:
+        lines.extend(
+            [
+                "",
+                "# HELP bot_telegram_requests_total Total Telegram handler invocations by handler and status",
+                "# TYPE bot_telegram_requests_total counter",
+            ]
+        )
+        for handler in sorted(_telegram_requests_total):
+            for status in ("success", "fail"):
+                count = _telegram_requests_total[handler][status]
+                if count:
+                    lines.append(
+                        f'bot_telegram_requests_total{{handler="{handler}",status="{status}"}} {count}'
+                    )
+        # Telegram handler duration percentiles
+        if _telegram_request_durations:
+            lines.extend(
+                [
+                    "",
+                    "# HELP bot_telegram_handler_duration_seconds Telegram handler duration by handler",
+                    "# TYPE bot_telegram_handler_duration_seconds summary",
+                ]
+            )
+            for handler in sorted(_telegram_request_durations):
+                durations = _telegram_request_durations[handler]
+                if durations:
+                    sorted_d = sorted(durations)
+                    n = len(sorted_d)
+                    p50 = sorted_d[int(n * 0.50)]
+                    p90 = sorted_d[int(n * 0.90)]
+                    p99 = sorted_d[min(int(n * 0.99), n - 1)]
+                    lines.append(
+                        f'bot_telegram_handler_duration_seconds{{handler="{handler}",quantile="0.5"}} {p50:.4f}'
+                    )
+                    lines.append(
+                        f'bot_telegram_handler_duration_seconds{{handler="{handler}",quantile="0.9"}} {p90:.4f}'
+                    )
+                    lines.append(
+                        f'bot_telegram_handler_duration_seconds{{handler="{handler}",quantile="0.99"}} {p99:.4f}'
+                    )
+                    lines.append(
+                        f'bot_telegram_handler_duration_seconds_sum{{handler="{handler}"}} {sum(sorted_d):.4f}'
+                    )
+                    lines.append(
+                        f'bot_telegram_handler_duration_seconds_count{{handler="{handler}"}} {n}'
                     )
 
     # Connection pool metrics

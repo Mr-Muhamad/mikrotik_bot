@@ -26,7 +26,10 @@ def log_api_call(
     component: str = COMPONENT_ROUTER,
     response_data: Any | None = None,
 ) -> None:
-    """Log a MikroTik API call with structured fields."""
+    """Log a MikroTik API call with structured fields and feed metrics."""
+    from core.metrics import record_mikrotik_request  # noqa: PLC0415 — avoid circular import
+
+    record_mikrotik_request(router_key, duration_ms / 1000.0)
     extra: dict[str, Any] = {
         "component": component,
         "router_key": router_key,

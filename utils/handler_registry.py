@@ -26,6 +26,7 @@ Example (multi-CH — grouped):
     async def hotspot_add_username(update, context): ...
 """
 
+import time
 from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from types import ModuleType
@@ -43,6 +44,7 @@ from telegram.ext import (
     filters,
 )
 
+from core.metrics import record_telegram_request
 from utils.logging_setup import (
     COMPONENT_HANDLER,
     bind_component,
@@ -290,7 +292,17 @@ def _build_handler(entry: _RegistryEntry) -> BaseHandler:  # type: ignore[type-a
                 set_user_id(update.effective_user.id)
             if update.effective_chat:
                 set_chat_id(update.effective_chat.id)
-            return await func(update, context)  # type: ignore[reportCallIssue]
+            handler_name = str(getattr(func, "__name__", "unknown"))
+            t0 = time.monotonic()
+            try:
+                result = await func(update, context)  # type: ignore[reportCallIssue]
+                elapsed_ms = (time.monotonic() - t0) * 1000
+                record_telegram_request(handler_name, True, elapsed_ms)
+                return result
+            except Exception:
+                elapsed_ms = (time.monotonic() - t0) * 1000
+                record_telegram_request(handler_name, False, elapsed_ms)
+                raise
 
     wrapped = bind_request_id_from_update(_wrapped_handler)
     return entry["cls"](callback=wrapped, **entry["kwargs"])  # type: ignore[reportArgumentType]
