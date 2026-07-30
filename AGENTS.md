@@ -118,6 +118,7 @@ mikrotik_bot/
 │   ├── error_response.py      # تصنيف الأخطاء وتعقيم الرسائل
 │   ├── formatters.py          # parse_bytes, format_bytes, sanitize_api_response
 │   ├── logging_setup.py       # request_id logging
+│   ├── log_helpers.py         # log_api_call لتسجيل وتوقيت استدعاءات API الخارجية
 │   ├── pagination.py          # أدوات الترقيم (pagination) للقوائم
 │   ├── request_id.py          # تتبع request_id عبر ContextVar
 │   ├── singleton_lock.py      # منع تشغيل أكثر من نسخة بوت
@@ -183,7 +184,7 @@ mikrotik_bot/
 │   ├── connection_pool.py     # connection pool وtimeouts وmetrics
 │   ├── cache.py               # TTLCache عام (dict-based مع threading.Lock)
 │   ├── exceptions.py          # فئات الاستثناءات المخصصة
-│   ├── metrics.py             # جمع مقاييس النظام (CPU/RAM)
+│   ├── metrics.py             # مقاييس Prometheus: record_action, record_error, record_component_result, record_db_query, record_mikrotik_request, record_telegram_request, get_health_status, get_error_rate
 │   ├── hotspot_manager.py     # Hotspot CRUD/search/kick/cards
 │   ├── hotspot_blocking.py    # حظر/فك حظر MAC عبر address-list
 │   ├── hotspot_expiry.py      # كشف المستخدمين المنتهيين
@@ -216,6 +217,7 @@ mikrotik_bot/
 ├── database/
 │   ├── __init__.py            # حزمة database
 │   ├── models.py              # SQLite schema, CRUD, migrations خفيفة
+│   ├── execute.py             # timed_execute — توقيت وتتبع استعلامات DB مع record_db_query
 │   └── repositories/          # مستودعات البيانات (CRUD)
 │       ├── admin_roles.py     # إدارة أدوار المشرفين
 │       ├── audit_logs.py      # سجلات التدقيق والتنظيف
@@ -259,6 +261,28 @@ mikrotik_bot/
 - **Duration tracking**: جميع العمليات التي تتجاوز `_DEFAULT_DURATION_WARN_MS` (5 ثوانٍ) تُسجّل بتنبيه. يتم تتبع مدة تنفيذ العمليات باستخدام `duration_ms` في كل سجل منظم.
 - **Sensitive data in errors**: أي خطأ من مكتبات خارجية (مثل RouterOS API) قد يكشف بيانات حساسة يجب تنقيتها عبر `sanitize_log_data()` قبل تسجيلها أو إرسالها للمستخدم.
 
+### المراقبة والمقاييس (Observability & Metrics)
+
+- **نظام المراقبة**: يستخدم `core/metrics.py` لتوفير endpoint مقاييس Prometheus عبر `/metrics` (في `commands_basic.py`). المسار معرّف في `config.METRICS_ENDPOINT_PATH`.
+- **Prometheus metrics** المصدرة:
+  - `bot_actions_total` — عدد العمليات (system, mikrotik, callback, command) مع labels: `user_id`, `command`, `success`, `error_category`.
+  - `bot_action_duration_seconds` — histogram لزمن العمليات.
+  - `bot_db_queries_total` — عدد استعلامات DB مع `operation` و `table` labels.
+  - `bot_db_query_duration_seconds` — histogram لزمن استعلامات DB.
+  - `bot_mikrotik_requests_total` — عدد طلبات RouterOS API مع `router` و `command` labels.
+  - `bot_mikrotik_request_duration_seconds` — histogram لزمن طلبات API.
+  - `bot_telegram_requests_total` — عدد طلبات Telegram مع `handler` label.
+  - `bot_telegram_handler_duration_seconds` — histogram لزمن معالجات Telegram.
+  - `bot_error_rate` — gauge لمعدل الخطأ لكل مكون (نافذة منزلقة 10 دقائق).
+  - `bot_health_status` — gauge: 0=سليم, 1=منحط, 2=حرج (عتبات: 10% WARN, 25% CRIT).
+  - `bot_duration_warnings_total` — تحذيرات العمليات البطيئة (>5 ثوانٍ).
+- **Component Health**: `get_health_status()` تفحص نسبة فشل كل مكون وتصنف الحالة.
+- **Error Rate**: `get_error_rate(component)` تحسب معدل الخطأ في نافذة منزلقة زمنية.
+- **توقيت DB**: `database/execute.py` يوفر `timed_execute()` لتغليف استعلامات SQLite مع تتبع وتسجيل تلقائي للمدة وعدد الصفوف.
+- **توقيت API خارجي**: `utils/log_helpers.py` يوفر `log_api_call()` (decorator/context manager) لتسجيل وتوقيت استدعاءات MikroTik API و Telegram API.
+- **ContextVars للتتبع**: `user_id`, `chat_id`, `router_key`, `command`, `success`, `duration_ms`, `error_category` تُحقن عبر `utils/logging_setup.py` ويتم تسجيلها تلقائياً في كل سجل.
+- **Component tagging**: يتم تتبع المكون النشط (`system`, `handler`, `callback`, `background`) عبر ContextVar `component` وتسجيله في كل سجل وكل metric.
+
 ## الأوامر الحالية
 
 الأوامر المعروضة في قائمة Telegram السريعة معرفة في `utils/bot_commands.py`:
@@ -277,7 +301,7 @@ mikrotik_bot/
 - `/settings` - إعدادات PDF.
 - `/reboot` - إعادة تشغيل الراوتر المختار.
 - `/timeout` - إعداد مدة الخمول وحماية الجلسة.
-- `/metrics` - أداء الاتصالات وحالة استهلاك السيرفر.
+- `/metrics` - مقاييس Prometheus، أداء الاتصالات، وسلامة المكونات الداخلية.
 - `/logs` - سجل التدقيق.
 - `/sync` - إعادة ضبط قائمة الأوامر السريعة.
 - `/clean` - تنظيف الشات.
@@ -346,7 +370,7 @@ mikrotik_bot/
 | `/timeout` | يعرض خيارات: 5/15/30/60 دقيقة أو بدون حد → يحفظ في `user_sessions.timeout_minutes`. |
 | `/roles` (الأدوار) | يعرض أدوار جميع المشرفين → يسمح بتعيين super_admin/admin/operator/viewer/customer → يدير المشغّلين وربطهم بالروترات. |
 | `/logs` (سجل التدقيق) | يعرض السجلات مع فلاتر (راوتر/مشرف/عملية/مدة) + ترقيم صفحات + تفاصيل كل سجل. |
-| `/metrics` | يعرض مقاييس الاتصال (نجاح/فشل/متوسط الوقت) + حالة استهلاك السيرفر (CPU/RAM). |
+| `/metrics` | يعرض مقاييس الاتصال (نجاح/فشل/متوسط الوقت) + حالة صحة المكونات (سليم/منحط/حرج) + حالة استهلاك السيرفر (CPU/RAM). |
 | `/settings` (إعدادات PDF) | يعرض مجموعات الإعدادات (نص/تخطيط/QR) → يسمح بتعديل كل إعداد مع تحقق من القيم. |
 | `/watchdog` | مراقبة دورية للروترات: بدء/إيقاف/عرض الحالة/تحديث فوري. |
 

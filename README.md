@@ -87,7 +87,7 @@ python main.py
 | `/settings` | إعدادات PDF. |
 | `/reboot` | إعادة تشغيل الراوتر المختار. |
 | `/timeout` | إعداد مدة الخمول وحماية الجلسة. |
-| `/metrics` | عرض أداء الاتصالات وحالة استهلاك السيرفر (CPU/RAM). |
+| `/metrics` | عرض مقاييس Prometheus (أداء الاتصالات، صحة المكونات، معدل الأخطاء) وحالة استهلاك السيرفر (CPU/RAM). |
 | `/logs` | عرض سجل التدقيق. |
 | `/sync` | إعادة ضبط قائمة الأوامر السريعة. |
 | `/clean` | تنظيف رسائل الشات المتتبعة. |
@@ -120,6 +120,7 @@ mikrotik_bot/
 │   ├── error_response.py      # رسائل أخطاء آمنة
 │   ├── formatters.py          # تنسيق bytes وتعقيم API responses
 │   ├── logging_setup.py       # request_id logging
+│   ├── log_helpers.py         # log_api_call لتسجيل وتوقيت استدعاءات API الخارجية
 │   ├── pagination.py          # أدوات الترقيم للقوائم
 │   ├── request_id.py          # تتبع request_id عبر ContextVar
 │   ├── singleton_lock.py      # منع أكثر من نسخة بوت
@@ -184,7 +185,7 @@ mikrotik_bot/
 │   ├── connection_pool.py     # إدارة اتصالات MikroTik
 │   ├── cache.py               # TTLCache عام (dict-based مع threading.Lock)
 │   ├── exceptions.py          # فئات الاستثناءات المخصصة
-│   ├── metrics.py             # جمع مقاييس النظام (CPU/RAM)
+│   ├── metrics.py             # مقاييس Prometheus: record_action, record_error, record_component_result, record_db_query, record_mikrotik_request, record_telegram_request, get_health_status
 │   ├── hotspot_manager.py     # منطق Hotspot
 │   ├── hotspot_blocking.py    # حظر/فك حظر MAC عبر address-list
 │   ├── hotspot_expiry.py      # كشف المستخدمين المنتهيين
@@ -217,6 +218,7 @@ mikrotik_bot/
 ├── database/
 │   ├── __init__.py            # حزمة database
 │   ├── models.py              # النماذج وعمليات CRUD
+│   ├── execute.py             # timed_execute — توقيت وتتبع استعلامات DB مع record_db_query
 │   └── repositories/          # مستودعات البيانات (CRUD)
 │       ├── admin_roles.py     # إدارة أدوار المشرفين
 │       ├── audit_logs.py      # سجلات التدقيق والتنظيف
