@@ -470,7 +470,8 @@ class TestAssignRouterCommand:
     async def test_no_routers(self):
         update = _msg_update("/assign_router 123")
         ctx = MagicMock()
-        with patch("database.models.get_saved_routers", return_value=[]):
+        # الوحدة تستورد مباشرة من database.repositories.routers وليس من database.models
+        with patch("database.repositories.routers.get_saved_routers", return_value=[]):
             await roles_module.assign_router_command(update, ctx)
         text = update.message.reply_text.call_args[0][0]
         assert "لا توجد روترات" in text
@@ -481,8 +482,9 @@ class TestAssignRouterCommand:
         ctx = MagicMock()
         routers = [{"id": 1, "name": "r1"}]
         with (
-            patch("database.models.get_saved_routers", return_value=routers),
-            patch("database.models.get_operator_routers", return_value=[1]),
+            # تحديد مسار الاستيراد الفعلي: lazy import داخل الدالة من repositories
+            patch("database.repositories.routers.get_saved_routers", return_value=routers),
+            patch("database.repositories.operator_permissions.get_operator_routers", return_value=[1]),
             patch(
                 "bot.keyboards.get_operator_router_assignment_keyboard",
                 return_value="KB",

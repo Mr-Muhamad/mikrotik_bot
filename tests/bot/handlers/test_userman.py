@@ -11,6 +11,7 @@ from bot.handlers.constants import (
     WAITING_CARD_PAYMENT,
     WAITING_CARD_PREFIX,
     WAITING_CARD_PROFILE,
+    WAITING_CARD_TIMESTAMP,
     WAITING_CARD_TYPE,
 )
 from bot.handlers.userman import (
@@ -123,17 +124,20 @@ class TestUsermanCardProfileSelected:
 
 class TestUsermanCardPaymentSelected:
     @pytest.mark.asyncio
-    async def test_paid_advances_to_mac_step(self):
+    async def test_paid_advances_to_timestamp_step(self):
+        # بعد اختيار طريقة الدفع، تنتقل المحادثة إلى خطوة الطابع الزمني (TIMESTAMP)
+        # وليس مباشرة إلى MAC — تم إضافة خطوة الطابع الزمني بعد كتابة هذا الاختبار.
         ctx = _ctx()
         result = await userman_card_payment_selected(_query_update("card_paid"), ctx)
-        assert result == WAITING_CARD_MAC
+        assert result == WAITING_CARD_TIMESTAMP
         assert ctx.user_data["card_payment"] == "مدفوع"
 
     @pytest.mark.asyncio
-    async def test_unpaid_advances_to_mac_step(self):
+    async def test_unpaid_advances_to_timestamp_step(self):
+        # نفس السبب: خطوة TIMESTAMP أُضيفت بين PAYMENT و MAC في تدفق الإنشاء.
         ctx = _ctx()
         result = await userman_card_payment_selected(_query_update("card_unpaid"), ctx)
-        assert result == WAITING_CARD_MAC
+        assert result == WAITING_CARD_TIMESTAMP
         assert ctx.user_data["card_payment"] == "غير مدفوع"
 
 
