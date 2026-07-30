@@ -36,6 +36,11 @@ _request_latencies: list[float] = []
 _mikrotik_api_latencies: list[float] = []
 _backup_latencies: list[tuple[str, float]] = []
 
+# Action success/fail counters per router+command
+_action_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+# Action durations per router+command (for average tracking)
+_action_durations: dict[str, list[float]] = defaultdict(list)
+
 
 def record_message_type(message_type: str) -> None:
     """Record a message of given type."""
@@ -71,6 +76,18 @@ def record_request_latency(handler_name: str, duration_seconds: float) -> None:
     _request_latencies.append(duration_seconds)
     if len(_request_latencies) > 1000:
         _request_latencies.pop(0)
+
+
+def record_action(router_key: str, command: str, success: bool, duration_ms: float) -> None:
+    """Record an action outcome with timing for a specific router and command."""
+    key = f"{router_key}:{command}"
+    if success:
+        _action_total[key]["success"] += 1
+    else:
+        _action_total[key]["fail"] += 1
+    _action_durations[key].append(duration_ms)
+    if len(_action_durations[key]) > 1000:
+        _action_durations[key].pop(0)
 
 
 def get_uptime() -> float:
@@ -183,6 +200,57 @@ def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:  # noqa: C
             lines.append(
                 f'bot_error_count_total{{component="{component}",category="{category}"}} {count}'
             )
+
+    # Action counters per router+command
+    if _action_total:
+        lines.extend(
+            [
+                "",
+                "# HELP bot_action_total Total actions by router, command, and status",
+                "# TYPE bot_action_total counter",
+            ]
+        )
+        for key in sorted(_action_total):
+            router, command = key.split(":", 1)
+            for status in ("success", "fail"):
+                count = _action_total[key][status]
+                if count:
+                    lines.append(
+                        f'bot_action_total{{router="{router}",command="{command}",status="{status}"}} {count}'
+                    )
+        # Action duration summary
+        if _action_durations:
+            lines.extend(
+                [
+                    "",
+                    "# HELP bot_action_duration_seconds Action duration by router and command",
+                    "# TYPE bot_action_duration_seconds summary",
+                ]
+            )
+            for key in sorted(_action_durations):
+                router, command = key.split(":", 1)
+                durations = _action_durations[key]
+                if durations:
+                    sorted_d = sorted(durations)
+                    n = len(sorted_d)
+                    p50 = sorted_d[int(n * 0.50)]
+                    p90 = sorted_d[int(n * 0.90)]
+                    p99 = sorted_d[min(int(n * 0.99), n - 1)]
+                    lines.append(
+                        f'bot_action_duration_seconds{{router="{router}",command="{command}",quantile="0.5"}} {p50:.4f}'
+                    )
+                    lines.append(
+                        f'bot_action_duration_seconds{{router="{router}",command="{command}",quantile="0.9"}} {p90:.4f}'
+                    )
+                    lines.append(
+                        f'bot_action_duration_seconds{{router="{router}",command="{command}",quantile="0.99"}} {p99:.4f}'
+                    )
+                    lines.append(
+                        f'bot_action_duration_seconds_sum{{router="{router}",command="{command}"}} {sum(sorted_d):.4f}'
+                    )
+                    lines.append(
+                        f'bot_action_duration_seconds_count{{router="{router}",command="{command}"}} {n}'
+                    )
 
     # Connection pool metrics
     if pool_metrics:

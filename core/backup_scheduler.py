@@ -1,8 +1,10 @@
 import logging
+import time
 from datetime import datetime, timedelta
 
 from telegram.ext import CallbackContext, JobQueue
 
+from core.metrics import record_action, record_backup_duration
 from core.mikrotik_client import RouterOSRow
 from utils.async_blocking import run_blocking
 from utils.logging_setup import COMPONENT_BACKUP, bind_component, new_request_id
@@ -44,9 +46,14 @@ class BackupScheduler:
                     return
 
                 router_name = str(r.get("identity", router_key))
+
+                t0 = time.monotonic()
                 try:
                     await run_blocking(backup_service.userman_backup, router_key)
+                    elapsed_ms = (time.monotonic() - t0) * 1000
                     successful_routers.append(router_name)
+                    record_action(router_key, "backup_userman", True, elapsed_ms)
+                    record_backup_duration("userman", elapsed_ms / 1000)
                     await run_blocking(
                         record_backup_result,
                         router_key,
@@ -57,6 +64,8 @@ class BackupScheduler:
                     )
                     logger.info("Scheduled backup done for %s", router_key)
                 except Exception as e:  # noqa: BLE001
+                    elapsed_ms = (time.monotonic() - t0) * 1000
+                    record_action(router_key, "backup_userman", False, elapsed_ms)
                     logger.error(
                         "Scheduled backup failed for %s in _run_daily_backup "
                         "(error type: %s): %s",
@@ -75,9 +84,13 @@ class BackupScheduler:
                         router_name=router_name,
                     )
 
+                t1 = time.monotonic()
                 try:
                     full_result = await run_blocking(backup_service.full_backup, router_key)
+                    elapsed_ms = (time.monotonic() - t1) * 1000
                 except Exception as e:  # noqa: BLE001
+                    elapsed_ms = (time.monotonic() - t1) * 1000
+                    record_action(router_key, "backup_full", False, elapsed_ms)
                     logger.error(
                         "Scheduled full backup failed for %s in _run_daily_backup "
                         "(error type: %s): %s",
@@ -103,6 +116,9 @@ class BackupScheduler:
                         if not success
                         else "scheduled full backup ok"
                     )
+                    record_action(router_key, "backup_full", bool(success), elapsed_ms)
+                    if success:
+                        record_backup_duration("full", elapsed_ms / 1000)
                     if not success:
                         logger.error(
                             "Scheduled full backup failed for %s: %s",
@@ -182,9 +198,14 @@ class BackupScheduler:
                             continue
                         router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
                         router_name = str(r.get("identity", router_key))
+                        t0 = time.monotonic()
                         try:
                             expiring = await run_blocking(hotspot_manager.get_expiring_users, router_key, days)
+                            elapsed_ms = (time.monotonic() - t0) * 1000
+                            record_action(router_key, "expiry_check", True, elapsed_ms)
                         except Exception as e:  # noqa: BLE001
+                            elapsed_ms = (time.monotonic() - t0) * 1000
+                            record_action(router_key, "expiry_check", False, elapsed_ms)
                             logger.warning(
                                 "Expiry check failed for %s "
                                 "(error type: %s): %s",
@@ -248,9 +269,12 @@ class BackupScheduler:
                             continue
                         router_key = f"{ROUTER_KEY_PREFIX}{r['id']}"
                         router_name = str(r.get("identity", router_key))
+                        t0 = time.monotonic()
                         try:
                             raw = await run_blocking(stats_manager.get_hotspot_stats, router_key)
+                            elapsed_ms = (time.monotonic() - t0) * 1000
                             if not raw:
+                                record_action(router_key, "stats_snapshot", True, elapsed_ms)
                                 continue
                             snapshot_data: dict[str, int] = {
                                 "active_users": int(raw.get("active_users", 0) or 0),
@@ -259,6 +283,7 @@ class BackupScheduler:
                                 "bytes_out": 0,
                             }
                             await run_blocking(save_snapshot, router_key, snapshot_data)
+                            record_action(router_key, "stats_snapshot", True, elapsed_ms)
                             logger.info("Stats snapshot saved for %s", router_key)
                             try:
                                 log_action("stats_snapshot", "", router_name, 0)
@@ -270,6 +295,8 @@ class BackupScheduler:
                                     extra={"component": COMPONENT_BACKUP},
                                 )
                         except Exception as e:  # noqa: BLE001
+                            elapsed_ms = (time.monotonic() - t0) * 1000
+                            record_action(router_key, "stats_snapshot", False, elapsed_ms)
                             logger.warning(
                                 "Stats snapshot failed for %s "
                                 "(error type: %s): %s",

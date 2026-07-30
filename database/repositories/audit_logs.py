@@ -14,6 +14,28 @@ logger = logging.getLogger(__name__)
 
 _LogRow = dict[str, str | int | float | bytes | None]
 
+_columns_checked: bool = False
+
+
+def _ensure_log_columns() -> None:
+    """Ensure duration_ms and error_category columns exist in logs table."""
+    from database.models import get_db
+
+    global _columns_checked
+    if _columns_checked:
+        return
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(logs)")
+        existing = {row["name"] for row in cursor.fetchall()}
+        if "duration_ms" not in existing:
+            cursor.execute("ALTER TABLE logs ADD COLUMN duration_ms REAL")
+            logger.info("Added column duration_ms to logs table")
+        if "error_category" not in existing:
+            cursor.execute("ALTER TABLE logs ADD COLUMN error_category TEXT DEFAULT ''")
+            logger.info("Added column error_category to logs table")
+    _columns_checked = True
+
 
 def _logs_where_clauses(
     filters: dict[str, str | int | None] | None,
@@ -54,26 +76,39 @@ def _logs_where_clauses(
     return clauses, params
 
 
-def log_action(action: str, username: str, router_name: str, admin_id: int) -> None:
+def log_action(
+    action: str,
+    username: str,
+    router_name: str,
+    admin_id: int,
+    duration_ms: float | None = None,
+    error_category: str | None = None,
+) -> None:
     from database.models import get_db
 
+    _ensure_log_columns()
+
     logger.info(
-        "📝 [AUDIT LOG] Action: %s | User: %s | Router: %s | Admin: %s",
+        "📝 [AUDIT LOG] Action: %s | User: %s | Router: %s | Admin: %s | Duration: %s | Error: %s",
         action,
         username,
         router_name,
         admin_id,
+        f"{duration_ms:.0f}ms" if duration_ms is not None else "N/A",
+        error_category or "N/A",
     )
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO logs (action, username, router_name, admin_id, timestamp) VALUES (?, ?, ?, ?, ?)",  # noqa: E501
+            "INSERT INTO logs (action, username, router_name, admin_id, timestamp, duration_ms, error_category) VALUES (?, ?, ?, ?, ?, ?, ?)",  # noqa: E501
             (
                 action,
                 username,
                 router_name,
                 admin_id,
                 _now_utc(),
+                duration_ms,
+                error_category,
             ),
         )
 
@@ -90,7 +125,7 @@ def get_logs(
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            f"SELECT action, username, router_name, timestamp FROM logs{where} ORDER BY timestamp DESC LIMIT ? OFFSET ?",  # noqa: E501
+            f"SELECT action, username, router_name, timestamp, duration_ms, error_category FROM logs{where} ORDER BY timestamp DESC LIMIT ? OFFSET ?",  # noqa: E501
             params,
         )
         return [dict(row) for row in cursor.fetchall()]
