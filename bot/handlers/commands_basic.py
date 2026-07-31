@@ -31,8 +31,8 @@ from bot.messages import (
     METRICS_CACHE,
     METRICS_FAILED,
     METRICS_HEADER,
+    METRICS_IDLE,
     METRICS_SERVER_HEALTH,
-    METRICS_STALE,
     METRICS_SUCCESS,
     METRICS_TOTAL,
     SELECT_ROUTER,
@@ -352,7 +352,7 @@ async def metrics_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         METRICS_HEADER
         + METRICS_ACTIVE.format(active=metrics.get("active_connections", 0))
         + "\n"
-        + METRICS_STALE.format(stale=metrics.get("stale_connections", 0))
+        + METRICS_IDLE.format(idle=metrics.get("idle_connections", 0))
         + "\n"
         + METRICS_TOTAL.format(total=total)
         + "\n"

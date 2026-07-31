@@ -264,7 +264,7 @@ class TestMetricsCommand:
             "successful": 95,
             "failed": 5,
             "active_connections": 2,
-            "stale_connections": 0,
+            "idle_connections": 0,
             "cache_hits": 10,
         }
         update = make_mock_update()

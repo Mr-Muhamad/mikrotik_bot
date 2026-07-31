@@ -133,7 +133,7 @@ SYNC_COMMANDS_DONE = "✅ تم تحديث قائمة الأوامر السريع
 
 METRICS_HEADER = "📊 <b>أداء الاتصال</b>\n"
 METRICS_ACTIVE = "🔌 الاتصالات النشطة: {active}"
-METRICS_STALE = "🗑️ الاتصالات القديمة المغلقة: {stale}"
+METRICS_IDLE = "⏳ الاتصالات الخاملة (Idle): {idle}"
 METRICS_TOTAL = "🔁 إجمالي المحاولات: {total}"
 METRICS_SUCCESS = "✅ الناجحة: {success}"
 METRICS_FAILED = "❌ الفاشلة: {failed}"

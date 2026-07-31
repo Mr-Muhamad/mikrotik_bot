@@ -10,7 +10,7 @@ from utils import admin_decorator
 
 SAMPLE_METRICS = {
     "active_connections": 2,
-    "stale_connections": 1,
+    "idle_connections": 1,
     "total_attempts": 10,
     "successful": 8,
     "failed": 2,
@@ -61,7 +61,7 @@ async def test_metrics_command_sends_report_and_deletes(mock_update, mock_contex
 async def test_metrics_command_with_zero_attempts(mock_update, mock_context):
     zero = {
         "active_connections": 0,
-        "stale_connections": 0,
+        "idle_connections": 0,
         "total_attempts": 0,
         "successful": 0,
         "failed": 0,
