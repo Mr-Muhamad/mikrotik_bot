@@ -1,14 +1,16 @@
 {
   "project_name": "mikrotik_bot",
   "version": "1.0.0",
-  "last_updated": "2026-07-19T14:00:00Z",
+  "last_updated": "2026-07-31",
   "architecture": {
     "framework": "python-telegram-bot v21+",
     "database": "SQLite + Alembic",
-    "bot_routing": "ConversationHandler (Centralized in bot/registrations.py)",
+    "bot_routing": "ConversationHandler (Centralized in bot/registrations.py via utils/handler_registry.py)",
     "state_management": "Typed Dataclasses (bot/handlers/session_models.py)",
     "localization": "Centralized strings (bot/messages.py)",
-    "mikrotik_api": "librouteros with in-memory connection pooling"
+    "mikrotik_api": "librouteros with in-memory connection pooling (core/connection_pool.py)",
+    "background_jobs": "python-telegram-bot JobQueue (backup, watchdog, expiry checks)",
+    "metrics": "Prometheus-style gauges/histograms in core/metrics.py"
   },
   "key_decisions": [
     {
@@ -35,7 +37,22 @@
       "decision": "Move general Telegram helpers to utils/tg_helpers.py",
       "reason": "Prevent circular imports between utils/error_response.py and bot/handlers/.",
       "date": "2026-07-19"
+    },
+    {
+      "decision": "Centralized handler/callback registration with source-of-truth tokens",
+      "reason": "All callback_data constants and patterns live in bot/handlers/callback_constants.py and are referenced by name (PATTERNS) in bot/registrations.py to prevent frozen-button regressions.",
+      "date": "2026-07-26"
+    },
+    {
+      "decision": "ConversationHandler entry points only (no standalone duplicates)",
+      "reason": "Multi-step flows (hotspot_add/edit/delete/search/cards, usage_start, batches_search, logs_filter_text) register only as CH entry_point+fallback; standalone registration swallowed flow starts and broke e2e_smoke step 11b.",
+      "date": "2026-07-29"
+    },
+    {
+      "decision": "Regenerated kb/ with clean scope",
+      "reason": "The previous kb/ was generated over the active venv (710/974 modules from scripts/Activate.ps1) and tests. scripts/generate_kb.py now excludes venv/tests/build artifacts; runtime surface = 133 modules, 1098 entities.",
+      "date": "2026-07-31"
     }
   ],
-  "testing_status": "All 808 tests passing. Circular imports and Pyright type issues resolved."
+  "testing_status": "All 2961 tests passing. Circular imports and Pyright type issues resolved."
 }

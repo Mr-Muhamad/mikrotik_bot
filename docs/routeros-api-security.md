@@ -1,7 +1,7 @@
 # أمان تشغيل MikroTik API على المنفذ 8728
 
 تاريخ الوثيقة: 2026-07-09
-المرجع: `docs/priority-plan.md` (الأولوية 1) + `docs/project-comparison-report.md` (القسم 4)
+المرجع: `archive/priority-plan.md` (الأولوية 1) + `archive/project-comparison-report.md` (القسم 4)
 
 ## الخلفية
 
@@ -29,7 +29,7 @@
 ## ملاحظة حول API-SSL (8729)
 
 يدعم RouterOS منفذاً آمناً `8729` عند توفر شهادة. يمكن مستقبلاً (على راوترات v7 ببيئات منفصلة)
-تفعيل نقل مشفّر اختياري دون كسر المسار الافتراضي `8728`. انظر `docs/post-plan-best-practices.md` (المرحلة ب-1).
+تفعيل نقل مشفّر اختياري دون كسر المسار الافتراضي `8728`. انظر `archive/post-plan-best-practices.md` (المرحلة ب-1).
 
 ## فحص startup (غير مانع)
 

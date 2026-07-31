@@ -2,14 +2,36 @@
   "roles": [
     {
       "name": "super_admin",
+      "level": 40,
+      "label": "👑 مدير عام",
       "description": "Defined in .env via ADMIN_IDS. Has absolute unrestricted access to all commands, router management, user role assignment, reboots, and full system backups.",
       "permissions": [
         "*"
       ]
     },
     {
+      "name": "customer",
+      "level": 30,
+      "label": "🏢 عميل",
+      "description": "Customer role assigned via /roles. Shares the admin access level but is scoped to assigned routers through operator_router_permissions.",
+      "permissions": [
+        "*"
+      ]
+    },
+    {
+      "name": "admin",
+      "level": 30,
+      "label": "👑 مالك/أدمن",
+      "description": "Full admin privileges (same level as customer) for owners assigned via /roles.",
+      "permissions": [
+        "*"
+      ]
+    },
+    {
       "name": "operator",
-      "description": "Operational user assigned via /roles. Restricted to assigned routers and operational commands (add/edit/cards/reports). Cannot delete routers or perform system reboots.",
+      "level": 20,
+      "label": "🛠️ مشغّل",
+      "description": "Operational user assigned via /roles. Restricted to assigned routers (operator_router_permissions) and operational commands (add/edit/cards/reports). Cannot delete routers or perform system reboots.",
       "permissions": [
         "hotspot:add",
         "hotspot:edit",
@@ -18,6 +40,16 @@
         "userman:read",
         "userman:cards",
         "reports:view"
+      ]
+    },
+    {
+      "name": "viewer",
+      "level": 10,
+      "label": "👁️ مشاهد",
+      "description": "Read-only access role assigned via /roles. Can view routers, logs, metrics and reports but cannot modify anything.",
+      "permissions": [
+        "reports:view",
+        "logs:read"
       ]
     }
   ],
@@ -30,7 +62,7 @@
     {
       "name": "@require_role(role_name)",
       "file": "utils/admin_decorator.py",
-      "purpose": "Enforces minimum role privilege before executing a handler."
+      "purpose": "Enforces minimum role privilege (ROLE_LEVELS numeric threshold) before executing a handler."
     },
     {
       "name": "@require_router",

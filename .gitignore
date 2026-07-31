@@ -22,3 +22,9 @@ scratch/
 scripts/Activate.ps1/
 node_modules/
 
+# MCP / tooling artifacts (not part of the runtime surface)
+.playwright-mcp/
+bandit_report.txt
+package.json
+package-lock.json
+

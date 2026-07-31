@@ -20,6 +20,71 @@
     "file": "bot/handlers/audit.py"
   },
   {
+    "id": "func:bot.handlers.audit.logs_command",
+    "name": "logs_command",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit.logs_filter_callback",
+    "name": "logs_filter_callback",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit.logs_set_callback",
+    "name": "logs_set_callback",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit.logs_clear_callback",
+    "name": "logs_clear_callback",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit.logs_filter_text_callback",
+    "name": "logs_filter_text_callback",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit.logs_search_query",
+    "name": "logs_search_query",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit.logs_back_callback",
+    "name": "logs_back_callback",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit.logs_subnav_callback",
+    "name": "logs_subnav_callback",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit.logs_page_callback",
+    "name": "logs_page_callback",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit._show_submenu",
+    "name": "_show_submenu",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit._show_logs_page",
+    "name": "_show_logs_page",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit._render_logs_empty",
+    "name": "_render_logs_empty",
+    "file": "bot/handlers/audit.py"
+  },
+  {
+    "id": "func:bot.handlers.audit._render_logs_list",
+    "name": "_render_logs_list",
+    "file": "bot/handlers/audit.py"
+  },
+  {
     "id": "func:bot.handlers.backup._is_backup_running",
     "name": "_is_backup_running",
     "file": "bot/handlers/backup.py"
@@ -30,8 +95,88 @@
     "file": "bot/handlers/backup.py"
   },
   {
+    "id": "func:bot.handlers.backup._finish_backup_result",
+    "name": "_finish_backup_result",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup._background_backup_job",
+    "name": "_background_backup_job",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup.backup_full",
+    "name": "backup_full",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup.backup_userman",
+    "name": "backup_userman",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup.schedule_menu",
+    "name": "schedule_menu",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup.schedule_menu_from_conversation",
+    "name": "schedule_menu_from_conversation",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup.schedule_enable",
+    "name": "schedule_enable",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup.schedule_set",
+    "name": "schedule_set",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup.schedule_disable",
+    "name": "schedule_disable",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup.backup_download_file",
+    "name": "backup_download_file",
+    "file": "bot/handlers/backup.py"
+  },
+  {
+    "id": "func:bot.handlers.backup_restore.backup_restore_start",
+    "name": "backup_restore_start",
+    "file": "bot/handlers/backup_restore.py"
+  },
+  {
+    "id": "func:bot.handlers.backup_restore.backup_restore_select",
+    "name": "backup_restore_select",
+    "file": "bot/handlers/backup_restore.py"
+  },
+  {
+    "id": "func:bot.handlers.backup_restore.backup_restore_confirm",
+    "name": "backup_restore_confirm",
+    "file": "bot/handlers/backup_restore.py"
+  },
+  {
+    "id": "func:bot.handlers.backup_restore.userman_restore_start",
+    "name": "userman_restore_start",
+    "file": "bot/handlers/backup_restore.py"
+  },
+  {
+    "id": "func:bot.handlers.backup_restore.userman_restore_select",
+    "name": "userman_restore_select",
+    "file": "bot/handlers/backup_restore.py"
+  },
+  {
     "id": "func:bot.handlers.backup_restore._format_restore_summary",
     "name": "_format_restore_summary",
+    "file": "bot/handlers/backup_restore.py"
+  },
+  {
+    "id": "func:bot.handlers.backup_restore.userman_restore_execute",
+    "name": "userman_restore_execute",
     "file": "bot/handlers/backup_restore.py"
   },
   {
@@ -40,13 +185,68 @@
     "file": "bot/handlers/batch.py"
   },
   {
+    "id": "func:bot.handlers.batch.batches_command",
+    "name": "batches_command",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch.batches_search_start",
+    "name": "batches_search_start",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch.batches_search_query",
+    "name": "batches_search_query",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch._show_batches_page",
+    "name": "_show_batches_page",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch.batch_page_handler",
+    "name": "batch_page_handler",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch.batch_select",
+    "name": "batch_select",
+    "file": "bot/handlers/batch.py"
+  },
+  {
     "id": "func:bot.handlers.batch._format_batch_text",
     "name": "_format_batch_text",
     "file": "bot/handlers/batch.py"
   },
   {
+    "id": "func:bot.handlers.batch.batch_regen",
+    "name": "batch_regen",
+    "file": "bot/handlers/batch.py"
+  },
+  {
     "id": "func:bot.handlers.batch._dump",
     "name": "_dump",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch.mark_batch_paid_handler",
+    "name": "mark_batch_paid_handler",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch.show_sales_summary",
+    "name": "show_sales_summary",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch.share_card_start",
+    "name": "share_card_start",
+    "file": "bot/handlers/batch.py"
+  },
+  {
+    "id": "func:bot.handlers.batch.share_card_send",
+    "name": "share_card_send",
     "file": "bot/handlers/batch.py"
   },
   {
@@ -230,6 +430,71 @@
     "file": "bot/handlers/callback_constants.py"
   },
   {
+    "id": "func:bot.handlers.commands_basic.start",
+    "name": "start",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.select_router_callback",
+    "name": "select_router_callback",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.cancel",
+    "name": "cancel",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.error_handler",
+    "name": "error_handler",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.help_command",
+    "name": "help_command",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.clean_chat",
+    "name": "clean_chat",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.sync_commands",
+    "name": "sync_commands",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.metrics_command",
+    "name": "metrics_command",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.reprompt_select_user",
+    "name": "reprompt_select_user",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.reprompt_card_type_text",
+    "name": "reprompt_card_type_text",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.commands_basic.reprompt_card_profile_text",
+    "name": "reprompt_card_profile_text",
+    "file": "bot/handlers/commands_basic.py"
+  },
+  {
+    "id": "func:bot.handlers.common.get_router_part",
+    "name": "get_router_part",
+    "file": "bot/handlers/common.py"
+  },
+  {
+    "id": "func:bot.handlers.common.show_menu",
+    "name": "show_menu",
+    "file": "bot/handlers/common.py"
+  },
+  {
     "id": "func:bot.handlers.handler_utils.get_user_id",
     "name": "get_user_id",
     "file": "bot/handlers/handler_utils.py"
@@ -260,13 +525,23 @@
     "file": "bot/handlers/handler_utils.py"
   },
   {
+    "id": "func:bot.handlers.handler_utils.ack_callback",
+    "name": "ack_callback",
+    "file": "bot/handlers/handler_utils.py"
+  },
+  {
+    "id": "func:bot.handlers.handler_utils.parse_router_id",
+    "name": "parse_router_id",
+    "file": "bot/handlers/handler_utils.py"
+  },
+  {
     "id": "func:bot.handlers.handler_utils.make_back_step",
     "name": "make_back_step",
     "file": "bot/handlers/handler_utils.py"
   },
   {
-    "id": "func:bot.handlers.hotspot._categories_kwargs",
-    "name": "_categories_kwargs",
+    "id": "func:bot.handlers.hotspot._reply_or_edit",
+    "name": "_reply_or_edit",
     "file": "bot/handlers/hotspot.py"
   },
   {
@@ -280,13 +555,278 @@
     "file": "bot/handlers/hotspot.py"
   },
   {
+    "id": "func:bot.handlers.hotspot.hotspot_stats",
+    "name": "hotspot_stats",
+    "file": "bot/handlers/hotspot.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot.hotspot_stats_day_input",
+    "name": "hotspot_stats_day_input",
+    "file": "bot/handlers/hotspot.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_start",
+    "name": "hotspot_add_start",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_username",
+    "name": "hotspot_add_username",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_password",
+    "name": "hotspot_add_password",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_profile",
+    "name": "hotspot_add_profile",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_profile_selected",
+    "name": "hotspot_add_profile_selected",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_bytes",
+    "name": "hotspot_add_bytes",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_comment",
+    "name": "hotspot_add_comment",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.add_back_to_profile",
+    "name": "add_back_to_profile",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.skip_password",
+    "name": "skip_password",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.skip_bytes",
+    "name": "skip_bytes",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_uptime_type",
+    "name": "hotspot_add_uptime_type",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_uptime_value",
+    "name": "hotspot_add_uptime_value",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.skip_uptime",
+    "name": "skip_uptime",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.skip_comment",
+    "name": "skip_comment",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_add.hotspot_add_uptime_type_invalid_text",
+    "name": "hotspot_add_uptime_type_invalid_text",
+    "file": "bot/handlers/hotspot_add.py"
+  },
+  {
     "id": "func:bot.handlers.hotspot_cards.get_card_type_keyboard",
     "name": "get_card_type_keyboard",
     "file": "bot/handlers/hotspot_cards.py"
   },
   {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_start",
+    "name": "hotspot_cards_start",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_count",
+    "name": "hotspot_cards_count",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_length",
+    "name": "hotspot_cards_length",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_prefix",
+    "name": "hotspot_cards_prefix",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_skip_prefix",
+    "name": "hotspot_cards_skip_prefix",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_price",
+    "name": "hotspot_cards_price",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_skip_price",
+    "name": "hotspot_cards_skip_price",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_type_selected",
+    "name": "hotspot_cards_type_selected",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_profile_selected",
+    "name": "hotspot_cards_profile_selected",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_uptime_type",
+    "name": "hotspot_cards_uptime_type",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_skip_uptime_type",
+    "name": "hotspot_cards_skip_uptime_type",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_uptime_value",
+    "name": "hotspot_cards_uptime_value",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_skip_uptime",
+    "name": "hotspot_cards_skip_uptime",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_bytes",
+    "name": "hotspot_cards_bytes",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hotspot_cards_skip_bytes",
+    "name": "hotspot_cards_skip_bytes",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards._create_cards",
+    "name": "_create_cards",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_cards.hs_back_to_profile",
+    "name": "hs_back_to_profile",
+    "file": "bot/handlers/hotspot_cards.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_common.search_users_for_action",
+    "name": "search_users_for_action",
+    "file": "bot/handlers/hotspot_common.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_common.execute_add_user",
+    "name": "execute_add_user",
+    "file": "bot/handlers/hotspot_common.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_common.handle_page_callback",
+    "name": "handle_page_callback",
+    "file": "bot/handlers/hotspot_common.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_delete.hotspot_delete_start",
+    "name": "hotspot_delete_start",
+    "file": "bot/handlers/hotspot_delete.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_delete.hotspot_delete_select",
+    "name": "hotspot_delete_select",
+    "file": "bot/handlers/hotspot_delete.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_delete.hotspot_delete_search",
+    "name": "hotspot_delete_search",
+    "file": "bot/handlers/hotspot_delete.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_delete.confirm_callback",
+    "name": "confirm_callback",
+    "file": "bot/handlers/hotspot_delete.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_delete.confirm_reprompt",
+    "name": "confirm_reprompt",
+    "file": "bot/handlers/hotspot_delete.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.hotspot_edit_start",
+    "name": "hotspot_edit_start",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.hotspot_edit_search",
+    "name": "hotspot_edit_search",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.hotspot_edit_select",
+    "name": "hotspot_edit_select",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.hotspot_edit_reset",
+    "name": "hotspot_edit_reset",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.hotspot_edit_kick",
+    "name": "hotspot_edit_kick",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.hotspot_edit_field",
+    "name": "hotspot_edit_field",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.edit_profile_selected",
+    "name": "edit_profile_selected",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.edit_back_to_fields",
+    "name": "edit_back_to_fields",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit._validate_edit_field",
+    "name": "_validate_edit_field",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
     "id": "func:bot.handlers.hotspot_edit._transform_renewal_day",
     "name": "_transform_renewal_day",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit._apply_edit_success_result",
+    "name": "_apply_edit_success_result",
+    "file": "bot/handlers/hotspot_edit.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_edit.hotspot_edit_value",
+    "name": "hotspot_edit_value",
     "file": "bot/handlers/hotspot_edit.py"
   },
   {
@@ -310,6 +850,51 @@
     "file": "bot/handlers/hotspot_report.py"
   },
   {
+    "id": "func:bot.handlers.hotspot_report.report_command",
+    "name": "report_command",
+    "file": "bot/handlers/hotspot_report.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_report.report_export_csv",
+    "name": "report_export_csv",
+    "file": "bot/handlers/hotspot_report.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_report.report_export_excel",
+    "name": "report_export_excel",
+    "file": "bot/handlers/hotspot_report.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search.hotspot_search_start",
+    "name": "hotspot_search_start",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search.hotspot_search_query",
+    "name": "hotspot_search_query",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search.hotspot_search_page_handler",
+    "name": "hotspot_search_page_handler",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search._search_users",
+    "name": "_search_users",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search._search_hosts_by_field",
+    "name": "_search_hosts_by_field",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search._search_hosts_with_users",
+    "name": "_search_hosts_with_users",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
     "id": "func:bot.handlers.hotspot_search._enrich_hosts",
     "name": "_enrich_hosts",
     "file": "bot/handlers/hotspot_search.py"
@@ -320,8 +905,168 @@
     "file": "bot/handlers/hotspot_search.py"
   },
   {
+    "id": "func:bot.handlers.hotspot_search.hotspot_search_back",
+    "name": "hotspot_search_back",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search.hotspot_show_host",
+    "name": "hotspot_show_host",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search.hotspot_host_action",
+    "name": "hotspot_host_action",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search.block_mac_handler",
+    "name": "block_mac_handler",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search.unblock_mac_handler",
+    "name": "unblock_mac_handler",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.hotspot_search.show_blocked_list",
+    "name": "show_blocked_list",
+    "file": "bot/handlers/hotspot_search.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.internal_hotspot_menu",
+    "name": "internal_hotspot_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.internal_userman_menu",
+    "name": "internal_userman_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.internal_stats_menu",
+    "name": "internal_stats_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.internal_backup_menu",
+    "name": "internal_backup_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.internal_routers_menu",
+    "name": "internal_routers_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.internal_reports_menu",
+    "name": "internal_reports_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.internal_pdf_settings_menu",
+    "name": "internal_pdf_settings_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.internal_main_menu",
+    "name": "internal_main_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.main_menu",
+    "name": "main_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.hotspot_menu",
+    "name": "hotspot_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.userman_menu",
+    "name": "userman_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.stats_menu",
+    "name": "stats_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.backup_menu",
+    "name": "backup_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.pdf_settings_menu",
+    "name": "pdf_settings_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.routers_menu",
+    "name": "routers_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.reports_menu",
+    "name": "reports_menu",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.menu_userman_from_conversation",
+    "name": "menu_userman_from_conversation",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.end_conversation_to_main",
+    "name": "end_conversation_to_main",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.end_conversation_to_hotspot",
+    "name": "end_conversation_to_hotspot",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.end_conversation_to_stats",
+    "name": "end_conversation_to_stats",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.end_conversation_to_backup",
+    "name": "end_conversation_to_backup",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.end_conversation_to_pdf_settings",
+    "name": "end_conversation_to_pdf_settings",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.end_conversation_to_routers",
+    "name": "end_conversation_to_routers",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.end_conversation_to_reports",
+    "name": "end_conversation_to_reports",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.end_conversation",
+    "name": "end_conversation",
+    "file": "bot/handlers/menus.py"
+  },
+  {
     "id": "func:bot.handlers.menus.resolve_nav_target",
     "name": "resolve_nav_target",
+    "file": "bot/handlers/menus.py"
+  },
+  {
+    "id": "func:bot.handlers.menus.go_back",
+    "name": "go_back",
     "file": "bot/handlers/menus.py"
   },
   {
@@ -330,9 +1075,179 @@
     "file": "bot/handlers/roles.py"
   },
   {
+    "id": "func:bot.handlers.roles.roles_command",
+    "name": "roles_command",
+    "file": "bot/handlers/roles.py"
+  },
+  {
+    "id": "func:bot.handlers.roles.role_set_command",
+    "name": "role_set_command",
+    "file": "bot/handlers/roles.py"
+  },
+  {
     "id": "func:bot.handlers.roles._validate_role_assignment",
     "name": "_validate_role_assignment",
     "file": "bot/handlers/roles.py"
+  },
+  {
+    "id": "func:bot.handlers.roles.add_customer_command",
+    "name": "add_customer_command",
+    "file": "bot/handlers/roles.py"
+  },
+  {
+    "id": "func:bot.handlers.roles.remove_customer_command",
+    "name": "remove_customer_command",
+    "file": "bot/handlers/roles.py"
+  },
+  {
+    "id": "func:bot.handlers.roles.assign_router_command",
+    "name": "assign_router_command",
+    "file": "bot/handlers/roles.py"
+  },
+  {
+    "id": "func:bot.handlers.roles.op_assign_router_callback",
+    "name": "op_assign_router_callback",
+    "file": "bot/handlers/roles.py"
+  },
+  {
+    "id": "func:bot.handlers.roles.op_revoke_router_callback",
+    "name": "op_revoke_router_callback",
+    "file": "bot/handlers/roles.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.discovery.discover_routers_callback",
+    "name": "discover_routers_callback",
+    "file": "bot/handlers/router_flows/discovery.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.discovery.discovered_router_selected",
+    "name": "discovered_router_selected",
+    "file": "bot/handlers/router_flows/discovery.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.discovery.disc_enter_username",
+    "name": "disc_enter_username",
+    "file": "bot/handlers/router_flows/discovery.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.discovery._process_discovered_connection",
+    "name": "_process_discovered_connection",
+    "file": "bot/handlers/router_flows/discovery.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.discovery._process_login_failure",
+    "name": "_process_login_failure",
+    "file": "bot/handlers/router_flows/discovery.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.discovery.disc_enter_password",
+    "name": "disc_enter_password",
+    "file": "bot/handlers/router_flows/discovery.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.manual_add._confirm_keyboard",
+    "name": "_confirm_keyboard",
+    "file": "bot/handlers/router_flows/manual_add.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.manual_add.manual_add_start",
+    "name": "manual_add_start",
+    "file": "bot/handlers/router_flows/manual_add.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.manual_add.manual_add_ip",
+    "name": "manual_add_ip",
+    "file": "bot/handlers/router_flows/manual_add.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.manual_add.manual_add_port",
+    "name": "manual_add_port",
+    "file": "bot/handlers/router_flows/manual_add.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.manual_add.manual_add_user",
+    "name": "manual_add_user",
+    "file": "bot/handlers/router_flows/manual_add.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.manual_add.manual_add_pass",
+    "name": "manual_add_pass",
+    "file": "bot/handlers/router_flows/manual_add.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.manual_add.manual_add_alias",
+    "name": "manual_add_alias",
+    "file": "bot/handlers/router_flows/manual_add.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.manual_add.manual_add_confirm",
+    "name": "manual_add_confirm",
+    "file": "bot/handlers/router_flows/manual_add.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.reboot.reboot_start",
+    "name": "reboot_start",
+    "file": "bot/handlers/router_flows/reboot.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.reboot.reboot_router_callback",
+    "name": "reboot_router_callback",
+    "file": "bot/handlers/router_flows/reboot.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.reboot.reboot_saved_router",
+    "name": "reboot_saved_router",
+    "file": "bot/handlers/router_flows/reboot.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.rename.rename_router_start",
+    "name": "rename_router_start",
+    "file": "bot/handlers/router_flows/rename.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.rename.rename_router_value",
+    "name": "rename_router_value",
+    "file": "bot/handlers/router_flows/rename.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.saved._build_router_status_text",
+    "name": "_build_router_status_text",
+    "file": "bot/handlers/router_flows/saved.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.saved.saved_routers_list",
+    "name": "saved_routers_list",
+    "file": "bot/handlers/router_flows/saved.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.saved.saved_router_selected",
+    "name": "saved_router_selected",
+    "file": "bot/handlers/router_flows/saved.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.saved.connect_router",
+    "name": "connect_router",
+    "file": "bot/handlers/router_flows/saved.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.saved.delete_router_confirm",
+    "name": "delete_router_confirm",
+    "file": "bot/handlers/router_flows/saved.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.saved.delete_router_execute",
+    "name": "delete_router_execute",
+    "file": "bot/handlers/router_flows/saved.py"
+  },
+  {
+    "id": "func:bot.handlers.router_flows.saved.refresh_routers",
+    "name": "refresh_routers",
+    "file": "bot/handlers/router_flows/saved.py"
+  },
+  {
+    "id": "func:bot.handlers.router_system.get_router_system_part",
+    "name": "get_router_system_part",
+    "file": "bot/handlers/router_system.py"
   },
   {
     "id": "func:bot.handlers.session_models.get_hotspot_add_session",
@@ -343,6 +1258,26 @@
     "id": "func:bot.handlers.session_models.get_hotspot_edit_session",
     "name": "get_hotspot_edit_session",
     "file": "bot/handlers/session_models.py"
+  },
+  {
+    "id": "func:bot.handlers.settings.pdf_group_text",
+    "name": "pdf_group_text",
+    "file": "bot/handlers/settings.py"
+  },
+  {
+    "id": "func:bot.handlers.settings.pdf_group_layout",
+    "name": "pdf_group_layout",
+    "file": "bot/handlers/settings.py"
+  },
+  {
+    "id": "func:bot.handlers.settings.pdf_group_misc",
+    "name": "pdf_group_misc",
+    "file": "bot/handlers/settings.py"
+  },
+  {
+    "id": "func:bot.handlers.settings.pdf_settings_option",
+    "name": "pdf_settings_option",
+    "file": "bot/handlers/settings.py"
   },
   {
     "id": "func:bot.handlers.settings._update_margins",
@@ -370,6 +1305,131 @@
     "file": "bot/handlers/settings.py"
   },
   {
+    "id": "func:bot.handlers.settings.pdf_settings_value",
+    "name": "pdf_settings_value",
+    "file": "bot/handlers/settings.py"
+  },
+  {
+    "id": "func:bot.handlers.stats._show_stats",
+    "name": "_show_stats",
+    "file": "bot/handlers/stats.py"
+  },
+  {
+    "id": "func:bot.handlers.stats.stats_hotspot",
+    "name": "stats_hotspot",
+    "file": "bot/handlers/stats.py"
+  },
+  {
+    "id": "func:bot.handlers.stats.stats_userman",
+    "name": "stats_userman",
+    "file": "bot/handlers/stats.py"
+  },
+  {
+    "id": "func:bot.handlers.stats.stats_chart_callback",
+    "name": "stats_chart_callback",
+    "file": "bot/handlers/stats.py"
+  },
+  {
+    "id": "func:bot.handlers.timeout.cmd_timeout",
+    "name": "cmd_timeout",
+    "file": "bot/handlers/timeout.py"
+  },
+  {
+    "id": "func:bot.handlers.timeout.handle_timeout_selection",
+    "name": "handle_timeout_selection",
+    "file": "bot/handlers/timeout.py"
+  },
+  {
+    "id": "func:bot.handlers.usage.usage_start",
+    "name": "usage_start",
+    "file": "bot/handlers/usage.py"
+  },
+  {
+    "id": "func:bot.handlers.usage.usage_query",
+    "name": "usage_query",
+    "file": "bot/handlers/usage.py"
+  },
+  {
+    "id": "func:bot.handlers.usage._execute_usage_query",
+    "name": "_execute_usage_query",
+    "file": "bot/handlers/usage.py"
+  },
+  {
+    "id": "func:bot.handlers.usage._show_usage_report",
+    "name": "_show_usage_report",
+    "file": "bot/handlers/usage.py"
+  },
+  {
+    "id": "func:bot.handlers.usage.usage_select_callback",
+    "name": "usage_select_callback",
+    "file": "bot/handlers/usage.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_cards_start",
+    "name": "userman_cards_start",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_type_selected",
+    "name": "userman_card_type_selected",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_profile_selected",
+    "name": "userman_card_profile_selected",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_payment_selected",
+    "name": "userman_card_payment_selected",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_timestamp_selected",
+    "name": "userman_card_timestamp_selected",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_timestamp_custom",
+    "name": "userman_card_timestamp_custom",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_count",
+    "name": "userman_card_count",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_mac_selected",
+    "name": "userman_card_mac_selected",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_prefix",
+    "name": "userman_card_prefix",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_card_skip_prefix",
+    "name": "userman_card_skip_prefix",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_back_to_profile",
+    "name": "userman_back_to_profile",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_list",
+    "name": "userman_list",
+    "file": "bot/handlers/userman.py"
+  },
+  {
+    "id": "func:bot.handlers.userman.userman_profiles",
+    "name": "userman_profiles",
+    "file": "bot/handlers/userman.py"
+  },
+  {
     "id": "func:bot.handlers.userman_search._format_userman_search_results",
     "name": "_format_userman_search_results",
     "file": "bot/handlers/userman_search.py"
@@ -380,1138 +1440,98 @@
     "file": "bot/handlers/userman_search.py"
   },
   {
+    "id": "func:bot.handlers.userman_search.userman_search_start",
+    "name": "userman_search_start",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.userman_search.userman_search_query",
+    "name": "userman_search_query",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.userman_search.userman_search_page_handler",
+    "name": "userman_search_page_handler",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.userman_search.userman_search_select",
+    "name": "userman_search_select",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.userman_search._execute_um_action",
+    "name": "_execute_um_action",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.userman_search.userman_search_action",
+    "name": "userman_search_action",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.userman_search.userman_search_back",
+    "name": "userman_search_back",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.userman_search.userman_search_add_profile",
+    "name": "userman_search_add_profile",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.userman_search.userman_search_add_profile_selected",
+    "name": "userman_search_add_profile_selected",
+    "file": "bot/handlers/userman_search.py"
+  },
+  {
+    "id": "func:bot.handlers.watchdog.watchdog_start",
+    "name": "watchdog_start",
+    "file": "bot/handlers/watchdog.py"
+  },
+  {
+    "id": "func:bot.handlers.watchdog.watchdog_stop",
+    "name": "watchdog_stop",
+    "file": "bot/handlers/watchdog.py"
+  },
+  {
+    "id": "func:bot.handlers.watchdog.watchdog_status",
+    "name": "watchdog_status",
+    "file": "bot/handlers/watchdog.py"
+  },
+  {
+    "id": "func:bot.handlers.watchdog._format_router_status",
+    "name": "_format_router_status",
+    "file": "bot/handlers/watchdog.py"
+  },
+  {
     "id": "func:bot.handlers.watchdog._parse_iso",
     "name": "_parse_iso",
     "file": "bot/handlers/watchdog.py"
   },
   {
-    "id": "func:bot.handlers.router_flows.manual_add._confirm_keyboard",
-    "name": "_confirm_keyboard",
-    "file": "bot/handlers/router_flows/manual_add.py"
+    "id": "func:bot.handlers.watchdog.watchdog_refresh",
+    "name": "watchdog_refresh",
+    "file": "bot/handlers/watchdog.py"
   },
   {
-    "id": "func:bot.handlers.router_flows.saved._build_router_status_text",
-    "name": "_build_router_status_text",
-    "file": "bot/handlers/router_flows/saved.py"
+    "id": "func:bot.handlers.watchdog._reply",
+    "name": "_reply",
+    "file": "bot/handlers/watchdog.py"
   },
   {
-    "id": "func:tests.bot.handlers.test_audit._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/test_audit.py"
+    "id": "func:bot.handlers.watchdog._check_all_routers",
+    "name": "_check_all_routers",
+    "file": "bot/handlers/watchdog.py"
   },
   {
-    "id": "func:tests.bot.handlers.test_audit._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_audit.py"
+    "id": "func:bot.handlers.watchdog._check_single",
+    "name": "_check_single",
+    "file": "bot/handlers/watchdog.py"
   },
   {
-    "id": "func:tests.bot.handlers.test_audit.test_empty_filters",
-    "name": "test_empty_filters",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_get_filters_first_call",
-    "name": "test_get_filters_first_call",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_get_filters_returns_existing",
-    "name": "test_get_filters_returns_existing",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_get_filters_default_values",
-    "name": "test_get_filters_default_values",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_build_db_filters_all_none",
-    "name": "test_build_db_filters_all_none",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_build_db_filters_with_router",
-    "name": "test_build_db_filters_with_router",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_build_db_filters_with_admin_id",
-    "name": "test_build_db_filters_with_admin_id",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_build_db_filters_with_action",
-    "name": "test_build_db_filters_with_action",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_build_db_filters_with_since_days",
-    "name": "test_build_db_filters_with_since_days",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_build_db_filters_since_days_zero_ignored",
-    "name": "test_build_db_filters_since_days_zero_ignored",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_build_db_filters_all_set",
-    "name": "test_build_db_filters_all_set",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_no_filters",
-    "name": "test_format_no_filters",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_router_only",
-    "name": "test_format_router_only",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_admin_with_label",
-    "name": "test_format_admin_with_label",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_admin_without_label",
-    "name": "test_format_admin_without_label",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_action_only",
-    "name": "test_format_action_only",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_time_only",
-    "name": "test_format_time_only",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_time_no_match",
-    "name": "test_format_time_no_match",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_all_filters",
-    "name": "test_format_all_filters",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_audit.test_format_separator_count",
-    "name": "test_format_separator_count",
-    "file": "tests/bot/handlers/test_audit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_extended._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_backup_extended.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_extended._make_context",
-    "name": "_make_context",
-    "file": "tests/bot/handlers/test_backup_extended.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_extended._make_job_context",
-    "name": "_make_job_context",
-    "file": "tests/bot/handlers/test_backup_extended.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_handler._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_backup_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_handler._bypass_decorators",
-    "name": "_bypass_decorators",
-    "file": "tests/bot/handlers/test_backup_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_handler._query_update",
-    "name": "_query_update",
-    "file": "tests/bot/handlers/test_backup_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_handler._text_update",
-    "name": "_text_update",
-    "file": "tests/bot/handlers/test_backup_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore._bypass_decorators",
-    "name": "_bypass_decorators",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore._cb_update",
-    "name": "_cb_update",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore._msg_update",
-    "name": "_msg_update",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore._ctx",
-    "name": "_ctx",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_all_fields_present",
-    "name": "test_all_fields_present",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_only_profiles",
-    "name": "test_only_profiles",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_only_users",
-    "name": "test_only_users",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_only_skipped",
-    "name": "test_only_skipped",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_empty_result",
-    "name": "test_empty_result",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_no_skipped_field",
-    "name": "test_no_skipped_field",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_skipped_none_values",
-    "name": "test_skipped_none_values",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_only_skipped_profiles",
-    "name": "test_only_skipped_profiles",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_backup_restore.test_only_skipped_users",
-    "name": "test_only_skipped_users",
-    "file": "tests/bot/handlers/test_backup_restore.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler._query",
-    "name": "_query",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler._update",
-    "name": "_update",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler._ctx",
-    "name": "_ctx",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_hotspot_type",
-    "name": "test_hotspot_type",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_userman_type",
-    "name": "test_userman_type",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_missing_keys_uses_defaults",
-    "name": "test_missing_keys_uses_defaults",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_returns_json_string",
-    "name": "test_returns_json_string",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_empty_list",
-    "name": "test_empty_list",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_unicode",
-    "name": "test_unicode",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_hotspot_batch",
-    "name": "test_hotspot_batch",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_userman_batch",
-    "name": "test_userman_batch",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_with_sold_at",
-    "name": "test_with_sold_at",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_with_customer",
-    "name": "test_with_customer",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_created_by",
-    "name": "test_created_by",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_missing_optional_fields",
-    "name": "test_missing_optional_fields",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_invalid_limit_bytes",
-    "name": "test_invalid_limit_bytes",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_no_customer_name",
-    "name": "test_no_customer_name",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_no_sold_at",
-    "name": "test_no_sold_at",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler.test_default_payment_status",
-    "name": "test_default_payment_status",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_batch_handler._make_share_ctx",
-    "name": "_make_share_ctx",
-    "file": "tests/bot/handlers/test_batch_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_commands_basic._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/test_commands_basic.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_commands_basic._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_commands_basic.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_common_handlers._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_common_handlers.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_common_handlers._make_context",
-    "name": "_make_context",
-    "file": "tests/bot/handlers/test_common_handlers.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_user_id",
-    "name": "test_returns_user_id",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_none_when_user_missing",
-    "name": "test_returns_none_when_user_missing",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_data",
-    "name": "test_returns_data",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_none_when_no_query",
-    "name": "test_returns_none_when_no_query",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_text",
-    "name": "test_returns_text",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_none_when_no_message",
-    "name": "test_returns_none_when_no_message",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_message",
-    "name": "test_returns_message",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_none_for_callback",
-    "name": "test_returns_none_for_callback",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_cast_message",
-    "name": "test_returns_cast_message",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_none_when_query_none",
-    "name": "test_returns_none_when_query_none",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_none_when_message_none",
-    "name": "test_returns_none_when_message_none",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_chat_id",
-    "name": "test_returns_chat_id",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_handler_utils.test_returns_none_when_query_none",
-    "name": "test_returns_none_when_query_none",
-    "file": "tests/bot/handlers/test_handler_utils.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_add_handler._patch_router",
-    "name": "_patch_router",
-    "file": "tests/bot/handlers/test_hotspot_add_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_add_handler.test_returns_keyboard",
-    "name": "test_returns_keyboard",
-    "file": "tests/bot/handlers/test_hotspot_add_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_add_handler.test_hours_valid",
-    "name": "test_hours_valid",
-    "file": "tests/bot/handlers/test_hotspot_add_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_add_handler.test_days_valid",
-    "name": "test_days_valid",
-    "file": "tests/bot/handlers/test_hotspot_add_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_add_handler.test_invalid_returns_empty",
-    "name": "test_invalid_returns_empty",
-    "file": "tests/bot/handlers/test_hotspot_add_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_cards_handler._patch_router",
-    "name": "_patch_router",
-    "file": "tests/bot/handlers/test_hotspot_cards_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_cards_handler._fake_cards",
-    "name": "_fake_cards",
-    "file": "tests/bot/handlers/test_hotspot_cards_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_cards_handler.test_returns_keyboard",
-    "name": "test_returns_keyboard",
-    "file": "tests/bot/handlers/test_hotspot_cards_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_common._ctx",
-    "name": "_ctx",
-    "file": "tests/bot/handlers/test_hotspot_common.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_common._update",
-    "name": "_update",
-    "file": "tests/bot/handlers/test_hotspot_common.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_delete._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/test_hotspot_delete.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_delete._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_hotspot_delete.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_edit._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/test_hotspot_edit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_edit._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_hotspot_edit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_edit.test_valid_day",
-    "name": "test_valid_day",
-    "file": "tests/bot/handlers/test_hotspot_edit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_edit.test_invalid_day",
-    "name": "test_invalid_day",
-    "file": "tests/bot/handlers/test_hotspot_edit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_edit.test_day_out_of_range",
-    "name": "test_day_out_of_range",
-    "file": "tests/bot/handlers/test_hotspot_edit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_edit.test_day_zero",
-    "name": "test_day_zero",
-    "file": "tests/bot/handlers/test_hotspot_edit.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_report_flow._patches",
-    "name": "_patches",
-    "file": "tests/bot/handlers/test_hotspot_report_flow.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_report_flow.test_generates_csv_with_rows",
-    "name": "test_generates_csv_with_rows",
-    "file": "tests/bot/handlers/test_hotspot_report_flow.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_report_flow.test_generates_csv_with_no_rows",
-    "name": "test_generates_csv_with_no_rows",
-    "file": "tests/bot/handlers/test_hotspot_report_flow.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_report_flow.test_generates_csv_with_missing_keys",
-    "name": "test_generates_csv_with_missing_keys",
-    "file": "tests/bot/handlers/test_hotspot_report_flow.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_report_handler._make_query",
-    "name": "_make_query",
-    "file": "tests/bot/handlers/test_hotspot_report_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_report_handler._report",
-    "name": "_report",
-    "file": "tests/bot/handlers/test_hotspot_report_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search._ctx",
-    "name": "_ctx",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search._admin_update",
-    "name": "_admin_update",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search._make_query",
-    "name": "_make_query",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search._make_update_with_query",
-    "name": "_make_update_with_query",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search._make_update_with_message",
-    "name": "_make_update_with_message",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search._make_search_update",
-    "name": "_make_search_update",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search._patch_query_deps",
-    "name": "_patch_query_deps",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_matching_user",
-    "name": "test_matching_user",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_no_matching_user",
-    "name": "test_no_matching_user",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_empty_hosts",
-    "name": "test_empty_hosts",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_empty_users",
-    "name": "test_empty_users",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_user_no_name",
-    "name": "test_user_no_name",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_host_no_user_field",
-    "name": "test_host_no_user_field",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_host_user_none",
-    "name": "test_host_user_none",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_multiple_hosts_partial_match",
-    "name": "test_multiple_hosts_partial_match",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_empty_results",
-    "name": "test_empty_results",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_with_results",
-    "name": "test_with_results",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_with_limit_and_uptime",
-    "name": "test_with_limit_and_uptime",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_with_comment",
-    "name": "test_with_comment",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_disabled_host",
-    "name": "test_disabled_host",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_no_hostname_uses_user",
-    "name": "test_no_hostname_uses_user",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_no_name_no_user_uses_unknown",
-    "name": "test_no_name_no_user_uses_unknown",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_no_ip",
-    "name": "test_no_ip",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_no_mac",
-    "name": "test_no_mac",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_header_format",
-    "name": "test_header_format",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_multiple_pages_header",
-    "name": "test_multiple_pages_header",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_disabled_false_not_shown",
-    "name": "test_disabled_false_not_shown",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_empty_comment_not_shown",
-    "name": "test_empty_comment_not_shown",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_search.test_empty_limit_not_shown",
-    "name": "test_empty_limit_not_shown",
-    "file": "tests/bot/handlers/test_hotspot_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_stats_handler._direct_hotspot_stats",
-    "name": "_direct_hotspot_stats",
-    "file": "tests/bot/handlers/test_hotspot_stats_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_stats_handler._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_hotspot_stats_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_stats_handler._bypass_decorators",
-    "name": "_bypass_decorators",
-    "file": "tests/bot/handlers/test_hotspot_stats_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_stats_handler._query_update",
-    "name": "_query_update",
-    "file": "tests/bot/handlers/test_hotspot_stats_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_stats_handler._message_update",
-    "name": "_message_update",
-    "file": "tests/bot/handlers/test_hotspot_stats_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_hotspot_stats_handler._base_stats",
-    "name": "_base_stats",
-    "file": "tests/bot/handlers/test_hotspot_stats_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_menus._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/test_menus.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_menus._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_menus.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_menus.test_returns_nav_target_when_found",
-    "name": "test_returns_nav_target_when_found",
-    "file": "tests/bot/handlers/test_menus.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_menus.test_returns_saved_routers_for_saved_routers",
-    "name": "test_returns_saved_routers_for_saved_routers",
-    "file": "tests/bot/handlers/test_menus.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_menus.test_falls_back_to_main_menu",
-    "name": "test_falls_back_to_main_menu",
-    "file": "tests/bot/handlers/test_menus.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_menus_extended._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_menus_extended.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_metrics_command._get_text",
-    "name": "_get_text",
-    "file": "tests/bot/handlers/test_metrics_command.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_metrics_command._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_metrics_command.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles.role_db",
-    "name": "role_db",
-    "file": "tests/bot/handlers/test_roles.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles._callback_update",
-    "name": "_callback_update",
-    "file": "tests/bot/handlers/test_roles.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler._bypass_decorators",
-    "name": "_bypass_decorators",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler._msg_update",
-    "name": "_msg_update",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler._callback_update",
-    "name": "_callback_update",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_normal_text",
-    "name": "test_normal_text",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_forwarded_message",
-    "name": "test_forwarded_message",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_forwarded_no_role",
-    "name": "test_forwarded_no_role",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_forwarded_no_text",
-    "name": "test_forwarded_no_text",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_no_text",
-    "name": "test_no_text",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_empty_text",
-    "name": "test_empty_text",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_invalid_target_id",
-    "name": "test_invalid_target_id",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_only_two_parts",
-    "name": "test_only_two_parts",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_none_msg",
-    "name": "test_none_msg",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_roles_handler.test_extra_parts",
-    "name": "test_extra_parts",
-    "file": "tests/bot/handlers/test_roles_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_settings._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_settings.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_settings._mock_db",
-    "name": "_mock_db",
-    "file": "tests/bot/handlers/test_settings.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_settings._query_update",
-    "name": "_query_update",
-    "file": "tests/bot/handlers/test_settings.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_settings._text_update",
-    "name": "_text_update",
-    "file": "tests/bot/handlers/test_settings.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_settings._ctx",
-    "name": "_ctx",
-    "file": "tests/bot/handlers/test_settings.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_stats_handlers._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_stats_handlers.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_stats_handlers._mock_deps",
-    "name": "_mock_deps",
-    "file": "tests/bot/handlers/test_stats_handlers.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_stats_handlers._query_update",
-    "name": "_query_update",
-    "file": "tests/bot/handlers/test_stats_handlers.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_timeout._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/test_timeout.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_timeout._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_timeout.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_usage._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/test_usage.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_usage._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/test_usage.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_userman._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_userman.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_userman._mock_db_session",
-    "name": "_mock_db_session",
-    "file": "tests/bot/handlers/test_userman.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_userman._ctx",
-    "name": "_ctx",
-    "file": "tests/bot/handlers/test_userman.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_userman._query_update",
-    "name": "_query_update",
-    "file": "tests/bot/handlers/test_userman.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_userman_search._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_userman_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_userman_search._ctx",
-    "name": "_ctx",
-    "file": "tests/bot/handlers/test_userman_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_userman_search._admin_update",
-    "name": "_admin_update",
-    "file": "tests/bot/handlers/test_userman_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_userman_search._allow",
-    "name": "_allow",
-    "file": "tests/bot/handlers/test_userman_search.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_watchdog_handler._reset_rate_limit",
-    "name": "_reset_rate_limit",
-    "file": "tests/bot/handlers/test_watchdog_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_watchdog_handler._cb_update",
-    "name": "_cb_update",
-    "file": "tests/bot/handlers/test_watchdog_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_watchdog_handler._msg_update",
-    "name": "_msg_update",
-    "file": "tests/bot/handlers/test_watchdog_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_watchdog_handler._ctx",
-    "name": "_ctx",
-    "file": "tests/bot/handlers/test_watchdog_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_watchdog_handler._router",
-    "name": "_router",
-    "file": "tests/bot/handlers/test_watchdog_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_watchdog_handler.side_effect",
-    "name": "side_effect",
-    "file": "tests/bot/handlers/test_watchdog_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_watchdog_handler.side_effect",
-    "name": "side_effect",
-    "file": "tests/bot/handlers/test_watchdog_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.test_watchdog_handler.side_effect",
-    "name": "side_effect",
-    "file": "tests/bot/handlers/test_watchdog_handler.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_discovery._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/router_flows/test_discovery.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_discovery._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/router_flows/test_discovery.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add._make_patches",
-    "name": "_make_patches",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add._clean_rate_limits",
-    "name": "_clean_rate_limits",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.setup_method",
-    "name": "setup_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.teardown_method",
-    "name": "teardown_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.setup_method",
-    "name": "setup_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.teardown_method",
-    "name": "teardown_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.setup_method",
-    "name": "setup_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.teardown_method",
-    "name": "teardown_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.setup_method",
-    "name": "setup_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.teardown_method",
-    "name": "teardown_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.setup_method",
-    "name": "setup_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.teardown_method",
-    "name": "teardown_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.setup_method",
-    "name": "setup_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.teardown_method",
-    "name": "teardown_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.setup_method",
-    "name": "setup_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_manual_add.teardown_method",
-    "name": "teardown_method",
-    "file": "tests/bot/handlers/router_flows/test_manual_add.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_reboot._make_query_mock",
-    "name": "_make_query_mock",
-    "file": "tests/bot/handlers/router_flows/test_reboot.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_reboot._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/router_flows/test_reboot.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_reboot._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/router_flows/test_reboot.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_rename._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/router_flows/test_rename.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_rename._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/router_flows/test_rename.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_saved._start_patches",
-    "name": "_start_patches",
-    "file": "tests/bot/handlers/router_flows/test_saved.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_saved._all_patches",
-    "name": "_all_patches",
-    "file": "tests/bot/handlers/router_flows/test_saved.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_saved._make_router",
-    "name": "_make_router",
-    "file": "tests/bot/handlers/router_flows/test_saved.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_saved.test_online_router",
-    "name": "test_online_router",
-    "file": "tests/bot/handlers/router_flows/test_saved.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_saved.test_offline_router",
-    "name": "test_offline_router",
-    "file": "tests/bot/handlers/router_flows/test_saved.py"
-  },
-  {
-    "id": "func:tests.bot.handlers.router_flows.test_saved.test_empty_list",
-    "name": "test_empty_list",
-    "file": "tests/bot/handlers/router_flows/test_saved.py"
+    "id": "func:bot.handlers.watchdog._notify_admins",
+    "name": "_notify_admins",
+    "file": "bot/handlers/watchdog.py"
   }
 ]

@@ -1,9 +1,12 @@
 {
-  "total_py_files": 974,
-  "total_entities": 14799,
-  "total_modules": 974,
-  "total_handlers": 303,
-  "total_services": 245,
+  "total_py_files": 133,
+  "total_entities": 1102,
+  "total_functions": 793,
+  "total_classes": 53,
+  "total_methods": 256,
+  "total_modules": 133,
+  "total_handlers": 307,
+  "total_services": 32,
   "total_repositories": 11,
   "status": "Fully Generated & Verified"
 }

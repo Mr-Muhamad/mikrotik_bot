@@ -1,118 +1,118 @@
 [
   {
     "command": "start",
-    "description": "القائمة الرئيسية"
+    "description": "🏠 القائمة الرئيسية"
   },
   {
     "command": "help",
-    "description": "المساعدة والتعليمات"
+    "description": "❓ مساعدة"
   },
   {
     "command": "add",
-    "description": "إضافة مستخدم Hotspot"
+    "description": "➕ إضافة هوتسبوت"
   },
   {
     "command": "edit",
-    "description": "تعديل مستخدم Hotspot"
+    "description": "✏️ تعديل هوتسبوت"
   },
   {
     "command": "delete",
-    "description": "حذف مستخدم Hotspot"
+    "description": "🗑️ حذف هوتسبوت"
   },
   {
     "command": "search",
-    "description": "بحث عن مستخدم أو جهاز"
+    "description": "🔍 بحث هوتسبوت"
   },
   {
     "command": "cards",
-    "description": "إنشاء كروت Hotspot PDF"
+    "description": "🎫 كروت هوتسبوت"
   },
   {
     "command": "userman",
-    "description": "إدارة User Manager"
-  },
-  {
-    "command": "backup",
-    "description": "قائمة النسخ الاحتياطي والاستعادة"
+    "description": "🎫 يوزر مانيجر"
   },
   {
     "command": "routers",
-    "description": "إدارة الروترات المحفوظة"
-  },
-  {
-    "command": "addrouter",
-    "description": "إضافة روتر يدوياً"
-  },
-  {
-    "command": "settings",
-    "description": "إعدادات PDF والكروت"
-  },
-  {
-    "command": "reboot",
-    "description": "إعادة تشغيل الراوتر المختار"
-  },
-  {
-    "command": "timeout",
-    "description": "إعداد مدة خمول الجلسة"
-  },
-  {
-    "command": "metrics",
-    "description": "مقاييس الأداء واستخدام السيرفر"
-  },
-  {
-    "command": "logs",
-    "description": "عرض سجل التدقيق والإجراءات"
-  },
-  {
-    "command": "sync",
-    "description": "إعادة تحديث قائمة الأوامر السريعة"
-  },
-  {
-    "command": "clean",
-    "description": "تنظيف رسائل المحادثة"
-  },
-  {
-    "command": "usage",
-    "description": "تقرير استهلاك مستخدم معين"
-  },
-  {
-    "command": "watchdog",
-    "description": "عرض حالة مراقبة الروترات"
-  },
-  {
-    "command": "watchdog_start",
-    "description": "بدء مراقبة الروترات الفعالة"
-  },
-  {
-    "command": "cancel",
-    "description": "إلغاء العملية الحالية"
+    "description": "🌐 إدارة الروترات"
   },
   {
     "command": "reports",
-    "description": "تقارير المبيعات والاستخدام"
+    "description": "📈 التقارير"
   },
   {
-    "command": "roles",
-    "description": "إدارة أدوار وأذونات المشرفين"
+    "command": "backup",
+    "description": "📦 النسخ الاحتياطي"
   },
   {
-    "command": "batches",
-    "description": "عرض وتصدير دفعات الكروت"
+    "command": "timeout",
+    "description": "⏰ إعداد مدة الخمول"
+  },
+  {
+    "command": "settings",
+    "description": "⚙️ إعدادات الطباعة"
+  },
+  {
+    "command": "reboot",
+    "description": "🔄 إعادة التشغيل"
+  },
+  {
+    "command": "metrics",
+    "description": "📊 أداء الاتصال"
+  },
+  {
+    "command": "logs",
+    "description": "📋 سجل التدقيق"
+  },
+  {
+    "command": "sync",
+    "description": "🔄 تحديث القائمة"
+  },
+  {
+    "command": "clean",
+    "description": "🧹 مسح المحادثة"
+  },
+  {
+    "command": "usage",
+    "description": "📊 تقرير الاستخدام"
   },
   {
     "command": "report",
-    "description": "تقرير المبيعات"
+    "description": "📊 تقرير المبيعات"
+  },
+  {
+    "command": "watchdog",
+    "description": "🔍 حالة الروترات"
+  },
+  {
+    "command": "watchdog_start",
+    "description": "🟢 بدء المراقبة"
+  },
+  {
+    "command": "roles",
+    "description": "👥 أدوار المشرفين"
+  },
+  {
+    "command": "batches",
+    "description": "📦 دفعات الكروت"
   },
   {
     "command": "sales",
-    "description": "المبيعات"
+    "description": "💰 المبيعات"
+  },
+  {
+    "command": "addrouter",
+    "description": "🌐 إضافة راوتر"
   },
   {
     "command": "add_customer",
-    "description": "إضافة عميل"
+    "description": "👤 إضافة عميل"
   },
   {
     "command": "remove_customer",
-    "description": "إزالة عميل"
+    "description": "👤 إزالة عميل"
+  },
+  {
+    "command": "cancel",
+    "description": "❌ إلغاء"
   }
 ]

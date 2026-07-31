@@ -1,2 +1,0 @@
-[     131ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ http://192.168.194.200:5000/mikrotik/1:0
-[   23362ms] [ERROR] Failed to load resource: the server responded with a status of 404 (NOT FOUND) @ http://192.168.194.200:5000/mikrotik:0
