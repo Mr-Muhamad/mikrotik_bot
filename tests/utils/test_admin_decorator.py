@@ -100,6 +100,8 @@ class TestAdminOnlyRateLimit:
         u2 = _update(user_id=admin_id)
         ctx = _ctx()
         await handler(u1, ctx)
+        # Push timestamp to pass the 50ms guard
+        _rate_limit_data[(admin_id, "handler")] = time.monotonic() - 0.1
         result = await handler(u2, ctx)
         # Second call within 1s is dropped
         assert result is None
@@ -131,6 +133,8 @@ class TestAdminOnlyRateLimit:
         u2 = _update(user_id=admin_id, has_message=False, has_callback=True)
         ctx = _ctx()
         await handler(u1, ctx)
+        # Push timestamp to pass the 50ms guard
+        _rate_limit_data[(admin_id, "handler")] = time.monotonic() - 0.1
         await handler(u2, ctx)
         u2.callback_query.answer.assert_called_once()
 
@@ -144,11 +148,15 @@ class TestCheckRateLimit:
 
     def test_immediate_second_call_returns_false(self):
         _check_rate_limit(42)
+        # Push timestamp to pass the 50ms guard in _check_rate_limit
+        _rate_limit_data[(42, "")] = time.monotonic() - 0.1
         assert _check_rate_limit(42) is False
 
     def test_different_users_independent(self):
         _check_rate_limit(1)
         assert _check_rate_limit(2) is True
+        # Push timestamp to pass the 50ms guard
+        _rate_limit_data[(1, "")] = time.monotonic() - 0.1
         assert _check_rate_limit(1) is False
 
     def test_stale_entries_cleaned_after_interval(self, monkeypatch):
