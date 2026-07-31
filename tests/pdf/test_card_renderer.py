@@ -3,6 +3,8 @@
 import os
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from core.card_models import CardData
 from pdf.card_generator import CardGenerator
 from pdf.card_renderer import (
@@ -209,6 +211,68 @@ class TestCardRendererDraw:
         )
         assert c.drawString.call_count >= 4
 
+    def test_draw_credentials_empty_password_username_only(self):
+        c = _mock_canvas()
+        r = CardRenderer(font_name="Helvetica")
+        # EMPTY_PASSWORD cards carry password="" and show_password=False
+        card = CardData(
+            username="u123",
+            password="",
+            card_number=1,
+            profile="default",
+        )
+        r._draw_credentials(c, 10, 10, 50, 80, card)
+        # Should not raise and should draw only the username label+value
+        assert c.drawString.call_count >= 2
+
+    def test_draw_credentials_empty_password_does_not_draw_password_label(self):
+        c = _mock_canvas()
+        r = CardRenderer(font_name="Helvetica")
+        card = CardData(
+            username="u123",
+            password="",
+            card_number=1,
+            profile="default",
+        )
+        r._draw_credentials(c, 10, 10, 50, 80, card)
+        labels = [args[0][0] for args in c.drawString.call_args_list if args[0]]
+        assert not any("الباسورد" in str(label) for label in labels)
+
+    def test_draw_credentials_dict_empty_password_show_password_false(self):
+        c = _mock_canvas()
+        r = CardRenderer(font_name="Helvetica")
+        r._draw_credentials(
+            c,
+            10,
+            10,
+            50,
+            80,
+            {
+                "username": "u",
+                "password": "",
+                "show_password": False,
+            },
+        )
+        assert c.drawString.call_count >= 2
+
+    def test_draw_credentials_dict_show_password_true_empty_raises(self):
+        c = _mock_canvas()
+        r = CardRenderer(font_name="Helvetica")
+        # show_password=True with an empty password is an inconsistent card state
+        with pytest.raises(ValueError, match="Password is required"):
+            r._draw_credentials(
+                c,
+                10,
+                10,
+                50,
+                80,
+                {
+                    "username": "u",
+                    "password": "",
+                    "show_password": True,
+                },
+            )
+
     def test_draw_qr_with_dns_renders(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica", hotspot_dns="login.mynet.com")
@@ -276,6 +340,32 @@ class TestCardGenerator:
         call_args = mock_renderer.generate_cards_pdf.call_args
         # First positional should be the cards list
         assert call_args.args[0] == cards or call_args.kwargs.get("cards") == cards
+
+    def test_generate_pdf_accepts_empty_password_cards(self, tmp_path):
+        """EMPTY_PASSWORD cards must render through the real pipeline end-to-end."""
+        gen = CardGenerator()
+        cards = [
+            CardData(username="u123", password="", card_number=1, profile="default"),
+            CardData(username="u456", password="", card_number=2, profile="default"),
+        ]
+        settings = {
+            "cards_per_row": 2,
+            "cards_per_page": 4,
+            "margin_top": 10,
+            "margin_bottom": 10,
+            "margin_left": 10,
+            "margin_right": 10,
+            "spacing_x": 5,
+            "spacing_y": 5,
+            "brand_name": "",
+            "hotspot_dns": "",
+            "footer_text": "",
+            "show_qr": 0,
+        }
+        with patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings):
+            result = gen.generate_pdf(cards, output_dir=str(tmp_path))
+        assert os.path.exists(result)
+        assert result.endswith(".pdf")
 
 
 class TestDrawFooterCallerId:

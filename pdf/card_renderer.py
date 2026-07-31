@@ -209,10 +209,11 @@ class CardRenderer:
         card = _normalize_card(card)
         username = str(card.get("username", ""))
         password_raw = card.get("password")
-        if not password_raw:
-            raise ValueError("Password is required for card generation")
-        password = str(password_raw)
+        password = str(password_raw) if password_raw else ""
         show_password = card.get("show_password", False)
+
+        if show_password and not password:
+            raise ValueError("Password is required for card generation")
 
         data_top = y + height - 10.5 * mm
         footer_line_y = y + 5 * mm
