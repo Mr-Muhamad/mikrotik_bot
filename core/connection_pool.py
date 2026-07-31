@@ -288,6 +288,9 @@ class ConnectionPool:
             keys = list(self.pools.keys())
         for key in keys:
             self.close_connection(key)
+        with self._lock:
+            self.pools.clear()
+            self.active_counts.clear()
 
     def get_version(self, router_key: str = "router1") -> str:
         with self._lock:
