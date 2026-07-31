@@ -52,9 +52,7 @@ def deserialize_cards(data: str) -> list["CardData"]:
     for item in raw:
         if not isinstance(item, dict):
             continue
-        password_raw = item.get("password")
-        if not password_raw:
-            raise ValueError("Password is required for card generation")
+        password_raw = item.get("password", "")
         cards.append(
             CardData(
                 username=item.get("username", ""),

@@ -1,5 +1,6 @@
 """Unit tests for core/connection_pool.py — ConnectionPool class."""
 
+import queue
 import time
 from unittest.mock import MagicMock, patch
 
@@ -188,10 +189,27 @@ class TestStaleConnectionHealthCheck:
 
             fake_api.path.return_value.side_effect = LibRouterosError("stale")
 
-            api2 = pool.get_connection("discovered_1")
+            pool.get_connection("discovered_1")
 
             assert mock_connect.call_count == 2
             fake_api.close.assert_called()
+            assert pool.active_counts["discovered_1"] == 1
+
+    def test_stale_discard_close_error_ignored(self, pool, fake_api):
+        fake_api.close = MagicMock(side_effect=OSError("already closed"))
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
+        ):
+            api1 = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api1)
+
+            fake_api.path.return_value.side_effect = LibRouterosError("stale")
+
+            api2 = pool.get_connection("discovered_1")
+
+            assert api2 is fake_api
+            assert mock_connect.call_count == 2
             assert pool.active_counts["discovered_1"] == 1
 
     def test_stale_os_error_discards_and_reconnects(self, pool, fake_api):
@@ -204,7 +222,7 @@ class TestStaleConnectionHealthCheck:
 
             fake_api.path.return_value.side_effect = OSError("connection reset")
 
-            api2 = pool.get_connection("discovered_1")
+            pool.get_connection("discovered_1")
 
             assert mock_connect.call_count == 2
             assert pool.active_counts["discovered_1"] == 1
@@ -235,10 +253,119 @@ class TestStaleConnectionHealthCheck:
 
             fake_api.path.return_value.side_effect = lambda *a, **kw: time.sleep(10)
 
-            api2 = pool.get_connection("discovered_1")
+            pool.get_connection("discovered_1")
 
             assert mock_connect.call_count == 2
             assert pool.active_counts["discovered_1"] == 1
+
+    def test_pool_timeout_raises_timeout_error(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+            patch("queue.Queue.get", side_effect=queue.Empty()),
+        ):
+            pool.get_connection("discovered_1")
+            pool.get_connection("discovered_1")
+            pool.get_connection("discovered_1")
+            assert pool.active_counts["discovered_1"] == 3
+
+            with pytest.raises(TimeoutError, match="Connection pool timeout"):
+                pool.get_connection("discovered_1")
+
+
+class TestReleaseConnectionEdgeCases:
+    def test_release_broken_close_error_logged(self, pool, fake_api):
+        fake_api.close = MagicMock(side_effect=LibRouterosError("close failed"))
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+            patch("core.connection_pool.logger.debug") as mock_debug,
+        ):
+            api = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api, broken=True)
+            mock_debug.assert_called()
+            assert pool.active_counts["discovered_1"] == 0
+
+    def test_release_connection_queue_full_closes_api(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+        ):
+            api1 = pool.get_connection("discovered_1")
+            api2 = pool.get_connection("discovered_1")
+            api3 = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api1)
+            pool.release_connection("discovered_1", api2)
+            pool.release_connection("discovered_1", api3)
+
+            pool.release_connection("discovered_1", fake_api)
+
+            assert pool.active_counts["discovered_1"] == 2
+            fake_api.close.assert_called()
+
+
+class TestReconnect:
+    def test_reconnect_success(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+        ):
+            api = pool.reconnect("discovered_1")
+            assert api is fake_api
+            assert pool.active_counts["discovered_1"] == 1
+
+    def test_reconnect_failure_decrements_and_raises(self, pool):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", side_effect=LibRouterosError("refused")),
+            patch("core.connection_pool.time.sleep"),
+        ):
+            with pytest.raises(LibRouterosError):
+                pool.reconnect("discovered_1")
+            assert pool.active_counts.get("discovered_1", 0) == 0
+
+
+class TestCloseConnection:
+    def test_close_connection_missing_router_returns(self, pool):
+        pool.close_connection("discovered_1")
+
+    def test_close_connection_drain_empty_breaks(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+            patch("queue.Queue.get_nowait", side_effect=queue.Empty()),
+        ):
+            api = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api)
+            # Concurrent taker already claimed the item -> get_nowait raises Empty
+            pool.close_connection("discovered_1")  # must not raise
+
+    def test_close_connection_close_error_logged(self, pool, fake_api):
+        fake_api.close = MagicMock(side_effect=OSError("close error"))
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+            patch("core.connection_pool.logger.debug") as mock_debug,
+        ):
+            api = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api)
+            pool.close_connection("discovered_1")
+            mock_debug.assert_called()
+
+
+class TestHasActiveConnection:
+    def test_no_connection(self, pool):
+        assert pool.has_active_connection("discovered_1") is False
+
+    def test_with_connection(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+        ):
+            pool.get_connection("discovered_1")
+            assert pool.has_active_connection("discovered_1") is True
+            pool.close_all()
+            assert pool.has_active_connection("discovered_1") is False
 
 
 class TestVersionCache:

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
 from telegram import InlineKeyboardMarkup
 
 from bot.keyboards import (
@@ -1240,13 +1241,13 @@ class TestGetLogsFilterKeyboard:
     def test_pagination_prev_and_next(self):
         m = get_logs_filter_keyboard({}, page=1, total=25, page_size=10)
         flat = _flat_btns(m)
-        assert any("السابس" in t for t in flat)
+        assert any("السابق" in t for t in flat)
         assert any("التالي" in t for t in flat)
 
     def test_pagination_prev_only(self):
         m = get_logs_filter_keyboard({}, page=2, total=25, page_size=10)
         flat = _flat_btns(m)
-        assert any("السابس" in t for t in flat)
+        assert any("السابق" in t for t in flat)
         assert not any("التالي" in t for t in flat)
 
     def test_nav_callbacks(self):
@@ -1493,7 +1494,7 @@ class TestGetOperatorRouterAssignmentKeyboard:
         assert not any("NoId" in t for t in flat)
 
     def test_fallback_name_fields(self):
-        routers = [{"id": 3, "identity": "IdentityOnly", "ip_address": ""}]
+        routers = [{"id": 3, "identity": "IdentityOnly", "ip_address": "1.1.1.1"}]
         m = get_operator_router_assignment_keyboard(1, routers, [])
         flat = _flat_btns(m)
         assert any("IdentityOnly" in t for t in flat)
@@ -1512,12 +1513,10 @@ class TestGetOperatorRouterAssignmentKeyboard:
         flat = _flat_btns(m)
         assert any("10.0.0.1" in t for t in flat)
 
-    def test_no_ip_in_label_when_empty(self):
+    def test_missing_ip_raises_value_error(self):
         routers = [{"id": 1, "name_alias": "R", "ip_address": ""}]
-        m = get_operator_router_assignment_keyboard(1, routers, [])
-        flat = _flat_btns(m)
-        # Only the name alias, no IP
-        assert any("R" in t and "()" not in t for t in flat)
+        with pytest.raises(ValueError, match="IP address is required for router listing"):
+            get_operator_router_assignment_keyboard(1, routers, [])
 
     def test_id_fallback_name(self):
         routers = [{"id": 42, "ip_address": "1.1.1.1"}]
