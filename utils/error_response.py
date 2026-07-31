@@ -1,5 +1,4 @@
 import logging
-import re
 from collections.abc import Callable
 from dataclasses import dataclass
 
@@ -11,6 +10,7 @@ from telegram.ext import ContextTypes
 
 from core.metrics import record_error
 from utils.chat_cleaner import track_msg
+from utils.formatters import sanitize_text as _sanitize_error_text
 from utils.logging_setup import (
     COMPONENT_HANDLER,
     COMPONENT_TELEGRAM,
@@ -36,46 +36,6 @@ ERROR_MESSAGES: dict[str, str] = {
     CATEGORY_STORAGE: "💾 مساحة التخزين على سيرفر البوت غير كافية أو يتعذر كتابة الملفات المحلية.",
     CATEGORY_GENERAL: "❌ حدث خطأ غير متوقع. حاول مرة أخرى أو استخدم /start.",
 }
-
-# كلمات تدل على أسرار محتملة في رسائل الخطأ
-_SECRET_KEYWORDS = (
-    "password",
-    "passwd",
-    "secret",
-    "token",
-    "credential",
-    "private",
-    "api[_-]?key",
-)
-
-# أنماط لإخفاء المعرّفات الحساسة (IP قد يكون حساساً، لكن نتركه لأن المستخدمين يحتاجونه)
-_SECRET_PATTERNS = [
-    # key=value أو key: value — 2 مجموعات: (prefix) + (value to replace)
-    # يخفي فقط القيم التي تزيد عن 5 أحرف لتجنب إخفاء كلمات قصيرة مثل "admin"
-    re.compile(
-        r"(?i)(" + "|".join(_SECRET_KEYWORDS) + r")\s*[=:]\s*(\S{6,})",
-    ),
-    # Authorization: Bearer xxx
-    re.compile(r"(?i)(authorization\s*:\s*bearer\s+)(\S+)"),
-    # Basic Auth header
-    re.compile(r"(?i)(basic\s+)([A-Za-z0-9+/=]+)"),
-]
-
-_SANITIZED_PLACEHOLDER = "[إخفاء]"
-
-
-def _sanitize_error_text(raw: str) -> str:
-    """إخفاء أي أسرار محتملة في نص الخطأ قبل عرضه للمستخدم.
-
-    الأمان أولاً: عند الشك، نُخفي. السجلات الكاملة تبقى في logger.
-    """
-    if not raw:
-        return raw
-    sanitized = raw
-    for pattern in _SECRET_PATTERNS:
-        sanitized = pattern.sub(rf"\1{_SANITIZED_PLACEHOLDER}", sanitized)
-    return sanitized
-
 
 # Public alias — external modules should import this instead of the private form.
 sanitize_error_text = _sanitize_error_text

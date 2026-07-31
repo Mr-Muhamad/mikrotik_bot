@@ -79,6 +79,41 @@ def format_bytes(bytes_val: str | None) -> str:
     return f"{val} B"
 
 
+_SECRET_KEYWORDS = (
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "credential",
+    "private",
+    "api[_-]?key",
+)
+
+_SECRET_PATTERNS = [
+    re.compile(
+        r"(?i)(" + "|".join(_SECRET_KEYWORDS) + r")\s*[=:]\s*(\S{6,})",
+    ),
+    re.compile(r"(?i)(authorization\s*:\s*bearer\s+)(\S+)"),
+    re.compile(r"(?i)(basic\s+)([A-Za-z0-9+/=]+)"),
+]
+
+_SANITIZED_PLACEHOLDER = "[إخفاء]"
+
+
+def sanitize_text(raw: str) -> str:
+    """Strip password-like values from a text string.
+
+    Masks values that follow known sensitive keys (password=, token:, etc.).
+    Safe to call on any user-facing or log-bound string.
+    """
+    if not raw:
+        return raw
+    sanitized = raw
+    for pattern in _SECRET_PATTERNS:
+        sanitized = pattern.sub(rf"\1{_SANITIZED_PLACEHOLDER}", sanitized)
+    return sanitized
+
+
 SENSITIVE_API_FIELDS = frozenset(
     {
         "password",
@@ -131,8 +166,8 @@ def sanitize_log_data(data: Any, max_depth: int = 3) -> Any:
         }
     if isinstance(data, (list, tuple)):
         return [sanitize_log_data(item, max_depth - 1) for item in data]
-    if isinstance(data, str) and len(data) > 200:
-        return data[:200] + "..."
+    if isinstance(data, str):
+        return sanitize_text(data[:200] + "..." if len(data) > 200 else data)
     return data
 
 
