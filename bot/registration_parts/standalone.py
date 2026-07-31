@@ -15,7 +15,6 @@ from bot.handlers.audit import (
     logs_clear_callback,
     logs_command,
     logs_filter_callback,
-    logs_filter_text_callback,
     logs_page_callback,
     logs_set_callback,
     logs_subnav_callback,
@@ -40,7 +39,6 @@ from bot.handlers.batch import (
     batch_regen,
     batch_select,
     batches_command,
-    batches_search_start,
     mark_batch_paid_handler,
     show_sales_summary,
 )
@@ -56,16 +54,9 @@ from bot.handlers.commands_basic import (
     sync_commands,
 )
 from bot.handlers.hotspot import hotspot_stats, hotspot_stats_day_input
-from bot.handlers.hotspot_add import hotspot_add_start
-from bot.handlers.hotspot_cards import hotspot_cards_start
 from bot.handlers.hotspot_common import handle_page_callback
-from bot.handlers.hotspot_delete import hotspot_delete_start
-from bot.handlers.hotspot_edit import hotspot_edit_start
 from bot.handlers.hotspot_report import report_command, report_export_csv, report_export_excel
-from bot.handlers.hotspot_search import (
-    hotspot_search_start,
-    unblock_mac_handler,
-)
+from bot.handlers.hotspot_search import unblock_mac_handler
 from bot.handlers.menus import (
     backup_menu,
     go_back,
@@ -101,8 +92,8 @@ from bot.handlers.routers import (
 from bot.handlers.settings import pdf_group_layout, pdf_group_misc, pdf_group_text
 from bot.handlers.stats import stats_chart_callback, stats_hotspot, stats_userman
 from bot.handlers.timeout import cmd_timeout, handle_timeout_selection
-from bot.handlers.usage import usage_select_callback, usage_start
-from bot.handlers.userman import userman_cards_start, userman_list, userman_profiles
+from bot.handlers.usage import usage_select_callback
+from bot.handlers.userman import userman_list, userman_profiles
 from bot.handlers.watchdog import (
     watchdog_refresh,
     watchdog_start,
@@ -123,15 +114,8 @@ standalone(CommandHandler, command="backup")(backup_menu)
 standalone(CommandHandler, command="settings")(pdf_settings_menu)
 standalone(CommandHandler, command="routers")(routers_menu)
 standalone(CommandHandler, command="sync")(sync_commands)
-standalone(CommandHandler, command="add")(hotspot_add_start)
-standalone(CommandHandler, command="edit")(hotspot_edit_start)
-standalone(CommandHandler, command="delete")(hotspot_delete_start)
-standalone(CommandHandler, command="search")(hotspot_search_start)
-standalone(CommandHandler, command="cards")(hotspot_cards_start)
-standalone(CommandHandler, command="userman")(userman_cards_start)
 standalone(CommandHandler, command="hotspot")(hotspot_menu)
 standalone(CommandHandler, command="stats")(stats_menu)
-standalone(CommandHandler, command="usage")(usage_start)
 standalone(CommandHandler, command="timeout")(cmd_timeout)
 
 standalone(CallbackQueryHandler, pattern=PATTERNS["set_timeout"])(handle_timeout_selection)
@@ -150,11 +134,6 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["menu_reports"])(reports_menu)
 standalone(CallbackQueryHandler, pattern=PATTERNS["menu_pdf_settings"])(pdf_settings_menu)
 standalone(CallbackQueryHandler, pattern=PATTERNS["cancel_edit"])(cancel)
 standalone(CallbackQueryHandler, pattern=PATTERNS["clean_chat"])(clean_chat)
-standalone(CallbackQueryHandler, pattern=PATTERNS["hotspot_add"])(hotspot_add_start)
-standalone(CallbackQueryHandler, pattern=PATTERNS["hotspot_edit"])(hotspot_edit_start)
-standalone(CallbackQueryHandler, pattern=PATTERNS["hotspot_delete"])(hotspot_delete_start)
-standalone(CallbackQueryHandler, pattern=PATTERNS["hotspot_search"])(hotspot_search_start)
-standalone(CallbackQueryHandler, pattern=PATTERNS["hotspot_cards"])(hotspot_cards_start)
 standalone(CallbackQueryHandler, pattern=PATTERNS["hotspot_stats"])(hotspot_stats)
 standalone(CallbackQueryHandler, pattern=PATTERNS["stats_day"])(hotspot_stats_day_input)
 standalone(CallbackQueryHandler, pattern=PATTERNS["userman_list"])(userman_list)
@@ -216,10 +195,7 @@ standalone(CommandHandler, command="sales")(show_sales_summary)
 standalone(CallbackQueryHandler, pattern=PATTERNS["sales_summary"])(show_sales_summary)
 standalone(CallbackQueryHandler, pattern=PATTERNS["batches_menu"])(batches_command)
 standalone(CallbackQueryHandler, pattern=PATTERNS["logs_menu"])(logs_command)
-standalone(CallbackQueryHandler, pattern=PATTERNS["usage_start"])(usage_start)
 standalone(CallbackQueryHandler, pattern=PATTERNS["usage_sel"])(usage_select_callback)
-standalone(CallbackQueryHandler, pattern=PATTERNS["batches_search"])(batches_search_start)
-standalone(CallbackQueryHandler, pattern=PATTERNS["logs_filter_text"])(logs_filter_text_callback)
 # حظر MAC — standalone لأن unblock قد يأتي من خارج conversation
 standalone(CallbackQueryHandler, pattern=PATTERNS["unblock_mac"])(unblock_mac_handler)
 standalone(CallbackQueryHandler, pattern=PATTERNS["reports_menu"])(reports_menu)

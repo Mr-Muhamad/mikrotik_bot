@@ -193,6 +193,11 @@ async def main() -> int:
     hotspot_manager.get_profiles = MagicMock(return_value=["default", "10MB"])
     hotspot_manager.user_exists = MagicMock(return_value=False)
 
+    # Keep the smoke run side-effect-free: skip persisting card batches to the dev DB
+    import bot.handlers.hotspot_cards as hotspot_cards_module
+
+    hotspot_cards_module.save_card_batch = MagicMock(return_value=1)
+
     application = (
         Application.builder()
         .bot(FakeBot(config.BOT_TOKEN))
@@ -294,10 +299,31 @@ async def main() -> int:
     check("11. hotspot_cards_start", len(sent_messages) > 0)
     await step_msg("/cancel", reset_conv=True)
 
-    # H8: Blocked MAC List
+    # H6b: Full cards flow with EMPTY_PASSWORD (no password) must produce a PDF end-to-end
     sent_messages.clear()
-    await step_cb("blocked_list", reset_conv=True)
+    await step_cb("hotspot_cards", reset_conv=True)
+    await step_msg("1")
+    await step_msg("4")
+    await step_cb("hs_skip_prefix")
+    await step_cb("hs_skip_price")
+    await step_cb("hs_card_type3")
+    await step_cb("hs_card_profile_0")
+    await step_cb("uptime_days")
+    await step_msg("1")
+    await step_cb("hs_skip_bytes")
+    check(
+        "11b. hotspot_cards_empty_password_pdf",
+        any(m.get("type") == "document" for m in sent_messages),
+    )
+    await step_msg("/cancel", reset_conv=True)
+
+    # H8: Blocked MAC List (button lives inside the search flow state)
+    sent_messages.clear()
+    await step_cb("hotspot_search", reset_conv=True)
+    await step_msg("mac:aa:bb:cc:dd:ee:ff")
+    await step_cb("blocked_list")
     check("12. hotspot_blocked_mac_list", len(sent_messages) > 0)
+    await step_msg("/cancel", reset_conv=True)
 
     # --- 3. User Manager Flows ---
     sent_messages.clear()
@@ -352,12 +378,12 @@ async def main() -> int:
     await step_msg("/cancel", reset_conv=True)
 
     sent_messages.clear()
-    await step_cb("rename_router", reset_conv=True)
+    await step_cb(f"rename_router_{router_id}", reset_conv=True)
     check("24. router_rename_start", len(sent_messages) > 0)
     await step_msg("/cancel", reset_conv=True)
 
     sent_messages.clear()
-    await step_cb("reboot_router", reset_conv=True)
+    await step_cb(f"reboot_router_{router_id}", reset_conv=True)
     check("25. router_reboot_prompt", len(sent_messages) > 0)
 
     # --- 7. Settings, Roles & Audit Flows ---

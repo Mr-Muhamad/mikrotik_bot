@@ -188,6 +188,7 @@ entry_point(
 entry_point(CallbackQueryHandler, pattern=PATTERNS["schedule_enable"])(schedule_enable)
 entry_point(CallbackQueryHandler, pattern=PATTERNS["hotspot_stats"])(hotspot_stats)
 entry_point(CommandHandler, command="usage")(usage_start)
+entry_point(CallbackQueryHandler, pattern=PATTERNS["usage_start"])(usage_start)
 entry_point(CallbackQueryHandler, pattern=PATTERNS["batches_search"])(batches_search_start)
 entry_point(CallbackQueryHandler, pattern=PATTERNS["logs_filter_text"])(logs_filter_text_callback)
 
@@ -220,6 +221,7 @@ fallback(CallbackQueryHandler, pattern=PATTERNS["menu_schedule"])(schedule_menu_
 fallback(CallbackQueryHandler, pattern=PATTERNS["schedule_enable"])(schedule_enable)
 fallback(CallbackQueryHandler, pattern=PATTERNS["go_back"])(go_back)
 fallback(CommandHandler, command="usage")(usage_start)
+fallback(CallbackQueryHandler, pattern=PATTERNS["usage_start"])(usage_start)
 fallback(CallbackQueryHandler, pattern=PATTERNS["batches_search"])(batches_search_start)
 fallback(CallbackQueryHandler, pattern=PATTERNS["logs_filter_text"])(logs_filter_text_callback)
 
