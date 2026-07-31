@@ -35,72 +35,90 @@ def get_leases_by_mac(api: MikrotikClient, router_key: str, macs: set[str]) -> d
     }
 
 
-def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> RouterOSResponse:  # noqa: C901
+def _query_hosts_by_field(
+    api: MikrotikClient,
+    router_key: str,
+    field: str,
+    value: str,
+    proplist: str,
+) -> RouterOSResponse:
+    """Query hotspot hosts by a single field, returning an empty list on failure."""
+    try:
+        return api.execute(
+            router_key,
+            "ip/hotspot/host/print",
+            **{f"?{field}": value, ".proplist": proplist},
+        )
+    except (TrapError, ConnectionError, OSError):
+        return []
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _search_all_hosts(
+    api: MikrotikClient,
+    router_key: str,
+    search_lower: str,
+    proplist: str,
+) -> RouterOSResponse:
+    """Fetch all hotspot hosts and filter locally by IP, MAC, or user."""
+    matched: RouterOSResponse = []
+    try:
+        all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": proplist})
+        for h in all_hosts:
+            mac = str(h.get("mac-address", "")).lower()
+            ip = str(h.get("address", "")).lower()
+            user = str(h.get("user", "")).lower()
+            if search_lower in ip or search_lower in mac or search_lower in user:
+                matched.append(h)
+    except (TrapError, ConnectionError, OSError) as e:
+        logger.warning(
+            "Error fetching all hotspot hosts in search_hosts (query='%s', router='%s') "
+            "(error type: %s): %s",
+            search_lower, router_key,
+            type(e).__name__, sanitize_log_data(str(e)),
+            exc_info=True,
+        )
+    except Exception as e:  # noqa: BLE001
+        logger.warning(
+            "Error fetching all hotspot hosts in search_hosts (query='%s', router='%s') "
+            "(error type: %s): %s",
+            search_lower, router_key,
+            type(e).__name__, sanitize_log_data(str(e)),
+            exc_info=True,
+        )
+    return matched
+
+
+def _enrich_host_names(
+    hosts: RouterOSResponse,
+    lease_by_mac: dict[str, LeaseDict],
+) -> None:
+    """Populate ``host-name`` on each host from the DHCP lease lookup."""
+    for h in hosts:
+        mac = str(h.get("mac-address", "")).lower()
+        lease = lease_by_mac.get(mac, {})
+        h["host-name"] = lease.get("host-name", "")
+
+
+def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> RouterOSResponse:
     """Search hotspot hosts by IP or MAC address with enriched host names from DHCP leases."""
     search_lower = search_term.lower().strip()
-    hosts: RouterOSResponse = []
-
     proplist = (
         ".id,mac-address,address,user,bypassed,uptime,bytes-in,bytes-out,server"
     )
-    try:
-        hosts = api.execute(
-            router_key,
-            "ip/hotspot/host/print",
-            **{"?mac-address": search_lower, ".proplist": proplist},
-        )
-    except (TrapError, ConnectionError, OSError):
-        hosts = []
-    except Exception:  # noqa: BLE001
-        hosts = []
 
+    hosts = _query_hosts_by_field(api, router_key, "mac-address", search_lower, proplist)
     if not hosts:
-        try:
-            hosts = api.execute(
-                router_key,
-                "ip/hotspot/host/print",
-                **{"?address": search_lower, ".proplist": proplist},
-            )
-        except (TrapError, ConnectionError, OSError):
-            hosts = []
-        except Exception:  # noqa: BLE001
-            hosts = []
-
+        hosts = _query_hosts_by_field(api, router_key, "address", search_lower, proplist)
     if not hosts:
-        try:
-            all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": proplist})
-            for h in all_hosts:
-                mac = str(h.get("mac-address", "")).lower()
-                ip = str(h.get("address", "")).lower()
-                user = str(h.get("user", "")).lower()
-                if search_lower in ip or search_lower in mac or search_lower in user:
-                    hosts.append(h)
-        except (TrapError, ConnectionError, OSError) as e:
-            logger.warning(
-                "Error fetching all hotspot hosts in search_hosts (query='%s', router='%s') "
-                "(error type: %s): %s",
-                search_lower, router_key,
-                type(e).__name__, sanitize_log_data(str(e)),
-                exc_info=True,
-            )
-        except Exception as e:  # noqa: BLE001
-            logger.warning(
-                "Error fetching all hotspot hosts in search_hosts (query='%s', router='%s') "
-                "(error type: %s): %s",
-                search_lower, router_key,
-                type(e).__name__, sanitize_log_data(str(e)),
-                exc_info=True,
-            )
-
+        hosts = _search_all_hosts(api, router_key, search_lower, proplist)
     if not hosts:
         return []
 
     matched_macs = {str(h.get("mac-address", "")).lower() for h in hosts if h.get("mac-address")}
     lease_by_mac = get_leases_by_mac(api, router_key, matched_macs)
-    for h in hosts:
-        mac = str(h.get("mac-address", "")).lower()
-        lease = lease_by_mac.get(mac, {})
-        h["host-name"] = lease.get("host-name", "")
+    _enrich_host_names(hosts, lease_by_mac)
     return hosts
 
 

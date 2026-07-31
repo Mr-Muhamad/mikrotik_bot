@@ -164,7 +164,28 @@ async def run_flow(app: Application, update: Update) -> None:
         logger.exception("Update raised: %s", e)
 
 
-async def main() -> int:  # noqa: C901
+def _report_results(
+    results: list[tuple[str, bool, str]],
+    captured_errors: list[str],
+) -> int:
+    """Print a human-readable E2E summary and return the process exit code."""
+    passed = sum(1 for _, ok, _ in results if ok)
+    failed = len(results) - passed
+    print("\n" + "=" * 60)
+    print(
+        f"E2E RESULTS: {passed}/{len(results)} passed, {failed} failed, {len(captured_errors)} handler errors"
+    )
+    for name, ok, snippet in results:
+        mark = "OK " if ok else "ERR"
+        print(f"  [{mark}] {name} :: {snippet[:60]}")
+    if captured_errors:
+        print("\nHandler exceptions:")
+        for e in captured_errors:
+            print("  -", e)
+    return 0 if failed == 0 and not captured_errors else 1
+
+
+async def main() -> int:
     init_db()
     router_id = save_discovered_router(
         ip="192.0.1.87",
@@ -414,20 +435,7 @@ async def main() -> int:  # noqa: C901
 
     await application.shutdown()
 
-    passed = sum(1 for _, ok, _ in results if ok)
-    failed = len(results) - passed
-    print("\n" + "=" * 60)
-    print(
-        f"E2E RESULTS: {passed}/{len(results)} passed, {failed} failed, {len(captured_errors)} handler errors"
-    )
-    for name, ok, snippet in results:
-        mark = "OK " if ok else "ERR"
-        print(f"  [{mark}] {name} :: {snippet[:60]}")
-    if captured_errors:
-        print("\nHandler exceptions:")
-        for e in captured_errors:
-            print("  -", e)
-    return 0 if failed == 0 and not captured_errors else 1
+    return _report_results(results, captured_errors)
 
 
 if __name__ == "__main__":

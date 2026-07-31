@@ -72,7 +72,71 @@ class UserManager:
         """Generate a random numeric password of the given length."""
         return self._generate_digits(length)
 
-    def create_cards(  # noqa: C901
+    def _fetch_existing_usernames(self, router_key: str) -> set[str]:
+        """Fetch existing User Manager usernames for deduplication."""
+        try:
+            base_path = self._api.get_userman_base_path(router_key)
+            rows = self._api.execute(
+                router_key,
+                f"{base_path}/user/print",
+                **{".proplist": "name,username"},
+            )
+        except (TrapError, ConnectionError, OSError) as e:
+            logger.warning(
+                "Failed to fetch existing User Manager users for "
+                "deduplication on %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return set()
+        except Exception as e:  # noqa: BLE001
+            logger.exception(
+                "Failed to fetch existing User Manager users for "
+                "deduplication on %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+            )
+            return set()
+        return {str(u.get("name") or u.get("username") or "") for u in rows}
+
+    def _generate_unique_card(
+        self,
+        router_key: str,
+        existing: set[str],
+        card_system: CardSystem,
+        profile: str,
+        username_length: int,
+        prefix: str,
+        batch_comment: str,
+        caller_id: str,
+        timestamp: str,
+    ) -> RouterOSRow | None:
+        """Generate one card with a unique username, or None after 10 attempts."""
+        for _attempt in range(10):
+            random_num = self._generate_digits(username_length)
+            username = f"{prefix}{random_num}" if prefix else random_num
+
+            if card_system == CardSystem.DIFFERENT_CREDENTIALS:
+                password = self._generate_digits(username_length)
+            elif card_system == CardSystem.SAME_CREDENTIALS:
+                password = username
+            else:
+                password = ""
+
+            if username not in existing:
+                result = self._create_user(
+                    router_key,
+                    username,
+                    password,
+                    profile,
+                    comment=batch_comment,
+                    caller_id=caller_id,
+                    timestamp=timestamp,
+                )
+                existing.add(username)
+                return result
+        logger.warning("Could not generate unique username after 10 attempts")
+        return None
+
+    def create_cards(
         self,
         router_key: str,
         count: int,
@@ -103,64 +167,26 @@ class UserManager:
             return []
 
         cards = []
-        try:
-            base_path = self._api.get_userman_base_path(router_key)
-            existing = {
-                (u.get("name") or u.get("username") or "")
-                for u in self._api.execute(
-                    router_key,
-                    f"{base_path}/user/print",
-                    **{".proplist": "name,username"},
-                )
-            }
-        except (TrapError, ConnectionError, OSError) as e:
-            logger.warning(
-                "Failed to fetch existing User Manager users for "
-                "deduplication on %s (error type: %s): %s",
-                router_key, type(e).__name__, sanitize_log_data(str(e)),
-            )
-            existing = set()
-        except Exception as e:  # noqa: BLE001
-            logger.exception(
-                "Failed to fetch existing User Manager users for "
-                "deduplication on %s (error type: %s): %s",
-                router_key, type(e).__name__, sanitize_log_data(str(e)),
-            )
-            existing = set()
+        existing = self._fetch_existing_usernames(router_key)
 
         base_time = datetime.now().strftime("%Y-%m-%d_%H:%M")
         batch_comment = f"{prefix}_{base_time}" if prefix else base_time
 
         for i in range(count):
             try:
-                for _attempt in range(10):
-                    random_num = self._generate_digits(username_length)
-                    username = f"{prefix}{random_num}" if prefix else random_num
-
-                    if card_system == CardSystem.DIFFERENT_CREDENTIALS:
-                        password = self._generate_digits(username_length)
-                    elif card_system == CardSystem.SAME_CREDENTIALS:
-                        password = username
-                    else:
-                        password = ""
-
-                    if username not in existing:
-                        break
-                else:
-                    logger.warning("Could not generate unique username after 10 attempts")
-                    continue
-
-                result = self._create_user(
+                card = self._generate_unique_card(
                     router_key,
-                    username,
-                    password,
+                    existing,
+                    card_system,
                     profile,
-                    comment=batch_comment,
-                    caller_id=caller_id,
-                    timestamp=timestamp,
+                    username_length,
+                    prefix,
+                    batch_comment,
+                    caller_id,
+                    timestamp,
                 )
-                cards.append(result)
-                existing.add(username)
+                if card is not None:
+                    cards.append(card)
             except (TrapError, ConnectionError, OSError) as e:
                 logger.error(
                     "Card %d/%d failed on %s in create_cards (error type: %s): %s",

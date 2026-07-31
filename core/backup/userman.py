@@ -21,7 +21,16 @@ logger = logging.getLogger(__name__)
 
 
 class UserManagerBackupService:
-    def userman_backup(self, router_key: str, backup_root: str | None = None) -> RouterOSRow:  # noqa: C901
+    @staticmethod
+    def _cleanup_partial_file(umb_path: str) -> None:
+        """Remove a partial User Manager backup file left after a failed run."""
+        if os.path.isfile(umb_path):
+            try:
+                os.remove(umb_path)
+            except OSError as cleanup_err:
+                logger.warning("Failed to cleanup partial file %s: %s", umb_path, cleanup_err)
+
+    def userman_backup(self, router_key: str, backup_root: str | None = None) -> RouterOSRow:
 
         backup_root = backup_root or backup_files.BACKUP_DIR
         router_name = mikrotik_api.get_router_name(router_key)
@@ -80,22 +89,14 @@ class UserManagerBackupService:
                 "User Manager backup failed for %s (error type: %s): %s",
                 router_name, type(e).__name__, sanitize_log_data(str(e)),
             )
-            if os.path.isfile(umb_path):
-                try:
-                    os.remove(umb_path)
-                except OSError as cleanup_err:
-                    logger.warning("Failed to cleanup partial file %s: %s", umb_path, cleanup_err)
+            self._cleanup_partial_file(umb_path)
             return cast(RouterOSRow, {"success": False, "message": f"فشل الباكوب: {sanitize_log_data(str(e))}"})
         except Exception as e:  # noqa: BLE001
             logger.exception(
                 "User Manager backup failed for %s (error type: %s): %s",
                 router_name, type(e).__name__, sanitize_log_data(str(e)),
             )
-            if os.path.isfile(umb_path):
-                try:
-                    os.remove(umb_path)
-                except OSError as cleanup_err:
-                    logger.warning("Failed to cleanup partial file %s: %s", umb_path, cleanup_err)
+            self._cleanup_partial_file(umb_path)
             return cast(RouterOSRow, {"success": False, "message": f"فشل الباكوب: {sanitize_log_data(str(e))}"})
 
     def userman_restore(
