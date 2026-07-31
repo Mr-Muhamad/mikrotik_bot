@@ -15,7 +15,7 @@ import logging.handlers
 import os
 import sys
 from contextlib import contextmanager
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 from datetime import datetime
 from typing import Any, Generator
 from uuid import uuid4
@@ -158,8 +158,19 @@ def bind_trace_id(trace_id: str):
         _trace_id_var.reset(token)
 
 
+def _bind_context_values(
+    bindings: list[tuple[ContextVar[Any], object]],
+) -> list[Token[Any]]:
+    """Bind non-None context values, returning their tokens for later reset."""
+    tokens: list[Token[Any]] = []
+    for var, value in bindings:
+        if value is not None:
+            tokens.append(var.set(value))
+    return tokens
+
+
 @contextmanager
-def bind_context(  # noqa: C901
+def bind_context(
     request_id: str | None = None,
     component: str | None = None,
     trace_id: str | None = None,
@@ -172,27 +183,20 @@ def bind_context(  # noqa: C901
     error_category: str | None = None,
 ) -> Generator[None, Any, None]:
     """Bind multiple context values for the duration of the block."""
-    tokens = []
-    if request_id is not None:
-        tokens.append(_request_id_var.set(request_id))
-    if component is not None:
-        tokens.append(_component_var.set(component))
-    if trace_id is not None:
-        tokens.append(_trace_id_var.set(trace_id))
-    if user_id is not None:
-        tokens.append(_user_id_var.set(user_id))
-    if chat_id is not None:
-        tokens.append(_chat_id_var.set(chat_id))
-    if router_key is not None:
-        tokens.append(_router_key_var.set(router_key))
-    if command is not None:
-        tokens.append(_command_var.set(command))
-    if success is not None:
-        tokens.append(_success_var.set(success))
-    if duration_ms is not None:
-        tokens.append(_duration_ms_var.set(duration_ms))
-    if error_category is not None:
-        tokens.append(_error_category_var.set(error_category))
+    tokens = _bind_context_values(
+        [
+            (_request_id_var, request_id),
+            (_component_var, component),
+            (_trace_id_var, trace_id),
+            (_user_id_var, user_id),
+            (_chat_id_var, chat_id),
+            (_router_key_var, router_key),
+            (_command_var, command),
+            (_success_var, success),
+            (_duration_ms_var, duration_ms),
+            (_error_category_var, error_category),
+        ]
+    )
     try:
         yield
     finally:
@@ -216,21 +220,17 @@ def bind_log_context(
     Only binds the fields that are explicitly provided (non-None), leaving
     all other ContextVars unchanged.
     """
-    tokens: list[Any] = []
-    if component is not None:
-        tokens.append(_component_var.set(component))
-    if request_id is not None:
-        tokens.append(_request_id_var.set(request_id))
-    if trace_id is not None:
-        tokens.append(_trace_id_var.set(trace_id))
-    if user_id is not None:
-        tokens.append(_user_id_var.set(user_id))
-    if chat_id is not None:
-        tokens.append(_chat_id_var.set(chat_id))
-    if router_key is not None:
-        tokens.append(_router_key_var.set(router_key))
-    if command is not None:
-        tokens.append(_command_var.set(command))
+    tokens = _bind_context_values(
+        [
+            (_component_var, component),
+            (_request_id_var, request_id),
+            (_trace_id_var, trace_id),
+            (_user_id_var, user_id),
+            (_chat_id_var, chat_id),
+            (_router_key_var, router_key),
+            (_command_var, command),
+        ]
+    )
     try:
         yield
     finally:
@@ -330,10 +330,7 @@ def _add_console_handler(root: logging.Logger, level: int) -> None:
     console = logging.StreamHandler(sys.stdout)
     console.setLevel(level)
     console.setFormatter(
-        logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] "
-            "[%(component)s] - %(message)s"
-        )
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] [%(component)s] - %(message)s")
     )
     console.addFilter(RequestIdFilter())
     root.addHandler(console)
@@ -375,9 +372,7 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
     root = logging.getLogger()
     _ensure_request_id_filter(root)
 
-    has_console = any(
-        isinstance(h, logging.StreamHandler) and h.stream is sys.stdout for h in root.handlers
-    )
+    has_console = any(isinstance(h, logging.StreamHandler) and h.stream is sys.stdout for h in root.handlers)
     has_file = any(isinstance(h, logging.handlers.RotatingFileHandler) for h in root.handlers)
 
     if has_console and has_file:
