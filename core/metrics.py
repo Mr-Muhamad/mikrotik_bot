@@ -188,315 +188,251 @@ def get_uptime() -> float:
     return time.time() - _bot_start_time
 
 
-def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:  # noqa: C901
-    """Generate Prometheus metrics in text format."""
-    if pool_metrics is None:
-        pool_metrics = {}
-    lines = [
-        "# HELP bot_uptime Bot uptime in seconds",
-        "# TYPE bot_uptime gauge",
-        f"bot_uptime {get_uptime():.1f}",
-        "",
-        "# HELP bot_messages_total Total messages processed by type",
-        "# TYPE bot_messages_total counter",
-    ]
+def _append_block_header(lines: list[str], metric_name: str, help_text: str, metric_type: str) -> None:
+    """Append a blank line plus a Prometheus HELP/TYPE pair for a metric."""
+    lines.extend(
+        ["", f"# HELP {metric_name} {help_text}", f"# TYPE {metric_name} {metric_type}"]
+    )
 
+
+def _append_summary_values(
+    lines: list[str],
+    metric_name: str,
+    durations: list[float],
+    label_body: str = "",
+) -> None:
+    """Append p50/p90/p99/sum/count value lines for a duration series.
+
+    ``label_body`` holds static labels without braces or trailing comma
+    (e.g. ``router="r",command="c"``); when empty the summary is rendered
+    without static labels.
+    """
+    if not durations:
+        return
+    sorted_d = sorted(durations)
+    n = len(sorted_d)
+    p50 = sorted_d[int(n * 0.50)]
+    p90 = sorted_d[int(n * 0.90)]
+    p99 = sorted_d[min(int(n * 0.99), n - 1)]
+    label_prefix = f"{{{label_body}," if label_body else ""
+    label_suffix = "}" if label_body else ""
+    sum_labels = f"{{{label_body}}}" if label_body else ""
+    lines.append(f'{metric_name}{{{label_prefix}quantile="0.5"{label_suffix}}} {p50:.4f}')
+    lines.append(f'{metric_name}{{{label_prefix}quantile="0.9"{label_suffix}}} {p90:.4f}')
+    lines.append(f'{metric_name}{{{label_prefix}quantile="0.99"{label_suffix}}} {p99:.4f}')
+    lines.append(f"{metric_name}_sum{sum_labels} {sum(sorted_d):.4f}")
+    lines.append(f"{metric_name}_count{sum_labels} {n}")
+
+
+def _append_uptime_and_messages(lines: list[str]) -> None:
+    lines.extend(
+        [
+            "# HELP bot_uptime Bot uptime in seconds",
+            "# TYPE bot_uptime gauge",
+            f"bot_uptime {get_uptime():.1f}",
+            "",
+            "# HELP bot_messages_total Total messages processed by type",
+            "# TYPE bot_messages_total counter",
+        ]
+    )
     for msg_type, count in sorted(_messages_total.items()):
         lines.append(f'bot_messages_total{{type="{msg_type}"}} {count}')
 
-    lines.extend(
-        [
-            "",
-            "# HELP bot_mikrotik_requests_total Total MikroTik API requests by router",
-            "# TYPE bot_mikrotik_requests_total counter",
-        ]
-    )
 
+def _append_mikrotik_requests(lines: list[str]) -> None:
+    _append_block_header(
+        lines, "bot_mikrotik_requests_total", "Total MikroTik API requests by router", "counter"
+    )
     for router, count in sorted(_mikrotik_requests_total.items()):
         lines.append(f'bot_mikrotik_requests_total{{router="{router}"}} {count}')
 
-    # Latency percentiles (simple calculation)
-    if _request_latencies:
-        sorted_latencies = sorted(_request_latencies)
-        n = len(sorted_latencies)
-        p50 = sorted_latencies[int(n * 0.50)]
-        p90 = sorted_latencies[int(n * 0.90)]
-        p99 = sorted_latencies[min(int(n * 0.99), n - 1)]
 
-        lines.extend(
-            [
-                "",
-                "# HELP bot_mikrotik_request_duration_seconds MikroTik request latency",
-                "# TYPE bot_mikrotik_request_duration_seconds summary",
-                f'bot_mikrotik_request_duration_seconds{{quantile="0.5"}} {p50:.4f}',
-                f'bot_mikrotik_request_duration_seconds{{quantile="0.9"}} {p90:.4f}',
-                f'bot_mikrotik_request_duration_seconds{{quantile="0.99"}} {p99:.4f}',
-                f"bot_mikrotik_request_duration_seconds_sum {sum(sorted_latencies):.4f}",
-                f"bot_mikrotik_request_duration_seconds_count {n}",
-            ]
-        )
-
-    # MikroTik API latency percentiles
-    if _mikrotik_api_latencies:
-        sorted_api_latencies = sorted(_mikrotik_api_latencies)
-        n = len(sorted_api_latencies)
-        p50 = sorted_api_latencies[int(n * 0.50)]
-        p90 = sorted_api_latencies[int(n * 0.90)]
-        p99 = sorted_api_latencies[min(int(n * 0.99), n - 1)]
-
-        lines.extend(
-            [
-                "",
-                "# HELP bot_mikrotik_api_duration_seconds MikroTik API latency",
-                "# TYPE bot_mikrotik_api_duration_seconds summary",
-                f'bot_mikrotik_api_duration_seconds{{quantile="0.5"}} {p50:.4f}',
-                f'bot_mikrotik_api_duration_seconds{{quantile="0.9"}} {p90:.4f}',
-                f'bot_mikrotik_api_duration_seconds{{quantile="0.99"}} {p99:.4f}',
-                f"bot_mikrotik_api_duration_seconds_sum {sum(sorted_api_latencies):.4f}",
-                f"bot_mikrotik_api_duration_seconds_count {n}",
-            ]
-        )
-
-    # Backup duration percentiles
-    if _backup_latencies:
-        backup_durations = [d for _, d in _backup_latencies]
-        if backup_durations:
-            sorted_backup = sorted(backup_durations)
-            n = len(sorted_backup)
-            p50 = sorted_backup[int(n * 0.50)]
-            p90 = sorted_backup[int(n * 0.90)]
-            p99 = sorted_backup[min(int(n * 0.99), n - 1)]
-
-            lines.extend(
-                [
-                    "",
-                    "# HELP bot_backup_duration_seconds Backup operation latency",
-                    "# TYPE bot_backup_duration_seconds summary",
-                    f'bot_backup_duration_seconds{{quantile="0.5"}} {p50:.4f}',
-                    f'bot_backup_duration_seconds{{quantile="0.9"}} {p90:.4f}',
-                    f'bot_backup_duration_seconds{{quantile="0.99"}} {p99:.4f}',
-                    f"bot_backup_duration_seconds_sum {sum(sorted_backup):.4f}",
-                    f"bot_backup_duration_seconds_count {n}",
-                ]
-            )
-
-    # Error count by component and category
-    lines.extend(
-        [
-            "",
-            "# HELP bot_error_count_total Total error count by component and category",
-            "# TYPE bot_error_count_total counter",
-        ]
+def _append_request_latency(lines: list[str]) -> None:
+    if not _request_latencies:
+        return
+    _append_block_header(
+        lines, "bot_mikrotik_request_duration_seconds", "MikroTik request latency", "summary"
     )
-    for component in sorted(_error_count_total.keys()):
+    _append_summary_values(lines, "bot_mikrotik_request_duration_seconds", _request_latencies)
+
+
+def _append_api_latency(lines: list[str]) -> None:
+    if not _mikrotik_api_latencies:
+        return
+    _append_block_header(
+        lines, "bot_mikrotik_api_duration_seconds", "MikroTik API latency", "summary"
+    )
+    _append_summary_values(lines, "bot_mikrotik_api_duration_seconds", _mikrotik_api_latencies)
+
+
+def _append_backup_latency(lines: list[str]) -> None:
+    if not _backup_latencies:
+        return
+    backup_durations = [d for _, d in _backup_latencies]
+    _append_block_header(lines, "bot_backup_duration_seconds", "Backup operation latency", "summary")
+    _append_summary_values(lines, "bot_backup_duration_seconds", backup_durations)
+
+
+def _append_errors(lines: list[str]) -> None:
+    _append_block_header(
+        lines, "bot_error_count_total", "Total error count by component and category", "counter"
+    )
+    for component in sorted(_error_count_total):
         for category, count in sorted(_error_count_total[component].items()):
             lines.append(
                 f'bot_error_count_total{{component="{component}",category="{category}"}} {count}'
             )
 
-    # Action counters per router+command
-    if _action_total:
-        lines.extend(
-            [
-                "",
-                "# HELP bot_action_total Total actions by router, command, and status",
-                "# TYPE bot_action_total counter",
-            ]
+
+def _append_actions(lines: list[str]) -> None:
+    if not _action_total:
+        return
+    _append_block_header(
+        lines, "bot_action_total", "Total actions by router, command, and status", "counter"
+    )
+    for key in sorted(_action_total):
+        router, command = key.split(":", 1)
+        for status in ("success", "fail"):
+            count = _action_total[key][status]
+            if count:
+                lines.append(
+                    f'bot_action_total{{router="{router}",command="{command}",status="{status}"}} {count}'
+                )
+    if _action_durations:
+        _append_block_header(
+            lines, "bot_action_duration_seconds", "Action duration by router and command", "summary"
         )
-        for key in sorted(_action_total):
+        for key in sorted(_action_durations):
             router, command = key.split(":", 1)
-            for status in ("success", "fail"):
-                count = _action_total[key][status]
-                if count:
-                    lines.append(
-                        f'bot_action_total{{router="{router}",command="{command}",status="{status}"}} {count}'
-                    )
-        # Action duration summary
-        if _action_durations:
-            lines.extend(
-                [
-                    "",
-                    "# HELP bot_action_duration_seconds Action duration by router and command",
-                    "# TYPE bot_action_duration_seconds summary",
-                ]
+            _append_summary_values(
+                lines,
+                "bot_action_duration_seconds",
+                _action_durations[key],
+                label_body=f'router="{router}",command="{command}"',
             )
-            for key in sorted(_action_durations):
-                router, command = key.split(":", 1)
-                durations = _action_durations[key]
-                if durations:
-                    sorted_d = sorted(durations)
-                    n = len(sorted_d)
-                    p50 = sorted_d[int(n * 0.50)]
-                    p90 = sorted_d[int(n * 0.90)]
-                    p99 = sorted_d[min(int(n * 0.99), n - 1)]
-                    lines.append(
-                        f'bot_action_duration_seconds{{router="{router}",command="{command}",quantile="0.5"}} {p50:.4f}'
-                    )
-                    lines.append(
-                        f'bot_action_duration_seconds{{router="{router}",command="{command}",quantile="0.9"}} {p90:.4f}'
-                    )
-                    lines.append(
-                        f'bot_action_duration_seconds{{router="{router}",command="{command}",'
-                        f'quantile="0.99"}} {p99:.4f}'
-                    )
-                    lines.append(
-                        f'bot_action_duration_seconds_sum{{router="{router}",command="{command}"}} {sum(sorted_d):.4f}'
-                    )
-                    lines.append(
-                        f'bot_action_duration_seconds_count{{router="{router}",command="{command}"}} {n}'
-                    )
 
-    # Database query counters per operation+table
-    if _db_query_total:
-        lines.extend(
-            [
-                "",
-                "# HELP bot_db_queries_total Total database queries by operation and table",
-                "# TYPE bot_db_queries_total counter",
-            ]
+
+def _append_db_queries(lines: list[str]) -> None:
+    if not _db_query_total:
+        return
+    _append_block_header(
+        lines, "bot_db_queries_total", "Total database queries by operation and table", "counter"
+    )
+    for key in sorted(_db_query_total):
+        operation, table = key.split(":", 1)
+        for status in ("success", "fail"):
+            count = _db_query_total[key][status]
+            if count:
+                lines.append(
+                    f'bot_db_queries_total{{operation="{operation}",table="{table}",status="{status}"}} {count}'
+                )
+    if _db_query_durations:
+        _append_block_header(
+            lines,
+            "bot_db_query_duration_seconds",
+            "Database query duration by operation and table",
+            "summary",
         )
-        for key in sorted(_db_query_total):
+        for key in sorted(_db_query_durations):
             operation, table = key.split(":", 1)
-            for status in ("success", "fail"):
-                count = _db_query_total[key][status]
-                if count:
-                    lines.append(
-                        f'bot_db_queries_total{{operation="{operation}",table="{table}",status="{status}"}} {count}'
-                    )
-        # DB query duration percentiles
-        if _db_query_durations:
-            lines.extend(
-                [
-                    "",
-                    "# HELP bot_db_query_duration_seconds Database query duration by operation and table",
-                    "# TYPE bot_db_query_duration_seconds summary",
-                ]
+            _append_summary_values(
+                lines,
+                "bot_db_query_duration_seconds",
+                _db_query_durations[key],
+                label_body=f'operation="{operation}",table="{table}"',
             )
-            for key in sorted(_db_query_durations):
-                operation, table = key.split(":", 1)
-                durations = _db_query_durations[key]
-                if durations:
-                    sorted_d = sorted(durations)
-                    n = len(sorted_d)
-                    p50 = sorted_d[int(n * 0.50)]
-                    p90 = sorted_d[int(n * 0.90)]
-                    p99 = sorted_d[min(int(n * 0.99), n - 1)]
-                    lines.append(
-                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",'
-                        f'quantile="0.5"}} {p50:.4f}'
-                    )
-                    lines.append(
-                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",'
-                        f'quantile="0.9"}} {p90:.4f}'
-                    )
-                    lines.append(
-                        f'bot_db_query_duration_seconds{{operation="{operation}",table="{table}",'
-                        f'quantile="0.99"}} {p99:.4f}'
-                    )
-                    lines.append(
-                        f'bot_db_query_duration_seconds_sum{{operation="{operation}",'
-                        f'table="{table}"}} {sum(sorted_d):.4f}'
-                    )
-                    lines.append(
-                        f'bot_db_query_duration_seconds_count{{operation="{operation}",table="{table}"}} {n}'
-                    )
 
-    # Telegram request counters per handler
-    if _telegram_requests_total:
-        lines.extend(
-            [
-                "",
-                "# HELP bot_telegram_requests_total Total Telegram handler invocations by handler and status",
-                "# TYPE bot_telegram_requests_total counter",
-            ]
+
+def _append_telegram_requests(lines: list[str]) -> None:
+    if not _telegram_requests_total:
+        return
+    _append_block_header(
+        lines,
+        "bot_telegram_requests_total",
+        "Total Telegram handler invocations by handler and status",
+        "counter",
+    )
+    for handler in sorted(_telegram_requests_total):
+        for status in ("success", "fail"):
+            count = _telegram_requests_total[handler][status]
+            if count:
+                lines.append(
+                    f'bot_telegram_requests_total{{handler="{handler}",status="{status}"}} {count}'
+                )
+    if _telegram_request_durations:
+        _append_block_header(
+            lines,
+            "bot_telegram_handler_duration_seconds",
+            "Telegram handler duration by handler",
+            "summary",
         )
-        for handler in sorted(_telegram_requests_total):
-            for status in ("success", "fail"):
-                count = _telegram_requests_total[handler][status]
-                if count:
-                    lines.append(
-                        f'bot_telegram_requests_total{{handler="{handler}",status="{status}"}} {count}'
-                    )
-        # Telegram handler duration percentiles
-        if _telegram_request_durations:
-            lines.extend(
-                [
-                    "",
-                    "# HELP bot_telegram_handler_duration_seconds Telegram handler duration by handler",
-                    "# TYPE bot_telegram_handler_duration_seconds summary",
-                ]
+        for handler in sorted(_telegram_request_durations):
+            _append_summary_values(
+                lines,
+                "bot_telegram_handler_duration_seconds",
+                _telegram_request_durations[handler],
+                label_body=f'handler="{handler}"',
             )
-            for handler in sorted(_telegram_request_durations):
-                durations = _telegram_request_durations[handler]
-                if durations:
-                    sorted_d = sorted(durations)
-                    n = len(sorted_d)
-                    p50 = sorted_d[int(n * 0.50)]
-                    p90 = sorted_d[int(n * 0.90)]
-                    p99 = sorted_d[min(int(n * 0.99), n - 1)]
-                    lines.append(
-                        f'bot_telegram_handler_duration_seconds{{handler="{handler}",quantile="0.5"}} {p50:.4f}'
-                    )
-                    lines.append(
-                        f'bot_telegram_handler_duration_seconds{{handler="{handler}",quantile="0.9"}} {p90:.4f}'
-                    )
-                    lines.append(
-                        f'bot_telegram_handler_duration_seconds{{handler="{handler}",quantile="0.99"}} {p99:.4f}'
-                    )
-                    lines.append(
-                        f'bot_telegram_handler_duration_seconds_sum{{handler="{handler}"}} {sum(sorted_d):.4f}'
-                    )
-                    lines.append(
-                        f'bot_telegram_handler_duration_seconds_count{{handler="{handler}"}} {n}'
-                    )
 
-    # Health status gauge
-    health_status = get_health_status()
+
+def _append_health(lines: list[str]) -> None:
+    _append_block_header(
+        lines,
+        "bot_health_status",
+        "Overall bot health (0=healthy, 1=degraded, 2=critical)",
+        "gauge",
+    )
+    lines.append(f"bot_health_status {get_health_status()}")
+
+
+def _append_error_rate(lines: list[str]) -> None:
+    if not _component_total:
+        return
+    _append_block_header(lines, "bot_error_rate", "Error rate (failures / total) per component", "gauge")
+    for component in sorted(_component_total):
+        lines.append(f'bot_error_rate{{component="{component}"}} {get_error_rate(component):.4f}')
+
+
+def _append_pool_metrics(lines: list[str], pool_metrics: RouterOSRow) -> None:
+    if not pool_metrics:
+        return
     lines.extend(
         [
             "",
-            "# HELP bot_health_status Overall bot health (0=healthy, 1=degraded, 2=critical)",
-            "# TYPE bot_health_status gauge",
-            f"bot_health_status {health_status}",
+            "# HELP bot_connection_pool_active Active connections in pool",
+            "# TYPE bot_connection_pool_active gauge",
+            f"bot_connection_pool_active {pool_metrics.get('active_connections', 0)}",
+            "",
+            "# HELP bot_connection_pool_stale Stale connections detected",
+            "# TYPE bot_connection_pool_stale counter",
+            f"bot_connection_pool_stale {pool_metrics.get('stale_connections', 0)}",
+            "",
+            "# HELP bot_connection_pool_successful Total successful connections",
+            "# TYPE bot_connection_pool_successful counter",
+            f"bot_connection_pool_successful {pool_metrics.get('successful', 0)}",
+            "",
+            "# HELP bot_connection_pool_failed Total failed connections",
+            "# TYPE bot_connection_pool_failed counter",
+            f"bot_connection_pool_failed {pool_metrics.get('failed', 0)}",
         ]
     )
 
-    # Error rate per component
-    if _component_total:
-        lines.extend(
-            [
-                "",
-                "# HELP bot_error_rate Error rate (failures / total) per component",
-                "# TYPE bot_error_rate gauge",
-            ]
-        )
-        for component in sorted(_component_total):
-            rate = get_error_rate(component)
-            lines.append(
-                f'bot_error_rate{{component="{component}"}} {rate:.4f}'
-            )
 
-    # Connection pool metrics
-    if pool_metrics:
-        lines.extend(
-            [
-                "",
-                "# HELP bot_connection_pool_active Active connections in pool",
-                "# TYPE bot_connection_pool_active gauge",
-                f"bot_connection_pool_active {pool_metrics.get('active_connections', 0)}",
-                "",
-                "# HELP bot_connection_pool_stale Stale connections detected",
-                "# TYPE bot_connection_pool_stale counter",
-                f"bot_connection_pool_stale {pool_metrics.get('stale_connections', 0)}",
-                "",
-                "# HELP bot_connection_pool_successful Total successful connections",
-                "# TYPE bot_connection_pool_successful counter",
-                f"bot_connection_pool_successful {pool_metrics.get('successful', 0)}",
-                "",
-                "# HELP bot_connection_pool_failed Total failed connections",
-                "# TYPE bot_connection_pool_failed counter",
-                f"bot_connection_pool_failed {pool_metrics.get('failed', 0)}",
-            ]
-        )
-
+def get_metrics_text(pool_metrics: RouterOSRow | None = None) -> str:
+    """Generate Prometheus metrics in text format."""
+    if pool_metrics is None:
+        pool_metrics = {}
+    lines: list[str] = []
+    _append_uptime_and_messages(lines)
+    _append_mikrotik_requests(lines)
+    _append_request_latency(lines)
+    _append_api_latency(lines)
+    _append_backup_latency(lines)
+    _append_errors(lines)
+    _append_actions(lines)
+    _append_db_queries(lines)
+    _append_telegram_requests(lines)
+    _append_health(lines)
+    _append_error_rate(lines)
+    _append_pool_metrics(lines, pool_metrics)
     return "\n".join(lines) + "\n"
