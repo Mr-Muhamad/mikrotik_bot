@@ -53,4 +53,4 @@ jobs:
 
       - name: Pyright
         run: |
-          python -m pyright
+          python -m pyright --pythonpath "$(command -v python)"
