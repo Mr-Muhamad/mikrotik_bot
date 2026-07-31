@@ -524,7 +524,7 @@ ruff check .
 py -3.12 scripts/validate_handlers.py
 py -3.12 scripts/validate_routeros_paths.py
 py -3.12 scripts/check_type_ignore.py
-py -3.12 -m pyright
+py -3.12 -m pyright --pythonpath ".\venv\Scripts\python.exe"
 py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --cov-fail-under=80 -q
 ```
 
@@ -534,7 +534,7 @@ py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --c
 - `validate_handlers.py` يتحقق من اتساق imports وتسجيل المعالجات؛ يتجاهل ثوابت ALL-CAPS (مثل `PATTERNS`, `CALLBACKS`) لأنها ليست معالجات.
 - `validate_routeros_paths.py` يمنع hardcoded User Manager paths في `core/` لضمان توافق RouterOS v6/v7.
 - `check_type_ignore.py` يتحقق من أن كل `# type: ignore` يحمل سبباً موثّقاً.
-- `pyright` يستخدم `pyrightconfig.json` (وضع strict).
+- `pyright` يستخدم `pyrightconfig.json` (وضع strict). يجب تحديد المفسر صراحةً عبر `--pythonpath` لأن pyright لا يكتشف الـ venv المحلي تلقائياً في هذا الجهاز (وفي CI عبر `$(command -v python)`). لا تضف `extraPaths` بمسار site-packages محلي إلى `pyrightconfig.json` لأنه يكسر تشغيل CI على Linux.
 - `pytest` مهيأ في `pyproject.toml`. التغطية ≥ 80% مطلوبة (`--cov-fail-under=80`).
 - عند تعديل Telegram flows، اختبر يدوياً من حساب مشرف داخل Telegram.
 

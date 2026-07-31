@@ -44,8 +44,11 @@ LEFT_ALIGN = Alignment(horizontal="left", vertical="center")
 def _auto_fit_columns(ws: Worksheet) -> None:
     """Adjust column widths dynamically based on max cell text length."""
     for col in ws.columns:
+        first_column = col[0].column
+        if first_column is None:
+            continue
         max_len = 0
-        col_letter = get_column_letter(col[0].column)
+        col_letter = get_column_letter(first_column)
         for cell in col:
             val = str(cell.value or "")
             max_len = max(max_len, len(val))

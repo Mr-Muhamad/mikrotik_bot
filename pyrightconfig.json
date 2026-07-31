@@ -10,15 +10,13 @@
   ],
   "pythonVersion": "3.12",
   "typeCheckingMode": "strict",
-  "extraPaths": [
-    "C:/Users/Administrator/AppData/Local/Programs/Python/Python312/Lib/site-packages"
-  ],
   "reportOptionalMemberAccess": "none",
   "reportOptionalSubscript": "none",
   "reportOptionalCall": "none",
   "reportOptionalIterable": "none",
   "reportOptionalContextManager": "none",
   "reportMissingModuleSource": false,
+  "reportMissingTypeStubs": "none",
   "reportUnusedExpression": "error",
   "reportAttributeAccessIssue": "error",
   "reportArgumentType": "error",

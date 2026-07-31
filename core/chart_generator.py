@@ -10,6 +10,8 @@ import io
 import logging
 
 import matplotlib
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 
 from core.mikrotik_client import RouterOSRow
 
@@ -30,7 +32,7 @@ ORANGE_BAR = "#fab387"
 PURPLE_BAR = "#cba6f7"
 
 
-def _configure_dark_style(fig: plt.Figure, ax: plt.Axes) -> None:
+def _configure_dark_style(fig: Figure, ax: Axes) -> None:
     """Apply modern sleek dark styling to a matplotlib figure and axes."""
     fig.patch.set_facecolor(BG_COLOR)
     ax.set_facecolor(PANEL_COLOR)

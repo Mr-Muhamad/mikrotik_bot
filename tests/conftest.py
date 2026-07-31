@@ -18,10 +18,7 @@ def temp_db():
     """
     with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
         tmp_path = f.name
-    with (
-        patch("database.models.DB_PATH", tmp_path),
-        patch("database.models.os.path.dirname", return_value=os.path.dirname(tmp_path)),
-    ):
+    with patch("database.models.DB_PATH", tmp_path):
         from database.models import init_db
 
         init_db()
@@ -58,6 +55,7 @@ def mock_mikrotik_api():
     from core.hotspot_manager import hotspot_manager
 
     hotspot_manager._users_cache.clear()
+    hotspot_manager._profiles_cache.clear()
     patches = [
         patch("core.mikrotik_api.mikrotik_api", mock),
         patch("core.hotspot_manager.mikrotik_api", mock),
