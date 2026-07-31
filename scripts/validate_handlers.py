@@ -10,6 +10,7 @@ intentionally ignored because they are not handler functions.
 
 import ast
 import sys
+from typing import Any
 
 HANDLER_CLASSES = frozenset(
     {
@@ -90,18 +91,18 @@ def _local_defs(tree: ast.AST) -> set[str]:
     return names
 
 
-def main():  # noqa: C901
+def _validate_handler_imports() -> bool:
+    """Validate that every imported handler is registered and vice versa.
+
+    Returns ``True`` when a validation problem was found.
+    """
     source_path = "bot/registrations.py"
     with open(source_path, encoding="utf-8") as f:
         tree = ast.parse(f.read())
 
     imported: set[str] = set()
     for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.ImportFrom)
-            and node.module
-            and node.module.startswith("bot.handlers")
-        ):
+        if isinstance(node, ast.ImportFrom) and node.module and node.module.startswith("bot.handlers"):
             for alias in node.names:
                 imported.add(alias.asname or alias.name)
 
@@ -131,35 +132,63 @@ def main():  # noqa: C901
             for name in sorted(actual_handlers):
                 print(f"   {name}")
 
-    # 2. Audit InlineKeyboardButton callback_data in keyboards.py
-    import os
-    import re
-    sys.path.insert(0, os.path.abspath("."))
-    import bot.registrations  # noqa: F401 # pyright: ignore[reportUnusedImport]
-    _ = bot.registrations
-    from utils.handler_registry import _registry  # pyright: ignore[reportPrivateUsage]
+    return has_error
 
-    registered_pats = []
-    for item in _registry["standalone"]:
-        if item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]:
+
+def _has_callback_pattern(item: dict[str, Any]) -> bool:
+    """Return ``True`` when *item* is a registered CallbackQueryHandler pattern."""
+    return item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]
+
+
+def _collect_registered_patterns(registry: dict[str, Any]) -> list[str]:
+    """Collect every registered CallbackQueryHandler pattern from *registry*."""
+    registered_pats: list[str] = []
+    for item in registry["standalone"]:
+        if _has_callback_pattern(item):
             registered_pats.append(item["kwargs"]["pattern"])
-    for _state, items in _registry["states"].items():
+    for _state, items in registry["states"].items():
         for item in items:
-            if item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]:
+            if _has_callback_pattern(item):
                 registered_pats.append(item["kwargs"]["pattern"])
-    for item in _registry["entry_points"]:
-        if item["cls"].__name__ == "CallbackQueryHandler" and "pattern" in item["kwargs"]:
+    for item in registry["entry_points"]:
+        if _has_callback_pattern(item):
             registered_pats.append(item["kwargs"]["pattern"])
+    return registered_pats
 
+
+def _collect_keyboard_callback_data() -> set[str]:
+    """Extract the literal callback_data values used in ``bot/keyboards.py``."""
     with open("bot/keyboards.py", encoding="utf-8") as kf:
         ktree = ast.parse(kf.read(), filename="bot/keyboards.py")
 
-    kb_cbs = set()
+    kb_cbs: set[str] = set()
     for node in ast.walk(ktree):
         if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "InlineKeyboardButton":
             for kw in node.keywords:
                 if kw.arg == "callback_data" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
                     kb_cbs.add(kw.value.value)
+    return kb_cbs
+
+
+def _audit_keyboard_callbacks() -> bool:
+    """Verify every InlineKeyboardButton callback_data has a registered handler.
+
+    Returns ``True`` when an unregistered callback was found.
+    """
+    # Local imports keep this script importable without bootstrapping the full
+    # Telegram application: importing bot.registrations at module level would
+    # eagerly pull in handlers and their runtime dependencies.
+    import os
+    import re
+
+    sys.path.insert(0, os.path.abspath("."))
+    import bot.registrations  # noqa: F401 # pyright: ignore[reportUnusedImport]
+
+    _ = bot.registrations
+    from utils.handler_registry import _registry  # pyright: ignore[reportPrivateUsage]
+
+    registered_pats = _collect_registered_patterns(_registry)
+    kb_cbs = _collect_keyboard_callback_data()
 
     unregistered_cbs = []
     for cb in sorted(kb_cbs):
@@ -168,10 +197,19 @@ def main():  # noqa: C901
             unregistered_cbs.append(cb)
 
     if unregistered_cbs:
-        has_error = True
         print("[ERROR] INLINE KEYBOARD CALLBACK_DATA WITH NO REGISTERED HANDLER:")
         for cb in unregistered_cbs:
             print(f"   '{cb}'")
+        return True
+
+    return False
+
+
+def main() -> None:
+    """Run handler validation and exit non-zero when problems are found."""
+    has_error = _validate_handler_imports()
+    if _audit_keyboard_callbacks():
+        has_error = True
 
     if has_error:
         sys.exit(1)
