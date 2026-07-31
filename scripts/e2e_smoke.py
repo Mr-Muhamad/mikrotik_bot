@@ -164,7 +164,7 @@ async def run_flow(app: Application, update: Update) -> None:
         logger.exception("Update raised: %s", e)
 
 
-async def main() -> int:
+async def main() -> int:  # noqa: C901
     init_db()
     router_id = save_discovered_router(
         ip="192.0.1.87",

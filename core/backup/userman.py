@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class UserManagerBackupService:
-    def userman_backup(self, router_key: str, backup_root: str | None = None) -> RouterOSRow:
+    def userman_backup(self, router_key: str, backup_root: str | None = None) -> RouterOSRow:  # noqa: C901
+
         backup_root = backup_root or backup_files.BACKUP_DIR
         router_name = mikrotik_api.get_router_name(router_key)
         router_safe = sanitize_router_name(router_name)

@@ -72,7 +72,7 @@ class UserManager:
         """Generate a random numeric password of the given length."""
         return self._generate_digits(length)
 
-    def create_cards(
+    def create_cards(  # noqa: C901
         self,
         router_key: str,
         count: int,

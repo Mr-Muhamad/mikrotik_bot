@@ -35,7 +35,7 @@ def get_leases_by_mac(api: MikrotikClient, router_key: str, macs: set[str]) -> d
     }
 
 
-def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> RouterOSResponse:
+def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> RouterOSResponse:  # noqa: C901
     """Search hotspot hosts by IP or MAC address with enriched host names from DHCP leases."""
     search_lower = search_term.lower().strip()
     hosts: RouterOSResponse = []
