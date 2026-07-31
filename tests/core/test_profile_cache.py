@@ -2,6 +2,7 @@
 
 import threading
 import time
+from unittest.mock import patch
 
 from core.profile_cache import ProfileCache
 
@@ -92,11 +93,12 @@ class TestProfileCacheStats:
         assert stats["size"] == 2
 
     def test_stats_fresh_vs_stale(self):
-        cache = ProfileCache(ttl=0)
-        cache.set("r1", ["a"])
-        time.sleep(0.01)
-        cache.set("r2", ["b"])
-        stats = cache.stats()
+        # ساعة حتمية: r1 منتهية (فارق > ttl) و r2 جديدة (فارق <= ttl).
+        with patch("core.profile_cache.time.time", side_effect=[1000.0, 1000.01, 1000.02]):
+            cache = ProfileCache(ttl=0.01)
+            cache.set("r1", ["a"])  # time() -> 1000.0
+            cache.set("r2", ["b"])  # time() -> 1000.01
+            stats = cache.stats()   # time() -> 1000.02
         assert stats["fresh"] == 1
         assert stats["stale"] == 1
 

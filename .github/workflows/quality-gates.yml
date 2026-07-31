@@ -27,7 +27,7 @@ jobs:
       - name: Create Dummy .env for CI
         run: |
           echo "BOT_TOKEN=ci_dummy_token" > .env
-          echo "ADMIN_IDS=123456" >> .env
+          echo "ADMIN_IDS=724730774" >> .env
           echo "ENCRYPTION_KEY=MTExMTExMTExMTExMTExMTExMTExMTExMTExMTExMTE=" >> .env
 
       - name: Ruff

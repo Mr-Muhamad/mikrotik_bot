@@ -156,8 +156,13 @@ def prepare_serve_file(local_path: str, filename: str) -> str:
     """
     serve_dir = os.path.join(BACKUP_DIR, "serves")
     os.makedirs(serve_dir, exist_ok=True)
-    dest = os.path.join(serve_dir, filename)
-    if os.path.abspath(dest) != os.path.join(serve_dir, filename):
+    # طبيعي الفواصل الخلفية لتشبه POSIX؛ يكشف محاولات الـ traversal
+    # مثل "..\escape.backup" على الأنظمة غير المبنية على Windows.
+    normalized = os.path.normpath(filename.replace("\\", "/"))
+    if normalized == ".." or normalized.startswith("../") or os.path.isabs(normalized):
+        raise ValueError("Filename contains path traversal")
+    dest = os.path.join(serve_dir, normalized)
+    if os.path.abspath(dest) != os.path.join(serve_dir, normalized):
         raise ValueError("Filename contains path traversal")
     import shutil
 
