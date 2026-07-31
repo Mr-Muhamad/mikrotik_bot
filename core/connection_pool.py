@@ -1,3 +1,4 @@
+import concurrent.futures
 import logging
 import queue
 import threading
@@ -6,6 +7,9 @@ import time
 from librouteros import connect
 from librouteros.api import Api
 from librouteros.exceptions import LibRouterosError
+
+_HEALTH_CHECK_TIMEOUT = 5
+_health_check_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.cache import TTLCache
@@ -177,7 +181,10 @@ class ConnectionPool:
                 # انتظار 30 ثانية كحد أقصى للحصول على اتصال فارغ (Throttle)
                 api = q.get(timeout=30)
                 try:
-                    api.path("system", "resource")("print")
+                    future = _health_check_executor.submit(
+                        lambda: api.path("system", "resource")("print")
+                    )
+                    future.result(timeout=_HEALTH_CHECK_TIMEOUT)
                 except (LibRouterosError, ConnectionError, OSError, TimeoutError) as e:
                     duration_ms = (time.monotonic() - start) * 1000
                     log_api_call(router_key, "get_connection", duration_ms, False, error=e, component="ROUTER")
@@ -195,9 +202,12 @@ class ConnectionPool:
                         pass
                     # إنشاء اتصال جديد بديلاً
                     router_info = self.get_router_info(router_key)
+                    api = self._connect_with_retry(router_info, timeout)
+                    with self._lock:
+                        self.active_counts[router_key] += 1
                     duration_ms = (time.monotonic() - start) * 1000
-                    log_api_call(router_key, "get_connection", duration_ms, False, error=e, component="ROUTER")
-                    return self._connect_with_retry(router_info, timeout)
+                    log_api_call(router_key, "get_connection", duration_ms, True, component="ROUTER")
+                    return api
                 with self._lock:
                     self.cache_hits += 1
                 duration_ms = (time.monotonic() - start) * 1000

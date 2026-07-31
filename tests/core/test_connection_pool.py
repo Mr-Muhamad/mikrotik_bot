@@ -1,5 +1,6 @@
 """Unit tests for core/connection_pool.py — ConnectionPool class."""
 
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -160,8 +161,84 @@ class TestCloseAll:
             assert fake_api.close.call_count == 2
 
 
-# Remaining test classes (VersionCache, NameCache, Metrics) don't
-# need get_router_by_id patches
+class TestStaleConnectionHealthCheck:
+    """Pooled stale-connection health check with timed executor."""
+
+    def test_healthy_connection_reused(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
+        ):
+            api1 = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api1)
+
+            api2 = pool.get_connection("discovered_1")
+
+            assert api2 is fake_api
+            assert mock_connect.call_count == 1
+            assert pool.cache_hits == 1
+
+    def test_stale_librouteros_error_discards_and_reconnects(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
+        ):
+            api1 = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api1)
+
+            fake_api.path.return_value.side_effect = LibRouterosError("stale")
+
+            api2 = pool.get_connection("discovered_1")
+
+            assert mock_connect.call_count == 2
+            fake_api.close.assert_called()
+            assert pool.active_counts["discovered_1"] == 1
+
+    def test_stale_os_error_discards_and_reconnects(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
+        ):
+            api1 = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api1)
+
+            fake_api.path.return_value.side_effect = OSError("connection reset")
+
+            api2 = pool.get_connection("discovered_1")
+
+            assert mock_connect.call_count == 2
+            assert pool.active_counts["discovered_1"] == 1
+
+    def test_stale_active_count_decremented_correctly(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+        ):
+            api1 = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api1)
+
+            assert pool.active_counts["discovered_1"] == 1
+
+            fake_api.path.return_value.side_effect = LibRouterosError("stale")
+            pool.get_connection("discovered_1")
+
+            assert pool.active_counts["discovered_1"] == 1
+
+    def test_health_check_timeout_triggers_reconnect(self, pool, fake_api):
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
+            patch("core.connection_pool._HEALTH_CHECK_TIMEOUT", 0.05),
+        ):
+            api1 = pool.get_connection("discovered_1")
+            pool.release_connection("discovered_1", api1)
+
+            fake_api.path.return_value.side_effect = lambda *a, **kw: time.sleep(10)
+
+            api2 = pool.get_connection("discovered_1")
+
+            assert mock_connect.call_count == 2
+            assert pool.active_counts["discovered_1"] == 1
 
 
 class TestVersionCache:
