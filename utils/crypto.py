@@ -19,7 +19,7 @@ def _get_key() -> Fernet:
         _key = Fernet(raw.encode())
         logger.info("Encryption key loaded successfully from environment")
         return _key
-    except Exception as e:
+    except (ValueError, TypeError) as e:
         logger.error("Invalid ENCRYPTION_KEY format: %s", e)
         raise ValueError("ENCRYPTION_KEY in .env is invalid. Fix or remove it.") from e
 

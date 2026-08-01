@@ -26,10 +26,11 @@ def record_health(router_key: str, status: str, error_msg: str = "") -> None:
                 "write",
                 "router_health_log",
             )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "Failed to record health for %s (error type: %s): %s",
             router_key, type(e).__name__, e,
+        exc_info=True,
         )
 
 
@@ -51,10 +52,11 @@ def get_latest_health(router_key: str) -> RouterOSRow | None:
             )
             row = cursor.fetchone()
             return dict(row) if row else None
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "Failed to get latest health for %s (error type: %s): %s",
             router_key, type(e).__name__, e,
+        exc_info=True,
         )
         return None
 
@@ -81,10 +83,11 @@ def get_all_latest_health() -> dict[str, RouterOSRow]:
             )
             rows = cursor.fetchall()
             return {row["router_key"]: dict(row) for row in rows}
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "Failed to get all latest health (error type: %s): %s",
             type(e).__name__, e,
+        exc_info=True,
         )
         return {}
 
@@ -107,10 +110,11 @@ def get_health_history(router_key: str, limit: int = 10) -> list[RouterOSRow]:
             )
             rows = cursor.fetchall()
             return [dict(row) for row in rows]
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "Failed to get health history for %s (error type: %s): %s",
             router_key, type(e).__name__, e,
+        exc_info=True,
         )
         return []
 
@@ -133,9 +137,10 @@ def cleanup_health_history(days: int = 7) -> int:
                 (cutoff_text,), "write", "router_health_log",
             )
             return cursor.rowcount
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "Failed to cleanup health history (error type: %s): %s",
             type(e).__name__, e,
+        exc_info=True,
         )
         return 0

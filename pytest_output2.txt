@@ -1,0 +1,286 @@
+........................................................................ [  2%]
+........................................................................ [  4%]
+........................................................................ [  7%]
+........................................................................ [  9%]
+........................................................................ [ 12%]
+........................................................................ [ 14%]
+........................................................................ [ 17%]
+........................................................................ [ 19%]
+........................................................................ [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 34%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 43%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 68%]
+........................................................................ [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 75%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+.........                                                                [100%]
+============================== warnings summary ===============================
+tests/bot/handlers/router_flows/test_manual_add.py::TestManualAddConfirm::test_confirm_duplicate_raises
+tests/bot/handlers/router_flows/test_manual_add.py::TestManualAddConfirm::test_confirm_generic_exception
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\admin_decorator.py:162: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    res = await func(update, context)
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/bot/handlers/router_flows/test_saved.py::TestDeleteRouterExecute::test_confirm_deletes_router
+tests/bot/handlers/router_flows/test_saved.py::TestDeleteRouterExecute::test_cancel_shows_cancelled
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\bot\handlers\router_flows\saved.py:260: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    if query.data.startswith("confirm_delete_router_yes_"):
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/bot/handlers/router_flows/test_saved.py::TestDeleteRouterExecute::test_cancel_shows_cancelled
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\tests\conftest.py:28: RuntimeWarning: coroutine 'AsyncMockMixin._execute_mock_call' was never awaited
+    gc.collect()
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+
+tests/bot/handlers/test_watchdog_handler.py: 12 warnings
+  C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\telegram\error.py:243: PTBDeprecationWarning: Deprecated since version v22.2: In a future major version attribute `retry_after` will be of type `datetime.timedelta`. You can opt-in early by setting `PTB_TIMEDELTA=true` or ``PTB_TIMEDELTA=1`` as an environment variable.
+    return get_timedelta_value(  # type: ignore[return-value]
+
+tests/core/test_reports_excel.py: 20 warnings
+  C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\openpyxl\packaging\core.py:99: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    now = datetime.datetime.utcnow()
+
+tests/core/test_reports_excel.py::TestBuildUsageExcelReport::test_returns_valid_xlsx_bytes
+tests/core/test_reports_excel.py::TestBuildUsageExcelReport::test_empty_rows_returns_valid_xlsx
+tests/core/test_reports_excel.py::TestBuildUsageExcelReport::test_no_rows_key_returns_valid_xlsx
+tests/core/test_reports_excel.py::TestBuildUsageExcelReport::test_custom_title
+tests/core/test_reports_excel.py::TestBuildUsageExcelReport::test_multiple_rows_zebra_striping
+tests/core/test_reports_excel.py::TestBuildSalesExcelReport::test_returns_valid_xlsx_bytes
+tests/core/test_reports_excel.py::TestBuildSalesExcelReport::test_empty_batches_returns_valid_xlsx
+tests/core/test_reports_excel.py::TestBuildSalesExcelReport::test_custom_title
+tests/core/test_reports_excel.py::TestBuildSalesExcelReport::test_multiple_batches
+  C:\Users\Administrator\AppData\Local\Programs\Python\Python312\Lib\site-packages\openpyxl\writer\excel.py:292: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    workbook.properties.modified = datetime.datetime.utcnow()
+
+tests/database/test_models_extended.py::TestMigratePasswords::test_encrypts_plaintext_password
+tests/database/test_models_extended.py::TestMigratePasswords::test_skips_already_encrypted_password
+tests/database/test_models_extended.py::TestMigratePasswords::test_skips_empty_password
+tests/database/test_models_extended.py::TestMigratePasswords::test_mixed_password_states
+tests/database/test_models_extended.py::TestMigratePasswords::test_no_routers_does_not_error
+tests/database/test_models_extended.py::TestMigratePasswords::test_idempotent_second_call_no_double_encryption
+tests/database/test_models_extended.py::TestMigratePasswords::test_idempotent_second_call_no_double_encryption
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\database\models.py:137: DeprecationWarning: migrate_passwords() is deprecated
+    warnings.warn("migrate_passwords() is deprecated", DeprecationWarning, stacklevel=1)
+
+tests/database/test_models_extended.py::TestMigrateAddNameAlias::test_no_error_when_columns_already_exist
+tests/database/test_models_extended.py::TestMigrateAddNameAlias::test_idempotent
+tests/database/test_models_extended.py::TestMigrateAddNameAlias::test_idempotent
+tests/database/test_models_extended.py::TestMigrateAddNameAlias::test_name_alias_column_exists_after_call
+tests/database/test_models_extended.py::TestMigrateAddNameAlias::test_owner_id_column_exists_after_call
+tests/database/test_models_extended.py::TestMigrateAddNameAlias::test_last_activity_column_exists_after_call
+tests/database/test_models_extended.py::TestMigrateAddNameAlias::test_session_timeout_column_exists_after_call
+tests/database/test_models_extended.py::TestMigrateAddNameAlias::test_adds_columns_to_bare_table
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\database\models.py:161: DeprecationWarning: migrate_add_name_alias() is deprecated
+    warnings.warn("migrate_add_name_alias() is deprecated", DeprecationWarning, stacklevel=1)
+
+tests/database/test_models_extended.py::TestMigrateBackupScheduleColumns::test_no_error_when_columns_already_exist
+tests/database/test_models_extended.py::TestMigrateBackupScheduleColumns::test_idempotent
+tests/database/test_models_extended.py::TestMigrateBackupScheduleColumns::test_idempotent
+tests/database/test_models_extended.py::TestMigrateBackupScheduleColumns::test_schedule_enabled_column_exists
+tests/database/test_models_extended.py::TestMigrateBackupScheduleColumns::test_schedule_hour_column_exists
+tests/database/test_models_extended.py::TestMigrateBackupScheduleColumns::test_schedule_minute_column_exists
+tests/database/test_models_extended.py::TestMigrateBackupScheduleColumns::test_adds_columns_to_bare_table
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\database\models.py:174: DeprecationWarning: migrate_backup_schedule_columns() is deprecated
+    warnings.warn(
+
+tests/database/test_models_extended.py: 12 warnings
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\database\models.py:191: DeprecationWarning: migrate_pdf_settings_columns() is deprecated
+    warnings.warn("migrate_pdf_settings_columns() is deprecated", DeprecationWarning, stacklevel=1)
+
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_no_error_when_columns_already_exist
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_idempotent
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_idempotent
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_created_by_column_exists
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_customer_name_column_exists
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_payment_status_column_exists
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_sale_price_column_exists
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_sold_at_column_exists
+tests/database/test_models_extended.py::TestMigrateCardBatchesColumns::test_adds_columns_to_bare_table
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\database\models.py:209: DeprecationWarning: migrate_card_batches_columns() is deprecated
+    warnings.warn("migrate_card_batches_columns() is deprecated", DeprecationWarning, stacklevel=1)
+
+tests/test_registration_order.py::test_main_conversation_handler_is_registered
+tests/test_registration_order.py::test_main_conversation_handler_after_standalone_handlers
+tests/test_registration_order.py::test_separate_conversation_handlers_precede_standalone_cancel
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\bot\registration_parts\separate_handlers.py:46: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+    return CH(
+
+tests/test_registration_order.py::test_main_conversation_handler_is_registered
+tests/test_registration_order.py::test_main_conversation_handler_after_standalone_handlers
+tests/test_registration_order.py::test_separate_conversation_handlers_precede_standalone_cancel
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\bot\registration_parts\separate_handlers.py:71: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+    return CH(
+
+tests/test_registration_order.py::test_main_conversation_handler_is_registered
+tests/test_registration_order.py::test_main_conversation_handler_after_standalone_handlers
+tests/test_registration_order.py::test_separate_conversation_handlers_precede_standalone_cancel
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\bot\registration_parts\separate_handlers.py:119: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+    return CH(
+
+tests/test_registration_order.py::test_main_conversation_handler_is_registered
+tests/test_registration_order.py::test_main_conversation_handler_after_standalone_handlers
+tests/test_registration_order.py::test_separate_conversation_handlers_precede_standalone_cancel
+  D:\New Projects 21-5\Mikrotik admin bot telegram\mikrotik_bot\utils\handler_registry.py:340: PTBUserWarning: If 'per_message=False', 'CallbackQueryHandler' will not be tracked for every message. Read this FAQ entry to learn more about the per_* settings: https://github.com/python-telegram-bot/python-telegram-bot/wiki/Frequently-Asked-Questions#what-do-the-per_-settings-in-conversationhandler-do.
+    main_conv = ConversationHandler(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.10-final-0 _______________
+
+Name                                            Stmts   Miss  Cover
+-------------------------------------------------------------------
+bot\__init__.py                                     5      0   100%
+bot\handlers\__init__.py                          164      0   100%
+bot\handlers\audit.py                             248     31    88%
+bot\handlers\backup.py                            215     15    93%
+bot\handlers\backup_restore.py                    184      1    99%
+bot\handlers\batch.py                             266     23    91%
+bot\handlers\callback_constants.py                 75     27    64%
+bot\handlers\commands_basic.py                    187     14    93%
+bot\handlers\common.py                             34     16    53%
+bot\handlers\constants.py                          46      0   100%
+bot\handlers\handler_utils.py                      51      0   100%
+bot\handlers\hotspot.py                           126     20    84%
+bot\handlers\hotspot_add.py                       225     10    96%
+bot\handlers\hotspot_cards.py                     242     39    84%
+bot\handlers\hotspot_common.py                     97     23    76%
+bot\handlers\hotspot_delete.py                     87      5    94%
+bot\handlers\hotspot_edit.py                      301      7    98%
+bot\handlers\hotspot_flow_utils.py                 22      0   100%
+bot\handlers\hotspot_report.py                     99      4    96%
+bot\handlers\hotspot_search.py                    264      0   100%
+bot\handlers\menus.py                             136      3    98%
+bot\handlers\roles.py                             224     21    91%
+bot\handlers\router_flows\__init__.py               5      0   100%
+bot\handlers\router_flows\discovery.py            125      6    95%
+bot\handlers\router_flows\manual_add.py           143      0   100%
+bot\handlers\router_flows\reboot.py                71      0   100%
+bot\handlers\router_flows\rename.py                73      0   100%
+bot\handlers\router_flows\saved.py                155     27    83%
+bot\handlers\router_system.py                      14      3    79%
+bot\handlers\routers.py                            10      0   100%
+bot\handlers\session_models.py                     28      2    93%
+bot\handlers\settings.py                           92     22    76%
+bot\handlers\states.py                             47      0   100%
+bot\handlers\stats.py                              71     10    86%
+bot\handlers\timeout.py                            42      0   100%
+bot\handlers\usage.py                             141     45    68%
+bot\handlers\userman.py                           224     44    80%
+bot\handlers\userman_search.py                    233     29    88%
+bot\handlers\watchdog.py                          168      6    96%
+bot\helpers\__init__.py                             0      0   100%
+bot\helpers\profiles.py                            47     12    74%
+bot\keyboards.py                                  335      8    98%
+bot\messages.py                                   349      0   100%
+bot\profile_callbacks.py                           16      1    94%
+bot\registration_parts\__init__.py                  0      0   100%
+bot\registration_parts\conversation.py            184      2    99%
+bot\registration_parts\separate_handlers.py        18      0   100%
+bot\registration_parts\standalone.py              119      0   100%
+bot\registrations.py                                9      0   100%
+bot\router_selector.py                            172     42    76%
+core\__init__.py                                   24     20    17%
+core\backup\__init__.py                             5      0   100%
+core\backup\file_server.py                        114      5    96%
+core\backup\files.py                              142     40    72%
+core\backup\ftp.py                                 80      0   100%
+core\backup\restore.py                             46      4    91%
+core\backup\system.py                              70      4    94%
+core\backup\userman.py                            101      6    94%
+core\backup_scheduler.py                          213      4    98%
+core\backup_service.py                             25      3    88%
+core\cache.py                                      41      0   100%
+core\card_models.py                                41      2    95%
+core\chart_generator.py                            78      0   100%
+core\circuit_breaker.py                            88     38    57%
+core\connection_pool.py                           217      0   100%
+core\exceptions.py                                  5      0   100%
+core\hotspot_blocking.py                           51      4    92%
+core\hotspot_expiry.py                             92      9    90%
+core\hotspot_manager.py                           303     38    87%
+core\hotspot_search.py                            131     25    81%
+core\hotspot_stats.py                             123      7    94%
+core\messages_expiry.py                             3      0   100%
+core\metrics.py                                   213     48    77%
+core\mikrotik_api.py                              376     21    94%
+core\mikrotik_client.py                             8      0   100%
+core\network_probe.py                             297      7    98%
+core\network_scanner.py                            42     12    71%
+core\profile_cache.py                              43      0   100%
+core\profile_sync.py                               24      2    92%
+core\reports_excel.py                             111      2    98%
+core\reports_export.py                             31      2    94%
+core\router_info.py                                52      4    92%
+core\router_key.py                                 38      0   100%
+core\stats.py                                      64      6    91%
+core\userman_manager.py                           295     14    95%
+core\watchdog.py                                  151      6    96%
+database\__init__.py                                2      0   100%
+database\execute.py                                17      4    76%
+database\models.py                                141      3    98%
+database\repositories\admin_roles.py               36      5    86%
+database\repositories\audit_logs.py               105      7    93%
+database\repositories\backups.py                   49      0   100%
+database\repositories\card_batches.py             107     11    90%
+database\repositories\chat_messages.py             38      0   100%
+database\repositories\operator_permissions.py      37     12    68%
+database\repositories\pdf_settings.py              19      0   100%
+database\repositories\router_health.py             56      0   100%
+database\repositories\routers.py                  111      2    98%
+database\repositories\stats_snapshots.py           32      8    75%
+database\repositories\user_sessions.py             31      8    74%
+pdf\__init__.py                                     4      0   100%
+pdf\card_generator.py                              15      1    93%
+pdf\card_renderer.py                              183     13    93%
+pdf\pdf_renderer.py                                52      1    98%
+pdf\pdf_settings.py                                19      1    95%
+utils\__init__.py                                  12      5    58%
+utils\admin_decorator.py                          209     16    92%
+utils\async_blocking.py                            13      0   100%
+utils\bot_commands.py                              24     17    29%
+utils\callback_utils.py                            57      4    93%
+utils\chat_cleaner.py                             219      0   100%
+utils\crypto.py                                    44      0   100%
+utils\error_response.py                           185      0   100%
+utils\formatters.py                               146      0   100%
+utils\handler_registry.py                         146     50    66%
+utils\log_helpers.py                               73      3    96%
+utils\logging_setup.py                            206     37    82%
+utils\pagination.py                                30      0   100%
+utils\request_id.py                                24      3    88%
+utils\singleton_lock.py                            67     22    67%
+utils\tg_helpers.py                                33      0   100%
+utils\validators.py                                66      0   100%
+-------------------------------------------------------------------
+TOTAL                                           12535   1084    91%
+Required test coverage of 80% reached. Total coverage: 91.35%
+2961 passed, 101 warnings in 1482.06s (0:24:42)

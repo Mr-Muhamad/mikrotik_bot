@@ -128,7 +128,8 @@ async def stats_chart_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 caption="📈 الرسم البياني المصور لحركة نشاط وتدفق الشبكة للأسبوع الحالي",
                 reply_markup=get_stats_keyboard(),
             )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("stats_chart_callback failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,

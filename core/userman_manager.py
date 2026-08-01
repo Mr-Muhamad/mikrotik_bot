@@ -88,7 +88,7 @@ class UserManager:
                 router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return set()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Failed to fetch existing User Manager users for "
                 "deduplication on %s (error type: %s): %s",
@@ -193,7 +193,7 @@ class UserManager:
                     i + 1, count, router_key, type(e).__name__, sanitize_log_data(str(e)),
                     exc_info=True,
                 )
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                 logger.exception(
                     "Card %d/%d failed on %s in create_cards (error type: %s): %s",
                     i + 1, count, router_key, type(e).__name__, sanitize_log_data(str(e)),
@@ -303,7 +303,7 @@ class UserManager:
                 username, router_key, profile, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False, str(e)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "User '%s' was created on %s but profile "
                 "'%s' could not be linked (error type: %s): %s",
@@ -341,7 +341,7 @@ class UserManager:
                 username, router_key, profile, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False, str(e)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "User '%s' was created on %s but profile "
                 "'%s' could not be activated (error type: %s): %s",
@@ -381,7 +381,7 @@ class UserManager:
                 username, router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False, f"verify failed: {e}"
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Could not verify profile link for '%s' on %s (error type: %s): %s",
                 username, router_key, type(e).__name__, sanitize_log_data(str(e)),
@@ -409,10 +409,11 @@ class UserManager:
                 "API filter failed in _get_user_id for %s (error type: %s): %s",
                 username, type(e).__name__, sanitize_log_data(str(e)),
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.debug(
                 "API filter failed in _get_user_id for %s (error type: %s): %s",
                 username, type(e).__name__, sanitize_log_data(str(e)),
+            exc_info=True,
             )
 
         # Fallback to full list if filter not supported
@@ -426,7 +427,7 @@ class UserManager:
                 "Error checking user by field '%s' (error type: %s): %s",
                 field, type(e).__name__, sanitize_log_data(str(e)),
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Error checking user by field '%s' (error type: %s): %s",
                 field, type(e).__name__, sanitize_log_data(str(e)),

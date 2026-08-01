@@ -57,7 +57,7 @@ async def simulate_load(hotspot_manager, router_key: str, num_requests: int):
                     format_hotspot_user(user)
             elif op_type == "stats":
                 hotspot_manager.get_hotspot_stats(router_key)
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 - catch-all: background stats task must not crash on unexpected errors
             logger.debug("Stress test worker error on op %s", op_type)
 
     tasks = [asyncio.create_task(worker(i)) for i in range(num_requests)]
@@ -97,7 +97,7 @@ async def main():
             try:
                 hm.list_users("discovered_1", limit=100)
                 hm.get_hotspot_stats("discovered_1")
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001 - catch-all: background stats task must not crash on unexpected errors
                 logger.debug("Read worker %d error", i)
 
         monitor_task = asyncio.create_task(monitor_resources(5, process))

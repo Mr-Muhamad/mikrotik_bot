@@ -51,7 +51,11 @@ def _query_hosts_by_field(
         )
     except (TrapError, ConnectionError, OSError):
         return []
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
+        logger.exception(
+            "Unexpected error querying hosts by field %s=%s on %s",
+            field, value, router_key,
+        )
         return []
 
 
@@ -79,7 +83,7 @@ def _search_all_hosts(
             type(e).__name__, sanitize_log_data(str(e)),
             exc_info=True,
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "Error fetching all hotspot hosts in search_hosts (query='%s', router='%s') "
             "(error type: %s): %s",
@@ -148,7 +152,7 @@ def kick_host(api: MikrotikClient, router_key: str, mac_or_ip: str) -> tuple[boo
             type(e).__name__, sanitize_log_data(str(e)),
             exc_info=True,
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "Error fetching host details for target '%s' in kick_host (router='%s') "
             "(error type: %s): %s",
@@ -204,11 +208,18 @@ def _find_active_sessions(
             router_key, "ip/hotspot/active/print", **{".proplist": active_proplist}
         )
         active_sessions = [s for s in active if str(s.get("user", "")).lower() == target]
-    except Exception:  # noqa: BLE001
-        active = api.execute(
-            router_key, "ip/hotspot/active/print", **{".proplist": active_proplist}
+    except Exception:  # noqa: BLE001 - catch-all: log unexpected error then fall back to unfiltered query
+        logger.exception(
+            "Unexpected error querying active sessions for user %s on %s",
+            target, router_key,
         )
-        active_sessions = [s for s in active if str(s.get("user", "")).lower() == target]
+        try:
+            active = api.execute(
+                router_key, "ip/hotspot/active/print", **{".proplist": active_proplist}
+            )
+            active_sessions = [s for s in active if str(s.get("user", "")).lower() == target]
+        except (TrapError, ConnectionError, OSError):
+            active_sessions = []
 
     macs_to_kick: set[str] = set()
     for s in active_sessions:
@@ -260,18 +271,25 @@ def _find_matched_hosts(
                 or str(h.get("address", "")).lower() == target
             )
         ]
-    except Exception:  # noqa: BLE001
-        all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": host_proplist})
-        return [
-            h
-            for h in all_hosts
-            if (
-                str(h.get("user", "")).lower() == target
-                or str(h.get("mac-address", "")).lower() in macs_to_kick
-                or (is_mac_target and str(h.get("mac-address", "")).lower() == target)
-                or str(h.get("address", "")).lower() == target
-            )
-        ]
+    except Exception:  # noqa: BLE001 - catch-all: log unexpected error then fall back to unfiltered query
+        logger.exception(
+            "Unexpected error querying matched hosts for %s on %s",
+            target, router_key,
+        )
+        try:
+            all_hosts = api.execute(router_key, "ip/hotspot/host/print", **{".proplist": host_proplist})
+            return [
+                h
+                for h in all_hosts
+                if (
+                    str(h.get("user", "")).lower() == target
+                    or str(h.get("mac-address", "")).lower() in macs_to_kick
+                    or (is_mac_target and str(h.get("mac-address", "")).lower() == target)
+                    or str(h.get("address", "")).lower() == target
+                )
+            ]
+        except (TrapError, ConnectionError, OSError):
+            return []
 
 
 def kick_user(api: MikrotikClient, router_key: str, username: str) -> list[str]:

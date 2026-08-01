@@ -264,7 +264,8 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         cleanup_state(query.from_user.id, context.user_data)
         return ConversationHandler.END
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("manual_add_save failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(update, context, e, log_extra="manual_add_save")
         cleanup_state(query.from_user.id, context.user_data)
         return ConversationHandler.END
@@ -295,8 +296,8 @@ async def manual_add_confirm(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 MANUAL_ADD_CONN_FAILED.format(version),
                 reply_markup=get_router_keyboard(),
             )
-    except Exception as e:  # noqa: BLE001
-        logger.warning("manual_add confirm test connection failed for %s: %s", ip, e)
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.warning("manual_add confirm test connection failed for %s: %s", ip, e, exc_info=True)
         await run_blocking(log_action, "add_router_manual", ip, "offline", query.from_user.id)
         await query.edit_message_text(
             MANUAL_ADD_CONN_FAILED.format("تعذّر الاتصال للتحقق"),

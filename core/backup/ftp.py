@@ -21,7 +21,7 @@ def _warn_plaintext_ftp() -> None:
         logger.warning(
             "Backup download uses plaintext FTP (port 21); the router password is "
             "transmitted unencrypted. Run the bot only inside an isolated management "
-            "network and restrict the FTP service to the bot host (see CLAUDE.md)."
+            "network and restrict the FTP service to the bot host (see AGENTS.md)."
         )
 
 
@@ -40,10 +40,11 @@ def get_router_ftp_info(router_key: str, ftp_port: int) -> RouterOSRow | None:
             router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
         return None
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected errors before returning None
         logger.warning(
             "Cannot get FTP info for %s (error type: %s): %s",
             router_key, type(e).__name__, sanitize_log_data(str(e)),
+            exc_info=True,
         )
         return None
 
@@ -56,6 +57,7 @@ def download_files_via_ftp(router_key: str, backup_dir: str, files_to_get: list[
         return []
 
     downloaded = []
+    ftp: ftplib.FTP | None = None
     try:
         _warn_plaintext_ftp()
         ftp = ftplib.FTP()
@@ -77,11 +79,14 @@ def download_files_via_ftp(router_key: str, backup_dir: str, files_to_get: list[
                 logger.info("FTP downloaded: %s", fname)
             except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
                 logger.warning("FTP download failed for %s: %s", fname, e)
-
-        ftp.quit()
     except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
         logger.error("FTP connection failed for %s:%s: %s", ftp_info["host"], ftp_info["port"], e)
-
+    finally:
+        if ftp is not None:
+            try:
+                ftp.quit()
+            except (ftplib.Error, OSError, EOFError) as e:
+                logger.debug("FTP quit error (already closed?): %s", sanitize_log_data(str(e)))
     return downloaded
 
 
@@ -92,6 +97,7 @@ def upload_file_via_ftp(router_key: str, local_path: str, remote_name: str) -> b
         logger.warning("FTP upload skipped for %s: no credentials", router_key)
         return False
 
+    ftp: ftplib.FTP | None = None
     try:
         _warn_plaintext_ftp()
         ftp = ftplib.FTP()
@@ -108,8 +114,13 @@ def upload_file_via_ftp(router_key: str, local_path: str, remote_name: str) -> b
             ftp.storbinary(f"STOR {remote_name}", file_handle)
         logger.info("FTP uploaded: %s", remote_name)
 
-        ftp.quit()
         return True
     except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
         logger.error("FTP upload failed for %s:%s: %s", ftp_info["host"], ftp_info["port"], e)
         return False
+    finally:
+        if ftp is not None:
+            try:
+                ftp.quit()
+            except (ftplib.Error, OSError, EOFError) as e:
+                logger.debug("FTP quit error (already closed?): %s", sanitize_log_data(str(e)))

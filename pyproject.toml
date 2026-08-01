@@ -12,15 +12,11 @@ line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "RUF022"]
-ignore = ["E501", "E402"]
+select = ["E", "F", "I", "RUF022", "C901", "BLE001", "S110"]
+ignore = ["E501", "E402", "S101"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/*" = ["E402"]
 "database/models.py" = ["E402"]
 "tests/*" = ["E402"]
 "bot/registration_parts/*" = ["E402"]
-
-
-
-

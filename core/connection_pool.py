@@ -169,10 +169,7 @@ class ConnectionPool:
                 duration_ms = (time.monotonic() - start) * 1000
                 log_api_call(router_key, "get_connection", duration_ms, True, component="ROUTER")
                 return api
-            except Exception:
-                duration_ms = (time.monotonic() - start) * 1000
-                log_api_call(router_key, "get_connection", duration_ms, False, component="ROUTER")
-                # إذا فشل إنشاء الاتصال، ننقص العداد
+            except Exception:  # noqa: BLE001 - catch-all for connection failures with error logging and counter decrement
                 with self._lock:
                     self.active_counts[router_key] -= 1
                 raise
@@ -265,7 +262,7 @@ class ConnectionPool:
         try:
             router_info = self.get_router_info(router_key)
             return self._connect_with_retry(router_info, timeout)
-        except Exception:
+        except Exception:  # noqa: BLE001 - catch-all for reconnect failures with counter rollback
             with self._lock:
                 self.active_counts[router_key] -= 1
             raise

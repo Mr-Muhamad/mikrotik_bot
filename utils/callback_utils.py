@@ -60,7 +60,7 @@ async def safe_answer_callback(
     start = time.monotonic()
     try:
         await query.answer(text=text, show_alert=show_alert)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         duration_ms = (time.monotonic() - start) * 1000
         error_msg = str(e)
         if "Query is too old" in error_msg or "query id is invalid" in error_msg:
@@ -74,6 +74,7 @@ async def safe_answer_callback(
                     "duration_ms": duration_ms,
                     "success": False,
                 },
+                exc_info=True,
             )
         else:
             logger.warning(
@@ -87,6 +88,7 @@ async def safe_answer_callback(
                     "success": False,
                     "error_category": _classify_callback_error(e),
                 },
+                exc_info=True,
             )
     else:
         duration_ms = (time.monotonic() - start) * 1000

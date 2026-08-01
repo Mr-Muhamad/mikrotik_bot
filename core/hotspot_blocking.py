@@ -53,7 +53,7 @@ def block_mac(
             exc_info=True,
         )
         return False
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.exception(
             "Failed to block MAC %s on %s in block_mac (error type: %s): %s",
             mac, router_key, type(e).__name__, sanitize_log_data(str(e)),
@@ -92,7 +92,7 @@ def unblock_mac(api: MikrotikClient, router_key: str, mac: str) -> bool:
             exc_info=True,
         )
         return False
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.exception(
             "Failed to unblock MAC %s on %s in unblock_mac (error type: %s): %s",
             mac, router_key, type(e).__name__, sanitize_log_data(str(e)),
@@ -127,7 +127,7 @@ def get_blocked_macs(api: MikrotikClient, router_key: str) -> list[RouterOSRow]:
             exc_info=True,
         )
         return []
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.exception(
             "Failed to fetch blocked MACs on %s in get_blocked_macs (error type: %s): %s",
             router_key, type(e).__name__, sanitize_log_data(str(e)),

@@ -166,7 +166,7 @@ async def _execute_handler(
                 "✅ [ACTION SUCCESS] User: %s | Router: %s | Handler: %s | Time: %.1fms",
                 user_id, router_key, func.__name__, elapsed_ms,
             )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - catch-all: decorator must wrap all handler errors for logging
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         category = classify_error(e)
         with bind_context(success=False, duration_ms=elapsed_ms, error_category=category):

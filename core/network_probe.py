@@ -234,7 +234,7 @@ class ARPTableProbe:
                 type(e).__name__, e,
             )
             return []
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Failed to parse ARP table (error type: %s): %s",
                 type(e).__name__, e,
@@ -289,12 +289,11 @@ class PortScanProbe:
             writer.close()
             try:
                 await writer.wait_closed()
-            except Exception:  # noqa: S110, BLE001
-                # Broad catch: may be closed already, mock objects in tests,
-                # or other StreamWriter edge cases. This is just cleanup.
-                pass
+            except Exception:  # noqa: BLE001 - catch-all: writer.wait_closed() may raise if already closed or under mock
+                logger.debug("StreamWriter wait_closed failed during cleanup", exc_info=True)
             return True
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 - catch-all: port probe failure should not crash discovery
+            logger.debug("Port check failed for %s:%d", ip, self._port, exc_info=True)
             return False
 
 
@@ -445,8 +444,8 @@ class MNDPListenerProbe:
         except PermissionError as e:
             logger.warning("MNDP requires admin privileges (run as Administrator): %s", e)
             raise
-        except Exception as e:  # noqa: BLE001
-            logger.error(
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
+            logger.exception(
                 "Failed to start MNDP listener (error type: %s): %s",
                 type(e).__name__, e,
             )

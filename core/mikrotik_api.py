@@ -10,6 +10,7 @@ from librouteros import connect
 from librouteros.exceptions import LibRouterosError, TrapError
 
 from config import DEFAULT_API_PORT, FILE_SERVER_PORT, FILE_SERVER_SECRET, ROUTER_KEY_PREFIX
+from core.circuit_breaker import CircuitBreaker, CircuitBreakerOpenError
 from core.connection_pool import API_TIMEOUT, LONG_TIMEOUT, ConnectionPool
 from core.mikrotik_client import MikrotikClient, RouterOSResponse, RouterOSRow
 from utils.formatters import sanitize_log_data
@@ -47,6 +48,7 @@ class MikrotikAPI:
         self._pool = ConnectionPool()
         self._rate_lock = threading.Lock()
         self._last_api_call: dict[str, float] = {}
+        self._circuit_breaker = CircuitBreaker(failure_threshold=3, reset_timeout=30.0)
 
     # ──────────────────────────────────────────────────────────────
     #  Metadata helpers (unchanged)
@@ -113,7 +115,7 @@ class MikrotikAPI:
                 router_key, type(e).__name__, sanitize_log_data(str(e)),
                 extra={"component": "ROUTER"},
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             duration_ms = (time.monotonic() - start) * 1000
             log_api_call(router_key, "system/resource/print", duration_ms, False, error=e, component="ROUTER")
             self._pool.invalidate_version(router_key)
@@ -170,7 +172,7 @@ class MikrotikAPI:
         except (ValueError, TypeError, KeyError, RuntimeError):
             broken = True
             raise
-        except Exception:
+        except Exception:  # noqa: BLE001 - catch-all: unexpected errors mark connection as broken for safe release
             broken = True
             raise
         finally:
@@ -196,9 +198,10 @@ class MikrotikAPI:
                 "Health check failed for %s (error type: %s): %s",
                 router_key, type(e).__name__, sanitize_log_data(str(e)),
                 extra={"component": "ROUTER"},
+                exc_info=True,
             )
             return False, str(e)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             duration_ms = (time.monotonic() - start) * 1000
             log_api_call(router_key, "system/resource/print", duration_ms, False, error=e, component="ROUTER")
             logger.warning(
@@ -253,7 +256,8 @@ class MikrotikAPI:
     def _execute_with_retry(
         self, router_key: str, command: str, timeout: int, **kwargs: object
     ) -> RouterOSResponse:
-        """القالب الأساسي: throttle → تنفيذ → retry مع exponential backoff."""
+        """القالب الأساسي: circuit-breaker → throttle → تنفيذ → retry مع exponential backoff."""
+        self._circuit_breaker.before_request(router_key)
         start = time.monotonic()
         self._throttle(router_key)
         last_exc: Exception | None = None
@@ -275,13 +279,16 @@ class MikrotikAPI:
                     result = self._call_command(api, command, **kwargs)  # type: ignore[reportArgumentType]
                     duration_ms = (time.monotonic() - start) * 1000
                     log_api_call(router_key, command, duration_ms, True, component="ROUTER")
+                    self._circuit_breaker.on_success(router_key)
                     return result
             except (LibRouterosError, ConnectionError, OSError) as e:
                 if command == "system/reboot":
                     duration_ms = (time.monotonic() - start) * 1000
                     log_api_call(router_key, command, duration_ms, True, component="ROUTER")
+                    self._circuit_breaker.on_success(router_key)
                     return []
                 if any(pat in str(e) for pat in NON_RETRYABLE_ERRORS):
+                    self._circuit_breaker.on_success(router_key)
                     logger.debug(
                         "Non-retryable error for %s on %s: %s",
                         command, router_key, sanitize_log_data(str(e)),
@@ -301,7 +308,10 @@ class MikrotikAPI:
                         exc_info=True,
                         extra={"component": "ROUTER"},
                     )
+                    self._circuit_breaker.on_failure(router_key)
                     raise
+            except CircuitBreakerOpenError:
+                raise
         raise last_exc  # type: ignore[misc]
 
     # ──────────────────────────────────────────────────────────────
@@ -356,8 +366,9 @@ class MikrotikAPI:
                 "Non-blocking command failed (error type: %s): %s",
                 type(e).__name__, sanitize_log_data(str(e)),
                 extra={"component": "ROUTER"},
+                exc_info=True,
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: DB write failure should not mask operation outcome
             duration_ms = (time.monotonic() - start) * 1000
             log_api_call(router_key, command, duration_ms, False, error=e, component="ROUTER")
             logger.warning(
@@ -434,7 +445,7 @@ class MikrotikAPI:
                     )
                 ssl_hint = self._probe_api_ssl(ip, username, password)
                 return False, self._classify_connect_failure(e, ip, port, ssl_hint), ""
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                 duration_ms = (time.monotonic() - start) * 1000
                 log_api_call(ip, "connect", duration_ms, False, error=e, component="ROUTER")
                 logger.exception(
@@ -453,11 +464,12 @@ class MikrotikAPI:
                             ip, type(e).__name__, sanitize_log_data(str(e)),
                             extra={"component": "ROUTER"},
                         )
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                         logger.debug(
                             "Error closing test connection for %s (error type: %s): %s",
                             ip, type(e).__name__, sanitize_log_data(str(e)),
                             extra={"component": "ROUTER"},
+                        exc_info=True,
                         )
 
     def _is_timeout_error(self, exc: Exception) -> bool:
@@ -591,7 +603,7 @@ class MikrotikAPI:
                 remote_name, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Router failed to fetch %s (error type: %s): %s",
                 remote_name, type(e).__name__, sanitize_log_data(str(e)),
@@ -647,7 +659,7 @@ class MikrotikAPI:
                 remote_name, type(e).__name__, sanitize_log_data(str(e)),
             )
             return False
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Router failed to push %s (error type: %s): %s",
                 remote_name, type(e).__name__, sanitize_log_data(str(e)),
@@ -672,10 +684,11 @@ class MikrotikAPI:
                     "Error closing api-ssl probe for %s (error type: %s): %s",
                     ip, type(e).__name__, sanitize_log_data(str(e)),
                 )
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                 logger.debug(
                     "Error closing api-ssl probe for %s (error type: %s): %s",
                     ip, type(e).__name__, sanitize_log_data(str(e)),
+                exc_info=True,
                 )
             return (
                 "\n\n💡 لاحظت أن منفذ 8729 (api-ssl) مفتوح على الراوتر. البوت يستخدم حالياً "
@@ -687,10 +700,11 @@ class MikrotikAPI:
                 ip, type(e).__name__, sanitize_log_data(str(e)),
             )
             return ""
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.debug(
                 "api-ssl probe failed for %s (error type: %s): %s",
                 ip, type(e).__name__, sanitize_log_data(str(e)),
+            exc_info=True,
             )
             return ""
 

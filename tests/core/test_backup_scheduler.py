@@ -138,15 +138,15 @@ class TestBackupScheduler:
             mock_run.side_effect = [
                 routers_list,
                 (True, "healthy"),
-                None,
-                1,  # router1: health, userman_backup, record
                 {"success": True},
-                2,  # router1: full_backup, record
+                1,
+                {"success": True},
+                2,
                 (True, "healthy"),
-                None,
-                3,  # router2: health, userman_backup, record
                 {"success": True},
-                4,  # router2: full_backup, record
+                3,
+                {"success": True},
+                4,
             ]
             scheduler = BackupScheduler()
             await scheduler._do_backup(mock_context)
@@ -167,7 +167,7 @@ class TestBackupScheduler:
                     {"id": 2, "username": "admin", "identity": "R2"},
                 ],
                 (True, "healthy"),
-                None,
+                {"success": True},
                 1,
                 {"success": True},
                 2,
@@ -215,8 +215,8 @@ class TestBackupScheduler:
             mock_run.side_effect = [
                 [{"id": 1, "username": "admin", "identity": "R1"}],
                 (True, "healthy"),
+                {"success": True},
                 None,
-                1,
                 {"success": True, "message": "ok"},
                 None,
             ]

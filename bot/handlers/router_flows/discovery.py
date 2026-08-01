@@ -77,7 +77,8 @@ async def discover_routers_callback(update: Update, context: ContextTypes.DEFAUL
         await query.edit_message_text(
             DISCOVERY_PERMISSION_ERROR, reply_markup=get_router_keyboard()
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("discover_routers_callback failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,

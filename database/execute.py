@@ -49,7 +49,7 @@ def timed_execute(
         cursor.execute(sql, params or ())
         elapsed_ms = (time.monotonic() - t0) * 1000
         record_db_query(operation, table, True, elapsed_ms)
-    except Exception:
+    except Exception:  # noqa: BLE001 - catch-all: log all DB query failures before re-raising
         elapsed_ms = (time.monotonic() - t0) * 1000
         record_db_query(operation, table, False, elapsed_ms)
         raise

@@ -15,10 +15,11 @@ def add_tracked_message(chat_id: int, message_id: int) -> None:
                 "INSERT INTO tracked_messages (chat_id, message_id) VALUES (?, ?)",
                 (chat_id, message_id),
             )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.error(
             "Failed to track message %d in chat %d (error type: %s): %s",
             message_id, chat_id, type(e).__name__, e,
+        exc_info=True,
         )
 
 
@@ -33,10 +34,11 @@ def get_tracked_messages(chat_id: int) -> list[int]:
                 (chat_id,),
             )
             return [row["message_id"] for row in cursor.fetchall()]
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.error(
             "Failed to get tracked messages for chat %d (error type: %s): %s",
             chat_id, type(e).__name__, e,
+        exc_info=True,
         )
         return []
 
@@ -55,10 +57,11 @@ def remove_tracked_messages(chat_id: int, message_ids: list[int]) -> None:
                 f"DELETE FROM tracked_messages WHERE chat_id = ? AND message_id IN ({placeholders})",  # noqa: E501
                 [chat_id] + message_ids,
             )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.error(
             "Failed to remove tracked messages %s in chat %d (error type: %s): %s",
             message_ids, chat_id, type(e).__name__, e,
+        exc_info=True,
         )
 
 
@@ -74,8 +77,9 @@ def delete_stale_records(cutoff_datetime: str) -> None:
             deleted_count = cursor.rowcount
             if deleted_count > 0:
                 logger.info("Purged %d stale tracked messages from database.", deleted_count)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.error(
             "Failed to delete stale tracked messages (error type: %s): %s",
             type(e).__name__, e,
+        exc_info=True,
         )

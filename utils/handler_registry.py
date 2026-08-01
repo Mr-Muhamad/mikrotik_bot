@@ -300,7 +300,7 @@ def _build_handler(entry: _RegistryEntry) -> BaseHandler:  # type: ignore[type-a
                 record_telegram_request(handler_name, True, elapsed_ms)
                 record_component_result(COMPONENT_HANDLER, True)
                 return result
-            except Exception:
+            except Exception:  # noqa: BLE001 - catch-all: record metrics before re-raising
                 elapsed_ms = (time.monotonic() - t0) * 1000
                 record_telegram_request(handler_name, False, elapsed_ms)
                 record_component_result(COMPONENT_HANDLER, False)

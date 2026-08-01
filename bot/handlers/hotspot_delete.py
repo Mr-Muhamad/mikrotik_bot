@@ -90,8 +90,8 @@ async def hotspot_delete_select(update: Update, context: ContextTypes.DEFAULT_TY
             reply_markup=get_confirm_keyboard(),
         )
         return WAITING_INPUT
-    except Exception as e:  # noqa: BLE001
-        logger.error("hotspot_delete_select failed (error type: %s): %s", type(e).__name__, e)
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("hotspot_delete_select failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,
@@ -151,11 +151,11 @@ async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if username:
                 try:
                     await run_blocking(hotspot_manager.kick_user, router_key, username)
-                except Exception as kick_err:  # noqa: BLE001
-                    logger.warning("Failed to kick user '%s' after delete: %s", username, kick_err)
+                except Exception as kick_err:  # noqa: BLE001 - post-delete cleanup: kick failure should not block delete confirmation
+                    logger.warning("Failed to kick user '%s' after delete: %s", username, kick_err, exc_info=True)
             await edit_clean(query, context, SUCCESS_DELETE, get_hotspot_keyboard())
-        except Exception as e:  # noqa: BLE001
-            logger.error("confirm_callback delete failed (error type: %s): %s", type(e).__name__, e)
+        except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+            logger.error("confirm_callback delete failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
             await send_error(
                 update,
                 context,

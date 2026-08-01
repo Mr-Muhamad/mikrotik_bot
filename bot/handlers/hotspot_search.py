@@ -177,7 +177,8 @@ async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFA
 async def _search_users(router_key: str, term: str) -> list[RouterOSRow]:
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, term)
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
+        logger.exception("Unexpected error searching users for %s", router_key)
         return []
     return [
         {
@@ -203,7 +204,8 @@ async def _search_hosts_by_field(router_key: str, field: str, value: str) -> lis
     """
     try:
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, value)
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
+        logger.exception("Unexpected error searching hosts by field for %s", router_key)
         return []
     value = value.lower().strip()
     return [h for h in hosts if value in str(h.get(field) or "").lower()]
@@ -214,9 +216,11 @@ async def _search_hosts_with_users(router_key: str, query: str) -> list[RouterOS
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, query)
         try:
             users = await run_blocking(hotspot_manager.search_users, router_key, query)
-        except Exception:  # noqa: BLE001
+        except Exception:  # noqa: BLE001 - catch-all: log unexpected error before using empty list
+            logger.exception("Unexpected error searching users during host enrichment for %s", router_key)
             users = []
-    except Exception:  # noqa: BLE001
+    except Exception:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
+        logger.exception("Unexpected error searching hosts for %s", router_key)
         return []
     return _enrich_hosts(hosts, users)
 
@@ -337,7 +341,8 @@ async def hotspot_show_host(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 is_disabled=is_disabled, mac=mac if mac != "—" else ""
             ),
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("hotspot_show_host failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,
@@ -400,7 +405,8 @@ async def hotspot_host_action(update: Update, context: ContextTypes.DEFAULT_TYPE
             await safe_edit_plain(
                 query, context, HOST_KICK_FAILED, reply_markup=get_hotspot_keyboard()
             )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("hotspot_host_action failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,
@@ -514,7 +520,8 @@ async def show_blocked_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text,
                 reply_markup=get_blocked_macs_keyboard(blocked),
             )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("show_blocked_list failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,

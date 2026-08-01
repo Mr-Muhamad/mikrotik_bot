@@ -351,7 +351,7 @@ async def _notify_critical_admins(
             await send_text(
                 update, context, text, chat_id=admin_id
             )
-        except Exception:
+        except Exception:  # noqa: BLE001 - catch-all: notification failures must not break main error handling
             logger.exception(
                 "Failed to notify admin %d about critical error %s", admin_id, category
             )

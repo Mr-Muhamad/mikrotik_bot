@@ -52,7 +52,7 @@ def get_db():
         # Lazy import to avoid circular dependency
         from utils.log_helpers import log_db_operation  # noqa: PLC0415
         log_db_operation("commit", "conn", elapsed, success=True)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - catch-all: rollback on any error, re-raise after
         conn.rollback()
         elapsed = (time.perf_counter() - start) * 1000
         from utils.log_helpers import log_db_operation  # noqa: PLC0415

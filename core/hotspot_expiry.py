@@ -30,10 +30,11 @@ def _parse_uptime_to_seconds(raw: str) -> int:
         mn = int(m.group(3) or 0)
         s = int(m.group(4) or 0)
         return d * 86400 + h * 3600 + mn * 60 + s
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.debug(
             "Failed to parse uptime '%s' (error type: %s): %s",
             raw, type(e).__name__, sanitize_log_data(str(e)),
+        exc_info=True,
         )
         return 0
 
@@ -76,10 +77,11 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
                 router_key, type(e).__name__, sanitize_log_data(str(e)),
             )
             active_map = {}
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.warning(
                 "Failed to fetch active sessions for %s (error type: %s): %s",
                 router_key, type(e).__name__, sanitize_log_data(str(e)),
+            exc_info=True,
             )
             active_map = {}
 
@@ -111,10 +113,11 @@ def get_expiring_users(api: MikrotikClient, router_key: str, days: int = 3) -> l
             "get_expiring_users failed for %s (error type: %s): %s",
             router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "get_expiring_users failed for %s (error type: %s): %s",
             router_key, type(e).__name__, sanitize_log_data(str(e)),
+        exc_info=True,
         )
     return sorted(result, key=lambda x: float(x["remaining_days"] or 0))
 
@@ -183,9 +186,10 @@ def get_custom_expiring_users(
             "get_custom_expiring_users failed for %s (error type: %s): %s",
             router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "get_custom_expiring_users failed for %s (error type: %s): %s",
             router_key, type(e).__name__, sanitize_log_data(str(e)),
+        exc_info=True,
         )
     return sorted(result, key=lambda x: int(x.get("days_left", 0) or 0))

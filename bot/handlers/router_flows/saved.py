@@ -201,7 +201,8 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 version,
                 reply_markup=get_router_action_keyboard(router_id),
             )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("connect_router_callback failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,

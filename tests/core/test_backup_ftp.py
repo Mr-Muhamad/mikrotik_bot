@@ -684,7 +684,7 @@ class TestDownloadEdgeCases:
         ftp_inst.quit.assert_called_once()
 
     @patch("core.backup.ftp.ftplib.FTP")
-    def test_download_connect_timeout_does_not_call_quit(self, MockFTP, _patch_api_and_port):
+    def test_download_connect_timeout_still_quits_for_cleanup(self, MockFTP, _patch_api_and_port):
         from core.backup.ftp import download_files_via_ftp
 
         mock_api, _ = _patch_api_and_port
@@ -700,7 +700,7 @@ class TestDownloadEdgeCases:
             result = download_files_via_ftp("r1", "/tmp", ["f.backup"])
 
         assert result == []
-        ftp_inst.quit.assert_not_called()
+        ftp_inst.quit.assert_called_once()
 
     @patch("core.backup.ftp.ftplib.FTP")
     def test_download_partial_failure_logs_correctly(self, MockFTP, _patch_api_and_port):
@@ -732,7 +732,7 @@ class TestDownloadEdgeCases:
 
 class TestUploadEdgeCases:
     @patch("core.backup.ftp.ftplib.FTP")
-    def test_upload_does_not_quit_on_failure(self, MockFTP, _patch_api_and_port):
+    def test_upload_quits_even_when_storbinary_fails(self, MockFTP, _patch_api_and_port):
         from core.backup.ftp import upload_file_via_ftp
 
         mock_api, _ = _patch_api_and_port
@@ -747,7 +747,7 @@ class TestUploadEdgeCases:
         with patch("builtins.open", mock_open(read_data=b"d")):
             upload_file_via_ftp("r1", "/tmp/f", "remote.f")
 
-        ftp_inst.quit.assert_not_called()
+        ftp_inst.quit.assert_called_once()
 
     @patch("core.backup.ftp.ftplib.FTP")
     def test_upload_returns_false_on_file_not_found(self, MockFTP, _patch_api_and_port):

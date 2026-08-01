@@ -126,7 +126,7 @@ async def hotspot_edit_select(update: Update, context: ContextTypes.DEFAULT_TYPE
     user = None
     try:
         user = await run_blocking(hotspot_manager.get_user, router_key, user_id)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
         logger.error("hotspot_edit_select failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
@@ -225,8 +225,8 @@ async def hotspot_edit_reset(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await query.edit_message_text(
             text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
         )
-    except Exception as e:  # noqa: BLE001
-        logger.error("hotspot_edit_reset failed (error type: %s): %s", type(e).__name__, e)
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("hotspot_edit_reset failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,
@@ -286,8 +286,8 @@ async def hotspot_edit_kick(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(
             msg, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
         )
-    except Exception as e:  # noqa: BLE001
-        logger.error("hotspot_edit_kick failed (error type: %s): %s", type(e).__name__, e)
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("hotspot_edit_kick failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,
@@ -354,9 +354,9 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await query.edit_message_text(
                 text, reply_markup=get_edit_field_keyboard(is_disabled=is_disabled)
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
             logger.error(
-                "hotspot_edit_toggle_disabled failed (error type: %s): %s", type(e).__name__, e
+                "hotspot_edit_toggle_disabled failed (error type: %s): %s", type(e).__name__, e, exc_info=True
             )
             await send_error(
                 update,
@@ -383,8 +383,8 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
                 keyboard=get_profile_keyboard(profile_names, "edit_profile", "edit_back_to_fields"),
             )
             return WAITING_EDIT_VALUE
-        except Exception as e:  # noqa: BLE001
-            logger.error("hotspot_edit_field failed (error type: %s): %s", type(e).__name__, e)
+        except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+            logger.error("hotspot_edit_field failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
             await send_error(
                 update,
                 context,
@@ -447,8 +447,8 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
             EDIT_SELECT_FIELD.format(format_hotspot_user(user_data or {})),
             reply_markup=get_edit_field_keyboard(is_disabled=is_disabled),
         )
-    except Exception as e:  # noqa: BLE001
-        logger.error("edit_profile_selected failed (error type: %s): %s", type(e).__name__, e)
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("edit_profile_selected failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,
@@ -511,7 +511,8 @@ async def _validate_edit_field(
         if new_value != current_name:
             try:
                 exists = await run_blocking(hotspot_manager.user_exists, router_key, new_value)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+                logger.error("hotspot_edit_value user_exists check failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
                 await send_error(
                     update,
                     context,
@@ -642,8 +643,8 @@ async def hotspot_edit_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             update, context, user_data, new_value, api_field,
             field, user_name, router_key, user_id,
         )
-    except Exception as e:  # noqa: BLE001
-        logger.error("hotspot_edit_value failed (error type: %s): %s", type(e).__name__, e)
+    except Exception as e:  # noqa: BLE001 - handler boundary: must catch all errors in callback handler
+        logger.error("hotspot_edit_value failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
         await send_error(
             update,
             context,

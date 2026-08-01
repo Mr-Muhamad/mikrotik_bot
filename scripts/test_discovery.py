@@ -41,7 +41,7 @@ async def run_real_discovery_test():
             print(f"   • IP: {ip} | Identity: {identity} | Board: {board} | Version: {version}")
     except PermissionError:
         print("⚠️ فشل MNDP: يتطلب تشغيل السكربت كـ Administrator لفتح منفذ UDP Raw Socket.")
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         print(f"❌ خطأ أثناء MNDP: {e}")
     # 2. Test ARP Table
     print("\n📋 [2/3] فحص جدول ARP المحلي للأجهزة المتصلة...")

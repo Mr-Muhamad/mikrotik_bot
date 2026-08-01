@@ -235,11 +235,12 @@ def load_status_from_db() -> None:
                 "Watchdog: loaded status for %d routers from DB",
                 len(all_latest),
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.warning(
                 "Watchdog: failed to load status from DB "
                 "(error type: %s): %s",
                 type(e).__name__,
                 e,
                 extra={"component": COMPONENT_SERVICE},
+            exc_info=True,
             )

@@ -34,7 +34,7 @@ class ProfileSync:
                 exc_info=True,
             )
             return []
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Error fetching user manager profiles in get_userman_profiles (router='%s') "
                 "(error type: %s): %s",

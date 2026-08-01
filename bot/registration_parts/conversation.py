@@ -243,8 +243,8 @@ async def _unhandled_callback_handler(update: Update, context: ContextTypes.DEFA
                 "⚠️ هذه القائمة قديمة أو منتهية الصلاحية.\nتم تحديث الواجهة تلقائياً.",
                 reply_markup=get_main_keyboard(),
             )
-        except Exception as e:  # noqa: BLE001
-            logger.debug("Handling stale callback message edit skip: %s", e)
+        except Exception as e:  # noqa: BLE001 - stale callback: old message may already be deleted, log and continue
+            logger.debug("Handling stale callback message edit skip: %s", e, exc_info=True)
 
 
 fallback(CallbackQueryHandler, pattern=r"^.*$")(_unhandled_callback_handler)

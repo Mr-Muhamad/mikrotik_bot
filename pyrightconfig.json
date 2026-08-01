@@ -10,20 +10,24 @@
   ],
   "pythonVersion": "3.12",
   "typeCheckingMode": "strict",
+  // The following 9 checks are disabled to avoid noise from third-party stubs
+  // (librouteros, python-telegram-bot) that do not ship proper type info.
+  // Re-enabling would require either contributing missing stubs upstream or
+  // adding per-line `# pyright: ignore` suppressions. Tracked as tech debt.
   "reportOptionalMemberAccess": "none",
   "reportOptionalSubscript": "none",
   "reportOptionalCall": "none",
   "reportOptionalIterable": "none",
   "reportOptionalContextManager": "none",
-  "reportMissingModuleSource": false,
-  "reportMissingTypeStubs": "none",
-  "reportUnusedExpression": "error",
-  "reportAttributeAccessIssue": "error",
-  "reportArgumentType": "error",
-  "reportIndexIssue": "error",
   "reportUnknownMemberType": "none",
   "reportUnknownVariableType": "none",
   "reportUnknownArgumentType": "none",
   "reportUnknownParameterType": "none",
   "reportUnknownLambdaType": "none",
+  "reportMissingModuleSource": false,
+  "reportMissingTypeStubs": "none",
+  "reportUnusedExpression": "error",
+  "reportAttributeAccessIssue": "error",
+  "reportArgumentType": "error",
+  "reportIndexIssue": "error"
 }

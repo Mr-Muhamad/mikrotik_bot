@@ -112,14 +112,14 @@ class TestProfileCacheThreadSafety:
             try:
                 for i in range(100):
                     cache.set(key, [f"v{i}"])
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                 errors.append(e)
 
         def reader(key):
             try:
                 for _ in range(100):
                     cache.get(key)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                 errors.append(e)
 
         threads = [

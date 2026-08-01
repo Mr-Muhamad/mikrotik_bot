@@ -48,6 +48,7 @@ from bot.router_selector import cleanup_state, nav_set, set_current_action
 from core.backup.files import resolve_local_backup_file
 from core.backup_scheduler import backup_scheduler
 from core.backup_service import backup_service
+from core.mikrotik_client import RouterOSRow
 from database.repositories.audit_logs import log_action
 from database.repositories.backups import get_backup_schedule, record_backup_result
 from utils.admin_decorator import admin_only, require_role
@@ -126,6 +127,52 @@ async def _finish_backup_result(
     logger.info("Background %s backup succeeded for router %s", b_type, router_key)
 
 
+def _persist_backup_record(
+    router_key: str,
+    action: str,
+    user_id: int,
+    b_type: str,
+    result: RouterOSRow,
+    file_key: str,
+) -> None:
+    """Persist audit log and backup result to DB.
+
+    Best-effort: if the DB write fails, log a warning but do not raise.
+    This prevents a DB failure from masking the actual backup outcome
+    communicated to the user.
+
+    Args:
+        router_key: The router identifier.
+        action: Audit log action name (e.g. "full_backup", "userman_backup").
+        user_id: Telegram user ID for audit logging.
+        b_type: Backup type for record_backup_result.
+        result: Backup result dict from backup_service.
+        file_key: Key to extract the file name from result.
+    """
+    try:
+        log_action(action, "", router_key, user_id)
+    except Exception:  # noqa: BLE001 - best-effort: audit log failure should not block user notification
+        logger.warning(
+            "Failed to write audit log for %s backup on %s",
+            b_type, router_key,
+            exc_info=True,
+        )
+    try:
+        record_backup_result(
+            router_key,
+            b_type,
+            bool(result["success"]),
+            str(result.get("message", "")),
+            file_name=str(result.get(file_key, "")),
+        )
+    except Exception:  # noqa: BLE001 - best-effort: backup record failure should not block user notification
+        logger.warning(
+            "Failed to record backup result for %s on %s",
+            b_type, router_key,
+            exc_info=True,
+        )
+
+
 async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
     job = context.job
 
@@ -140,15 +187,8 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
     try:
         if b_type == "full":
             result = await run_blocking(backup_service.full_backup, router_key)
-            await run_blocking(log_action, "full_backup", "", router_key, user_id)
-            await run_blocking(
-                record_backup_result,
-                router_key,
-                "full",
-                result["success"],
-                result.get("message", ""),
-                file_name=result.get("local_path", ""),
-            )
+            # DB writes are best-effort: a DB failure must not mask the actual backup result
+            _persist_backup_record(router_key, "full_backup", user_id, "full", result, "local_path")
             if result["success"]:
                 await _finish_backup_result(
                     context, chat_id, user_id, router_key, "full", result,
@@ -163,15 +203,8 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
 
         elif b_type == "userman":
             result = await run_blocking(backup_service.userman_backup, router_key)
-            await run_blocking(log_action, "userman_backup", "", router_key, user_id)
-            await run_blocking(
-                record_backup_result,
-                router_key,
-                "userman",
-                result["success"],
-                result.get("message", ""),
-                file_name=result.get("filename", ""),
-            )
+            # DB writes are best-effort: a DB failure must not mask the actual backup result
+            _persist_backup_record(router_key, "userman_backup", user_id, "userman", result, "filename")
             if result["success"]:
                 await _finish_backup_result(
                     context, chat_id, user_id, router_key, "userman", result,
@@ -185,7 +218,7 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                     text=BACKUP_FAILED_USERMAN.format(message=result["message"]),
                 )
                 logger.warning("Background userman backup failed for router %s: %s", router_key, result.get("message"))
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - background task: must not crash scheduler even on unexpected errors
         logger.exception("Background backup failed for %s: %s", router_key, e)
         try:
             await context.bot.send_message(

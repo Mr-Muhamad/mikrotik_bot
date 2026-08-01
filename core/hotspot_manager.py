@@ -118,7 +118,7 @@ class HotspotManager:
                 exc_info=True,
             )
             return False
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Failed to check user existence for '%s' in user_exists (router='%s') "
                 "(error type: %s): %s",
@@ -254,11 +254,12 @@ class HotspotManager:
                     "(error type: %s): %s",
                     search, field, type(e).__name__, sanitize_log_data(str(e)),
                 )
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                 logger.debug(
                     "API-side filtered search for '%s' on %s failed "
                     "(error type: %s): %s",
                     search, field, type(e).__name__, sanitize_log_data(str(e)),
+                exc_info=True,
                 )
 
         if not results:
@@ -339,7 +340,7 @@ class HotspotManager:
                 exc_info=True,
             )
             return []
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Failed to fetch hotspot profiles in get_profiles (router='%s') "
                 "(error type: %s): %s",
@@ -456,7 +457,7 @@ class HotspotManager:
                             type(e).__name__, sanitize_log_data(str(e)),
                             exc_info=True,
                         )
-                    except Exception as e:  # noqa: BLE001
+                    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                         logger.exception(
                             "Failed to add hotspot card user '%s' in generate_cards (router='%s') "
                             "(error type: %s): %s",
@@ -575,7 +576,7 @@ class HotspotManager:
                                 type(ex).__name__, sanitize_log_data(str(ex)),
                                 exc_info=True,
                             )
-                        except Exception as ex:  # noqa: BLE001
+                        except Exception as ex:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                             logger.warning(
                                 "Failed to purge user %s in purge_expired_users (router='%s') "
                                 "(error type: %s): %s",
@@ -592,7 +593,7 @@ class HotspotManager:
                 exc_info=True,
             )
             return 0
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.exception(
                 "Failed to purge expired users on %s in purge_expired_users "
                 "(error type: %s): %s",

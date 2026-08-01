@@ -91,7 +91,7 @@ class UserManagerBackupService:
             )
             self._cleanup_partial_file(umb_path)
             return cast(RouterOSRow, {"success": False, "message": f"فشل الباكوب: {sanitize_log_data(str(e))}"})
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected errors before returning failure result
             logger.exception(
                 "User Manager backup failed for %s (error type: %s): %s",
                 router_name, type(e).__name__, sanitize_log_data(str(e)),
@@ -133,7 +133,7 @@ class UserManagerBackupService:
                 router_name, type(e).__name__, sanitize_log_data(str(e)),
             )
             return cast(RouterOSRow, {"success": False, "message": f"فشل الاستعادة: {sanitize_log_data(str(e))}"})
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected errors before returning failure result
             logger.exception(
                 "User Manager restore failed for %s (error type: %s): %s",
                 router_name, type(e).__name__, sanitize_log_data(str(e)),

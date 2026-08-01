@@ -63,7 +63,7 @@ class TestBackupSingleRouter:
 
         mock_run.side_effect = [
             (True, "ok"),  # health check
-            None,  # userman_backup ok
+            {"success": True},  # userman_backup ok
             None,  # record_backup_result
             LibRouterosError("full fail"),  # full_backup raises
             None,  # record_backup_result
@@ -84,7 +84,7 @@ class TestBackupSingleRouter:
     async def test_full_backup_success_false(self, mock_run):
         mock_run.side_effect = [
             (True, "ok"),
-            None,
+            {"success": True},
             None,
             {"success": False, "message": "disk full"},
             None,
@@ -105,7 +105,7 @@ class TestBackupSingleRouter:
     async def test_full_backup_success_true(self, mock_run):
         mock_run.side_effect = [
             (True, "ok"),
-            None,
+            {"success": True},
             None,
             {"success": True, "message": "ok"},
             None,

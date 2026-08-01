@@ -159,7 +159,7 @@ async def run_flow(app: Application, update: Update) -> None:
     update._bot = app.bot
     try:
         await app.process_update(update)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         captured_errors.append(f"{type(e).__name__}: {e}")
         logger.exception("Update raised: %s", e)
 

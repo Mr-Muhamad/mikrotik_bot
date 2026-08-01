@@ -56,7 +56,7 @@ class StatsManager:
                 exc_info=True,
             )
             return None
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: background stats task must not crash on unexpected errors
             logger.exception(
                 "Error getting hotspot stats in get_hotspot_stats (router='%s') "
                 "(error type: %s): %s",
@@ -89,7 +89,7 @@ class StatsManager:
                 exc_info=True,
             )
             return None
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: background stats task must not crash on unexpected errors
             logger.exception(
                 "Error getting userman stats in get_userman_stats (router='%s') "
                 "(error type: %s): %s",

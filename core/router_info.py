@@ -48,10 +48,11 @@ def _probe_path(router_key: str, path: str) -> bool:
             path, router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
         return False
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.debug(
             "Probe failed for %s on %s (error type: %s): %s",
             path, router_key, type(e).__name__, sanitize_log_data(str(e)),
+        exc_info=True,
         )
         return False
 
@@ -91,9 +92,10 @@ def detect_router_system(router_key: str | None) -> str:
             router_key, type(e).__name__, sanitize_log_data(str(e)),
         )
         return SYSTEM_UNKNOWN
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.warning(
             "detect_router_system failed for %s (error type: %s): %s",
             router_key, type(e).__name__, sanitize_log_data(str(e)),
+        exc_info=True,
         )
         return SYSTEM_UNKNOWN

@@ -142,10 +142,11 @@ async def _delete_message_ids(
         try:
             await context.bot.delete_message(chat_id=chat_id, message_id=message_ids[0])
             return 1
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.debug(
                 "Failed to delete message %s in chat %s (error type: %s): %s",
                 message_ids[0], chat_id, type(e).__name__, e,
+            exc_info=True,
             )
             return 0
 
@@ -153,10 +154,11 @@ async def _delete_message_ids(
         result = await context.bot.delete_messages(chat_id=chat_id, message_ids=message_ids)
         if result is True:
             return len(message_ids)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.debug(
             "Batched delete failed for chat %s (error type: %s): %s",
             chat_id, type(e).__name__, e,
+        exc_info=True,
         )
 
     deleted = 0
@@ -164,10 +166,11 @@ async def _delete_message_ids(
         try:
             await context.bot.delete_message(chat_id=chat_id, message_id=mid)
             deleted += 1
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
             logger.debug(
                 "Failed to delete message %s in chat %s (error type: %s): %s",
                 mid, chat_id, type(e).__name__, e,
+            exc_info=True,
             )
         # Throttle to prevent FloodWait when deleting many individual messages
         await asyncio.sleep(0.05)
@@ -208,8 +211,8 @@ async def _delete_job(context: _CleanerContext) -> None:
             message_id=int(str(data["message_id"])),
         )
         _stats["messages_deleted"] += 1
-    except Exception as e:  # noqa: BLE001
-        logger.debug("Delete failed (error type: %s): %s", type(e).__name__, e)
+    except Exception as e:  # noqa: BLE001 - catch-all: background stats task must not crash on unexpected errors
+        logger.debug("Delete failed (error type: %s): %s", type(e).__name__, e, exc_info=True)
 
 
 async def delete_now(context: _CleanerContext, chat_id: int, message_id: int) -> None:
@@ -217,7 +220,7 @@ async def delete_now(context: _CleanerContext, chat_id: int, message_id: int) ->
     try:
         await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
         _stats["messages_deleted"] += 1
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: background stats task must not crash on unexpected errors
         logger.debug("delete_now failed (error type: %s): %s", type(e).__name__, e)
 
 
@@ -298,7 +301,7 @@ async def safe_edit_or_send(
             context.user_data["last_msg"] = edited.message_id
             return edited
         return None
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         logger.debug("edit_or_send failed with benign error: %s", e)
         if _is_benign_edit_error(e):
             prev = context.user_data.pop("last_msg", None)
@@ -333,9 +336,9 @@ async def edit_clean(
         edited = await query.edit_message_text(
             text=text, reply_markup=keyboard, parse_mode="HTML"
         )
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         if _is_benign_edit_error(e):
-            logger.debug("edit_clean benign skip: %s", e)
+            logger.debug("edit_clean benign skip: %s", e, exc_info=True)
             return None
         raise
     if isinstance(edited, Message) and message is not None:
@@ -366,9 +369,9 @@ async def safe_edit_plain(
             return None
     try:
         edited = await query.edit_message_text(text=text, reply_markup=reply_markup)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
         if _is_benign_edit_error(e):
-            logger.debug("safe_edit_plain benign skip: %s", e)
+            logger.debug("safe_edit_plain benign skip: %s", e, exc_info=True)
             return None
         raise
     if isinstance(edited, Message) and message is not None:
