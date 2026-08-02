@@ -25,6 +25,20 @@ def _warn_plaintext_ftp() -> None:
         )
 
 
+def _remove_partial_file(local_path: str) -> None:
+    """Best-effort deletion of a partially downloaded file after a failed transfer."""
+    try:
+        if os.path.exists(local_path):
+            os.remove(local_path)
+            logger.debug("Removed partial download: %s", local_path)
+    except OSError as e:
+        logger.debug(
+            "Could not remove partial download %s: %s",
+            local_path,
+            sanitize_log_data(str(e)),
+        )
+
+
 def get_router_ftp_info(router_key: str, ftp_port: int) -> RouterOSRow | None:
     try:
         info = mikrotik_api.get_router_info(router_key)
@@ -79,6 +93,7 @@ def download_files_via_ftp(router_key: str, backup_dir: str, files_to_get: list[
                 logger.info("FTP downloaded: %s", fname)
             except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
                 logger.warning("FTP download failed for %s: %s", fname, e)
+                _remove_partial_file(local_path)
     except (TimeoutError, OSError, ftplib.Error, EOFError) as e:
         logger.error("FTP connection failed for %s:%s: %s", ftp_info["host"], ftp_info["port"], e)
     finally:

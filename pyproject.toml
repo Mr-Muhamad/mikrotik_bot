@@ -2,6 +2,7 @@
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+markers = ["stress", "fault"]
 
 [tool.coverage.run]
 source = ["bot", "core", "database", "utils", "pdf"]
