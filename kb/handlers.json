@@ -745,6 +745,11 @@
     "file": "bot/handlers/hotspot_common.py"
   },
   {
+    "id": "func:bot.handlers.hotspot_common.ensure_hotspot_user_exists",
+    "name": "ensure_hotspot_user_exists",
+    "file": "bot/handlers/hotspot_common.py"
+  },
+  {
     "id": "func:bot.handlers.hotspot_common.handle_page_callback",
     "name": "handle_page_callback",
     "file": "bot/handlers/hotspot_common.py"

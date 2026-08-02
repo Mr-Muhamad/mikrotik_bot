@@ -1043,6 +1043,13 @@
     "docstring": ""
   },
   {
+    "id": "function:bot.handlers.hotspot_common.ensure_hotspot_user_exists",
+    "name": "ensure_hotspot_user_exists",
+    "type": "function",
+    "file": "bot/handlers/hotspot_common.py",
+    "docstring": "Return True if the hotspot user still exists on the router. Uses the cached user lookup (users cache TTL 5s). On verification failure (transport/API error) it returns True so the operation proceeds and the router's write-time trap error re…"
+  },
+  {
     "id": "function:bot.handlers.hotspot_common.handle_page_callback",
     "name": "handle_page_callback",
     "type": "function",
@@ -3623,7 +3630,7 @@
     "name": "user_exists",
     "type": "method",
     "file": "core/hotspot_manager.py",
-    "docstring": "Return True if a hotspot user with the given name already exists on the router. Uses an API-side ``?name=`` filter to avoid pulling the full user list. On any transport/API error it returns False so callers fall back to the defensive dupli…"
+    "docstring": "Return True if a hotspot user with the given name already exists on the router. Uses an API-side ``?name=`` filter to avoid pulling the full user list. On any transport/API error it returns False so callers treat the name as unknown; if a …"
   },
   {
     "id": "method:core.hotspot_manager.HotspotManager._generate_unique_username",
@@ -6997,7 +7004,7 @@
     "name": "sanitize_api_response",
     "type": "function",
     "file": "utils/formatters.py",
-    "docstring": "Remove sensitive fields from MikroTik API responses for safe logging. Non-dict rows (e.g. ``None`` returned by a malformed router response) are passed through unchanged instead of raising ``AttributeError``, so the sanitizer never crashes …"
+    "docstring": "Remove sensitive fields from MikroTik API responses for safe logging. Non-dict rows (e.g. ``None`` or scalar values returned by a malformed router response) are passed through unchanged instead of raising ``AttributeError``, so the sanitiz…"
   },
   {
     "id": "function:utils.formatters.sanitize_log_data",
