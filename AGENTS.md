@@ -536,6 +536,7 @@ py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --c
 - `check_type_ignore.py` يتحقق من أن كل `# type: ignore` يحمل سبباً موثّقاً.
 - `pyright` يستخدم `pyrightconfig.json` (وضع strict). يجب تحديد المفسر صراحةً عبر `--pythonpath` لأن pyright لا يكتشف الـ venv المحلي تلقائياً في هذا الجهاز (وفي CI عبر `$(command -v python)`). لا تضف `extraPaths` بمسار site-packages محلي إلى `pyrightconfig.json` لأنه يكسر تشغيل CI على Linux.
 - `pytest` مهيأ في `pyproject.toml`. التغطية ≥ 80% مطلوبة (`--cov-fail-under=80`).
+- **وقت تشغيل المجموعة الكاملة ~20 دقيقة** (مقاس: `2998 passed in 1161.98s`). أي مهلة CI أقل من 25 دقيقة ستقطع المجموعة أثناء التشغيل وتبدو وكأنها "تعليق" زائف — اضبط مهلة خطوة الاختبار على **25 دقيقة على الأقل** في GitHub Actions واعتبر "timeout" بلا سجل `STALL` مؤكداً سبباً حقيقياً وليس تعليقاً.
 - عند تعديل Telegram flows، اختبر يدوياً من حساب مشرف داخل Telegram.
 
 ## المبادئ العامة وأسلوب العمل (دمج AI_DEVELOPMENT_GUIDE)
