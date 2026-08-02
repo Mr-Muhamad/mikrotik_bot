@@ -238,6 +238,8 @@ mikrotik_bot/
 │   └── pdf_settings.py        # إعدادات PDF
 ├── scripts/                   # validate_handlers, validate_routeros_paths, check_type_ignore, snapshot_release, e2e_smoke, stress_test
 └── tests/                     # pytest tests للوحدات والتكامل
+    ├── stress/                # اختبارات تزامن حتمية (مكتشفة الأخطاء، إصلاح time.monotonic hang)
+    └── fault/                 # حقن أعطال (circuit-breaker, DB latency, FTP, RouterOS malformed)
 ```
 
 ## المعمارية الحالية

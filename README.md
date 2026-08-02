@@ -239,6 +239,8 @@ mikrotik_bot/
 │   └── pdf_settings.py        # إعدادات PDF
 ├── scripts/                   # أدوات التحقق والإصدار
 └── tests/                     # اختبارات pytest
+    ├── stress/                # اختبارات تزامن حتمية (time.monotonic patch-leak hang)
+    └── fault/                 # حقن أعطال (circuit-breaker, DB latency, FTP, RouterOS)
 ```
 
 ## المعمارية
