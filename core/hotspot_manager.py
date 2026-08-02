@@ -97,8 +97,9 @@ class HotspotManager:
         """Return True if a hotspot user with the given name already exists on the router.
 
         Uses an API-side ``?name=`` filter to avoid pulling the full user list.
-        On any transport/API error it returns False so callers fall back to the
-        defensive duplicate check performed by ``add_user`` at write time.
+        On any transport/API error it returns False so callers treat the name as
+        unknown; if a duplicate still reaches the router at write time, RouterOS
+        rejects it with an "already have user" trap error which callers surface.
         """
         name = (name or "").strip()
         if not name:

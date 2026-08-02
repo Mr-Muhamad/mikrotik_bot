@@ -194,6 +194,7 @@ UNKNOWN_NAME = "غير معروف"
 # ─── HOTSPOT ───────────────────────────────────────────────────────────
 
 USER_NOT_FOUND = "❌ المستخدم غير موجود"
+USER_NOT_FOUND_ANYMORE = "❌ المستخدم غير موجود أو تم حذفه مسبقاً"
 SEARCHING_HOSTS = "🔍 جاري البحث في الأجهزة..."
 INVALID_SELECTION = "❌ اختيار غير صالح"
 INVALID_PROFILE = "بروفايل غير صالح"

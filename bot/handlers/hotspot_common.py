@@ -25,7 +25,7 @@ from database.repositories.audit_logs import log_action
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import reply_final, send_step
 from utils.error_response import send_error
-from utils.formatters import format_hotspot_user
+from utils.formatters import format_hotspot_user, sanitize_log_data
 from utils.pagination import Paginator
 
 from .constants import (
@@ -154,6 +154,33 @@ async def execute_add_user(
 
         sanitized_err = sanitize_error_text(str(e))
         return False, sanitized_err
+
+
+async def ensure_hotspot_user_exists(router_key: str, user_id: str) -> bool:
+    """Return True if the hotspot user still exists on the router.
+
+    Uses the cached user lookup (users cache TTL 5s). On verification failure
+    (transport/API error) it returns True so the operation proceeds and the
+    router's write-time trap error remains the backstop for a missing user.
+    """
+    try:
+        user = await run_blocking(hotspot_manager.get_user, router_key, user_id)
+        return user is not None
+    except (LibRouterosError, OSError, MikrotikBotError) as e:
+        logger.warning(
+            "ensure_hotspot_user_exists: could not verify user '%s' on router '%s' "
+            "(error type: %s): %s; proceeding and relying on write-time backstop",
+            user_id, router_key, type(e).__name__, sanitize_log_data(str(e)),
+        )
+        return True
+    except Exception as e:  # noqa: BLE001 - catch-all: verification failure must not block the operation
+        logger.warning(
+            "ensure_hotspot_user_exists: unexpected error verifying user '%s' on router '%s' "
+            "(error type: %s): %s; proceeding and relying on write-time backstop",
+            user_id, router_key, type(e).__name__, sanitize_log_data(str(e)),
+            exc_info=True,
+        )
+        return True
 
 
 async def handle_page_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):

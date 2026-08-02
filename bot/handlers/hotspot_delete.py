@@ -15,6 +15,7 @@ from bot.messages import (
     INCOMPLETE_DATA,
     SUCCESS_DELETE,
     USER_NOT_FOUND,
+    USER_NOT_FOUND_ANYMORE,
 )
 from bot.router_selector import (
     cleanup_state,
@@ -32,7 +33,7 @@ from utils.error_response import send_error
 from utils.formatters import format_hotspot_user
 
 from .constants import WAITING_DELETE_ID, WAITING_INPUT
-from .hotspot_common import search_users_for_action
+from .hotspot_common import ensure_hotspot_user_exists, search_users_for_action
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +141,11 @@ async def confirm_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not router_key or not user_id:
             await query.edit_message_text(INCOMPLETE_DATA, reply_markup=get_hotspot_keyboard())
+            cleanup_state(query.from_user.id, context.user_data)
+            return ConversationHandler.END
+
+        if not await ensure_hotspot_user_exists(router_key, user_id):
+            await query.edit_message_text(USER_NOT_FOUND_ANYMORE)
             cleanup_state(query.from_user.id, context.user_data)
             return ConversationHandler.END
 

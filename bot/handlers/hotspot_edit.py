@@ -32,6 +32,7 @@ from bot.messages import (
     TOGGLE_DISABLED_OFF,
     TOGGLE_DISABLED_ON,
     USER_NOT_FOUND,
+    USER_NOT_FOUND_ANYMORE,
     USER_NOT_SELECTED,
 )
 from bot.profile_callbacks import resolve_profile_from_callback
@@ -53,7 +54,7 @@ from utils.formatters import format_bytes, format_hotspot_user
 from utils.validators import validate_bytes_input, validate_password, validate_username
 
 from .constants import WAITING_EDIT_FIELD, WAITING_EDIT_VALUE
-from .hotspot_common import search_users_for_action
+from .hotspot_common import ensure_hotspot_user_exists, search_users_for_action
 from .session_models import get_hotspot_edit_session
 
 logger = logging.getLogger(__name__)
@@ -331,6 +332,11 @@ async def hotspot_edit_field(update: Update, context: ContextTypes.DEFAULT_TYPE)
             cleanup_state(query.from_user.id, context.user_data)
             return ConversationHandler.END
 
+        if not await ensure_hotspot_user_exists(router_key, user_id):
+            await query.edit_message_text(USER_NOT_FOUND_ANYMORE)
+            cleanup_state(query.from_user.id, context.user_data)
+            return ConversationHandler.END
+
         current_disabled = str(user_data.get("disabled", "no")).lower() in (
             "yes",
             "true",
@@ -430,6 +436,16 @@ async def edit_profile_selected(update: Update, context: ContextTypes.DEFAULT_TY
         return WAITING_EDIT_VALUE
     router_key = get_selected_router(query.from_user.id)
     user_id = get_hotspot_edit_session(context.user_data).user_id
+    if not router_key or not user_id:
+        await query.edit_message_text(USER_NOT_SELECTED)
+        cleanup_state(query.from_user.id, context.user_data)
+        return ConversationHandler.END
+
+    if not await ensure_hotspot_user_exists(router_key, user_id):
+        await query.edit_message_text(USER_NOT_FOUND_ANYMORE)
+        cleanup_state(query.from_user.id, context.user_data)
+        return ConversationHandler.END
+
     try:
         await run_blocking(hotspot_manager.edit_user, router_key, user_id, profile=profile)
         user_data = get_hotspot_edit_session(context.user_data).user_data
@@ -568,6 +584,11 @@ async def _apply_edit_success_result(
     Returns:
         WAITING_EDIT_VALUE.
     """
+    if not await ensure_hotspot_user_exists(router_key, user_id):
+        await reply_final(update, context, USER_NOT_FOUND_ANYMORE)
+        cleanup_state(update.effective_user.id, context.user_data)
+        return ConversationHandler.END
+
     await run_blocking(hotspot_manager.edit_user, router_key, user_id, **{api_field: new_value})
     await run_blocking(log_action, f"edit_{field}", str(user_name), router_key, update.effective_user.id)
 

@@ -10,6 +10,7 @@ import pytest
 from telegram.ext import ConversationHandler
 
 from bot.handlers.hotspot_edit import (
+    edit_profile_selected,
     hotspot_edit_field,
     hotspot_edit_select,
     hotspot_edit_start,
@@ -167,6 +168,43 @@ class TestHotspotEditField:
         assert result == WAITING_EDIT_VALUE
         mock_err.assert_called_once()
 
+    @pytest.mark.asyncio
+    async def test_toggle_disabled_nonexistent_user_ends_with_message(self, mock_mikrotik_api):
+        from bot.messages import USER_NOT_FOUND_ANYMORE
+        from database.models import save_user_session
+
+        save_user_session(ADMIN_ID, ROUTER_KEY)
+        update = make_mock_update(callback_data="edit_field_toggle_disabled")
+        context = _make_context()
+        get_hotspot_edit_session(context.user_data).user_id = "*9999"
+        get_hotspot_edit_session(context.user_data).user_data = {"name": "ghost", "disabled": "no"}
+
+        result = await hotspot_edit_field(update, context)
+
+        assert result == ConversationHandler.END
+        update.callback_query.edit_message_text.assert_called_once()
+        assert USER_NOT_FOUND_ANYMORE in str(update.callback_query.edit_message_text.call_args)
+
+
+class TestEditProfileSelected:
+    @pytest.mark.asyncio
+    async def test_profile_selected_nonexistent_user_ends_with_message(self, mock_mikrotik_api):
+        from bot.messages import USER_NOT_FOUND_ANYMORE
+        from database.models import save_user_session
+
+        save_user_session(ADMIN_ID, ROUTER_KEY)
+        context = _make_context()
+        context.user_data["profile_names"] = ["default"]
+        get_hotspot_edit_session(context.user_data).user_id = "*9999"
+        get_hotspot_edit_session(context.user_data).user_data = {"name": "ghost", "disabled": "no"}
+
+        update = make_mock_update(callback_data="edit_profile_0")
+        result = await edit_profile_selected(update, context)
+
+        assert result == ConversationHandler.END
+        update.callback_query.edit_message_text.assert_called_once()
+        assert USER_NOT_FOUND_ANYMORE in str(update.callback_query.edit_message_text.call_args)
+
 
 class TestHotspotEditValue:
     @pytest.mark.asyncio
@@ -270,3 +308,21 @@ class TestHotspotEditValue:
                 result = await hotspot_edit_value(update, context)
         assert result == WAITING_EDIT_VALUE
         mock_err.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_update_nonexistent_user_ends_with_message(self, mock_mikrotik_api):
+        from bot.messages import USER_NOT_FOUND_ANYMORE
+        from database.models import save_user_session
+
+        save_user_session(ADMIN_ID, ROUTER_KEY)
+        update = make_mock_update(text="newpass")
+        context = _make_context()
+        get_hotspot_edit_session(context.user_data).current_field = "password"
+        get_hotspot_edit_session(context.user_data).user_id = "*9999"
+        get_hotspot_edit_session(context.user_data).user_data = {"name": "ghost"}
+
+        result = await hotspot_edit_value(update, context)
+
+        assert result == ConversationHandler.END
+        context.bot.send_message.assert_called_once()
+        assert USER_NOT_FOUND_ANYMORE in str(context.bot.send_message.call_args)

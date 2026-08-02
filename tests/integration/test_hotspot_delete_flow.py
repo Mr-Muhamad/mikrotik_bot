@@ -207,3 +207,20 @@ class TestConfirmCallback:
 
         mock_err.assert_called_once()
         assert "net down" in str(mock_err.call_args)
+
+    @pytest.mark.asyncio
+    async def test_confirm_yes_nonexistent_user_ends_with_message(self, mock_mikrotik_api):
+        from bot.messages import USER_NOT_FOUND_ANYMORE
+        from database.models import save_user_session
+
+        save_user_session(ADMIN_ID, ROUTER_KEY)
+        update = make_mock_update(callback_data="confirm_yes")
+        context = _make_context()
+        context.user_data["delete_user_id"] = "*9999"
+
+        result = await confirm_callback(update, context)
+
+        assert result == ConversationHandler.END
+        update.callback_query.edit_message_text.assert_called_once()
+        assert USER_NOT_FOUND_ANYMORE in str(update.callback_query.edit_message_text.call_args)
+        assert "delete_user_id" not in context.user_data
