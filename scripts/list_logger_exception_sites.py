@@ -19,13 +19,16 @@ def classify_site(block_start: int, lines: list[str]) -> str:
     """Inspect the body of an except block to classify it."""
     has_logger = False
     has_send_error = False
-    end = min(block_start + 6, len(lines))
+    has_send_message = False
+    end = min(block_start + 8, len(lines))
     for j in range(block_start, end):
         if "logger.exception" in lines[j]:
             has_logger = True
         if "send_error" in lines[j] and "await" in lines[j]:
             has_send_error = True
-    if has_send_error:
+        if "context.bot.send_message" in lines[j] and "await" in lines[j]:
+            has_send_message = True
+    if has_send_error or has_send_message:
         return "MIGRATED"
     if has_logger:
         return "REMAINING"

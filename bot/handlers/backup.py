@@ -25,7 +25,6 @@ from bot.messages import (
     BACKUP_DL_TOO_LARGE,
     BACKUP_DL_UNKNOWN_TYPE,
     BACKUP_DOWNLOADED_LOCAL,
-    BACKUP_ERROR_UNEXPECTED,
     BACKUP_FAILED_FULL,
     BACKUP_FAILED_USERMAN,
     BACKUP_FULL_IN_PROGRESS,
@@ -220,13 +219,14 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                 logger.warning("Background userman backup failed for router %s: %s", router_key, result.get("message"))
     except Exception as e:  # noqa: BLE001 - background task: must not crash scheduler even on unexpected errors
         logger.exception("Background backup failed for %s: %s", router_key, e)
-        try:
-            await context.bot.send_message(
-                chat_id=chat_id,
-                text=BACKUP_ERROR_UNEXPECTED.format(router_key=router_key),
-            )
-        except telegram.error.TelegramError:
-            logger.debug("Failed to send backup error notification for %s", router_key)
+        await send_error(
+            update=None,
+            context=context,
+            error=e,
+            router_key=router_key,
+            log_extra="_background_backup_job",
+            chat_id=chat_id,
+        )
     finally:
         _set_backup_running(router_key, False)
 

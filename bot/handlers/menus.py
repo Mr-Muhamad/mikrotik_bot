@@ -43,6 +43,7 @@ from bot.router_selector import cleanup_state, get_selected_router, nav_get
 from utils.admin_decorator import admin_only
 from utils.callback_utils import safe_answer_callback
 from utils.chat_cleaner import safe_edit_or_send, send_and_track
+from utils.error_response import send_error
 
 logger = logging.getLogger(__name__)
 
@@ -413,5 +414,6 @@ async def go_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handler(update, context)
     except Exception as e:  # noqa: BLE001 - catch-all: navigation errors fall back to main menu safely
         logger.error("go_back navigation error: %s", e, exc_info=True)
+        await send_error(update, context, e, log_extra="go_back")
         await internal_main_menu(update, context)
     return ConversationHandler.END

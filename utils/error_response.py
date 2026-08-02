@@ -181,7 +181,7 @@ def format_error_message(error: Exception, router_key: str | None = None) -> str
 
 
 async def _dispatch_message(
-    update: Update,
+    update: Update | None,
     context: ContextTypes.DEFAULT_TYPE,
     text: str,
     reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | None,
@@ -230,7 +230,7 @@ async def _dispatch_message(
 
 
 async def send_error(
-    update: Update,
+    update: Update | None,
     context: ContextTypes.DEFAULT_TYPE,
     error: Exception,
     router_key: str | None = None,
@@ -291,7 +291,7 @@ async def send_error(
 
 
 async def send_text(
-    update: Update,
+    update: Update | None,
     context: ContextTypes.DEFAULT_TYPE,
     text: str,
     reply_markup: InlineKeyboardMarkup | ReplyKeyboardMarkup | None = None,
@@ -330,7 +330,7 @@ def get_router_key_from_context(
 
 
 async def _notify_critical_admins(
-    update: Update,
+    update: Update | None,
     context: ContextTypes.DEFAULT_TYPE,
     error: Exception,
     category: str,

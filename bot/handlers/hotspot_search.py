@@ -109,15 +109,15 @@ async def hotspot_search_query(update: Update, context: ContextTypes.DEFAULT_TYP
     loading = await send_loading(update, context, SEARCHING_HOSTS)
 
     if text.startswith("user:"):
-        hosts = await _search_users(router_key, text[5:].strip())
+        hosts = await _search_users(router_key, text[5:].strip(), update, context)
     elif text.startswith("mac:"):
-        hosts = await _search_hosts_by_field(router_key, "mac-address", text[4:].strip())
+        hosts = await _search_hosts_by_field(router_key, "mac-address", text[4:].strip(), update, context)
     elif text.startswith("comment:"):
-        hosts = await _search_users(router_key, text[8:].strip())
+        hosts = await _search_users(router_key, text[8:].strip(), update, context)
     elif text.startswith("ip:"):
-        hosts = await _search_hosts_by_field(router_key, "address", text[3:].strip())
+        hosts = await _search_hosts_by_field(router_key, "address", text[3:].strip(), update, context)
     else:
-        hosts = await _search_hosts_with_users(router_key, text)
+        hosts = await _search_hosts_with_users(router_key, text, update, context)
 
     context.user_data["search_hosts"] = hosts
     await delete_now(context, update.effective_chat.id, loading.message_id)
@@ -174,11 +174,18 @@ async def hotspot_search_page_handler(update: Update, context: ContextTypes.DEFA
     return WAITING_HOTSPOT_SEARCH
 
 
-async def _search_users(router_key: str, term: str) -> list[RouterOSRow]:
+async def _search_users(
+    router_key: str,
+    term: str,
+    update: Update | None = None,
+    context: ContextTypes.DEFAULT_TYPE | None = None,
+) -> list[RouterOSRow]:
     try:
         users = await run_blocking(hotspot_manager.search_users, router_key, term)
-    except Exception:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
         logger.exception("Unexpected error searching users for %s", router_key)
+        if update is not None and context is not None:
+            await send_error(update, context, e, router_key=router_key, log_extra="_search_users")
         return []
     return [
         {
@@ -195,7 +202,13 @@ async def _search_users(router_key: str, term: str) -> list[RouterOSRow]:
     ]
 
 
-async def _search_hosts_by_field(router_key: str, field: str, value: str) -> list[RouterOSRow]:
+async def _search_hosts_by_field(
+    router_key: str,
+    field: str,
+    value: str,
+    update: Update | None = None,
+    context: ContextTypes.DEFAULT_TYPE | None = None,
+) -> list[RouterOSRow]:
     """Search hotspot hosts by a specific field (mac-address or address).
 
     Delegates to :meth:`HotspotManager.search_hosts` so the host list is fetched
@@ -204,23 +217,34 @@ async def _search_hosts_by_field(router_key: str, field: str, value: str) -> lis
     """
     try:
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, value)
-    except Exception:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
         logger.exception("Unexpected error searching hosts by field for %s", router_key)
+        if update is not None and context is not None:
+            await send_error(update, context, e, router_key=router_key, log_extra="_search_hosts_by_field")
         return []
     value = value.lower().strip()
     return [h for h in hosts if value in str(h.get(field) or "").lower()]
 
 
-async def _search_hosts_with_users(router_key: str, query: str) -> list[RouterOSRow]:
+async def _search_hosts_with_users(
+    router_key: str,
+    query: str,
+    update: Update | None = None,
+    context: ContextTypes.DEFAULT_TYPE | None = None,
+) -> list[RouterOSRow]:
     try:
         hosts = await run_blocking(hotspot_manager.search_hosts, router_key, query)
         try:
             users = await run_blocking(hotspot_manager.search_users, router_key, query)
-        except Exception:  # noqa: BLE001 - catch-all: log unexpected error before using empty list
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before using empty list
             logger.exception("Unexpected error searching users during host enrichment for %s", router_key)
+            if update is not None and context is not None:
+                await send_error(update, context, e, router_key=router_key, log_extra="_search_hosts_with_users")
             users = []
-    except Exception:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
+    except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning empty list
         logger.exception("Unexpected error searching hosts for %s", router_key)
+        if update is not None and context is not None:
+            await send_error(update, context, e, router_key=router_key, log_extra="_search_hosts_with_users")
         return []
     return _enrich_hosts(hosts, users)
 
