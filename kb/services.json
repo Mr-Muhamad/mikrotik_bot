@@ -50,6 +50,21 @@
     "file": "core/card_models.py"
   },
   {
+    "id": "class:core.circuit_breaker.CircuitState",
+    "name": "CircuitState",
+    "file": "core/circuit_breaker.py"
+  },
+  {
+    "id": "class:core.circuit_breaker.CircuitBreakerOpenError",
+    "name": "CircuitBreakerOpenError",
+    "file": "core/circuit_breaker.py"
+  },
+  {
+    "id": "class:core.circuit_breaker.CircuitBreaker",
+    "name": "CircuitBreaker",
+    "file": "core/circuit_breaker.py"
+  },
+  {
     "id": "class:core.connection_pool.ConnectionPool",
     "name": "ConnectionPool",
     "file": "core/connection_pool.py"

@@ -384,6 +384,12 @@
     "type": "module"
   },
   {
+    "id": "mod:core.circuit_breaker",
+    "name": "core.circuit_breaker",
+    "path": "core/circuit_breaker.py",
+    "type": "module"
+  },
+  {
     "id": "mod:core.connection_pool",
     "name": "core.connection_pool",
     "path": "core/connection_pool.py",

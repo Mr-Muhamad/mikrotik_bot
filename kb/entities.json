@@ -140,6 +140,13 @@
     "docstring": "Handle common backup success/failure messaging and user-data update."
   },
   {
+    "id": "function:bot.handlers.backup._persist_backup_record",
+    "name": "_persist_backup_record",
+    "type": "function",
+    "file": "bot/handlers/backup.py",
+    "docstring": "Persist audit log and backup result to DB. Best-effort: if the DB write fails, log a warning but do not raise. This prevents a DB failure from masking the actual backup outcome communicated to the user. Args: router_key: The router identif…"
+  },
+  {
     "id": "function:bot.handlers.backup._background_backup_job",
     "name": "_background_backup_job",
     "type": "function",
@@ -2891,6 +2898,13 @@
     "docstring": ""
   },
   {
+    "id": "function:core.backup.ftp._remove_partial_file",
+    "name": "_remove_partial_file",
+    "type": "function",
+    "file": "core/backup/ftp.py",
+    "docstring": "Best-effort deletion of a partially downloaded file after a failed transfer."
+  },
+  {
     "id": "function:core.backup.ftp.get_router_ftp_info",
     "name": "get_router_ftp_info",
     "type": "function",
@@ -3010,11 +3024,32 @@
     "docstring": ""
   },
   {
+    "id": "method:core.backup_scheduler.BackupScheduler._run_backup_operation",
+    "name": "_run_backup_operation",
+    "type": "method",
+    "file": "core/backup_scheduler.py",
+    "docstring": "Run a backup operation and record results. Returns True on success."
+  },
+  {
     "id": "method:core.backup_scheduler.BackupScheduler._backup_single_router",
     "name": "_backup_single_router",
     "type": "method",
     "file": "core/backup_scheduler.py",
     "docstring": ""
+  },
+  {
+    "id": "method:core.backup_scheduler.BackupScheduler._run_userman_backup",
+    "name": "_run_userman_backup",
+    "type": "method",
+    "file": "core/backup_scheduler.py",
+    "docstring": "Run User Manager backup and record results. Returns True on success."
+  },
+  {
+    "id": "method:core.backup_scheduler.BackupScheduler._run_full_backup",
+    "name": "_run_full_backup",
+    "type": "method",
+    "file": "core/backup_scheduler.py",
+    "docstring": "Run full system backup and record results. Returns True on success."
   },
   {
     "id": "method:core.backup_scheduler.BackupScheduler._do_backup",
@@ -3225,6 +3260,97 @@
     "type": "function",
     "file": "core/chart_generator.py",
     "docstring": "Generate a PNG bar chart stream for card batch sales by profile."
+  },
+  {
+    "id": "class:core.circuit_breaker.CircuitState",
+    "name": "CircuitState",
+    "type": "class",
+    "file": "core/circuit_breaker.py",
+    "docstring": ""
+  },
+  {
+    "id": "class:core.circuit_breaker.CircuitBreakerOpenError",
+    "name": "CircuitBreakerOpenError",
+    "type": "class",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Raised when the circuit is open and the request is short-circuited."
+  },
+  {
+    "id": "class:core.circuit_breaker.CircuitBreaker",
+    "name": "CircuitBreaker",
+    "type": "class",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Thread-safe circuit breaker per-router key. Args: failure_threshold: Consecutive failures before opening the circuit. reset_timeout: Seconds to stay open before transitioning to half-open."
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker.__init__",
+    "name": "__init__",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": ""
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker._get_state",
+    "name": "_get_state",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": ""
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker._can_attempt",
+    "name": "_can_attempt",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Check if a request can proceed (not open, or half-open transition)."
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker.before_request",
+    "name": "before_request",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Called before making a request. Raises if circuit is open."
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker.on_success",
+    "name": "on_success",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Called after a successful request; resets failure count and closes circuit."
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker.on_failure",
+    "name": "on_failure",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Called after a failed request; opens circuit if threshold reached."
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker.get_state",
+    "name": "get_state",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Public accessor for monitoring/metrics."
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker.get_failure_count",
+    "name": "get_failure_count",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Public accessor for failure count."
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker.reset",
+    "name": "reset",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Manually reset a router's circuit (e.g. after configuration change)."
+  },
+  {
+    "id": "method:core.circuit_breaker.CircuitBreaker.wrap",
+    "name": "wrap",
+    "type": "method",
+    "file": "core/circuit_breaker.py",
+    "docstring": "Decorator: wraps a callable with circuit-breaker logic."
   },
   {
     "id": "class:core.connection_pool.ConnectionPool",
@@ -4141,7 +4267,7 @@
     "name": "_execute_with_retry",
     "type": "method",
     "file": "core/mikrotik_api.py",
-    "docstring": "القالب الأساسي: throttle → تنفيذ → retry مع exponential backoff."
+    "docstring": "القالب الأساسي: circuit-breaker → throttle → تنفيذ → retry مع exponential backoff."
   },
   {
     "id": "method:core.mikrotik_api.MikrotikAPI.execute",
@@ -5877,7 +6003,14 @@
     "name": "scan_files",
     "type": "function",
     "file": "scripts/check_type_ignore.py",
-    "docstring": "Scan all Python files for type: ignore comments."
+    "docstring": "Scan all Python files for type: ignore and pyright: ignore comments."
+  },
+  {
+    "id": "function:scripts.check_type_ignore._has_reason",
+    "name": "_has_reason",
+    "type": "function",
+    "file": "scripts/check_type_ignore.py",
+    "docstring": "Check if there is non-empty text (error code or reason) after the ignore directive."
   },
   {
     "id": "function:scripts.check_type_ignore.main",
@@ -6864,7 +6997,7 @@
     "name": "sanitize_api_response",
     "type": "function",
     "file": "utils/formatters.py",
-    "docstring": "Remove sensitive fields from MikroTik API responses for safe logging."
+    "docstring": "Remove sensitive fields from MikroTik API responses for safe logging. Non-dict rows (e.g. ``None`` returned by a malformed router response) are passed through unchanged instead of raising ``AttributeError``, so the sanitizer never crashes …"
   },
   {
     "id": "function:utils.formatters.sanitize_log_data",

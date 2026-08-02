@@ -100,6 +100,11 @@
     "file": "bot/handlers/backup.py"
   },
   {
+    "id": "func:bot.handlers.backup._persist_backup_record",
+    "name": "_persist_backup_record",
+    "file": "bot/handlers/backup.py"
+  },
+  {
     "id": "func:bot.handlers.backup._background_backup_job",
     "name": "_background_backup_job",
     "file": "bot/handlers/backup.py"

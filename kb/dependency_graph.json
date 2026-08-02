@@ -996,6 +996,11 @@
   },
   {
     "source": "bot/handlers/backup.py",
+    "target": "core.mikrotik_client",
+    "relation": "imports"
+  },
+  {
+    "source": "bot/handlers/backup.py",
     "target": "database.repositories.audit_logs",
     "relation": "imports"
   },
@@ -4616,7 +4621,7 @@
   },
   {
     "source": "core/backup_scheduler.py",
-    "target": "telegram.ext",
+    "target": "typing",
     "relation": "imports"
   },
   {
@@ -4626,7 +4631,17 @@
   },
   {
     "source": "core/backup_scheduler.py",
+    "target": "core.mikrotik_api",
+    "relation": "imports"
+  },
+  {
+    "source": "core/backup_scheduler.py",
     "target": "core.mikrotik_client",
+    "relation": "imports"
+  },
+  {
+    "source": "core/backup_scheduler.py",
+    "target": "database.models",
     "relation": "imports"
   },
   {
@@ -4656,12 +4671,7 @@
   },
   {
     "source": "core/backup_scheduler.py",
-    "target": "core.mikrotik_api",
-    "relation": "imports"
-  },
-  {
-    "source": "core/backup_scheduler.py",
-    "target": "database.models",
+    "target": "core.backup_service",
     "relation": "imports"
   },
   {
@@ -4821,12 +4831,52 @@
   },
   {
     "source": "core/chart_generator.py",
+    "target": "matplotlib.axes",
+    "relation": "imports"
+  },
+  {
+    "source": "core/chart_generator.py",
+    "target": "matplotlib.figure",
+    "relation": "imports"
+  },
+  {
+    "source": "core/chart_generator.py",
     "target": "core.mikrotik_client",
     "relation": "imports"
   },
   {
     "source": "core/chart_generator.py",
     "target": "matplotlib.pyplot",
+    "relation": "imports"
+  },
+  {
+    "source": "core/circuit_breaker.py",
+    "target": "__future__",
+    "relation": "imports"
+  },
+  {
+    "source": "core/circuit_breaker.py",
+    "target": "logging",
+    "relation": "imports"
+  },
+  {
+    "source": "core/circuit_breaker.py",
+    "target": "threading",
+    "relation": "imports"
+  },
+  {
+    "source": "core/circuit_breaker.py",
+    "target": "time",
+    "relation": "imports"
+  },
+  {
+    "source": "core/circuit_breaker.py",
+    "target": "enum",
+    "relation": "imports"
+  },
+  {
+    "source": "core/circuit_breaker.py",
+    "target": "typing",
     "relation": "imports"
   },
   {
@@ -5202,6 +5252,11 @@
   {
     "source": "core/mikrotik_api.py",
     "target": "config",
+    "relation": "imports"
+  },
+  {
+    "source": "core/mikrotik_api.py",
+    "target": "core.circuit_breaker",
     "relation": "imports"
   },
   {
