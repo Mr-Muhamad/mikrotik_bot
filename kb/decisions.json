@@ -27,6 +27,25 @@
       ],
       "impact": "Ensures zero data loss during bot updates.",
       "review_trigger": "When adding new analytics or logging tables."
+    },
+    {
+      "decision": "Reserve the circuit-breaker HALF_OPEN trial slot at the OPEN->HALF_OPEN transition",
+      "reason": "A concurrent thread could otherwise pass the transition check and believe it is the single allowed trial request, letting two requests through the half-open window.",
+      "alternatives": [
+        "Accept the race and allow extra trial requests to leak through",
+        "Hold the state lock across the whole request path"
+      ],
+      "impact": "Guarantees at most one trial request per half-open window; verified deterministically by tests/stress.",
+      "review_trigger": "If trial-request races reappear under high per-router concurrency."
+    },
+    {
+      "decision": "Keep deterministic concurrency stress tests (tests/stress) and fault-injection suites (tests/fault) with fully mocked external I/O",
+      "reason": "The original time.monotonic patch-leak hang only reproduced under specific interleavings; barriers plus fully mocked I/O make it reproducible on every run and guard against regression.",
+      "alternatives": [
+        "Real-socket integration tests against live routers (flaky, CI-hostile)"
+      ],
+      "impact": "Reproducible CI without timing-dependent sleeps; zero real stalls across the full suite (2998 passed in ~20 min).",
+      "review_trigger": "When adding new concurrency-sensitive or failure-prone code paths."
     }
   ]
 }
