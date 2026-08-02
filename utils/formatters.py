@@ -137,12 +137,24 @@ _SENSITIVE_LOG_KEYWORDS = frozenset(
 )
 
 
-def sanitize_api_response(response: list[RouterOSRow]) -> list[RouterOSRow]:
-    """Remove sensitive fields from MikroTik API responses for safe logging."""
+def sanitize_api_response(
+    response: list[RouterOSRow | None] | None,
+) -> list[RouterOSRow | None] | None:
+    """Remove sensitive fields from MikroTik API responses for safe logging.
+
+    Non-dict rows (e.g. ``None`` or scalar values returned by a malformed
+    router response) are passed through unchanged instead of raising
+    ``AttributeError``, so the sanitizer never crashes the logging path on
+    unexpected data. A ``None`` response is returned as-is.
+    """
     if not response:
         return response
     return [
-        {k: ("***" if k in SENSITIVE_API_FIELDS else v) for k, v in item.items()}
+        (
+            {k: ("***" if k in SENSITIVE_API_FIELDS else v) for k, v in item.items()}
+            if isinstance(item, dict)
+            else item
+        )
         for item in response
     ]
 
