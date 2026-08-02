@@ -69,6 +69,9 @@ class CircuitBreaker:
                 last_failure = self._last_failure_time.get(router_key, 0.0)
                 if time.monotonic() - last_failure >= self._reset_timeout:
                     self._state[router_key] = CircuitState.HALF_OPEN
+                    # Claim the single trial slot at the transition so no
+                    # concurrent thread can sneak a second trial request in.
+                    self._in_trial[router_key] = True
                     logger.info(
                         "Circuit half-open for %s — trial request will be attempted",
                         router_key,
