@@ -120,6 +120,7 @@ class SystemBackupService:
             logger.error(
                 "Full backup failed for %s (error type: %s): %s",
                 router_name, type(e).__name__, sanitize_log_data(str(e)),
+                exc_info=True,
             )
             return cast(RouterOSRow, {"success": False, "message": f"فشل نسخ إحتياطى: {sanitize_log_data(str(e))}"})
         except Exception as e:  # noqa: BLE001 - catch-all: log unexpected errors before returning failure result

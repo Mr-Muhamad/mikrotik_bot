@@ -29,7 +29,7 @@ def _make_get_db():
         try:
             yield conn
             conn.commit()
-        except Exception:
+        except Exception:  # noqa: BLE001 - catch-all: ensure rollback before re-raising
             conn.rollback()
             raise
 

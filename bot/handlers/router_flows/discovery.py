@@ -42,6 +42,7 @@ from utils.admin_decorator import admin_only, reset_rate_limit
 from utils.async_blocking import run_blocking
 from utils.chat_cleaner import edit_clean, schedule_delete, send_step
 from utils.error_response import send_error
+from utils.formatters import sanitize_text
 
 logger = logging.getLogger(__name__)
 
@@ -257,7 +258,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
         else:
             await _process_login_failure(update, context, status_msg, conn_result)
     except (LibRouterosError, OSError, ConnectionError) as e:
-        logger.warning("Connection/RouterOS error during disc_enter_password for %s: %s", ip, e)
+        logger.warning("Connection/RouterOS error during disc_enter_password for %s: %s", ip, sanitize_text(str(e)))
         await send_error(
             update,
             context,
@@ -268,7 +269,7 @@ async def disc_enter_password(update: Update, context: ContextTypes.DEFAULT_TYPE
         if update.effective_chat:
             await schedule_delete(context, update.effective_chat.id, status_msg.message_id)
     except Exception as e:  # noqa: BLE001 - catch-all handler for unexpected runtime errors before ending conversation
-        logger.exception("Unexpected error in disc_enter_password: %s", e)
+        logger.exception("Unexpected error in disc_enter_password: %s", sanitize_text(str(e)))
         await send_error(
             update,
             context,

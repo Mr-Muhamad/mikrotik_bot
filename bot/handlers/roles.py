@@ -41,7 +41,7 @@ def _parse_role_target(msg: Message) -> tuple[int | None, str]:
             try:
                 return int(parts[1]), parts[2].strip()
             except ValueError:
-                pass
+                pass  # parse: non-numeric input — None return handles it
     return None, ""
 
 
@@ -151,7 +151,7 @@ async def add_customer_command(update: Update, context: ContextTypes.DEFAULT_TYP
             try:
                 target = int(parts[1])
             except ValueError:
-                pass
+                pass  # parse: non-numeric input — handled by the falsy check below
 
     if not target or not msg:
         if msg:

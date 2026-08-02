@@ -196,7 +196,7 @@ class ConnectionPool:
                     try:
                         api.close()
                     except (LibRouterosError, OSError):
-                        pass
+                        logger.debug("Failed to close stale connection for %s", router_key)
                     # إنشاء اتصال جديد بديلاً
                     router_info = self.get_router_info(router_key)
                     api = self._connect_with_retry(router_info, timeout)
@@ -216,6 +216,7 @@ class ConnectionPool:
                 logger.error(
                     "Connection pool timeout for %s. Too many concurrent requests.",
                     router_key,
+                    exc_info=True,
                     extra={"component": "ROUTER"},
                 )
                 raise TimeoutError(

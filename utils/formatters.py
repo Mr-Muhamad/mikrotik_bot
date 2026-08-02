@@ -26,7 +26,7 @@ def parse_bytes(raw: str) -> str:
         float(raw)
         return raw
     except ValueError:
-        pass
+        pass  # parse: raw is not a plain number — try unit-based parsing below
     parts = raw.lower().replace(" ", "").split("-")
     converted: list[str] = []
     for part in parts:
@@ -35,7 +35,7 @@ def parse_bytes(raw: str) -> str:
             converted.append(part)
             continue
         except ValueError:
-            pass
+            pass  # parse: part is not a plain number — try unit-based parsing
         if len(part) < 2:
             raise ValueError(
                 f"❌ الرمز «{part}» يحتاج رقماً قبله.\nأمثلة صحيحة: 1G, 500M, 2.5G, 10G-500M"

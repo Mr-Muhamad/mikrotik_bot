@@ -326,7 +326,7 @@ async def mark_batch_paid_handler(update: Update, context: ContextTypes.DEFAULT_
                     reply_markup=get_batch_detail_keyboard(batch_id, payment_status=status),
                 )
         except (ValueError, OSError, telegram.error.TelegramError):
-            pass
+            logger.debug("Failed to update batch %s payment UI", batch_id)
     else:
         await query.answer(MARK_PAID_FAIL, show_alert=True)
 

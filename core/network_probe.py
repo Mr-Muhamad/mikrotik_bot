@@ -310,7 +310,7 @@ def _get_local_ips() -> set[str]:
             addr = info[4][0]
             local_ips.add(addr if isinstance(addr, str) else str(addr))
     except (OSError, socket.gaierror):
-        pass
+        pass  # discovery: failed to resolve local hostname — falls back to 127.0.0.1
     local_ips.add("127.0.0.1")
     return local_ips
 
@@ -454,7 +454,7 @@ class MNDPListenerProbe:
                 try:
                     sock.close()
                 except OSError:
-                    pass
+                    pass  # cleanup: socket close failure is safe to ignore
 
         logger.info("MNDP single-socket discovery finished: %d devices", len(discovered))
         return list(discovered.values())

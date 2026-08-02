@@ -53,7 +53,12 @@ def check_router_health(router_key: str) -> RouterOSRow:
                     cpu_load = int(str(info.get("cpu-load", "0")))
                     free_mem = int(str(info.get("free-memory", "0")))
                 except (ValueError, TypeError):
-                    pass
+                    logger.debug(
+                        "Malformed RouterOS resource data for %s: cpu-load=%r, free-memory=%r",
+                        router_key,
+                        info.get("cpu-load"),
+                        info.get("free-memory"),
+                    )
 
             with _router_status_lock:
                 _router_status.setdefault(router_key, {})

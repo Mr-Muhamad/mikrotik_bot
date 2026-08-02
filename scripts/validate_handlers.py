@@ -157,16 +157,19 @@ def _collect_registered_patterns(registry: dict[str, Any]) -> list[str]:
 
 
 def _collect_keyboard_callback_data() -> set[str]:
-    """Extract the literal callback_data values used in ``bot/keyboards.py``."""
-    with open("bot/keyboards.py", encoding="utf-8") as kf:
-        ktree = ast.parse(kf.read(), filename="bot/keyboards.py")
+    """Extract the literal callback_data values used in ``bot/keyboards/`` package."""
+    import glob as glob_mod
 
     kb_cbs: set[str] = set()
-    for node in ast.walk(ktree):
-        if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "InlineKeyboardButton":
-            for kw in node.keywords:
-                if kw.arg == "callback_data" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
-                    kb_cbs.add(kw.value.value)
+    py_files = glob_mod.glob("bot/keyboards/*.py")
+    for path in sorted(py_files):
+        with open(path, encoding="utf-8") as kf:
+            ktree = ast.parse(kf.read(), filename=path)
+        for node in ast.walk(ktree):
+            if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "InlineKeyboardButton":
+                for kw in node.keywords:
+                    if kw.arg == "callback_data" and isinstance(kw.value, ast.Constant) and isinstance(kw.value.value, str):
+                        kb_cbs.add(kw.value.value)
     return kb_cbs
 
 

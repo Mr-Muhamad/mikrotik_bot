@@ -1,6 +1,8 @@
 {
   "$schema": "https://app.kilo.ai/config.json",
   "indexing": {
-    "enabled": false
+    "enabled": false,
+    "provider": "kilo",
+    "model": "intfloat/e5-base-v2"
   }
 }

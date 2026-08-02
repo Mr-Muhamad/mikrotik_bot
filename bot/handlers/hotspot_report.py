@@ -140,7 +140,7 @@ async def report_export_csv(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             os.remove(path)
         except OSError:
-            pass
+            pass  # cleanup: temp file removal failure is safe to ignore
 
 
 @admin_only

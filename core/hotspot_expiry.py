@@ -139,7 +139,7 @@ def parse_renewal_day_from_comment(comment: str) -> tuple[str, int | None]:
             name_part = comment[: match.start()].strip()
             return name_part or comment, renewal_day
     except ValueError:
-        pass
+        pass  # parse: comment doesn't contain a numeric renewal day — None is returned
     return comment, None
 
 

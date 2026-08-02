@@ -92,14 +92,14 @@ def release_lock() -> None:
             try:
                 msvcrt.locking(_lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
             except OSError:
-                pass
+                logger.debug("Failed to unlock (msvcrt) single-instance lock")
         else:
             import fcntl
 
             try:
                 fcntl.flock(_lock_handle.fileno(), fcntl.LOCK_UN)
             except OSError:
-                pass
+                logger.debug("Failed to unlock (fcntl) single-instance lock")
         _lock_handle.close()
         logger.info("Released single-instance lock")
     except OSError as e:

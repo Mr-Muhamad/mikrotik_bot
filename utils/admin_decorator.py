@@ -146,7 +146,7 @@ async def _handle_rate_limited(update: Update, func_name: str) -> None:
         try:
             await update.callback_query.answer(text="⏳", show_alert=False)
         except telegram.error.TelegramError:
-            pass
+            logger.debug("Failed to answer rate-limited callback query for user %s", user_id)
 
 
 async def _execute_handler(
@@ -266,7 +266,7 @@ def _extract_router_id(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
             try:
                 return int(router_key[len(ROUTER_KEY_PREFIX) :])
             except ValueError:
-                pass
+                pass  # parse: suffix is not numeric — None is returned
     return None
 
 

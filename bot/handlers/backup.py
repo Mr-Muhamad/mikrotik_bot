@@ -226,7 +226,7 @@ async def _background_backup_job(context: ContextTypes.DEFAULT_TYPE):
                 text=BACKUP_ERROR_UNEXPECTED.format(router_key=router_key),
             )
         except telegram.error.TelegramError:
-            pass
+            logger.debug("Failed to send backup error notification for %s", router_key)
     finally:
         _set_backup_running(router_key, False)
 

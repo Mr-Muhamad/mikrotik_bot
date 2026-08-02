@@ -30,7 +30,7 @@ class RouterKey:
             try:
                 self._db_id = int(raw[len(ROUTER_KEY_PREFIX) :])
             except ValueError:
-                pass
+                pass  # parse: suffix is not numeric — db_id stays None for non-discovered keys
 
     @classmethod
     def discovered(cls, db_id: int) -> RouterKey:

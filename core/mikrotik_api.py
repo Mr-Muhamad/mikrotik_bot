@@ -423,6 +423,7 @@ class MikrotikAPI:
                 logger.error(
                     "test_connection LibRouterosError for %s:%s: %s", ip, port,
                     sanitize_log_data(str(e)),
+                    exc_info=True,
                     extra={"component": "ROUTER"},
                 )
                 return False, self._classify_connect_failure(e, ip, port), ""
@@ -601,6 +602,7 @@ class MikrotikAPI:
             logger.error(
                 "Router failed to fetch %s (error type: %s): %s",
                 remote_name, type(e).__name__, sanitize_log_data(str(e)),
+                exc_info=True,
             )
             return False
         except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
@@ -657,6 +659,7 @@ class MikrotikAPI:
             logger.error(
                 "Router failed to push %s (error type: %s): %s",
                 remote_name, type(e).__name__, sanitize_log_data(str(e)),
+                exc_info=True,
             )
             return False
         except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result

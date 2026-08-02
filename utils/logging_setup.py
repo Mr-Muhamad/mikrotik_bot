@@ -322,7 +322,7 @@ def _ensure_utf8_streams() -> None:
                 if isinstance(cast_stream, io.TextIOWrapper):
                     cast_stream.reconfigure(encoding="utf-8")
         except OSError:
-            pass
+            logger.debug("Failed to reconfigure stream encoding to utf-8")
 
 
 def _add_console_handler(root: logging.Logger, level: int) -> None:

@@ -101,7 +101,7 @@ def classify_error(error: Exception) -> str:
         if isinstance(error, httpx.ConnectError):
             return CATEGORY_CONNECTION
     except ImportError:
-        pass
+        pass  # guard: optional dependency — httpx is not installed
 
     return CATEGORY_GENERAL
 
@@ -224,6 +224,7 @@ async def _dispatch_message(
         logger.error(
             "%s: %s",
             error_label, _sanitize_error_text(str(send_err)),
+            exc_info=True,
             extra={"component": COMPONENT_TELEGRAM},
         )
 

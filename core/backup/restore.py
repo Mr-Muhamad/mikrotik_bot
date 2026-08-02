@@ -42,6 +42,7 @@ class BackupRestore:
             logger.error(
                 "Failed to list backups on %s (error type: %s): %s",
                 router_key, type(e).__name__, sanitize_log_data(str(e)),
+                exc_info=True,
             )
             return []
         except Exception as e:  # noqa: BLE001 - catch-all: log unexpected errors before returning empty list
@@ -76,6 +77,7 @@ class BackupRestore:
             logger.error(
                 "Failed to restore %s on %s (error type: %s): %s",
                 backup_name, router_name, type(e).__name__, sanitize_log_data(str(e)),
+                exc_info=True,
             )
             return {"success": False, "message": f"فشل الاستعادة: {sanitize_log_data(str(e))}"}
         except Exception as e:  # noqa: BLE001 - catch-all: log unexpected errors before returning failure result
