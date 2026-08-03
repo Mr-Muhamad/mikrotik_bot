@@ -19,13 +19,15 @@ from utils.bot_commands import set_bot_commands
 from utils.logging_setup import COMPONENT_SYSTEM, bind_component, configure_logging
 from utils.singleton_lock import single_instance
 
+configure_logging(logging.INFO)
+# Silence noisy third-party loggers AFTER configure_logging so the root logger
+# and its handlers are fully set up before we adjust child logger levels.
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
 logging.getLogger("PIL").setLevel(logging.WARNING)
 logging.getLogger("librouteros").setLevel(logging.WARNING)
 logging.getLogger("utils.chat_cleaner").setLevel(logging.WARNING)
-configure_logging(logging.INFO)
 logger = logging.getLogger(__name__)
 
 

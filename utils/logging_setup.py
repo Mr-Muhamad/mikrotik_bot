@@ -21,7 +21,17 @@ from typing import Any, Generator
 from uuid import uuid4
 
 # Production configuration from environment
-LOG_LEVEL = int(os.getenv("LOG_LEVEL", logging.INFO))
+def _parse_log_level(raw: str | None) -> int:
+    """Parse LOG_LEVEL env var accepting either a numeric level or a name (e.g. "DEBUG")."""
+    if not raw:
+        return logging.INFO
+    try:
+        return int(raw)
+    except ValueError:
+        return getattr(logging, raw.upper(), logging.INFO)
+
+
+LOG_LEVEL = _parse_log_level(os.getenv("LOG_LEVEL"))
 LOG_FILE = os.getenv("LOG_FILE", "logs/mikrotik-bot.log")
 LOG_MAX_BYTES = int(os.getenv("LOG_MAX_BYTES", "10485760"))  # 10MB
 LOG_BACKUP_COUNT = int(os.getenv("LOG_BACKUP_COUNT", "30"))
@@ -325,9 +335,21 @@ def _ensure_utf8_streams() -> None:
             logger.debug("Failed to reconfigure stream encoding to utf-8")
 
 
+class _FlushStreamHandler(logging.StreamHandler):  # type: ignore[type-arg]  # StreamHandler is generic in Python 3.13+
+    """StreamHandler that flushes after every record.
+
+    Ensures log lines appear immediately in the terminal even when stdout is
+    buffered (common on Windows with cmd.exe or some IDEs).
+    """
+
+    def emit(self, record: logging.LogRecord) -> None:
+        super().emit(record)
+        self.flush()
+
+
 def _add_console_handler(root: logging.Logger, level: int) -> None:
     """Attach a human-readable console handler to *root*."""
-    console = logging.StreamHandler(sys.stdout)
+    console = _FlushStreamHandler(sys.stdout)
     console.setLevel(level)
     console.setFormatter(
         logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] [%(component)s] - %(message)s")

@@ -18,7 +18,7 @@ from bot.messages import (
     TIMEOUT_SAVED_MINS,
     TIMEOUT_SAVED_NO_LIMIT,
 )
-from database.repositories.user_sessions import set_session_timeout
+from database.repositories.user_sessions import get_user_session, set_session_timeout
 from utils.admin_decorator import admin_only
 from utils.callback_utils import safe_answer_callback
 
@@ -36,14 +36,28 @@ TIMEOUT_OPTIONS = [
 @admin_only
 async def cmd_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Entry point for /timeout command to configure session timeout."""
+    user_id = update.effective_user.id if update.effective_user else 0
+    session = get_user_session(user_id) if user_id else None
+    current_val = (
+        int(session["session_timeout"])
+        if session and session.get("session_timeout") is not None
+        else 15
+    )
+
+    current_label = next(
+        (label for label, val in TIMEOUT_OPTIONS if val == current_val),
+        f"{current_val} دقيقة" if current_val > 0 else TIMEOUT_NO_LIMIT,
+    )
+
     keyboard = []
     for label, value in TIMEOUT_OPTIONS:
-        keyboard.append([InlineKeyboardButton(label, callback_data=f"set_timeout:{value}")])
+        btn_text = f"✅ {label}" if value == current_val else label
+        keyboard.append([InlineKeyboardButton(btn_text, callback_data=f"set_timeout:{value}")])
 
     keyboard.append([InlineKeyboardButton(TIMEOUT_CANCEL_BTN, callback_data="cancel_timeout")])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    text = TIMEOUT_HEADER
+    text = f"{TIMEOUT_HEADER}\n\n⏱️ <b>القيمة الحالية:</b> {current_label}"
 
     if update.message:
         await update.message.reply_html(text, reply_markup=reply_markup)
