@@ -55,6 +55,7 @@ class CircuitBreaker:
         self._failure_count: dict[str, int] = {}
         self._last_failure_time: dict[str, float] = {}
         self._in_trial: dict[str, bool] = {}
+        self._trial_started_at: dict[str, float] = {}
 
     def _get_state(self, router_key: str) -> CircuitState:
         return self._state.get(router_key, CircuitState.CLOSED)
@@ -72,6 +73,7 @@ class CircuitBreaker:
                     # Claim the single trial slot at the transition so no
                     # concurrent thread can sneak a second trial request in.
                     self._in_trial[router_key] = True
+                    self._trial_started_at[router_key] = time.monotonic()
                     logger.info(
                         "Circuit half-open for %s — trial request will be attempted",
                         router_key,
@@ -81,8 +83,24 @@ class CircuitBreaker:
                 return False
             # HALF_OPEN: only one concurrent trial allowed
             if self._in_trial.get(router_key, False):
+                # A claimed trial that never reports back within a full reset
+                # window is considered leaked: discard it and re-open so the
+                # circuit is not wedged in HALF_OPEN forever.
+                started = self._trial_started_at.get(router_key)
+                if started is not None and time.monotonic() - started >= self._reset_timeout:
+                    self._in_trial.pop(router_key, None)
+                    self._trial_started_at.pop(router_key, None)
+                    self._state[router_key] = CircuitState.OPEN
+                    self._last_failure_time[router_key] = time.monotonic()
+                    logger.warning(
+                        "Circuit re-OPENED for %s after a leaked trial (no report within reset window)",
+                        router_key,
+                        extra={"component": "ROUTER"},
+                    )
+                    return False
                 return False  # Trial already in progress
             self._in_trial[router_key] = True
+            self._trial_started_at[router_key] = time.monotonic()
             return True
 
     def before_request(self, router_key: str) -> None:
@@ -106,6 +124,7 @@ class CircuitBreaker:
             prev_state = self._get_state(router_key)
             self._failure_count[router_key] = 0
             self._in_trial.pop(router_key, None)
+            self._trial_started_at.pop(router_key, None)
             if prev_state == CircuitState.HALF_OPEN:
                 self._state[router_key] = CircuitState.CLOSED
                 logger.info(
@@ -124,6 +143,7 @@ class CircuitBreaker:
                 # Trial failed — re-open
                 self._failure_count[router_key] = 0
                 self._in_trial.pop(router_key, None)
+                self._trial_started_at.pop(router_key, None)
                 self._state[router_key] = CircuitState.OPEN
                 self._last_failure_time[router_key] = time.monotonic()
                 logger.warning(
@@ -163,6 +183,7 @@ class CircuitBreaker:
             self._failure_count.pop(router_key, None)
             self._last_failure_time.pop(router_key, None)
             self._in_trial.pop(router_key, None)
+            self._trial_started_at.pop(router_key, None)
 
     def wrap(self, router_key: str, func: Callable[..., object]) -> Callable[..., object]:
         """Decorator: wraps a callable with circuit-breaker logic."""

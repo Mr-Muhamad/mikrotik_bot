@@ -1,5 +1,6 @@
 """Unit tests for core/connection_pool.py — ConnectionPool class."""
 
+import concurrent.futures
 import queue
 import time
 from unittest.mock import MagicMock, patch
@@ -16,6 +17,12 @@ def pool():
     p = ConnectionPool()
     yield p
     p.close_all()
+    # close_all() shuts down the shared health-check executor. Restore a fresh
+    # one so later tests in the same process can exercise the health-check path.
+    import core.connection_pool as cp_mod
+
+    cp_mod._health_check_executor_shutdown = False
+    cp_mod._health_check_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 
 @pytest.fixture
@@ -375,6 +382,40 @@ class TestHasActiveConnection:
             assert pool.has_active_connection("discovered_1") is True
             pool.close_all()
             assert pool.has_active_connection("discovered_1") is False
+
+
+class TestHealthCheckExecutorShutdown:
+    def test_close_all_shuts_down_health_check_executor(self):
+        """close_all must stop the shared health-check worker thread (resource leak)."""
+        fake_executor = MagicMock()
+        with (
+            patch("core.connection_pool._health_check_executor", fake_executor),
+            patch(
+                "core.connection_pool._health_check_executor_shutdown",
+                False,
+                create=True,
+            ),
+        ):
+            pool = ConnectionPool()
+            pool.close_all()
+        fake_executor.shutdown.assert_called_once()
+
+    def test_shutdown_health_check_executor_is_idempotent(self):
+        """Calling the shutdown helper twice must not raise or double-shutdown."""
+        import core.connection_pool as cp
+
+        fake_executor = MagicMock()
+        with (
+            patch("core.connection_pool._health_check_executor", fake_executor),
+            patch(
+                "core.connection_pool._health_check_executor_shutdown",
+                False,
+                create=True,
+            ),
+        ):
+            cp.shutdown_health_check_executor()
+            cp.shutdown_health_check_executor()
+        assert fake_executor.shutdown.call_count == 1
 
 
 class TestVersionCache:

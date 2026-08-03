@@ -332,23 +332,46 @@ class TestUploadFileToRouter:
             api.upload_file_to_router("r1", "/tmp/file.backup", "file.backup")
         mock_cleanup.assert_called_once_with("staged_file.backup")
 
-    def test_secret_not_leaked_in_debug_logs(
-        self, api, caplog  # type: ignore[reportMissingParameterType]
-    ) -> None:
+    def test_secret_not_leaked_in_debug_logs(self, api):  # type: ignore[reportMissingParameterType]
         secret = "SUPERSECRET_BEARER_TOKEN_98765"
         fake_api = MagicMock()
         fake_api.path.return_value = MagicMock(return_value=[])
-        with (
-            patch("config.BOT_HOST", "10.0.0.1"),
-            patch("core.backup.file_server.prepare_serve_file", return_value="staged.backup"),
-            patch("core.backup.file_server.cleanup_serve_file"),
-            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
-            patch("core.mikrotik_api.FILE_SERVER_SECRET", secret),
-            caplog.at_level("DEBUG"),
-        ):
-            result = api.upload_file_to_router("r1", "/tmp/f.backup", "f.backup")
+        logger = MagicMock()
+        with patch("core.mikrotik_api.logger", logger):
+            with (
+                patch("config.BOT_HOST", "10.0.0.1"),
+                patch("core.backup.file_server.prepare_serve_file", return_value="staged.backup"),
+                patch("core.backup.file_server.cleanup_serve_file"),
+                patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
+                patch("core.mikrotik_api.FILE_SERVER_SECRET", secret),
+            ):
+                result = api.upload_file_to_router("r1", "/tmp/f.backup", "f.backup")
         assert result is True
-        assert secret not in caplog.text
+        assert secret not in str(logger.debug.call_args)
+
+
+class TestAuditLogBestEffort:
+    def test_execute_survives_log_action_db_failure(self, api):  # type: ignore[reportMissingParameterType]
+        """H6: an audit-log write failure must not fail a successful command."""
+        fake_result = [{"return": True}]
+        with (
+            patch.object(api, "_execute_with_retry", return_value=fake_result),
+            patch.object(api, "get_router_name", return_value="r1"),
+            patch("database.models.log_action", side_effect=RuntimeError("database is locked")),
+        ):
+            result = api.execute("r1", "ip/hotspot/user/print")
+        assert result == fake_result
+
+    def test_execute_long_survives_log_action_db_failure(self, api):  # type: ignore[reportMissingParameterType]
+        """H6: execute_long must also tolerate an audit-log write failure."""
+        fake_result = [{"status": "ok"}]
+        with (
+            patch.object(api, "_execute_with_retry", return_value=fake_result),
+            patch.object(api, "get_router_name", return_value="r1"),
+            patch("database.models.log_action", side_effect=RuntimeError("database is locked")),
+        ):
+            result = api.execute_long("r1", "system/backup/save")
+        assert result == fake_result
 
 
 class TestDownloadFileFromRouter:

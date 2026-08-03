@@ -15,7 +15,8 @@ Metrics include:
 
 import logging
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
+from collections.abc import Sequence
 
 from core.mikrotik_client import RouterOSRow
 
@@ -31,31 +32,33 @@ _error_count_total: dict[str, dict[str, int]] = defaultdict(
     lambda: defaultdict(int)
 )
 
-# Latency tracking (simple list for now, can be improved with histogram buckets)
-_request_latencies: list[float] = []
-_mikrotik_api_latencies: list[float] = []
-_backup_latencies: list[tuple[str, float]] = []
+# Latency tracking — bounded deques (O(1) eviction, no O(n) pop(0) trims)
+_request_latencies: deque[float] = deque(maxlen=1000)
+_mikrotik_api_latencies: deque[float] = deque(maxlen=1000)
+_backup_latencies: deque[tuple[str, float]] = deque(maxlen=1000)
 
 # Action success/fail counters per router+command
 _action_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 # Action durations per router+command (for average tracking)
-_action_durations: dict[str, list[float]] = defaultdict(list)
+_action_durations: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=1000))
 
 # Database query counters per operation+table
 _db_query_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 # Database query durations per operation+table
-_db_query_durations: dict[str, list[float]] = defaultdict(list)
+_db_query_durations: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=1000))
 
 # Telegram API counters per handler/method
 _telegram_requests_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 # Telegram API durations per handler/method
-_telegram_request_durations: dict[str, list[float]] = defaultdict(list)
+_telegram_request_durations: dict[str, deque[float]] = defaultdict(lambda: deque(maxlen=1000))
 
 # Component-level total operations (success/fail per component)
 _component_total: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
 # Error timestamps per component for sliding-window rate calculation
 _ERROR_TIMESTAMPS_WINDOW = 200
-_error_timestamps_per_component: dict[str, list[float]] = defaultdict(list)
+_error_timestamps_per_component: dict[str, deque[float]] = defaultdict(
+    lambda: deque(maxlen=_ERROR_TIMESTAMPS_WINDOW)
+)
 
 # Health thresholds
 _ERROR_RATE_WARN = 0.10  # 10% error rate triggers degraded
@@ -72,11 +75,6 @@ def record_mikrotik_request(router_key: str, duration_seconds: float) -> None:
     _mikrotik_requests_total[router_key] += 1
     _request_latencies.append(duration_seconds)
     _mikrotik_api_latencies.append(duration_seconds)
-    # Keep only last 1000 latencies to avoid memory bloat
-    if len(_request_latencies) > 1000:
-        _request_latencies.pop(0)
-    if len(_mikrotik_api_latencies) > 1000:
-        _mikrotik_api_latencies.pop(0)
 
 
 def record_error(error_category: str, component: str) -> None:
@@ -96,9 +94,6 @@ def record_component_result(component: str, success: bool) -> None:
         _component_total[component]["fail"] += 1
         ts = _error_timestamps_per_component[component]
         ts.append(time.time())
-        # Trim sliding window
-        if len(ts) > _ERROR_TIMESTAMPS_WINDOW:
-            ts.pop(0)
 
 
 def get_error_rate(component: str) -> float:
@@ -137,15 +132,11 @@ def get_health_status() -> int:
 def record_backup_duration(backup_type: str, duration_seconds: float) -> None:
     """Record a backup operation duration."""
     _backup_latencies.append((backup_type, duration_seconds))
-    if len(_backup_latencies) > 1000:
-        _backup_latencies.pop(0)
 
 
 def record_request_latency(handler_name: str, duration_seconds: float) -> None:
     """Record a handler request latency."""
     _request_latencies.append(duration_seconds)
-    if len(_request_latencies) > 1000:
-        _request_latencies.pop(0)
 
 
 def record_action(router_key: str, command: str, success: bool, duration_ms: float) -> None:
@@ -156,8 +147,6 @@ def record_action(router_key: str, command: str, success: bool, duration_ms: flo
     else:
         _action_total[key]["fail"] += 1
     _action_durations[key].append(duration_ms)
-    if len(_action_durations[key]) > 1000:
-        _action_durations[key].pop(0)
 
 
 def record_db_query(operation: str, table: str, success: bool, duration_ms: float) -> None:
@@ -168,8 +157,6 @@ def record_db_query(operation: str, table: str, success: bool, duration_ms: floa
     else:
         _db_query_total[key]["fail"] += 1
     _db_query_durations[key].append(duration_ms)
-    if len(_db_query_durations[key]) > 1000:
-        _db_query_durations[key].pop(0)
 
 
 def record_telegram_request(handler: str, success: bool, duration_ms: float) -> None:
@@ -179,8 +166,6 @@ def record_telegram_request(handler: str, success: bool, duration_ms: float) -> 
     else:
         _telegram_requests_total[handler]["fail"] += 1
     _telegram_request_durations[handler].append(duration_ms)
-    if len(_telegram_request_durations[handler]) > 1000:
-        _telegram_request_durations[handler].pop(0)
 
 
 def get_uptime() -> float:
@@ -198,7 +183,7 @@ def _append_block_header(lines: list[str], metric_name: str, help_text: str, met
 def _append_summary_values(
     lines: list[str],
     metric_name: str,
-    durations: list[float],
+    durations: Sequence[float],
     label_body: str = "",
 ) -> None:
     """Append p50/p90/p99/sum/count value lines for a duration series.

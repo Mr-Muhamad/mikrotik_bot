@@ -27,13 +27,72 @@ class TestRecordMikrotikRequest:
     def test_increments_and_stores_latency(self):
         m.record_mikrotik_request("router1", 0.25)
         assert m._mikrotik_requests_total["router1"] == 1  # type: ignore[reportPrivateUsage]
-        assert m._request_latencies == [0.25]  # type: ignore[reportPrivateUsage]
+        assert list(m._request_latencies) == [0.25]  # type: ignore[reportPrivateUsage]
 
     def test_evicts_old_latencies_at_1000(self):
         for i in range(1005):
             m.record_mikrotik_request("r", float(i))
         assert len(m._request_latencies) == 1000  # type: ignore[reportPrivateUsage]
         assert m._request_latencies[0] == 5.0  # type: ignore[reportPrivateUsage]
+
+
+class TestBoundedLatencyStores:
+    """Guards the O(1) sliding-window storage (no O(n) pop(0) trims)."""
+
+    def setup_method(self):
+        m._request_latencies.clear()  # type: ignore[reportPrivateUsage]
+        m._mikrotik_api_latencies.clear()  # type: ignore[reportPrivateUsage]
+        m._backup_latencies.clear()  # type: ignore[reportPrivateUsage]
+        m._action_durations.clear()  # type: ignore[reportPrivateUsage]
+        m._db_query_durations.clear()  # type: ignore[reportPrivateUsage]
+        m._telegram_request_durations.clear()  # type: ignore[reportPrivateUsage]
+        m._error_timestamps_per_component.clear()  # type: ignore[reportPrivateUsage]
+
+    def test_request_latencies_is_bounded_deque(self):
+        from collections import deque
+
+        assert isinstance(m._request_latencies, deque)
+        assert m._request_latencies.maxlen == 1000
+
+    def test_api_latencies_is_bounded_deque(self):
+        from collections import deque
+
+        assert isinstance(m._mikrotik_api_latencies, deque)
+        assert m._mikrotik_api_latencies.maxlen == 1000
+
+    def test_backup_latencies_is_bounded_deque(self):
+        from collections import deque
+
+        assert isinstance(m._backup_latencies, deque)
+        assert m._backup_latencies.maxlen == 1000
+
+    def test_action_durations_is_bounded_deque(self):
+        from collections import deque
+
+        m.record_action("router1", "print", True, 5.0)
+        assert isinstance(m._action_durations["router1:print"], deque)  # type: ignore[reportPrivateUsage]
+        assert m._action_durations["router1:print"].maxlen == 1000  # type: ignore[reportPrivateUsage]
+
+    def test_db_query_durations_is_bounded_deque(self):
+        from collections import deque
+
+        m.record_db_query("select", "logs", True, 3.0)
+        assert isinstance(m._db_query_durations["select:logs"], deque)  # type: ignore[reportPrivateUsage]
+        assert m._db_query_durations["select:logs"].maxlen == 1000  # type: ignore[reportPrivateUsage]
+
+    def test_telegram_request_durations_is_bounded_deque(self):
+        from collections import deque
+
+        m.record_telegram_request("handler", True, 4.0)
+        assert isinstance(m._telegram_request_durations["handler"], deque)  # type: ignore[reportPrivateUsage]
+        assert m._telegram_request_durations["handler"].maxlen == 1000  # type: ignore[reportPrivateUsage]
+
+    def test_error_timestamps_is_bounded_deque(self):
+        from collections import deque
+
+        m.record_component_result("ROUTER", False)
+        assert isinstance(m._error_timestamps_per_component["ROUTER"], deque)  # type: ignore[reportPrivateUsage]
+        assert m._error_timestamps_per_component["ROUTER"].maxlen == 200  # type: ignore[reportPrivateUsage]
 
 
 class TestGetUptime:

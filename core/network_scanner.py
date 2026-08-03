@@ -19,6 +19,7 @@ from collections.abc import Awaitable, Callable
 
 from core.mikrotik_client import RouterOSRow
 from core.network_probe import DiscoveredRouter, MNDPListenerProbe
+from utils.async_blocking import run_blocking
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +60,11 @@ async def discover_routers(
     except OSError as e:
         logger.warning("MNDP discovery error: %s", e)
 
-    # 2. ARP Table Probe
+    # 2. ARP Table Probe (sync subprocess call — must not block the event loop)
     arp_results: list[RouterOSRow] = []
     try:
         arp_probe = ARPTableProbe()
-        arp_results = arp_probe.discover()
+        arp_results = await run_blocking(arp_probe.discover)
         logger.info("ARP probe found %d dynamic entries", len(arp_results))
     except OSError as e:
         logger.warning("ARP probe error: %s", e)

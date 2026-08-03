@@ -290,21 +290,37 @@ def require_ownership(func: Callable[..., Awaitable[object]]):
             return await func(update, context)
 
         router_id = _extract_router_id(update, context)
-        if router_id is not None:
-            from database.repositories.routers import get_router_by_id
+        if router_id is None:
+            logger.warning(
+                "OWNERSHIP FAIL-CLOSED: router id unresolvable, user=%s",
+                user_id,
+            )
+            await _send_reply(update, NOT_OWNER_MSG)
+            return
 
-            router = get_router_by_id(router_id, decrypt=False)
-            if router:
-                owner_id = router.get("owner_id")
-                if owner_id and owner_id != user_id:
-                    logger.warning(
-                        "OWNERSHIP VIOLATION: user=%s, router_id=%s, owner=%s",
-                        user_id,
-                        router_id,
-                        owner_id,
-                    )
-                    await _send_reply(update, NOT_OWNER_MSG)
-                    return
+        from database.repositories.routers import get_router_by_id
+
+        router = get_router_by_id(router_id, decrypt=False)
+        if not router:
+            logger.warning(
+                "OWNERSHIP FAIL-CLOSED: router not found, user=%s, router_id=%s",
+                user_id,
+                router_id,
+            )
+            await _send_reply(update, NOT_OWNER_MSG)
+            return
+
+        owner_id = router.get("owner_id")
+        if not owner_id or owner_id != user_id:
+            logger.warning(
+                "OWNERSHIP VIOLATION: user=%s, router_id=%s, owner=%s",
+                user_id,
+                router_id,
+                owner_id,
+            )
+            await _send_reply(update, NOT_OWNER_MSG)
+            return
+
         return await func(update, context)
 
     return wrapper

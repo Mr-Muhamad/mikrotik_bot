@@ -34,6 +34,9 @@ class _RouterOSApi(Protocol):
 _MIN_INTERVAL = 0.1  # 100ms بين الأوامر لنفس الراوتر
 _RETRY_DELAYS = (1.0, 2.0)  # تأخير exponential backoff بين المحاولات
 
+# مفاتيح تُخفي قيمها في السجلات: كلمات مرور، توكنات مصادقة، ورؤوس Authorization
+_SENSITIVE_KEY_FRAGMENTS = ("password", "secret", "token", "auth", "header")
+
 # أخطاء نهائية: إعادة المحاولة لن تفيدين لأن السبب في أمر الراوتر نفسه وليس في الاتصال
 NON_RETRYABLE_ERRORS = {"unknown parameter", "no such command"}
 
@@ -252,14 +255,35 @@ class MikrotikAPI:
         return list(cmd_path(cmd))
 
     def _debug_log(self, method: str, command: str, kwargs: dict[str, object]):
-        """Logs kwargs with hidden passwords and structured component tag."""
+        """Logs kwargs with hidden passwords/authorization tokens and structured component tag."""
         if kwargs:
             sanitized = {
-                k: ("***" if "password" in k.lower() else v) for k, v in kwargs.items()
+                k: ("***" if any(f in k.lower() for f in _SENSITIVE_KEY_FRAGMENTS) else v)
+                for k, v in kwargs.items()
             }
             logger.debug(
                 "%s %s kwargs=%s", method, command, sanitized,
                 extra={"component": "ROUTER"},
+            )
+
+    def _log_action_best_effort(
+        self, action: str, username: str, router_name: str, admin_id: int
+    ) -> None:
+        """Best-effort audit logging: a DB write failure must never surface to the caller.
+
+        The lazy import keeps the database dependency out of the module's import
+        graph (avoids a circular import) — do not move it to the top of the file.
+        """
+        from database.models import log_action  # noqa: PLC0415
+
+        try:
+            log_action(action, username, router_name, admin_id)
+        except Exception as e:  # noqa: BLE001 - best-effort: audit-log failure must not break the API call
+            logger.warning(
+                "Failed to write audit log for action=%s (error type: %s): %s",
+                action, type(e).__name__, sanitize_log_data(str(e)),
+                extra={"component": "ROUTER"},
+                exc_info=True,
             )
 
     # ──────────────────────────────────────────────────────────────
@@ -357,25 +381,21 @@ class MikrotikAPI:
 
     def execute(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse:
         """الأمر العادي — مهلة 30 ثانية، يعيد المحاولة عند الخطأ."""
-        from database.models import log_action  # noqa: PLC0415
-
         start = time.monotonic()
         result = self._execute_with_retry(router_key, command, API_TIMEOUT, **kwargs)
         duration_ms = (time.monotonic() - start) * 1000
         router_name = self.get_router_name(router_key)
-        log_action(command, "", router_name, 0)
+        self._log_action_best_effort(command, "", router_name, 0)
         log_api_call(router_key, command, duration_ms, True, component="ROUTER")
         return result
 
     def execute_long(self, router_key: str, command: str, **kwargs: object) -> RouterOSResponse:
         """أمر طويل — مهلة 120 ثانية، يعيد المحاولة عند الخطأ."""
-        from database.models import log_action  # noqa: PLC0415
-
         start = time.monotonic()
         result = self._execute_with_retry(router_key, command, LONG_TIMEOUT, **kwargs)
         duration_ms = (time.monotonic() - start) * 1000
         router_name = self.get_router_name(router_key)
-        log_action(command, "", router_name, 0)
+        self._log_action_best_effort(command, "", router_name, 0)
         log_api_call(router_key, command, duration_ms, True, component="ROUTER")
         return result
 
@@ -393,8 +413,6 @@ class MikrotikAPI:
     def _execute_non_blocking_locked(
         self, router_key: str, command: str, **kwargs: object
     ) -> None:
-        from database.models import log_action  # noqa: PLC0415
-
         start = time.monotonic()
         try:
             with self._connection_ctx(router_key, timeout=API_TIMEOUT) as api:
@@ -406,7 +424,7 @@ class MikrotikAPI:
                     extra={"component": "ROUTER"},
                 )
                 router_name = self.get_router_name(router_key)
-                log_action(command, "", router_name, 0)
+                self._log_action_best_effort(command, "", router_name, 0)
                 log_api_call(router_key, command, duration_ms, True, component="ROUTER")
         except (TrapError, ConnectionError, OSError) as e:
             duration_ms = (time.monotonic() - start) * 1000

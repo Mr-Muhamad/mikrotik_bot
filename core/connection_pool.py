@@ -10,6 +10,20 @@ from librouteros.exceptions import LibRouterosError
 
 _HEALTH_CHECK_TIMEOUT = 5
 _health_check_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+_health_check_executor_shutdown = False
+
+
+def shutdown_health_check_executor() -> None:
+    """Gracefully stop the shared health-check worker thread (idempotent).
+
+    The executor is module-level; without an explicit shutdown its
+    non-daemon worker keeps the interpreter alive during process exit.
+    """
+    global _health_check_executor_shutdown
+    if _health_check_executor_shutdown:
+        return
+    _health_check_executor_shutdown = True
+    _health_check_executor.shutdown(wait=False, cancel_futures=True)
 
 from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.cache import TTLCache
@@ -178,13 +192,17 @@ class ConnectionPool:
                 raise
         else:
             try:
-                # انتظار 30 ثانية كحد أقصى للحصول على اتصال فارغ (Throttle)
                 api = q.get(timeout=30)
                 try:
-                    future = _health_check_executor.submit(
-                        lambda: api.path("system", "resource")("print")
-                    )
-                    future.result(timeout=_HEALTH_CHECK_TIMEOUT)
+                    if _health_check_executor_shutdown:
+                        # Executor already stopped (app exiting); treat pooled
+                        # connection as healthy to avoid a RuntimeError.
+                        pass
+                    else:
+                        future = _health_check_executor.submit(
+                            lambda: api.path("system", "resource")("print")
+                        )
+                        future.result(timeout=_HEALTH_CHECK_TIMEOUT)
                 except (LibRouterosError, ConnectionError, OSError, TimeoutError) as e:
                     duration_ms = (time.monotonic() - start) * 1000
                     log_api_call(router_key, "get_connection", duration_ms, False, error=e, component="ROUTER")
@@ -259,9 +277,21 @@ class ConnectionPool:
                 self.pools[router_key] = queue.Queue(maxsize=MAX_CONNECTIONS_PER_ROUTER)
                 self.active_counts[router_key] = 0
 
-            # We are assuming this is used when a connection is marked broken
-            # and we need a replacement immediately.
-            self.active_counts[router_key] += 1
+            # Hard cap: reconnect must never inflate active_counts beyond
+            # MAX_CONNECTIONS_PER_ROUTER. When already at the cap, reuse an
+            # idle pooled connection if one is available; otherwise allocate
+            # the fresh connection while pinning the counter at the cap (any
+            # excess is later closed by release_connection's queue.Full guard).
+            if self.active_counts[router_key] >= MAX_CONNECTIONS_PER_ROUTER:
+                try:
+                    api = self.pools[router_key].get_nowait()
+                except queue.Empty:
+                    api = None
+                if api is not None:
+                    return api
+                self.active_counts[router_key] = MAX_CONNECTIONS_PER_ROUTER
+            else:
+                self.active_counts[router_key] += 1
 
         try:
             router_info = self.get_router_info(router_key)
@@ -302,6 +332,7 @@ class ConnectionPool:
         with self._lock:
             self.pools.clear()
             self.active_counts.clear()
+        shutdown_health_check_executor()
 
     def get_version(self, router_key: str = "router1") -> str:
         with self._lock:
