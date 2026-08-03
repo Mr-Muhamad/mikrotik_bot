@@ -13,6 +13,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+# Importing the private classifier intentionally to unit-test it directly.
 from core.mikrotik_api import (
     MikrotikAPI,
     _is_write_command,  # type: ignore[reportPrivateUsage]
@@ -45,10 +46,14 @@ def _run_concurrent(api: MikrotikAPI, jobs: list[tuple[str, str]]) -> int:
     def worker(job: tuple[str, str]) -> None:
         router_key, command = job
         barrier.wait(timeout=15)
+        # Calling the private execution path to exercise the lock without the
+        # DB write (log_action) that could race on SQLite across threads.
         api._execute_with_retry(router_key, command, 30)  # type: ignore[reportPrivateUsage]
 
     with (
+        # Patching the private pool so all workers share one fake connection.
         patch.object(api._pool, "get_connection", return_value=fake_connection),  # type: ignore[reportPrivateUsage]
+        # The same fake connection serves the (unused) retry path.
         patch.object(api._pool, "reconnect", return_value=fake_connection),  # type: ignore[reportPrivateUsage]
         patch.object(api, "_call_command", side_effect=tracked_call),
         patch.object(api, "_throttle"),
@@ -99,6 +104,7 @@ class TestWriteLockSerialization:
 
         def block_worker() -> None:
             barrier.wait(timeout=15)
+            # Private path call, same rationale as in _run_concurrent.
             api._execute_with_retry("r1", "ip/hotspot/user/add", 30)  # type: ignore[reportPrivateUsage]
 
         def non_blocking_worker() -> None:
@@ -106,7 +112,9 @@ class TestWriteLockSerialization:
             api.execute_non_blocking("r1", "ip/hotspot/user/add", name="x")
 
         with (
+            # Patching the private pool so both workers share one fake connection.
             patch.object(api._pool, "get_connection", return_value=fake_connection),  # type: ignore[reportPrivateUsage]
+            # The same fake connection serves the (unused) retry path.
             patch.object(api._pool, "reconnect", return_value=fake_connection),  # type: ignore[reportPrivateUsage]
             patch.object(api, "_call_command", side_effect=tracked_call),
             patch.object(api, "_throttle"),
