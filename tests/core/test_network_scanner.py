@@ -1,5 +1,7 @@
 """Integration tests for core.network_scanner using mocked probes."""
 
+from collections.abc import Callable
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -17,7 +19,9 @@ class TestArpProbeOffloaded:
         """
         executed: list[bool] = []
 
-        async def fake_run_blocking(func, *args, **kwargs):
+        async def fake_run_blocking(
+            func: Callable[..., Any], *args: Any, **kwargs: Any
+        ) -> Any:
             executed.append(True)
             return func(*args, **kwargs)
 

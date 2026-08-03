@@ -51,20 +51,20 @@ class TestBoundedLatencyStores:
     def test_request_latencies_is_bounded_deque(self):
         from collections import deque
 
-        assert isinstance(m._request_latencies, deque)
-        assert m._request_latencies.maxlen == 1000
+        assert isinstance(m._request_latencies, deque)  # type: ignore[reportPrivateUsage]
+        assert m._request_latencies.maxlen == 1000  # type: ignore[reportPrivateUsage]
 
     def test_api_latencies_is_bounded_deque(self):
         from collections import deque
 
-        assert isinstance(m._mikrotik_api_latencies, deque)
-        assert m._mikrotik_api_latencies.maxlen == 1000
+        assert isinstance(m._mikrotik_api_latencies, deque)  # type: ignore[reportPrivateUsage]
+        assert m._mikrotik_api_latencies.maxlen == 1000  # type: ignore[reportPrivateUsage]
 
     def test_backup_latencies_is_bounded_deque(self):
         from collections import deque
 
-        assert isinstance(m._backup_latencies, deque)
-        assert m._backup_latencies.maxlen == 1000
+        assert isinstance(m._backup_latencies, deque)  # type: ignore[reportPrivateUsage]
+        assert m._backup_latencies.maxlen == 1000  # type: ignore[reportPrivateUsage]
 
     def test_action_durations_is_bounded_deque(self):
         from collections import deque

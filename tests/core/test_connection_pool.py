@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from librouteros.exceptions import LibRouterosError
 
+import core.connection_pool as cp_mod
 from core.connection_pool import MAX_CONNECTIONS_PER_ROUTER, MAX_RETRIES, ConnectionPool
 from core.exceptions import RouterNotFoundError
 
@@ -19,10 +20,10 @@ def pool():
     p.close_all()
     # close_all() shuts down the shared health-check executor. Restore a fresh
     # one so later tests in the same process can exercise the health-check path.
-    import core.connection_pool as cp_mod
-
-    cp_mod._health_check_executor_shutdown = False
-    cp_mod._health_check_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+    cp_mod._health_check_executor_shutdown = False  # type: ignore[reportPrivateUsage]
+    cp_mod._health_check_executor = concurrent.futures.ThreadPoolExecutor(  # type: ignore[reportPrivateUsage]
+        max_workers=1
+    )
 
 
 @pytest.fixture
