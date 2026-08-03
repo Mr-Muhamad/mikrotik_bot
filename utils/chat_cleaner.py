@@ -53,6 +53,10 @@ _BENIGN_EDIT_ERRORS = (
     "Message is not modified",
     "Message to edit not found",
     "exactly the same",
+    "no text in the message",
+    "can't be edited",
+    "cannot be edited",
+    "has no text",
 )
 
 
