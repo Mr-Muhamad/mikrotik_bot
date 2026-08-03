@@ -39,8 +39,14 @@ def get_pdf_layout_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_pdf_misc_keyboard() -> InlineKeyboardMarkup:
+    from bot.handlers.callback_constants import CALLBACKS  # noqa: PLC0415
+    from pdf.pdf_settings import pdf_settings  # noqa: PLC0415
+
+    settings = pdf_settings.get_settings()
+    is_enabled = bool(settings.get("show_qr", 1))
+    btn_text = "📱 QR Code: ✅ مفعّل" if is_enabled else "📱 QR Code: ❌ معطّل"
     keyboard = [
-        [InlineKeyboardButton("📱 تفعيل QR Code", callback_data="pdf_show_qr")],
+        [InlineKeyboardButton(btn_text, callback_data=CALLBACKS["pdf_toggle_qr"])],
         [InlineKeyboardButton("🔙 رجوع", callback_data="menu_pdf_settings")],
     ]
     return InlineKeyboardMarkup(keyboard)

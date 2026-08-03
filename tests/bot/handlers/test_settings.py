@@ -288,3 +288,28 @@ class TestPdfSettingsValue:
         with patch("bot.handlers.settings.reply_final", new=AsyncMock()):
             result = await pdf_settings_value(update, ctx)
         assert result == ConversationHandler.END
+
+    @pytest.mark.asyncio
+    async def test_pdf_toggle_qr(self):
+        from bot.handlers.settings import pdf_toggle_qr
+
+        query = MagicMock()
+        query.from_user.id = ADMIN_ID
+        query.edit_message_text = AsyncMock()
+
+        update = MagicMock()
+        update.effective_user.id = ADMIN_ID
+        update.effective_chat.id = 123
+        update.callback_query = query
+
+        ctx = MagicMock()
+
+        with (
+            patch("bot.handlers.settings.pdf_settings") as mock_ps,
+            patch("bot.handlers.settings.safe_answer_callback", new=AsyncMock()) as mock_ans,
+        ):
+            mock_ps.get_settings.return_value = {"show_qr": 1}
+            await pdf_toggle_qr(update, ctx)
+            mock_ps.update.assert_called_once_with(show_qr=0)
+            mock_ans.assert_called_once_with(query, text="❌ تم تعطيل الـ QR Code")
+            query.edit_message_text.assert_called_once()

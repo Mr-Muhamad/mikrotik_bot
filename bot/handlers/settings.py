@@ -96,6 +96,25 @@ async def pdf_group_misc(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+@admin_only
+async def pdf_toggle_qr(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Toggle the PDF QR code setting directly on button click."""
+    from bot.keyboards import get_pdf_misc_keyboard
+
+    query = update.callback_query
+    if query:
+        settings = pdf_settings.get_settings()
+        current = bool(settings.get("show_qr", 1))
+        new_val = 0 if current else 1
+        pdf_settings.update(show_qr=new_val)
+        status_str = "✅ تم تفعيل الـ QR Code" if new_val else "❌ تم تعطيل الـ QR Code"
+        await safe_answer_callback(query, text=status_str)
+        await query.edit_message_text(
+            "📱 إعدادات الباركود (QR Code)",
+            reply_markup=get_pdf_misc_keyboard(),
+        )
+
+
 def _get_pdf_group_info(option: str):
     from bot.keyboards import (
         get_pdf_layout_keyboard,

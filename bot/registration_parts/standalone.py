@@ -89,7 +89,12 @@ from bot.handlers.routers import (
     saved_router_selected,
     saved_routers_list,
 )
-from bot.handlers.settings import pdf_group_layout, pdf_group_misc, pdf_group_text
+from bot.handlers.settings import (
+    pdf_group_layout,
+    pdf_group_misc,
+    pdf_group_text,
+    pdf_toggle_qr,
+)
 from bot.handlers.stats import stats_chart_callback, stats_hotspot, stats_userman
 from bot.handlers.timeout import cmd_timeout, handle_timeout_selection
 from bot.handlers.usage import usage_select_callback
@@ -207,3 +212,4 @@ standalone(CallbackQueryHandler, pattern=PATTERNS["op_revoke_router"])(op_revoke
 standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_text"])(pdf_group_text)
 standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_layout"])(pdf_group_layout)
 standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_group_misc"])(pdf_group_misc)
+standalone(CallbackQueryHandler, pattern=PATTERNS["pdf_toggle_qr"])(pdf_toggle_qr)
