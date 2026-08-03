@@ -258,7 +258,7 @@ def get_usage_select_keyboard(users: list[RouterOSRow]) -> InlineKeyboardMarkup:
         uptime = str(user.get("uptime", ""))
         label = f"{name} — {uptime}" if uptime else name
         keyboard.append([InlineKeyboardButton(label, callback_data=f"usage_sel_{idx}")])
-    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="reports_menu")])
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -285,7 +285,7 @@ def get_batches_keyboard(
         keyboard.append(nav_row)
 
     keyboard.append([InlineKeyboardButton("🔍 بحث", callback_data="batches_search")])
-    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="main_menu")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="reports_menu")])
     return InlineKeyboardMarkup(keyboard)
 
 

@@ -59,7 +59,7 @@ async def usage_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query:
         await query.answer()
     cleanup_state(update.effective_user.id, context.user_data)
-    nav_set(context, "menu_hotspot")
+    nav_set(context, "menu_reports")
     router_key = get_selected_router(update.effective_user.id)
     if not router_key:
         router_key = context.user_data.get("router_key")
@@ -195,7 +195,7 @@ async def _show_usage_report(
     except (LibRouterosError, OSError):
         lines.append(USAGE_NO_ACTIVE)
 
-    await send_step(update, context, "\n".join(lines), get_back_keyboard("menu_hotspot"))
+    await send_step(update, context, "\n".join(lines), get_back_keyboard("menu_reports"))
 
 
 @admin_only

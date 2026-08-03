@@ -9,7 +9,12 @@ from telegram.ext import ContextTypes, ConversationHandler
 
 from bot.handlers.constants import WAITING_BATCHES_SEARCH, WAITING_SHARE_RECIPIENT
 from bot.handlers.handler_utils import get_query_message
-from bot.keyboards import get_batch_detail_keyboard, get_batches_keyboard, get_cancel_keyboard
+from bot.keyboards import (
+    get_back_keyboard,
+    get_batch_detail_keyboard,
+    get_batches_keyboard,
+    get_cancel_keyboard,
+)
 from bot.messages import (
     BATCHES_SEARCH_PROMPT,
     MARK_PAID_FAIL,
@@ -66,7 +71,7 @@ async def batches_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query:
         await query.answer()
     cleanup_state(update.effective_user.id, context.user_data)
-    nav_set(context, "menu_hotspot")
+    nav_set(context, "menu_reports")
     await _show_batches_page(update, context, page=0)
 
 
@@ -350,7 +355,7 @@ async def show_sales_summary(update: Update, context: ContextTypes.DEFAULT_TYPE)
             "total_revenue": 0.0,
         }
     text = SALES_SUMMARY_HEADER.format(days=days) + SALES_SUMMARY_ROW.format(**summary)
-    await send_step(update, context, text)
+    await send_step(update, context, text, get_back_keyboard("menu_reports"))
 
 
 @admin_only
