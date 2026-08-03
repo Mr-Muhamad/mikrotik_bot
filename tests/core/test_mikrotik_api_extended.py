@@ -23,6 +23,13 @@ MOCK_ROUTER_INFO = {
 }
 
 
+class _OSErrorWithWinerror(OSError):
+    """OSError carrying a `winerror` attribute, declared explicitly so the
+    attribute type-checks on both Windows and Linux typeshed."""
+
+    winerror: int
+
+
 def _patch_pool_for_retry(api_obj, exc_class, exc_msg):  # type: ignore[reportMissingParameterType]
     """Return a tuple of context-manager patches to exhaust retries for execute."""
     return (
@@ -384,13 +391,13 @@ class TestProbeApiSslSuccess:
 
 class TestClassifyConnectFailure:
     def test_timeout_winerror_10060(self, api):  # type: ignore[reportMissingParameterType]
-        exc = OSError("Connection timed out")
+        exc = _OSErrorWithWinerror("Connection timed out")
         exc.winerror = 10060
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728)
         assert "مهلة" in msg
 
     def test_refused_winerror_10061(self, api):  # type: ignore[reportMissingParameterType]
-        exc = OSError("Connection refused")
+        exc = _OSErrorWithWinerror("Connection refused")
         exc.winerror = 10061
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728)
         assert "refused" in msg.lower()
@@ -426,7 +433,7 @@ class TestClassifyConnectFailure:
 
 class TestIsTimeoutError:
     def test_winerror_10060(self, api):  # type: ignore[reportMissingParameterType]
-        exc = OSError("fail")
+        exc = _OSErrorWithWinerror("fail")
         exc.winerror = 10060
         assert api._is_timeout_error(exc) is True
 
@@ -445,15 +452,14 @@ class TestIsTimeoutError:
         assert api._is_timeout_error(OSError("Error 10060")) is True
 
     def test_non_timeout_error(self, api):  # type: ignore[reportMissingParameterType]
-        exc = OSError("Connection refused")
-        exc.winerror = None  # type: ignore[reportAttributeAccessIssue]
+        exc = _OSErrorWithWinerror("Connection refused")
         exc.errno = None
         assert api._is_timeout_error(exc) is False
 
 
 class TestTestConnectionTimeoutClassification:
     def test_timeout_oserror_winerror(self, api):  # type: ignore[reportMissingParameterType]
-        exc = OSError("Connection timed out")
+        exc = _OSErrorWithWinerror("Connection timed out")
         exc.winerror = 10060
         with (
             patch("socket.create_connection", return_value=MagicMock()),
@@ -465,7 +471,7 @@ class TestTestConnectionTimeoutClassification:
         assert "مهلة" in msg or "api" in msg
 
     def test_refused_oserror_winerror(self, api):  # type: ignore[reportMissingParameterType]
-        exc = OSError("Connection refused")
+        exc = _OSErrorWithWinerror("Connection refused")
         exc.winerror = 10061
         with (
             patch("socket.create_connection", return_value=MagicMock()),
@@ -476,8 +482,7 @@ class TestTestConnectionTimeoutClassification:
         assert "refused" in msg.lower()
 
     def test_non_timeout_oserror(self, api):  # type: ignore[reportMissingParameterType]
-        exc = OSError("Address already in use")
-        exc.winerror = None  # type: ignore[reportAttributeAccessIssue]
+        exc = _OSErrorWithWinerror("Address already in use")
         exc.errno = None
         with (
             patch("socket.create_connection", return_value=MagicMock()),
@@ -732,8 +737,7 @@ class TestTestConnectionFullFlow:
         assert identity == "192.168.1.1"
 
     def test_os_error_non_timeout_with_ssl_probe(self, api):  # type: ignore[reportMissingParameterType]
-        exc = OSError("Connection reset")
-        exc.winerror = None  # type: ignore[reportAttributeAccessIssue]
+        exc = _OSErrorWithWinerror("Connection reset")
         exc.errno = None
         with (
             patch("socket.create_connection", return_value=MagicMock()),
