@@ -16,6 +16,15 @@ _CARD_TYPE_MAP = {
     "type1": CardSystem.DIFFERENT_CREDENTIALS,
     "type2": CardSystem.SAME_CREDENTIALS,
     "type3": CardSystem.EMPTY_PASSWORD,
+    "card_type1": CardSystem.DIFFERENT_CREDENTIALS,
+    "card_type2": CardSystem.SAME_CREDENTIALS,
+    "card_type3": CardSystem.EMPTY_PASSWORD,
+    "hs_card_type1": CardSystem.DIFFERENT_CREDENTIALS,
+    "hs_card_type2": CardSystem.SAME_CREDENTIALS,
+    "hs_card_type3": CardSystem.EMPTY_PASSWORD,
+    "1": CardSystem.DIFFERENT_CREDENTIALS,
+    "2": CardSystem.SAME_CREDENTIALS,
+    "3": CardSystem.EMPTY_PASSWORD,
 }
 
 logger = logging.getLogger(__name__)

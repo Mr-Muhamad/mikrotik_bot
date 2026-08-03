@@ -312,6 +312,15 @@ async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE)
             except TelegramError as e:
                 logger.debug("Failed to delete status message: %s", e)
 
+        if not cards:
+            await send_step(
+                update,
+                context,
+                "❌ لم يتم إنشاء أي كارت! يرجى التأكد من اختيار نوع الكارت، واسم البروفايل، واتصال الراوتر.",
+            )
+            cleanup_state(update.effective_user.id, context.user_data)
+            return ConversationHandler.END
+
         # لا نعرض بيانات الدخول (يوزر/باسورد) في الدردشة؛ الملف PDF هو المخرج الرسمي.
         payment = context.user_data.get("card_payment", "")
         created_at = datetime.now()
