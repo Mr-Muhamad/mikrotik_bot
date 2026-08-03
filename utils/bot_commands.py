@@ -49,9 +49,6 @@ async def set_bot_commands(app: Application) -> None:  # type: ignore[reportMiss
     ]
     for attempt in range(1, 4):
         try:
-            await app.bot.delete_my_commands()
-            await app.bot.delete_my_commands(scope=PRIVATE)
-            await app.bot.delete_my_commands(scope=GROUP)
             await app.bot.set_my_commands(commands)
             await app.bot.set_my_commands(commands, scope=PRIVATE)
             await app.bot.set_my_commands(commands, scope=GROUP)
