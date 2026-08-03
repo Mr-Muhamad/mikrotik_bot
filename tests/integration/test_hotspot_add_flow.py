@@ -12,7 +12,7 @@ from utils.formatters import format_hotspot_user
 class TestHotspotAddFlow:
     ROUTER_KEY = "discovered_1"
 
-    def test_add_user_and_verify_in_mock(self, mock_mikrotik_api):
+    def test_add_user_and_verify_in_mock(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         result = hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="flow_user",
@@ -32,7 +32,7 @@ class TestHotspotAddFlow:
         user = hotspot_manager.get_user(self.ROUTER_KEY, kwargs.get(".id", "*1"))
         assert user is not None
 
-    def test_add_then_search(self, mock_mikrotik_api):
+    def test_add_then_search(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="searchable",
@@ -43,7 +43,7 @@ class TestHotspotAddFlow:
         assert len(results) >= 1
         assert any(u.get("name") == "searchable" for u in results)
 
-    def test_add_then_delete(self, mock_mikrotik_api):
+    def test_add_then_delete(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="to_delete",
@@ -53,10 +53,10 @@ class TestHotspotAddFlow:
         results = hotspot_manager.search_users(self.ROUTER_KEY, "to_delete")
         assert len(results) >= 1
         uid = results[0][".id"]
-        hotspot_manager.delete_user(self.ROUTER_KEY, uid)
-        assert hotspot_manager.get_user(self.ROUTER_KEY, uid) is None
+        hotspot_manager.delete_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
+        assert hotspot_manager.get_user(self.ROUTER_KEY, uid) is None  # type: ignore[reportArgumentType]
 
-    def test_create_cards_then_list(self, mock_mikrotik_api):
+    def test_create_cards_then_list(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         cards = hotspot_manager.create_cards(
             self.ROUTER_KEY,
             count=3,
@@ -70,7 +70,7 @@ class TestHotspotAddFlow:
         found_usernames = {u.get("name") for u in users if u.get("name") in card_usernames}
         assert len(found_usernames) == 3
 
-    def test_get_hotspot_stats_after_operations(self, mock_mikrotik_api):
+    def test_get_hotspot_stats_after_operations(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="stats_user",
@@ -79,10 +79,10 @@ class TestHotspotAddFlow:
         )
         stats = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY)
         assert stats is not None
-        assert stats["total"] >= 1
+        assert stats["total"] >= 1  # type: ignore[reportOperatorIssue]
         assert "categories" in stats
 
-    def test_duplicate_username_handling(self, mock_mikrotik_api):
+    def test_duplicate_username_handling(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="duplicate",
@@ -101,11 +101,11 @@ class TestHotspotAddFlow:
         assert len(new_usernames) == 3
         assert "duplicate" not in new_usernames
 
-    def test_delete_nonexistent_returns_clean(self, mock_mikrotik_api):
+    def test_delete_nonexistent_returns_clean(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         result = hotspot_manager.delete_user(self.ROUTER_KEY, "*nonexistent")
         assert isinstance(result, list)
 
-    def test_format_user_output(self, mock_mikrotik_api):
+    def test_format_user_output(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="format_me",
@@ -119,7 +119,7 @@ class TestHotspotAddFlow:
             assert isinstance(formatted, str)
             assert len(formatted) > 10
 
-    def test_reset_counters_command(self, mock_mikrotik_api):
+    def test_reset_counters_command(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="reset_me",
@@ -129,5 +129,5 @@ class TestHotspotAddFlow:
         users = hotspot_manager.search_users(self.ROUTER_KEY, "reset_me")
         if users:
             uid = users[0][".id"]
-            hotspot_manager.delete_user(self.ROUTER_KEY, uid)
-            assert hotspot_manager.get_user(self.ROUTER_KEY, uid) is None
+            hotspot_manager.delete_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
+            assert hotspot_manager.get_user(self.ROUTER_KEY, uid) is None  # type: ignore[reportArgumentType]

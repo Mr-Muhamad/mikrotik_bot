@@ -16,13 +16,13 @@ ROUTER_KEY = "discovered_1"
 
 
 class TestBackupService:
-    def test_full_backup_creates_local_dir(self, mock_mikrotik_api, temp_backup_dir):
+    def test_full_backup_creates_local_dir(self, mock_mikrotik_api, temp_backup_dir):  # type: ignore[reportMissingParameterType]
         with patch("core.backup_service.BACKUP_DIR", temp_backup_dir):
             result = backup_service.full_backup(ROUTER_KEY)
 
         assert result["success"] is True
-        assert "تم الباكوب الكامل" in result["message"]
-        assert os.path.isdir(result["local_path"])
+        assert "تم الباكوب الكامل" in result["message"]  # type: ignore[reportOperatorIssue]
+        assert os.path.isdir(result["local_path"])  # type: ignore[reportArgumentType]
         backup_commands = [
             c
             for c in mock_mikrotik_api.commands_executed
@@ -30,7 +30,7 @@ class TestBackupService:
         ]
         assert len(backup_commands) >= 2
 
-    def test_full_backup_failure_returns_dict(self, mock_mikrotik_api, temp_backup_dir):
+    def test_full_backup_failure_returns_dict(self, mock_mikrotik_api, temp_backup_dir):  # type: ignore[reportMissingParameterType]
         with (
             patch("core.backup_service.BACKUP_DIR", temp_backup_dir),
             patch.object(
@@ -40,17 +40,17 @@ class TestBackupService:
             result = backup_service.full_backup(ROUTER_KEY)
 
         assert result["success"] is False
-        assert "فشل" in result["message"]
-        assert "router offline" in result["message"]
+        assert "فشل" in result["message"]  # type: ignore[reportOperatorIssue]
+        assert "router offline" in result["message"]  # type: ignore[reportOperatorIssue]
 
-    def test_userman_backup_creates_local_dir(self, mock_mikrotik_api, temp_backup_dir):
+    def test_userman_backup_creates_local_dir(self, mock_mikrotik_api, temp_backup_dir):  # type: ignore[reportMissingParameterType]
         with patch("core.backup_service.BACKUP_DIR", temp_backup_dir):
             result = backup_service.userman_backup(ROUTER_KEY)
 
         assert result["success"] is True
-        assert "تم" in result["message"]
+        assert "تم" in result["message"]  # type: ignore[reportOperatorIssue]
 
-    def test_userman_backup_failure_returns_dict(self, mock_mikrotik_api, temp_backup_dir):
+    def test_userman_backup_failure_returns_dict(self, mock_mikrotik_api, temp_backup_dir):  # type: ignore[reportMissingParameterType]
         with (
             patch("core.backup_service.BACKUP_DIR", temp_backup_dir),
             patch.object(mock_mikrotik_api, "execute", side_effect=Exception("timeout")),
@@ -58,7 +58,7 @@ class TestBackupService:
             result = backup_service.userman_backup(ROUTER_KEY)
 
         assert result["success"] is False
-        assert "فشل" in result["message"]
+        assert "فشل" in result["message"]  # type: ignore[reportOperatorIssue]
 
 
 class TestBackupHandlers:
@@ -73,13 +73,13 @@ class TestBackupHandlers:
         return context
 
     @pytest.mark.asyncio
-    async def test_backup_full_handler_success(self, mock_mikrotik_api, temp_backup_dir):
+    async def test_backup_full_handler_success(self, mock_mikrotik_api, temp_backup_dir):  # type: ignore[reportMissingParameterType]
         from bot.handlers.backup import backup_full
         from database.models import save_user_session
         from tests.fixtures.telegram_mocks import make_mock_update
         from utils import admin_decorator
 
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
         save_user_session(724730774, ROUTER_KEY)
         try:
             update = make_mock_update(callback_data="backup_full")
@@ -107,16 +107,16 @@ class TestBackupHandlers:
                 for c in mock_mikrotik_api.commands_executed
             )
         finally:
-            admin_decorator._rate_limit_data.clear()
+            admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
-    async def test_backup_userman_handler_success(self, mock_mikrotik_api, temp_backup_dir):
+    async def test_backup_userman_handler_success(self, mock_mikrotik_api, temp_backup_dir):  # type: ignore[reportMissingParameterType]
         from bot.handlers.backup import backup_userman
         from database.models import save_user_session
         from tests.fixtures.telegram_mocks import make_mock_update
         from utils import admin_decorator
 
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
         save_user_session(724730774, ROUTER_KEY)
         try:
             update = make_mock_update(callback_data="backup_userman")
@@ -131,7 +131,7 @@ class TestBackupHandlers:
 
             assert update.callback_query.edit_message_text.called
         finally:
-            admin_decorator._rate_limit_data.clear()
+            admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture
@@ -140,7 +140,7 @@ def temp_backup_dir():
         yield tmp
 
 
-def test_full_backup_cleanup_uses_file_prefix(mock_mikrotik_api, temp_backup_dir):
+def test_full_backup_cleanup_uses_file_prefix(mock_mikrotik_api, temp_backup_dir):  # type: ignore[reportMissingParameterType]
     from unittest.mock import patch as _patch
 
     with (

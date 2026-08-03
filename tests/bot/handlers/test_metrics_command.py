@@ -18,20 +18,20 @@ SAMPLE_METRICS = {
 }
 
 
-def _get_text(call):
+def _get_text(call):  # type: ignore[reportMissingParameterType]
     return call.args[1] if len(call.args) > 1 else call.kwargs.get("text", "")
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
     """Bypass the 1-second per-user rate limit between tests."""
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.mark.asyncio
-async def test_metrics_command_sends_report_and_deletes(mock_update, mock_context):
+async def test_metrics_command_sends_report_and_deletes(mock_update, mock_context):  # type: ignore[reportMissingParameterType]
     sent_msg = MagicMock()
     sent_msg.message_id = 99
     mock_context.bot.send_message = AsyncMock(return_value=sent_msg)
@@ -58,7 +58,7 @@ async def test_metrics_command_sends_report_and_deletes(mock_update, mock_contex
 
 
 @pytest.mark.asyncio
-async def test_metrics_command_with_zero_attempts(mock_update, mock_context):
+async def test_metrics_command_with_zero_attempts(mock_update, mock_context):  # type: ignore[reportMissingParameterType]
     zero = {
         "active_connections": 0,
         "idle_connections": 0,
@@ -83,7 +83,7 @@ async def test_metrics_command_with_zero_attempts(mock_update, mock_context):
 
 
 @pytest.mark.asyncio
-async def test_metrics_command_continues_on_delete_failure(mock_update, mock_context):
+async def test_metrics_command_continues_on_delete_failure(mock_update, mock_context):  # type: ignore[reportMissingParameterType]
     mock_update.message.delete = AsyncMock(side_effect=telegram.error.TelegramError("nope"))
     mock_context.bot.send_message = AsyncMock(return_value=MagicMock(message_id=1))
 

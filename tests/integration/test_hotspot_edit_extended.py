@@ -11,7 +11,7 @@ from telegram.ext import ConversationHandler
 
 from bot.handlers.constants import WAITING_EDIT_FIELD, WAITING_EDIT_VALUE
 from bot.handlers.hotspot_edit import (
-    _transform_renewal_day,
+    _transform_renewal_day,  # type: ignore[reportPrivateUsage]
     edit_back_to_fields,
     edit_profile_selected,
     hotspot_edit_field,
@@ -32,10 +32,10 @@ ROUTER_KEY = "discovered_1"
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _make_context():
@@ -47,13 +47,13 @@ def _make_context():
     return context
 
 
-def _seed_user(name="edit_user", uid_hint="*99"):
+def _seed_user(name="edit_user", uid_hint="*99"):  # type: ignore[reportMissingParameterType]
     hotspot_manager.add_user(ROUTER_KEY, name=name, password="1234", profile="default")
     users = hotspot_manager.search_users(ROUTER_KEY, name)
     return users[0] if users else None
 
 
-def _setup_edit_session(context, user):
+def _setup_edit_session(context, user):  # type: ignore[reportMissingParameterType]
     session = get_hotspot_edit_session(context.user_data)
     session.user_id = str(user[".id"])
     session.user_data = dict(user)
@@ -63,7 +63,7 @@ def _setup_edit_session(context, user):
 # ── hotspot_edit_start ──────────────────────────────────────────────
 class TestHotspotEditStartExtended:
     @pytest.mark.asyncio
-    async def test_start_from_command(self, mock_mikrotik_api):
+    async def test_start_from_command(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(text="/edit")
         context = _make_context()
@@ -77,7 +77,7 @@ class TestHotspotEditStartExtended:
 # ── hotspot_edit_search ──────────────────────────────────────────────
 class TestHotspotEditSearch:
     @pytest.mark.asyncio
-    async def test_search_delegates_to_shared_logic(self, mock_mikrotik_api):
+    async def test_search_delegates_to_shared_logic(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(text="test_user")
         context = _make_context()
@@ -95,7 +95,7 @@ class TestHotspotEditSearch:
 # ── hotspot_edit_reset ───────────────────────────────────────────────
 class TestHotspotEditReset:
     @pytest.mark.asyncio
-    async def test_reset_guard_no_session(self, mock_mikrotik_api):
+    async def test_reset_guard_no_session(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(callback_data="reset_counters")
         context = _make_context()
@@ -106,7 +106,7 @@ class TestHotspotEditReset:
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_reset_happy_path_with_kicked(self, mock_mikrotik_api):
+    async def test_reset_happy_path_with_kicked(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("resetme")
         assert user is not None
@@ -130,7 +130,7 @@ class TestHotspotEditReset:
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_reset_no_active_devices(self, mock_mikrotik_api):
+    async def test_reset_no_active_devices(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("resetno")
         assert user is not None
@@ -153,7 +153,7 @@ class TestHotspotEditReset:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_reset_exception(self, mock_mikrotik_api):
+    async def test_reset_exception(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("reseterr")
         assert user is not None
@@ -176,7 +176,7 @@ class TestHotspotEditReset:
 # ── hotspot_edit_kick ────────────────────────────────────────────────
 class TestHotspotEditKick:
     @pytest.mark.asyncio
-    async def test_kick_guard_no_user_data(self, mock_mikrotik_api):
+    async def test_kick_guard_no_user_data(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(callback_data="kick_user")
         context = _make_context()
@@ -187,7 +187,7 @@ class TestHotspotEditKick:
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_kick_happy_path_with_kicked(self, mock_mikrotik_api):
+    async def test_kick_happy_path_with_kicked(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("kickme")
         assert user is not None
@@ -209,7 +209,7 @@ class TestHotspotEditKick:
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_kick_no_active_devices(self, mock_mikrotik_api):
+    async def test_kick_no_active_devices(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("kicknone")
         assert user is not None
@@ -230,7 +230,7 @@ class TestHotspotEditKick:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_kick_exception(self, mock_mikrotik_api):
+    async def test_kick_exception(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("kickerr")
         assert user is not None
@@ -253,7 +253,7 @@ class TestHotspotEditKick:
 # ── hotspot_edit_field: toggle_disabled ───────────────────────────────
 class TestHotspotEditFieldToggle:
     @pytest.mark.asyncio
-    async def test_toggle_guard_no_session(self, mock_mikrotik_api):
+    async def test_toggle_guard_no_session(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         update = make_mock_update(callback_data="edit_field_toggle_disabled")
         context = _make_context()
@@ -263,7 +263,7 @@ class TestHotspotEditFieldToggle:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_toggle_happy_path(self, mock_mikrotik_api):
+    async def test_toggle_happy_path(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("toggleme")
         assert user is not None
@@ -282,7 +282,7 @@ class TestHotspotEditFieldToggle:
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_toggle_exception(self, mock_mikrotik_api):
+    async def test_toggle_exception(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("toggleerr")
         assert user is not None
@@ -305,7 +305,7 @@ class TestHotspotEditFieldToggle:
 # ── hotspot_edit_field: bytes formatting ──────────────────────────────
 class TestHotspotEditFieldBytes:
     @pytest.mark.asyncio
-    async def test_bytes_field_formats_value(self, mock_mikrotik_api):
+    async def test_bytes_field_formats_value(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("bytesfmt")
         assert user is not None
@@ -324,7 +324,7 @@ class TestHotspotEditFieldBytes:
 # ── hotspot_edit_field: generic field ─────────────────────────────────
 class TestHotspotEditFieldGeneric:
     @pytest.mark.asyncio
-    async def test_comment_field(self, mock_mikrotik_api):
+    async def test_comment_field(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("commentf")
         assert user is not None
@@ -343,7 +343,7 @@ class TestHotspotEditFieldGeneric:
 # ── edit_profile_selected ─────────────────────────────────────────────
 class TestEditProfileSelected:
     @pytest.mark.asyncio
-    async def test_invalid_profile(self, mock_mikrotik_api):
+    async def test_invalid_profile(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("profinv")
         assert user is not None
@@ -361,7 +361,7 @@ class TestEditProfileSelected:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_happy_path(self, mock_mikrotik_api):
+    async def test_happy_path(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("profok")
         assert user is not None
@@ -380,7 +380,7 @@ class TestEditProfileSelected:
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_exception(self, mock_mikrotik_api):
+    async def test_exception(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("profexc")
         assert user is not None
@@ -407,7 +407,7 @@ class TestEditProfileSelected:
 # ── edit_back_to_fields ───────────────────────────────────────────────
 class TestEditBackToFields:
     @pytest.mark.asyncio
-    async def test_with_user_data(self, mock_mikrotik_api):
+    async def test_with_user_data(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("backf")
         assert user is not None
@@ -422,7 +422,7 @@ class TestEditBackToFields:
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_without_user_data(self, mock_mikrotik_api):
+    async def test_without_user_data(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         context = _make_context()
 
@@ -436,7 +436,7 @@ class TestEditBackToFields:
 # ── hotspot_edit_value: renewal_day ───────────────────────────────────
 class TestHotspotEditValueRenewalDay:
     @pytest.mark.asyncio
-    async def test_renewal_day_valid(self, mock_mikrotik_api):
+    async def test_renewal_day_valid(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("renewalok")
         assert user is not None
@@ -451,7 +451,7 @@ class TestHotspotEditValueRenewalDay:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_renewal_day_invalid(self, mock_mikrotik_api):
+    async def test_renewal_day_invalid(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("renewalbad")
         assert user is not None
@@ -466,7 +466,7 @@ class TestHotspotEditValueRenewalDay:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_renewal_day_out_of_range(self, mock_mikrotik_api):
+    async def test_renewal_day_out_of_range(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("renewaloor")
         assert user is not None
@@ -511,7 +511,7 @@ class TestTransformRenewalDay:
 # ── hotspot_edit_value: name validation ───────────────────────────────
 class TestHotspotEditValueNameValidation:
     @pytest.mark.asyncio
-    async def test_invalid_username(self, mock_mikrotik_api):
+    async def test_invalid_username(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("nameinv")
         assert user is not None
@@ -526,7 +526,7 @@ class TestHotspotEditValueNameValidation:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_duplicate_username(self, mock_mikrotik_api):
+    async def test_duplicate_username(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         hotspot_manager.add_user(ROUTER_KEY, name="existing", password="1234", profile="default")
         user = _seed_user("namedup")
@@ -542,7 +542,7 @@ class TestHotspotEditValueNameValidation:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_unchanged_username(self, mock_mikrotik_api):
+    async def test_unchanged_username(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("nameunch")
         assert user is not None
@@ -557,7 +557,7 @@ class TestHotspotEditValueNameValidation:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_user_exists_api_error(self, mock_mikrotik_api):
+    async def test_user_exists_api_error(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("nameerr")
         assert user is not None
@@ -569,11 +569,11 @@ class TestHotspotEditValueNameValidation:
 
         call_count = 0
 
-        async def mock_run_blocking(func, *args, **kwargs):
+        async def mock_run_blocking(func, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                from core.exceptions import RouterOSCommandError
+                from core.exceptions import RouterOSCommandError  # type: ignore[reportAttributeAccessIssue]
                 raise RouterOSCommandError("timeout")
             return None
 
@@ -588,7 +588,7 @@ class TestHotspotEditValueNameValidation:
 # ── hotspot_edit_value: invalid password/bytes ────────────────────────
 class TestHotspotEditValueInvalidInputs:
     @pytest.mark.asyncio
-    async def test_invalid_password(self, mock_mikrotik_api):
+    async def test_invalid_password(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("pwdinv")
         assert user is not None
@@ -603,7 +603,7 @@ class TestHotspotEditValueInvalidInputs:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_invalid_bytes(self, mock_mikrotik_api):
+    async def test_invalid_bytes(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("bytesinv")
         assert user is not None
@@ -621,7 +621,7 @@ class TestHotspotEditValueInvalidInputs:
 # ── hotspot_edit_value: bytes kick message ────────────────────────────
 class TestHotspotEditBytesKick:
     @pytest.mark.asyncio
-    async def test_bytes_update_with_kick(self, mock_mikrotik_api):
+    async def test_bytes_update_with_kick(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         save_user_session(ADMIN_ID, ROUTER_KEY)
         user = _seed_user("kickbytes")
         assert user is not None
@@ -633,7 +633,7 @@ class TestHotspotEditBytesKick:
 
         call_count = 0
 
-        async def mock_run_blocking(func, *args, **kwargs):
+        async def mock_run_blocking(func, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             nonlocal call_count
             call_count += 1
             if call_count == 1:

@@ -17,9 +17,9 @@ from utils.error_response import (
     CATEGORY_NOT_FOUND,
     CATEGORY_STORAGE,
     CATEGORY_TIMEOUT,
-    _classify_librouteros,
-    _classify_os_error,
-    _get_chat_id,
+    _classify_librouteros,  # type: ignore[reportPrivateUsage]
+    _classify_os_error,  # type: ignore[reportPrivateUsage]
+    _get_chat_id,  # type: ignore[reportPrivateUsage]
     classify_error,
     format_error_message,
     get_router_key_from_context,
@@ -31,7 +31,7 @@ from utils.error_response import (
 from utils.logging_setup import set_request_id
 
 
-def _ctx(chat_id: int = 1, user_data=None):
+def _ctx(chat_id: int = 1, user_data=None):  # type: ignore[reportMissingParameterType]
     ctx = MagicMock()
     ctx.user_data = user_data if user_data is not None else {}
     ctx.bot_data = {}
@@ -40,7 +40,7 @@ def _ctx(chat_id: int = 1, user_data=None):
     return ctx
 
 
-def _callback_update(chat_id: int = 1, edit_raises=None):
+def _callback_update(chat_id: int = 1, edit_raises=None):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_message = None
     update.effective_chat = None
@@ -151,12 +151,12 @@ class TestClassifyError:
 
 class TestLogError:
     @patch("utils.error_response.logger.error")
-    def test_logs_without_context(self, mock_error):
+    def test_logs_without_context(self, mock_error):  # type: ignore[reportMissingParameterType]
         log_error(ValueError("test"))
         assert mock_error.call_count == 1
 
     @patch("utils.error_response.logger.error")
-    def test_logs_with_context(self, mock_error):
+    def test_logs_with_context(self, mock_error):  # type: ignore[reportMissingParameterType]
         from utils.error_response import ErrorContext
 
         ctx = ErrorContext(
@@ -210,7 +210,7 @@ class TestFormatErrorMessage:
 class TestSendErrorBenign:
     @pytest.mark.asyncio
     @patch("utils.error_response.logger.debug")
-    async def test_benign_logged_debug_and_no_user_message(self, mock_debug):
+    async def test_benign_logged_debug_and_no_user_message(self, mock_debug):  # type: ignore[reportMissingParameterType]
         update = _callback_update()
         ctx = _ctx()
         error = BadRequest("Message is not modified")
@@ -231,7 +231,7 @@ class TestSendErrorBenign:
 
     @pytest.mark.asyncio
     @patch("utils.error_response.logger.error")
-    async def test_send_error_with_error_context(self, mock_error):
+    async def test_send_error_with_error_context(self, mock_error):  # type: ignore[reportMissingParameterType]
         from utils.error_response import ErrorContext
 
         update = _callback_update()
@@ -326,7 +326,7 @@ class TestDispatchMessage:
         effective.chat_id = 1
         update.effective_message = effective
         ctx = _ctx()
-        from utils.error_response import _dispatch_message
+        from utils.error_response import _dispatch_message  # type: ignore[reportPrivateUsage]
 
         await _dispatch_message(update, ctx, "hi", None, 1, "test")
         effective.reply_text.assert_awaited_once()
@@ -337,33 +337,33 @@ class TestDispatchMessage:
         update.callback_query = None
         update.effective_message = None
         ctx = _ctx()
-        from utils.error_response import _dispatch_message
+        from utils.error_response import _dispatch_message  # type: ignore[reportPrivateUsage]
 
         await _dispatch_message(update, ctx, "hi", None, 5, "test")
         ctx.bot.send_message.assert_awaited_once()
 
     @pytest.mark.asyncio
     @patch("utils.error_response.logger.debug")
-    async def test_benign_telegram_error_ignored(self, mock_debug):
+    async def test_benign_telegram_error_ignored(self, mock_debug):  # type: ignore[reportMissingParameterType]
         update = MagicMock()
         update.callback_query = None
         update.effective_message = None
         ctx = _ctx()
         ctx.bot.send_message = AsyncMock(side_effect=BadRequest("Message is not modified"))
-        from utils.error_response import _dispatch_message
+        from utils.error_response import _dispatch_message  # type: ignore[reportPrivateUsage]
 
         await _dispatch_message(update, ctx, "hi", None, 5, "test")
         mock_debug.assert_called()
 
     @pytest.mark.asyncio
     @patch("utils.error_response.logger.error")
-    async def test_non_benign_telegram_error_logged(self, mock_error):
+    async def test_non_benign_telegram_error_logged(self, mock_error):  # type: ignore[reportMissingParameterType]
         update = MagicMock()
         update.callback_query = None
         update.effective_message = None
         ctx = _ctx()
         ctx.bot.send_message = AsyncMock(side_effect=BadRequest("can't parse entities"))
-        from utils.error_response import _dispatch_message
+        from utils.error_response import _dispatch_message  # type: ignore[reportPrivateUsage]
 
         await _dispatch_message(update, ctx, "hi", None, 5, "test")
         mock_error.assert_called()
@@ -372,7 +372,7 @@ class TestDispatchMessage:
     async def test_query_chat_id_differs_from_target_sends_message(self):
         update = _callback_update(chat_id=1)
         ctx = _ctx()
-        from utils.error_response import _dispatch_message
+        from utils.error_response import _dispatch_message  # type: ignore[reportPrivateUsage]
 
         await _dispatch_message(update, ctx, "hi", None, 99, "test")
         ctx.bot.send_message.assert_awaited_once()
@@ -384,7 +384,7 @@ class TestDispatchMessage:
 class TestSendErrorCritical:
     @pytest.mark.asyncio
     @patch("utils.error_response._notify_critical_admins", new_callable=AsyncMock)
-    async def test_critical_category_notifies_admins(self, mock_notify):
+    async def test_critical_category_notifies_admins(self, mock_notify):  # type: ignore[reportMissingParameterType]
         update = _callback_update()
         ctx = _ctx()
         await send_error(update, ctx, LibRouterosError("connection refused"))
@@ -408,8 +408,8 @@ class TestNotifyCriticalAdmins:
     @pytest.mark.asyncio
     @patch("config.ADMIN_IDS", [1, 2])
     @patch("utils.error_response.send_text", new_callable=AsyncMock)
-    async def test_notifies_all_admins(self, mock_send_text):
-        from utils.error_response import _notify_critical_admins
+    async def test_notifies_all_admins(self, mock_send_text):  # type: ignore[reportMissingParameterType]
+        from utils.error_response import _notify_critical_admins  # type: ignore[reportPrivateUsage]
 
         update = MagicMock()
         ctx = _ctx()
@@ -420,8 +420,8 @@ class TestNotifyCriticalAdmins:
     @patch("config.ADMIN_IDS", [1])
     @patch("utils.error_response.send_text", new_callable=AsyncMock, side_effect=RuntimeError("boom"))
     @patch("utils.error_response.logger.exception")
-    async def test_admin_notify_failure_logged(self, mock_exc, mock_send_text):
-        from utils.error_response import _notify_critical_admins
+    async def test_admin_notify_failure_logged(self, mock_exc, mock_send_text):  # type: ignore[reportMissingParameterType]
+        from utils.error_response import _notify_critical_admins  # type: ignore[reportPrivateUsage]
 
         update = MagicMock()
         ctx = _ctx()

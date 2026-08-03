@@ -20,14 +20,14 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
     admin_disc_limiter_clear()
 
 
 def admin_disc_limiter_clear():
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _make_context():
@@ -39,7 +39,7 @@ def _make_context():
     return context
 
 
-def _seed_router(ip="10.0.0.1", identity="SeedRouter", version="7.10"):
+def _seed_router(ip="10.0.0.1", identity="SeedRouter", version="7.10"):  # type: ignore[reportMissingParameterType]
     from database.models import save_discovered_router
 
     return save_discovered_router(
@@ -54,7 +54,7 @@ def _seed_router(ip="10.0.0.1", identity="SeedRouter", version="7.10"):
 
 class TestDiscoveredRouterSelected:
     @pytest.mark.asyncio
-    async def test_known_router_prompts_username(self, mock_mikrotik_api):
+    async def test_known_router_prompts_username(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_DISC_USERNAME
 
         rid = _seed_router()
@@ -71,7 +71,7 @@ class TestDiscoveredRouterSelected:
         assert context.user_data["disc_ip"] == "10.0.0.1"
 
     @pytest.mark.asyncio
-    async def test_unknown_router_ip_prompts_for_credentials(self, mock_mikrotik_api):
+    async def test_unknown_router_ip_prompts_for_credentials(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_DISC_USERNAME
 
         update = make_mock_update(callback_data="disc_router_99.99.99.99")
@@ -84,7 +84,7 @@ class TestDiscoveredRouterSelected:
 
 class TestDiscEnterUsername:
     @pytest.mark.asyncio
-    async def test_saves_username(self, mock_mikrotik_api):
+    async def test_saves_username(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_DISC_PASSWORD
 
         update = make_mock_update(text="admin")
@@ -98,7 +98,7 @@ class TestDiscEnterUsername:
 
 class TestDiscEnterPassword:
     @pytest.mark.asyncio
-    async def test_password_success_connects(self, mock_mikrotik_api):
+    async def test_password_success_connects(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.router_selector import get_selected_router
 
         update = make_mock_update(text="secret")
@@ -111,7 +111,7 @@ class TestDiscEnterPassword:
         status_msg.edit_text = AsyncMock()
         update.message.reply_text = AsyncMock(return_value=status_msg)
 
-        async def fake_run_blocking(func, *args, **kwargs):
+        async def fake_run_blocking(func, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             skip_names = {
                 "get_router_by_ip",
                 "check_router_health",
@@ -138,7 +138,7 @@ class TestDiscEnterPassword:
         assert get_selected_router(ADMIN_ID) is not None
 
     @pytest.mark.asyncio
-    async def test_password_failure_ends(self, mock_mikrotik_api):
+    async def test_password_failure_ends(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="wrongpass")
         context = _make_context()
         context.user_data["disc_ip"] = "10.0.0.1"
@@ -161,7 +161,7 @@ class TestDiscEnterPassword:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_password_exception_ends(self, mock_mikrotik_api):
+    async def test_password_exception_ends(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="x")
         context = _make_context()
         context.user_data["disc_ip"] = "10.0.0.1"
@@ -188,7 +188,7 @@ class TestDiscEnterPassword:
 
 class TestRenameRouter:
     @pytest.mark.asyncio
-    async def test_rename_start_prompts_for_name(self, mock_mikrotik_api):
+    async def test_rename_start_prompts_for_name(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_RENAME
 
         rid = _seed_router()
@@ -200,7 +200,7 @@ class TestRenameRouter:
         assert context.user_data["rename_router_id"] == rid
 
     @pytest.mark.asyncio
-    async def test_rename_value_updates_alias(self, mock_mikrotik_api):
+    async def test_rename_value_updates_alias(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import get_router_by_id
 
         rid = _seed_router(ip="10.0.0.5", identity="OldName")
@@ -217,7 +217,7 @@ class TestRenameRouter:
         assert router["name_alias"] == "NewName"
 
     @pytest.mark.asyncio
-    async def test_rename_value_empty_name_reprompts(self, mock_mikrotik_api):
+    async def test_rename_value_empty_name_reprompts(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_RENAME
 
         rid = _seed_router()
@@ -229,7 +229,7 @@ class TestRenameRouter:
         assert result == WAITING_RENAME
 
     @pytest.mark.asyncio
-    async def test_rename_value_no_id_ends(self, mock_mikrotik_api):
+    async def test_rename_value_no_id_ends(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="x")
         context = _make_context()
         result = await rename_router_value(update, context)

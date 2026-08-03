@@ -9,21 +9,21 @@ import pytest
 
 class TestGetBackupLock:
     def test_returns_same_lock_for_same_key(self):
-        from core.backup.system import _get_backup_lock
+        from core.backup.system import _get_backup_lock  # type: ignore[reportPrivateUsage]
 
         lock_a = _get_backup_lock("router_X")
         lock_b = _get_backup_lock("router_X")
         assert lock_a is lock_b
 
     def test_returns_different_locks_for_different_keys(self):
-        from core.backup.system import _get_backup_lock
+        from core.backup.system import _get_backup_lock  # type: ignore[reportPrivateUsage]
 
         lock_a = _get_backup_lock("router_A")
         lock_b = _get_backup_lock("router_B")
         assert lock_a is not lock_b
 
     def test_lock_is_reentrant(self):
-        from core.backup.system import _get_backup_lock
+        from core.backup.system import _get_backup_lock  # type: ignore[reportPrivateUsage]
 
         lock = _get_backup_lock("router_RE")
         assert lock.acquire(blocking=False)
@@ -57,7 +57,7 @@ class TestSystemBackupServiceFullBackup:
             yield
 
     def test_lock_contention_returns_error(self):
-        from core.backup.system import SystemBackupService, _get_backup_lock
+        from core.backup.system import SystemBackupService, _get_backup_lock  # type: ignore[reportPrivateUsage]
 
         lock = _get_backup_lock("router_LC")
         barrier = threading.Event()
@@ -76,7 +76,7 @@ class TestSystemBackupServiceFullBackup:
             svc = SystemBackupService()
             result = svc.full_backup("router_LC")
             assert result["success"] is False
-            assert "نسخ احتياطي جارية" in result["message"]
+            assert "نسخ احتياطي جارية" in result["message"]  # type: ignore[reportOperatorIssue]
         finally:
             proceed.set()
             t.join(timeout=5)
@@ -87,7 +87,7 @@ class TestSystemBackupServiceFullBackup:
         svc = SystemBackupService()
         result = svc.full_backup("key1", "backups")
         assert result["success"] is True
-        assert "MyRouter" in result["message"]
+        assert "MyRouter" in result["message"]  # type: ignore[reportOperatorIssue]
 
     def test_successful_backup_no_downloads_warns(self):
         from core.backup.system import SystemBackupService
@@ -97,7 +97,7 @@ class TestSystemBackupServiceFullBackup:
         result = svc.full_backup("key2", "backups")
         assert result["success"] is True
         assert "warning" in result
-        assert "فشل التحميل" in result["warning"]
+        assert "فشل التحميل" in result["warning"]  # type: ignore[reportOperatorIssue]
 
     def test_exception_during_backup(self):
         from core.backup.system import SystemBackupService
@@ -106,7 +106,7 @@ class TestSystemBackupServiceFullBackup:
         svc = SystemBackupService()
         result = svc.full_backup("key3", "backups")
         assert result["success"] is False
-        assert "فشل" in result["message"]
+        assert "فشل" in result["message"]  # type: ignore[reportOperatorIssue]
 
     def test_exception_cleanup_failure_is_tolerated(self):
         from core.backup.system import SystemBackupService
@@ -117,7 +117,7 @@ class TestSystemBackupServiceFullBackup:
         assert result["success"] is False
 
     def test_backup_dir_isolation_between_calls(self):
-        from core.backup.system import _get_backup_lock
+        from core.backup.system import _get_backup_lock  # type: ignore[reportPrivateUsage]
 
         lock1 = _get_backup_lock("key_a")
         lock2 = _get_backup_lock("key_b")
@@ -160,7 +160,7 @@ class TestSystemBackupServiceFullBackup:
         assert r2["success"] is True
 
     def test_lock_released_after_exception(self):
-        from core.backup.system import SystemBackupService, _get_backup_lock
+        from core.backup.system import SystemBackupService, _get_backup_lock  # type: ignore[reportPrivateUsage]
 
         self.mock_execute_long.side_effect = RuntimeError("fail")
         svc = SystemBackupService()

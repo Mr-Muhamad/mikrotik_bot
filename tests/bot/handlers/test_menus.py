@@ -34,12 +34,12 @@ def _start_patches():
 
 
 @pytest.fixture(autouse=True)
-def _all_patches():
-    admin_decorator._rate_limit_data.clear()
+def _all_patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     stack = _start_patches()
     yield
     stack.close()
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestGoBack:
@@ -55,7 +55,7 @@ class TestGoBack:
     @pytest.mark.asyncio
     @patch(f"{P}.resolve_nav_target")
     @patch(f"{P}.nav_get", return_value="menu_stats")
-    async def test_resolves_nav_target(self, mock_nav_get, mock_resolve):
+    async def test_resolves_nav_target(self, mock_nav_get, mock_resolve):  # type: ignore[reportMissingParameterType]
         from bot.handlers.menus import go_back
 
         mock_resolve.return_value = AsyncMock()
@@ -68,7 +68,7 @@ class TestGoBack:
     @pytest.mark.asyncio
     @patch(f"{P}.resolve_nav_target")
     @patch(f"{P}.nav_get", return_value="main_menu")
-    async def test_calls_resolved_handler(self, mock_nav_get, mock_resolve):
+    async def test_calls_resolved_handler(self, mock_nav_get, mock_resolve):  # type: ignore[reportMissingParameterType]
         from bot.handlers.menus import go_back
 
         mock_handler = AsyncMock()
@@ -98,11 +98,11 @@ class TestEndConversation:
         await end_conversation(update, context, "menu_hotspot")
         from bot.handlers.menus import cleanup_state
 
-        cleanup_state.assert_called_once_with(724730774, context.user_data)
+        cleanup_state.assert_called_once_with(724730774, context.user_data)  # type: ignore[reportFunctionMemberAccess]
 
     @pytest.mark.asyncio
     @patch(f"{P}.NAV_TARGETS")
-    async def test_calls_target_handler(self, mock_targets):
+    async def test_calls_target_handler(self, mock_targets):  # type: ignore[reportMissingParameterType]
         from bot.handlers.menus import end_conversation
 
         mock_handler = AsyncMock()

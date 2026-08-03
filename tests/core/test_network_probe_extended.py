@@ -15,9 +15,9 @@ from core.network_probe import (
     MNDP_TYPE_VERSION,
     DiscoveredRouter,
     MNDPListenerProbe,
-    _get_local_ips,
-    _merge_mndp_results,
-    _merge_port_results,
+    _get_local_ips,  # type: ignore[reportPrivateUsage]
+    _merge_mndp_results,  # type: ignore[reportPrivateUsage]
+    _merge_port_results,  # type: ignore[reportPrivateUsage]
     decode_mndp_packet,
     merge_probe_results,
 )
@@ -130,14 +130,14 @@ class TestGetLocalIps:
 
 
 class TestMNDPSetupSocket:
-    def _make_probe(self, factory):
+    def _make_probe(self, factory):  # type: ignore[reportMissingParameterType]
         return MNDPListenerProbe(timeout=1.0, socket_factory=factory)
 
     def test_basic_setup(self):
         sock = MagicMock()
         factory = MagicMock(return_value=sock)
         probe = self._make_probe(factory)
-        result = probe._setup_socket()
+        result = probe._setup_socket()  # type: ignore[reportPrivateUsage]
         factory.assert_called_once_with(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         sock.setsockopt.assert_any_call(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.bind.assert_called_once_with(("", MNDP_PORT))
@@ -148,7 +148,7 @@ class TestMNDPSetupSocket:
         sock = MagicMock()
         factory = MagicMock(return_value=sock)
         probe = self._make_probe(factory)
-        probe._setup_socket()
+        probe._setup_socket()  # type: ignore[reportPrivateUsage]
         so_reuse_port = getattr(socket, "SO_REUSEPORT", None)
         if so_reuse_port is not None:
             sock.setsockopt.assert_any_call(socket.SOL_SOCKET, so_reuse_port, 1)
@@ -160,7 +160,7 @@ class TestMNDPSetupSocket:
         if original is not None:
             with patch.object(socket, "SO_REUSEPORT", original):
                 call_count = [0]
-                def selective_setsockopt(*args):
+                def selective_setsockopt(*args):  # type: ignore[reportMissingParameterType]
                     call_count[0] += 1
                     if call_count[0] == 2 and args[1] == original:
                         raise OSError("not supported")
@@ -168,7 +168,7 @@ class TestMNDPSetupSocket:
                 sock.setsockopt.side_effect = selective_setsockopt
                 factory = MagicMock(return_value=sock)
                 probe = self._make_probe(factory)
-                probe._setup_socket()
+                probe._setup_socket()  # type: ignore[reportPrivateUsage]
                 sock.setsockopt.assert_any_call(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
     def test_no_reuseport_attr(self):
@@ -176,7 +176,7 @@ class TestMNDPSetupSocket:
         factory = MagicMock(return_value=sock)
         probe = self._make_probe(factory)
         with patch.object(socket, "SO_REUSEPORT", None, create=True):
-            probe._setup_socket()
+            probe._setup_socket()  # type: ignore[reportPrivateUsage]
         sock.setsockopt.assert_any_call(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 
@@ -184,7 +184,7 @@ class TestMNDSendBroadcast:
     def test_sends_when_interval_elapsed(self):
         sock = MagicMock()
         probe = MNDPListenerProbe(timeout=1.0)
-        result = probe._send_broadcast(sock, 0.0)
+        result = probe._send_broadcast(sock, 0.0)  # type: ignore[reportPrivateUsage]
         sock.sendto.assert_called_once_with(MNDP_DISCOVERY_PAYLOAD, ("255.255.255.255", MNDP_PORT))
         assert result > 0
 
@@ -192,7 +192,7 @@ class TestMNDSendBroadcast:
         sock = MagicMock()
         probe = MNDPListenerProbe(timeout=1.0)
         now = time.time()
-        result = probe._send_broadcast(sock, now)
+        result = probe._send_broadcast(sock, now)  # type: ignore[reportPrivateUsage]
         sock.sendto.assert_not_called()
         assert result == now
 
@@ -200,7 +200,7 @@ class TestMNDSendBroadcast:
         sock = MagicMock()
         sock.sendto.side_effect = OSError("send failed")
         probe = MNDPListenerProbe(timeout=1.0)
-        result = probe._send_broadcast(sock, 0.0)
+        result = probe._send_broadcast(sock, 0.0)  # type: ignore[reportPrivateUsage]
         sock.sendto.assert_called_once()
         assert result == 0.0
 
@@ -209,7 +209,7 @@ class TestMNDPProcessPacket:
     def test_skips_local_ip(self):
         discovered = {}
         probe = MNDPListenerProbe(timeout=1.0)
-        probe._process_packet(b"\x00\x00\x00\x00", "127.0.0.1", {"127.0.0.1"}, discovered)
+        probe._process_packet(b"\x00\x00\x00\x00", "127.0.0.1", {"127.0.0.1"}, discovered)  # type: ignore[reportPrivateUsage]
         assert discovered == {}
 
     def test_skips_no_identity_no_board(self):
@@ -217,7 +217,7 @@ class TestMNDPProcessPacket:
         packet = b"\x00\x00\x00\x00" + struct.pack(">HH", MNDP_TYPE_MAC, 6) + mac
         discovered = {}
         probe = MNDPListenerProbe(timeout=1.0)
-        probe._process_packet(packet, "10.0.0.1", set(), discovered)
+        probe._process_packet(packet, "10.0.0.1", set(), discovered)  # type: ignore[reportPrivateUsage]
         assert discovered == {}
 
     def test_creates_new_entry_with_identity(self):
@@ -228,7 +228,7 @@ class TestMNDPProcessPacket:
         )
         discovered = {}
         probe = MNDPListenerProbe(timeout=1.0)
-        probe._process_packet(packet, "10.0.0.1", set(), discovered)
+        probe._process_packet(packet, "10.0.0.1", set(), discovered)  # type: ignore[reportPrivateUsage]
         assert "10.0.0.1" in discovered
         assert discovered["10.0.0.1"]["identity"] == "Router1"
         assert discovered["10.0.0.1"]["source"] == "mndp"
@@ -250,7 +250,7 @@ class TestMNDPProcessPacket:
             }
         }
         probe = MNDPListenerProbe(timeout=1.0)
-        probe._process_packet(packet, "10.0.0.1", set(), discovered)
+        probe._process_packet(packet, "10.0.0.1", set(), discovered)  # type: ignore[reportPrivateUsage]
         assert discovered["10.0.0.1"]["identity"] == "Router1"
         assert discovered["10.0.0.1"]["version"] == "7.12"
         assert discovered["10.0.0.1"]["last_seen"] != "2020-01-01"
@@ -265,7 +265,7 @@ class TestMNDPProcessPacket:
         )
         discovered = {}
         probe = MNDPListenerProbe(timeout=1.0)
-        probe._process_packet(packet, "10.0.0.1", set(), discovered)
+        probe._process_packet(packet, "10.0.0.1", set(), discovered)  # type: ignore[reportPrivateUsage]
         assert discovered["10.0.0.1"]["ip"] == "192.168.1.100"
 
     def test_does_not_overwrite_existing_non_empty_attrs(self):
@@ -284,7 +284,7 @@ class TestMNDPProcessPacket:
             }
         }
         probe = MNDPListenerProbe(timeout=1.0)
-        probe._process_packet(packet, "10.0.0.1", set(), discovered)
+        probe._process_packet(packet, "10.0.0.1", set(), discovered)  # type: ignore[reportPrivateUsage]
         assert discovered["10.0.0.1"]["identity"] == "NewRouter"
         assert discovered["10.0.0.1"]["version"] == "7.12"
 
@@ -302,7 +302,7 @@ class TestMNDPDiscoverSync:
         factory = MagicMock(return_value=fake_sock)
 
         probe = MNDPListenerProbe(timeout=0.3, socket_factory=factory)
-        result = probe._discover_sync()
+        result = probe._discover_sync()  # type: ignore[reportPrivateUsage]
         assert len(result) >= 1
         assert result[0]["ip"] == "10.0.0.1"
 
@@ -313,7 +313,7 @@ class TestMNDPDiscoverSync:
         factory = MagicMock(return_value=fake_sock)
 
         probe = MNDPListenerProbe(timeout=0.1, socket_factory=factory)
-        result = probe._discover_sync()
+        result = probe._discover_sync()  # type: ignore[reportPrivateUsage]
         assert result == []
 
     def test_handles_recv_oserror(self):
@@ -323,7 +323,7 @@ class TestMNDPDiscoverSync:
         factory = MagicMock(return_value=fake_sock)
 
         probe = MNDPListenerProbe(timeout=0.1, socket_factory=factory)
-        result = probe._discover_sync()
+        result = probe._discover_sync()  # type: ignore[reportPrivateUsage]
         assert result == []
 
     def test_closes_socket_in_finally(self):
@@ -333,7 +333,7 @@ class TestMNDPDiscoverSync:
         factory = MagicMock(return_value=fake_sock)
 
         probe = MNDPListenerProbe(timeout=0.05, socket_factory=factory)
-        probe._discover_sync()
+        probe._discover_sync()  # type: ignore[reportPrivateUsage]
         fake_sock.close.assert_called()
 
     def test_handles_close_error_in_finally(self):
@@ -344,7 +344,7 @@ class TestMNDPDiscoverSync:
         factory = MagicMock(return_value=fake_sock)
 
         probe = MNDPListenerProbe(timeout=0.05, socket_factory=factory)
-        result = probe._discover_sync()
+        result = probe._discover_sync()  # type: ignore[reportPrivateUsage]
         assert result == []
 
     def test_filters_out_local_ip(self):
@@ -360,7 +360,7 @@ class TestMNDPDiscoverSync:
             factory = MagicMock(return_value=fake_sock)
 
             probe = MNDPListenerProbe(timeout=0.15, socket_factory=factory)
-            result = probe._discover_sync()
+            result = probe._discover_sync()  # type: ignore[reportPrivateUsage]
             assert result == []
 
     def test_sends_broadcast_in_loop(self):
@@ -370,7 +370,7 @@ class TestMNDPDiscoverSync:
         factory = MagicMock(return_value=fake_sock)
 
         probe = MNDPListenerProbe(timeout=0.2, socket_factory=factory)
-        probe._discover_sync()
+        probe._discover_sync()  # type: ignore[reportPrivateUsage]
         assert fake_sock.sendto.called
 
 
@@ -378,13 +378,13 @@ class TestMergeResultsExtended:
     def test_merge_mndp_empty_ipv4_skipped(self):
         by_ip = {}
         mndp = [{"ip": "", "identity": "R1", "source": "mndp", "last_seen": "2024-01-01"}]
-        _merge_mndp_results(mndp, by_ip, "2024-01-01")
+        _merge_mndp_results(mndp, by_ip, "2024-01-01")  # type: ignore[reportArgumentType]
         assert by_ip == {}
 
     def test_merge_mndp_no_ip_key_skipped(self):
         by_ip = {}
         mndp = [{"identity": "R1", "source": "mndp", "last_seen": "2024-01-01"}]
-        _merge_mndp_results(mndp, by_ip, "2024-01-01")
+        _merge_mndp_results(mndp, by_ip, "2024-01-01")  # type: ignore[reportArgumentType]
         assert by_ip == {}
 
     def test_merge_mndp_enriches_existing_with_ipv4(self):
@@ -405,7 +405,7 @@ class TestMergeResultsExtended:
                 "last_seen": "2024-06-01",
             }
         ]
-        _merge_mndp_results(mndp, by_ip, "2024-01-01")
+        _merge_mndp_results(mndp, by_ip, "2024-01-01")  # type: ignore[reportArgumentType]
         r = by_ip["10.0.0.1"]
         assert r.identity == "Router1"
         assert r.version == "7.12"
@@ -423,7 +423,7 @@ class TestMergeResultsExtended:
                 "last_seen": "2024-01-01",
             }
         ]
-        _merge_mndp_results(mndp, by_ip, "2024-01-01")
+        _merge_mndp_results(mndp, by_ip, "2024-01-01")  # type: ignore[reportArgumentType]
         assert "10.0.0.2" in by_ip
         assert by_ip["10.0.0.2"].identity == "NewRouter"
 
@@ -437,12 +437,12 @@ class TestMergeResultsExtended:
                 "last_seen": "2024-01-01",
             }
         ]
-        _merge_mndp_results(mndp, by_ip, "2024-01-01")
+        _merge_mndp_results(mndp, by_ip, "2024-01-01")  # type: ignore[reportArgumentType]
         assert "10.0.0.3" in by_ip
 
     def test_merge_port_results_basic(self):
         port = [{"ip": "10.0.0.1", "mac": "aa:bb:cc:dd:ee:ff", "source": "port_check"}]
-        result = _merge_port_results(port, "2024-01-01")
+        result = _merge_port_results(port, "2024-01-01")  # type: ignore[reportArgumentType]
         assert "10.0.0.1" in result
         assert result["10.0.0.1"].mac_address == "aa:bb:cc:dd:ee:ff"
 
@@ -455,18 +455,18 @@ class TestMergeResultsExtended:
                 ip_address="10.0.0.1", source="port_check", mac_address=""
             )
         }
-        from core.network_probe import _enrich_from_arp
+        from core.network_probe import _enrich_from_arp  # type: ignore[reportPrivateUsage]
 
         arp = [{"ip": "10.0.0.1", "mac": "aa:bb:cc:dd:ee:ff"}]
-        _enrich_from_arp(arp, by_ip)
+        _enrich_from_arp(arp, by_ip)  # type: ignore[reportArgumentType]
         assert by_ip["10.0.0.1"].mac_address == "aa:bb:cc:dd:ee:ff"
 
     def test_enrich_from_arp_skips_non_router(self):
         by_ip = {}
-        from core.network_probe import _enrich_from_arp
+        from core.network_probe import _enrich_from_arp  # type: ignore[reportPrivateUsage]
 
         arp = [{"ip": "10.0.0.5", "mac": "aa:bb:cc:dd:ee:ff"}]
-        _enrich_from_arp(arp, by_ip)
+        _enrich_from_arp(arp, by_ip)  # type: ignore[reportArgumentType]
         assert "10.0.0.5" not in by_ip
 
     def test_enrich_from_arp_skips_if_mac_already_set(self):
@@ -475,10 +475,10 @@ class TestMergeResultsExtended:
                 ip_address="10.0.0.1", mac_address="11:22:33:44:55:66"
             )
         }
-        from core.network_probe import _enrich_from_arp
+        from core.network_probe import _enrich_from_arp  # type: ignore[reportPrivateUsage]
 
         arp = [{"ip": "10.0.0.1", "mac": "aa:bb:cc:dd:ee:ff"}]
-        _enrich_from_arp(arp, by_ip)
+        _enrich_from_arp(arp, by_ip)  # type: ignore[reportArgumentType]
         assert by_ip["10.0.0.1"].mac_address == "11:22:33:44:55:66"
 
     def test_full_merge_all_three(self):
@@ -495,7 +495,7 @@ class TestMergeResultsExtended:
                 "last_seen": "2024-01-01",
             }
         ]
-        result = merge_probe_results(arp, port, mndp)
+        result = merge_probe_results(arp, port, mndp)  # type: ignore[reportArgumentType]
         assert len(result) == 1
         r = result[0]
         assert r.identity == "FullRouter"

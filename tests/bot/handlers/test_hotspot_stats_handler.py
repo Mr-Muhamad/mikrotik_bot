@@ -10,40 +10,40 @@ from utils import admin_decorator
 ADMIN_ID = 724730774
 
 
-def _direct_hotspot_stats(update, context):
+def _direct_hotspot_stats(update, context):  # type: ignore[reportUnusedFunction, reportMissingParameterType]
     """Direct invocation bypassing @admin_only decorator."""
     original = getattr(hotspot_module, "_original_hotspot_stats", None)
     if original is None:
         original = hotspot_module.hotspot_stats.__wrapped__
-        hotspot_module._original_hotspot_stats = original
+        hotspot_module._original_hotspot_stats = original  # type: ignore[reportAttributeAccessIssue]
     return original(update, context)
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture(autouse=True)
-def _bypass_decorators():
+def _bypass_decorators():  # type: ignore[reportUnusedFunction]
     """Replace handlers with the unwrapped functions to bypass decorators.
 
     The handlers are decorated as @admin_only(original). __wrapped__ from
     @admin_only points to the actual original function.
     """
     if not hasattr(hotspot_module, "_original_hotspot_stats"):
-        hotspot_module._original_hotspot_stats = hotspot_module.hotspot_stats.__wrapped__
-    hotspot_module.hotspot_stats = hotspot_module._original_hotspot_stats
+        hotspot_module._original_hotspot_stats = hotspot_module.hotspot_stats.__wrapped__  # type: ignore[reportAttributeAccessIssue]
+    hotspot_module.hotspot_stats = hotspot_module._original_hotspot_stats  # type: ignore[reportAttributeAccessIssue]
     if not hasattr(hotspot_module, "_original_hotspot_stats_day_input"):
         wrapped = hotspot_module.hotspot_stats_day_input.__wrapped__
-        hotspot_module._original_hotspot_stats_day_input = wrapped
-    hotspot_module.hotspot_stats_day_input = hotspot_module._original_hotspot_stats_day_input
+        hotspot_module._original_hotspot_stats_day_input = wrapped  # type: ignore[reportAttributeAccessIssue]
+    hotspot_module.hotspot_stats_day_input = hotspot_module._original_hotspot_stats_day_input  # type: ignore[reportAttributeAccessIssue]
     yield
 
 
-def _query_update(data="hotspot_stats"):
+def _query_update(data="hotspot_stats"):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=ADMIN_ID)
     update.effective_chat = MagicMock(id=1)
@@ -55,7 +55,7 @@ def _query_update(data="hotspot_stats"):
     return update
 
 
-def _message_update(text="5"):
+def _message_update(text="5"):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=ADMIN_ID)
     update.effective_chat = MagicMock(id=1)
@@ -67,7 +67,7 @@ def _message_update(text="5"):
     return update
 
 
-def _base_stats(**overrides):
+def _base_stats(**overrides):  # type: ignore[reportMissingParameterType]
     stats = {
         "total": 100,
         "active": 30,

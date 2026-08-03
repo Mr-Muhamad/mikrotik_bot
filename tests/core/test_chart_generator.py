@@ -1,7 +1,7 @@
 """Tests for core/chart_generator.py — chart generation utilities."""
 
 
-def _s(date, active, total, b_in, b_out):
+def _s(date, active, total, b_in, b_out):  # type: ignore[reportMissingParameterType]
     return {
         "snapshot_date": date,
         "active_users": active,
@@ -15,7 +15,7 @@ class TestGenerateTrendChart:
     def test_returns_png_bytes(self):
         from core.chart_generator import generate_trend_chart
 
-        result = generate_trend_chart([
+        result = generate_trend_chart([  # type: ignore[reportArgumentType]
             _s("2025-01-01", 5, 10, 1000, 500),
             _s("2025-01-02", 8, 12, 2000, 800),
         ])
@@ -33,7 +33,7 @@ class TestGenerateTrendChart:
     def test_single_snapshot(self):
         from core.chart_generator import generate_trend_chart
 
-        result = generate_trend_chart([_s("day1", 3, 7, 100, 50)])
+        result = generate_trend_chart([_s("day1", 3, 7, 100, 50)])  # type: ignore[reportArgumentType]
         assert isinstance(result, bytes)
         assert len(result) > 100
 
@@ -41,7 +41,7 @@ class TestGenerateTrendChart:
         from core.chart_generator import generate_trend_chart
 
         result = generate_trend_chart(
-            [_s("d1", 1, 2, 0, 0)],
+            [_s("d1", 1, 2, 0, 0)],  # type: ignore[reportArgumentType]
             title="عنوان مخصص",
         )
         assert isinstance(result, bytes)
@@ -50,7 +50,7 @@ class TestGenerateTrendChart:
         from core.chart_generator import generate_trend_chart
 
         result = generate_trend_chart(
-            [_s("d1", None, None, None, None)]
+            [_s("d1", None, None, None, None)]  # type: ignore[reportArgumentType]
         )
         assert isinstance(result, bytes)
 
@@ -109,7 +109,7 @@ class TestConfigureDarkStyle:
     def test_applies_style_without_error(self):
         import matplotlib.pyplot as plt
 
-        from core.chart_generator import _configure_dark_style
+        from core.chart_generator import _configure_dark_style  # type: ignore[reportPrivateUsage]
 
         fig, ax = plt.subplots()
         try:

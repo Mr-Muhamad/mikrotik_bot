@@ -11,8 +11,8 @@ from utils.admin_decorator import (
     ADMIN_ONLY_MSG,
     NOT_OWNER_MSG,
     RATE_LIMIT_WINDOW,
-    _check_rate_limit,
-    _rate_limit_data,
+    _check_rate_limit,  # type: ignore[reportPrivateUsage]
+    _rate_limit_data,  # type: ignore[reportPrivateUsage]
     admin_only,
     require_ownership,
 )
@@ -38,7 +38,7 @@ def _ctx():
 
 
 @pytest.fixture(autouse=True)
-def _clear_rate_limit():
+def _clear_rate_limit():  # type: ignore[reportUnusedFunction]
     """Reset rate limit cache between tests."""
     _rate_limit_data.clear()
     _rate_limit_data["_test_enforce_rate_limit"] = True
@@ -53,7 +53,7 @@ class TestAdminOnlyAllowsAdmin:
     @pytest.mark.asyncio
     async def test_admin_passes_through(self):
         @admin_only
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         admin_id = next(iter(ADMIN_IDS))
@@ -65,7 +65,7 @@ class TestAdminOnlyAllowsAdmin:
     @pytest.mark.asyncio
     async def test_non_admin_with_message_is_blocked(self):
         @admin_only
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         update = _update(user_id=999999)
@@ -77,7 +77,7 @@ class TestAdminOnlyAllowsAdmin:
     @pytest.mark.asyncio
     async def test_non_admin_with_callback_is_blocked(self):
         @admin_only
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         update = _update(user_id=999999, has_message=False, has_callback=True)
@@ -92,7 +92,7 @@ class TestAdminOnlyRateLimit:
     @pytest.mark.asyncio
     async def test_second_call_within_window_is_blocked(self):
         @admin_only
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         admin_id = next(iter(ADMIN_IDS))
@@ -109,7 +109,7 @@ class TestAdminOnlyRateLimit:
     @pytest.mark.asyncio
     async def test_call_after_window_succeeds(self):
         @admin_only
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         admin_id = next(iter(ADMIN_IDS))
@@ -125,7 +125,7 @@ class TestAdminOnlyRateLimit:
     @pytest.mark.asyncio
     async def test_rate_limited_callback_answers_query(self):
         @admin_only
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         admin_id = next(iter(ADMIN_IDS))
@@ -159,13 +159,13 @@ class TestCheckRateLimit:
         _rate_limit_data[(1, "")] = time.monotonic() - 0.1
         assert _check_rate_limit(1) is False
 
-    def test_stale_entries_cleaned_after_interval(self, monkeypatch):
+    def test_stale_entries_cleaned_after_interval(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         # Force cleanup trigger
         from utils import admin_decorator
 
-        admin_decorator._last_cleanup = 0.0
+        admin_decorator._last_cleanup = 0.0  # type: ignore[reportPrivateUsage]
         # Insert stale entry
-        _rate_limit_data[99] = time.monotonic() - 7200  # 2 hours old
+        _rate_limit_data[99] = time.monotonic() - 7200  # 2 hours old  # type: ignore[reportArgumentType]
         # New call triggers cleanup
         _check_rate_limit(100)
         assert 99 not in _rate_limit_data
@@ -176,7 +176,7 @@ class TestCheckRateLimit:
 
 class TestRequireRouter:
     @pytest.mark.asyncio
-    async def test_with_router_proceeds(self, monkeypatch):
+    async def test_with_router_proceeds(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         from unittest.mock import AsyncMock
 
         from bot.router_selector import set_selected_router
@@ -190,7 +190,7 @@ class TestRequireRouter:
         )
 
         @require_router
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ran"
 
         u = _update(user_id=admin_id)
@@ -202,7 +202,7 @@ class TestRequireRouter:
     @pytest.mark.asyncio
     async def test_without_router_message_prompts(self):
         @require_router
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ran"
 
         u = _update(user_id=999999, has_message=True, has_callback=False)
@@ -215,7 +215,7 @@ class TestRequireRouter:
     @pytest.mark.asyncio
     async def test_without_router_callback_shows_keyboard(self):
         @require_router
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ran"
 
         u = _update(user_id=999999, has_message=False, has_callback=True)
@@ -234,7 +234,7 @@ class TestRequireOwnership:
     @pytest.mark.asyncio
     async def test_admin_bypasses_ownership_check(self):
         @require_ownership
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         admin_id = next(iter(ADMIN_IDS))
@@ -246,7 +246,7 @@ class TestRequireOwnership:
     @pytest.mark.asyncio
     async def test_non_admin_owner_callback_passes(self):
         @require_ownership
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         with patch("database.repositories.routers.get_router_by_id") as mock_get:
@@ -260,7 +260,7 @@ class TestRequireOwnership:
     @pytest.mark.asyncio
     async def test_non_owner_callback_blocked(self):
         @require_ownership
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         with patch("database.repositories.routers.get_router_by_id") as mock_get:
@@ -276,7 +276,7 @@ class TestRequireOwnership:
     @pytest.mark.asyncio
     async def test_non_owner_message_blocked(self):
         @require_ownership
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         with patch("database.repositories.routers.get_router_by_id") as mock_get:
@@ -291,7 +291,7 @@ class TestRequireOwnership:
     @pytest.mark.asyncio
     async def test_no_router_id_passes_through(self):
         @require_ownership
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         u = _update(user_id=100, has_message=True, has_callback=True)
@@ -302,7 +302,7 @@ class TestRequireOwnership:
 
     @pytest.mark.asyncio
     async def test_extract_router_id_from_callback_data(self):
-        from utils.admin_decorator import _extract_router_id
+        from utils.admin_decorator import _extract_router_id  # type: ignore[reportPrivateUsage]
 
         u = _update(has_message=False, has_callback=True)
         u.callback_query.data = "connect_router_42"
@@ -311,7 +311,7 @@ class TestRequireOwnership:
 
     @pytest.mark.asyncio
     async def test_extract_router_id_from_user_data(self):
-        from utils.admin_decorator import _extract_router_id
+        from utils.admin_decorator import _extract_router_id  # type: ignore[reportPrivateUsage]
 
         u = _update(has_message=True, has_callback=False)
         u.message.text = "/somecommand"

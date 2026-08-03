@@ -18,11 +18,11 @@ class MikrotikAPIMock:
     """
 
     def __init__(self):
-        self._users: list[dict] = [dict(u) for u in SAMPLE_HOTSPOT_USERS]
-        self._profiles: list[dict] = [dict(p) for p in SAMPLE_HOTSPOT_PROFILES]
-        self._hosts: list[dict] = [dict(h) for h in SAMPLE_HOTSPOT_HOSTS]
-        self._leases: list[dict] = [dict(lease) for lease in SAMPLE_DHCP_LEASES]
-        self.commands_executed: list[tuple[str, str, dict]] = []
+        self._users: list[dict] = [dict(u) for u in SAMPLE_HOTSPOT_USERS]  # type: ignore[reportMissingTypeArgument]
+        self._profiles: list[dict] = [dict(p) for p in SAMPLE_HOTSPOT_PROFILES]  # type: ignore[reportMissingTypeArgument]
+        self._hosts: list[dict] = [dict(h) for h in SAMPLE_HOTSPOT_HOSTS]  # type: ignore[reportMissingTypeArgument]
+        self._leases: list[dict] = [dict(lease) for lease in SAMPLE_DHCP_LEASES]  # type: ignore[reportMissingTypeArgument]
+        self.commands_executed: list[tuple[str, str, dict]] = []  # type: ignore[reportMissingTypeArgument]
         self.last_router_key: str | None = None
         self._version = "7.15"
         self._next_user_id = len(SAMPLE_HOTSPOT_USERS) + 1
@@ -30,16 +30,16 @@ class MikrotikAPIMock:
 
     # --- public API matching MikrotikAPI ---
 
-    def execute(self, router_key: str, command: str, **kwargs) -> list[dict]:
+    def execute(self, router_key: str, command: str, **kwargs) -> list[dict]:  # type: ignore[reportMissingParameterType, reportMissingTypeArgument]
         self.commands_executed.append((router_key, command, kwargs))
         self.last_router_key = router_key
         return self._route_command(command, kwargs)
 
-    def execute_long(self, router_key: str, command: str, **kwargs) -> list[dict]:
+    def execute_long(self, router_key: str, command: str, **kwargs) -> list[dict]:  # type: ignore[reportMissingParameterType, reportMissingTypeArgument]
         # Heavy-command variant (backups/restores) — same in-memory behaviour.
         return self.execute(router_key, command, **kwargs)
 
-    def execute_non_blocking(self, router_key: str, command: str, **kwargs) -> None:
+    def execute_non_blocking(self, router_key: str, command: str, **kwargs) -> None:  # type: ignore[reportMissingParameterType]
         self.commands_executed.append((router_key, command, kwargs))
 
     def get_version(self, router_key: str = "router1") -> str:
@@ -69,7 +69,7 @@ class MikrotikAPIMock:
 
     # --- internal routing ---
 
-    def _route_command(self, command: str, kwargs: dict) -> list[dict]:
+    def _route_command(self, command: str, kwargs: dict) -> list[dict]:  # type: ignore[reportMissingTypeArgument]
         handlers: dict[str, Any] = {
             "ip/hotspot/user/print": self._filter_users,
             "ip/hotspot/user/add": self._add_user,
@@ -89,7 +89,7 @@ class MikrotikAPIMock:
             return []
         return handler(kwargs)
 
-    def _add_user(self, kwargs: dict) -> list[dict]:
+    def _add_user(self, kwargs: dict) -> list[dict]:  # type: ignore[reportMissingTypeArgument]
         entry = dict(kwargs)
         if ".id" not in entry:
             entry[".id"] = f"*{self._next_user_id}"
@@ -97,7 +97,7 @@ class MikrotikAPIMock:
         self._users.append(entry)
         return [dict(entry)]
 
-    def _filter_users(self, kwargs: dict) -> list[dict]:
+    def _filter_users(self, kwargs: dict) -> list[dict]:  # type: ignore[reportMissingTypeArgument]
         if not kwargs:
             return list(self._users)
         limit = kwargs.get("limit")
@@ -119,7 +119,7 @@ class MikrotikAPIMock:
                 pass
         return results
 
-    def _apply_update(self, kwargs: dict) -> list[dict]:
+    def _apply_update(self, kwargs: dict) -> list[dict]:  # type: ignore[reportMissingTypeArgument]
         uid = kwargs.pop(".id", None)
         for user in self._users:
             if user.get(".id") == uid:
@@ -127,12 +127,12 @@ class MikrotikAPIMock:
                 break
         return []
 
-    def _remove_user(self, kwargs: dict) -> list[dict]:
+    def _remove_user(self, kwargs: dict) -> list[dict]:  # type: ignore[reportMissingTypeArgument]
         uid = kwargs.get(".id")
         self._users = [u for u in self._users if u.get(".id") != uid]
         return []
 
-    def _remove_host(self, kwargs: dict) -> list[dict]:
+    def _remove_host(self, kwargs: dict) -> list[dict]:  # type: ignore[reportMissingTypeArgument]
         hid = kwargs.get(".id")
         self._hosts = [h for h in self._hosts if h.get(".id") != hid]
         return []
@@ -142,7 +142,7 @@ class MikrotikAPIMock:
     def reset(self):
         self.__init__()
 
-    def add_user(self, user: dict):
+    def add_user(self, user: dict):  # type: ignore[reportMissingTypeArgument]
         self._users.append(dict(user))
 
     def set_version(self, version: str):

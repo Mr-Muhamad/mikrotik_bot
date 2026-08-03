@@ -26,7 +26,7 @@ MOCK_AUDIT_LIST_HEADER = "📋 <b>سجل التدقيق</b> ({start}-{end} من 
 MOCK_AUDIT_NO_FILTERS = "بدون فلاتر"
 
 
-async def _call_through(fn, *args, **kwargs):
+async def _call_through(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
     """Make run_blocking actually invoke the passed function."""
     result = fn(*args, **kwargs)
     if hasattr(result, "__await__"):
@@ -65,17 +65,17 @@ def _start_patches():
 
 
 @pytest.fixture(autouse=True)
-def _all_patches():
-    admin_decorator._rate_limit_data.clear()
+def _all_patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     stack = _start_patches()
     yield
     stack.close()
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestEmptyFilters:
     def test_empty_filters(self):
-        from bot.handlers.audit import _empty_filters
+        from bot.handlers.audit import _empty_filters  # type: ignore[reportPrivateUsage]
 
         result = _empty_filters()
         assert result == {
@@ -91,7 +91,7 @@ class TestEmptyFilters:
 
 class TestGetFilters:
     def test_get_filters_first_call(self):
-        from bot.handlers.audit import _get_filters
+        from bot.handlers.audit import _get_filters  # type: ignore[reportPrivateUsage]
 
         ctx = make_mock_context()
         filters = _get_filters(ctx)
@@ -99,7 +99,7 @@ class TestGetFilters:
         assert "logs_filters" in ctx.user_data
 
     def test_get_filters_returns_existing(self):
-        from bot.handlers.audit import _get_filters
+        from bot.handlers.audit import _get_filters  # type: ignore[reportPrivateUsage]
 
         ctx = make_mock_context()
         ctx.user_data["logs_filters"] = {
@@ -113,7 +113,7 @@ class TestGetFilters:
         assert filters["router"] == "R1"
 
     def test_get_filters_default_values(self):
-        from bot.handlers.audit import _get_filters
+        from bot.handlers.audit import _get_filters  # type: ignore[reportPrivateUsage]
 
         ctx = make_mock_context()
         f = _get_filters(ctx)
@@ -123,7 +123,7 @@ class TestGetFilters:
 
 class TestBuildDbFilters:
     def test_build_db_filters_all_none(self):
-        from bot.handlers.audit import _build_db_filters
+        from bot.handlers.audit import _build_db_filters  # type: ignore[reportPrivateUsage]
 
         result = _build_db_filters({
             "router": None, "admin_id": None, "action": None, "since_days": None,
@@ -131,7 +131,7 @@ class TestBuildDbFilters:
         assert result == {"router": None, "admin_id": None, "action": None}
 
     def test_build_db_filters_with_router(self):
-        from bot.handlers.audit import _build_db_filters
+        from bot.handlers.audit import _build_db_filters  # type: ignore[reportPrivateUsage]
 
         result = _build_db_filters({
             "router": "MikroTik-1", "admin_id": None, "action": None, "since_days": None,
@@ -139,7 +139,7 @@ class TestBuildDbFilters:
         assert result["router"] == "MikroTik-1"
 
     def test_build_db_filters_with_admin_id(self):
-        from bot.handlers.audit import _build_db_filters
+        from bot.handlers.audit import _build_db_filters  # type: ignore[reportPrivateUsage]
 
         result = _build_db_filters({
             "router": None, "admin_id": 42, "action": None, "since_days": None,
@@ -147,7 +147,7 @@ class TestBuildDbFilters:
         assert result["admin_id"] == 42
 
     def test_build_db_filters_with_action(self):
-        from bot.handlers.audit import _build_db_filters
+        from bot.handlers.audit import _build_db_filters  # type: ignore[reportPrivateUsage]
 
         result = _build_db_filters({
             "router": None, "admin_id": None, "action": "backup", "since_days": None,
@@ -155,7 +155,7 @@ class TestBuildDbFilters:
         assert result["action"] == "backup"
 
     def test_build_db_filters_with_since_days(self):
-        from bot.handlers.audit import _build_db_filters
+        from bot.handlers.audit import _build_db_filters  # type: ignore[reportPrivateUsage]
 
         now = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
         with patch(f"{P}.datetime") as mock_dt:
@@ -170,7 +170,7 @@ class TestBuildDbFilters:
         assert result["since"] == expected
 
     def test_build_db_filters_since_days_zero_ignored(self):
-        from bot.handlers.audit import _build_db_filters
+        from bot.handlers.audit import _build_db_filters  # type: ignore[reportPrivateUsage]
 
         result = _build_db_filters({
             "router": None, "admin_id": None, "action": None, "since_days": 0,
@@ -178,7 +178,7 @@ class TestBuildDbFilters:
         assert "since" not in result
 
     def test_build_db_filters_all_set(self):
-        from bot.handlers.audit import _build_db_filters
+        from bot.handlers.audit import _build_db_filters  # type: ignore[reportPrivateUsage]
 
         now = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
         with patch(f"{P}.datetime") as mock_dt:
@@ -196,7 +196,7 @@ class TestBuildDbFilters:
 
 class TestFormatFiltersShort:
     def test_format_no_filters(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": None, "admin_id": None, "admin_label": None,
@@ -205,7 +205,7 @@ class TestFormatFiltersShort:
         assert result == MOCK_AUDIT_NO_FILTERS
 
     def test_format_router_only(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": "RouterA", "admin_id": None, "admin_label": None,
@@ -215,7 +215,7 @@ class TestFormatFiltersShort:
         assert "🔍" in result
 
     def test_format_admin_with_label(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": None, "admin_id": 10, "admin_label": "AdminX",
@@ -225,7 +225,7 @@ class TestFormatFiltersShort:
         assert "👤" in result
 
     def test_format_admin_without_label(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": None, "admin_id": 10, "admin_label": None,
@@ -234,7 +234,7 @@ class TestFormatFiltersShort:
         assert "10" in result
 
     def test_format_action_only(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": None, "admin_id": None, "admin_label": None,
@@ -244,7 +244,7 @@ class TestFormatFiltersShort:
         assert "⚙️" in result
 
     def test_format_time_only(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": None, "admin_id": None, "admin_label": None,
@@ -254,7 +254,7 @@ class TestFormatFiltersShort:
         assert "🕓" in result
 
     def test_format_time_no_match(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": None, "admin_id": None, "admin_label": None,
@@ -263,7 +263,7 @@ class TestFormatFiltersShort:
         assert "🕓" in result
 
     def test_format_all_filters(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": "R1", "admin_id": 1, "admin_label": "adm",
@@ -276,7 +276,7 @@ class TestFormatFiltersShort:
         assert "|" in result
 
     def test_format_separator_count(self):
-        from bot.handlers.audit import _format_filters_short
+        from bot.handlers.audit import _format_filters_short  # type: ignore[reportPrivateUsage]
 
         result = _format_filters_short({
             "router": "R1", "admin_id": 1, "admin_label": "A",
@@ -636,7 +636,7 @@ class TestLogsPageCallback:
 class TestShowSubmenu:
     @pytest.mark.asyncio
     async def test_submenu_time(self):
-        from bot.handlers.audit import _show_submenu
+        from bot.handlers.audit import _show_submenu  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_filter_time")
         ctx = make_mock_context()
@@ -651,7 +651,7 @@ class TestShowSubmenu:
 
     @pytest.mark.asyncio
     async def test_submenu_router(self):
-        from bot.handlers.audit import _show_submenu
+        from bot.handlers.audit import _show_submenu  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_filter_router")
         ctx = make_mock_context()
@@ -667,7 +667,7 @@ class TestShowSubmenu:
 
     @pytest.mark.asyncio
     async def test_submenu_admin(self):
-        from bot.handlers.audit import _show_submenu
+        from bot.handlers.audit import _show_submenu  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_filter_admin")
         ctx = make_mock_context()
@@ -685,7 +685,7 @@ class TestShowSubmenu:
 
     @pytest.mark.asyncio
     async def test_submenu_admin_no_username(self):
-        from bot.handlers.audit import _show_submenu
+        from bot.handlers.audit import _show_submenu  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_filter_admin")
         ctx = make_mock_context()
@@ -702,7 +702,7 @@ class TestShowSubmenu:
 
     @pytest.mark.asyncio
     async def test_submenu_action(self):
-        from bot.handlers.audit import _show_submenu
+        from bot.handlers.audit import _show_submenu  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_filter_action")
         ctx = make_mock_context()
@@ -717,7 +717,7 @@ class TestShowSubmenu:
 
     @pytest.mark.asyncio
     async def test_submenu_unknown_fallback(self):
-        from bot.handlers.audit import _show_submenu
+        from bot.handlers.audit import _show_submenu  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="x")
         ctx = make_mock_context()
@@ -732,7 +732,7 @@ class TestShowSubmenu:
 
     @pytest.mark.asyncio
     async def test_submenu_no_callback_query(self):
-        from bot.handlers.audit import _show_submenu
+        from bot.handlers.audit import _show_submenu  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="test")
         update.callback_query = None
@@ -748,7 +748,7 @@ class TestShowSubmenu:
 class TestShowLogsPage:
     @pytest.mark.asyncio
     async def test_empty_results_from_command(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()
@@ -763,7 +763,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_empty_results_from_callback(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_page_0")
         ctx = make_mock_context()
@@ -777,7 +777,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_empty_page_after_offset(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_page_5")
         ctx = make_mock_context()
@@ -792,7 +792,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_with_results(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()
@@ -817,7 +817,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_timestamp_truncated(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()
@@ -838,7 +838,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_missing_fields(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()
@@ -853,7 +853,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_short_timestamp(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()
@@ -874,7 +874,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_page_pagination_header(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_page_1")
         ctx = make_mock_context()
@@ -897,7 +897,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_empty_timestamp(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()
@@ -915,7 +915,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_multiple_entries(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()
@@ -938,7 +938,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_from_callback_with_results(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(callback_data="logs_page_0")
         ctx = make_mock_context()
@@ -957,7 +957,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_filter_keyboard_called(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()
@@ -972,7 +972,7 @@ class TestShowLogsPage:
 
     @pytest.mark.asyncio
     async def test_logs_nav_set_called(self):
-        from bot.handlers.audit import _show_logs_page
+        from bot.handlers.audit import _show_logs_page  # type: ignore[reportPrivateUsage]
 
         update = make_mock_update(text="/logs")
         ctx = make_mock_context()

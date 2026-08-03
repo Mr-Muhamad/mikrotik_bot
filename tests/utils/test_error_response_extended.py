@@ -13,9 +13,9 @@ from utils.error_response import (
     CATEGORY_NOT_FOUND,
     CATEGORY_STORAGE,
     CATEGORY_TIMEOUT,
-    _dispatch_message,
-    _get_chat_id,
-    _sanitize_error_text,
+    _dispatch_message,  # type: ignore[reportPrivateUsage]
+    _get_chat_id,  # type: ignore[reportPrivateUsage]
+    _sanitize_error_text,  # type: ignore[reportPrivateUsage]
     classify_error,
     format_error_message,
     get_router_key_from_context,
@@ -30,7 +30,7 @@ class TestSanitizeErrorText:
         assert _sanitize_error_text("") == ""
 
     def test_none_returns_none(self):
-        assert _sanitize_error_text(None) is None
+        assert _sanitize_error_text(None) is None  # type: ignore[reportArgumentType]
 
     def test_hides_password_value(self):
         result = _sanitize_error_text("password=secret123456")
@@ -99,24 +99,24 @@ class TestClassifyError:
 
 class TestFormatErrorMessage:
     @patch("utils.logging_setup.get_request_id", return_value=None)
-    def test_general_category_includes_error_text(self, _mock_req):
+    def test_general_category_includes_error_text(self, _mock_req):  # type: ignore[reportMissingParameterType]
         msg = format_error_message(RuntimeError("something broke"))
         assert "حدث خطأ" in msg
         assert "something broke" in msg
 
     @patch("utils.logging_setup.get_request_id", return_value=None)
-    def test_connection_category(self, _mock_req):
+    def test_connection_category(self, _mock_req):  # type: ignore[reportMissingParameterType]
         err = LibRouterosError("Connection refused")
         msg = format_error_message(err)
         assert "الاتصال بالروتر" in msg
 
     @patch("utils.logging_setup.get_request_id", return_value=None)
-    def test_with_router_key(self, _mock_req):
+    def test_with_router_key(self, _mock_req):  # type: ignore[reportMissingParameterType]
         msg = format_error_message(RuntimeError("err"), router_key="discovered_1")
         assert "discovered_1" in msg
 
     @patch("utils.logging_setup.get_request_id", return_value="abc123")
-    def test_with_request_id(self, _mock_req):
+    def test_with_request_id(self, _mock_req):  # type: ignore[reportMissingParameterType]
         msg = format_error_message(RuntimeError("err"))
         assert "abc123" in msg
 

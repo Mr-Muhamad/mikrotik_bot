@@ -181,7 +181,7 @@ class TestGetWeekSnapshots:
 
         assert len(snaps) == 3
         # مرتبة ASC — الأقدم أولاً
-        assert snaps[0]["snapshot_date"] < snaps[-1]["snapshot_date"]
+        assert snaps[0]["snapshot_date"] < snaps[-1]["snapshot_date"]  # type: ignore[reportOperatorIssue]
 
 
 # ─── StatsManager trend/format methods ────────────────────────────────────
@@ -205,7 +205,7 @@ class TestStatsManagerTrend:
 
     def test_format_trend_chart_single(self):
         snaps = [{"snapshot_date": "2025-01-15", "active_users": 8}]
-        chart = self.sm.format_trend_chart(snaps)
+        chart = self.sm.format_trend_chart(snaps)  # type: ignore[reportArgumentType]
         assert "01-15" in chart
         assert "8" in chart
 
@@ -215,31 +215,31 @@ class TestStatsManagerTrend:
             {"snapshot_date": "2025-01-01", "active_users": 0},
             {"snapshot_date": "2025-01-02", "active_users": 100},
         ]
-        chart = self.sm.format_trend_chart(snaps)
+        chart = self.sm.format_trend_chart(snaps)  # type: ignore[reportArgumentType]
         lines = chart.split("\n")
         # السطر الثاني (الأكبر) يجب أن يحتوي 8 كتل
         assert "████████" in lines[1]
 
     def test_format_vs_yesterday_no_yesterday(self):
         current = {"active_users": 30}
-        assert self.sm.format_vs_yesterday(current, None) == ""
+        assert self.sm.format_vs_yesterday(current, None) == ""  # type: ignore[reportArgumentType]
 
     def test_format_vs_yesterday_increase(self):
         current = {"active_users": 35}
         yesterday = {"active_users": 30}
-        result = self.sm.format_vs_yesterday(current, yesterday)
+        result = self.sm.format_vs_yesterday(current, yesterday)  # type: ignore[reportArgumentType]
         assert "↑5" in result
         assert "30 → 35" in result
 
     def test_format_vs_yesterday_decrease(self):
         current = {"active_users": 20}
         yesterday = {"active_users": 30}
-        result = self.sm.format_vs_yesterday(current, yesterday)
+        result = self.sm.format_vs_yesterday(current, yesterday)  # type: ignore[reportArgumentType]
         assert "↓10" in result
 
     def test_format_vs_yesterday_same(self):
         current = {"active_users": 25}
         yesterday = {"active_users": 25}
-        result = self.sm.format_vs_yesterday(current, yesterday)
+        result = self.sm.format_vs_yesterday(current, yesterday)  # type: ignore[reportArgumentType]
         assert "↔" in result
         assert "0" in result

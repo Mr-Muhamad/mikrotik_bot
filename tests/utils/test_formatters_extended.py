@@ -120,7 +120,7 @@ class TestSanitizeApiResponse:
 
     def test_all_sensitive_fields(self):
         row = {field: "value" for field in SENSITIVE_API_FIELDS}
-        result = sanitize_api_response([row])
+        result = sanitize_api_response([row])  # type: ignore[reportArgumentType]
         for field in SENSITIVE_API_FIELDS:
             assert result[0][field] == "***"
 
@@ -148,12 +148,12 @@ class TestFormatUserList:
 
     def test_truncation_at_max_items(self):
         users = [{"name": f"u{i}", "profile": "p", ".id": f"*{i}"} for i in range(25)]
-        result = format_user_list(users, max_items=10)
+        result = format_user_list(users, max_items=10)  # type: ignore[reportArgumentType]
         assert "15 مستخدمين آخرين" in result
 
     def test_below_max_no_truncation(self):
         users = [{"name": "u1"}, {"name": "u2"}]
-        result = format_user_list(users, max_items=20)
+        result = format_user_list(users, max_items=20)  # type: ignore[reportArgumentType]
         assert "مستخدمين آخرين" not in result
 
 
@@ -173,7 +173,7 @@ class TestFormatHotspotUser:
             "comment": "test comment",
             ".id": "*5",
         }
-        result = format_hotspot_user(user)
+        result = format_hotspot_user(user)  # type: ignore[reportArgumentType]
         assert "testuser" in result
         assert "********" in result  # password masked
         assert "default" in result
@@ -205,7 +205,7 @@ class TestFormatHotspotStats:
             "total_users": 100, "active_users": 50,
             "inactive_users": 50, "total_bytes": 5000000,
         }
-        result = format_hotspot_stats(stats, "router1")
+        result = format_hotspot_stats(stats, "router1")  # type: ignore[reportArgumentType]
         assert "router1" in result
         assert "100" in result
         assert "50" in result
@@ -220,7 +220,7 @@ class TestUsermanStats:
 
     def test_formats_correctly(self):
         stats = {"total_users": 200, "enabled_users": 150, "disabled_users": 50}
-        result = format_userman_stats(stats, "router1")
+        result = format_userman_stats(stats, "router1")  # type: ignore[reportArgumentType]
         assert "200" in result
         assert "150" in result
         assert "50" in result
@@ -231,7 +231,7 @@ class TestUsermanStats:
 
 class TestFormatHotspotUsageReport:
     def test_none_returns_empty(self):
-        result = format_hotspot_usage_report(None, "router1")
+        result = format_hotspot_usage_report(None, "router1")  # type: ignore[reportArgumentType]
         assert "لا يوجد مستخدمون" in result
 
     def test_zero_total_returns_empty(self):
@@ -250,7 +250,7 @@ class TestFormatHotspotUsageReport:
             "inactive": [],
             "top_consumers": [{"name": "top1", "total_str": "1 GB", "percent": 50.0}],
         }
-        result = format_hotspot_usage_report(report, "router1")
+        result = format_hotspot_usage_report(report, "router1")  # type: ignore[reportArgumentType]
         assert "100" in result
         assert "top1" in result
         assert "50%" in result
@@ -272,7 +272,7 @@ class TestFormatTrendChart:
             {"active_users": 5, "snapshot_date": "2025-01-10"},
             {"active_users": 10, "snapshot_date": "2025-01-11"},
         ]
-        result = format_trend_chart(data)
+        result = format_trend_chart(data)  # type: ignore[reportArgumentType]
         assert "5" in result
         assert "10" in result
 
@@ -287,7 +287,7 @@ class TestFormatTrendChart:
 class TestFormatVsYesterday:
     def test_none_yesterday_returns_empty(self):
         current = {"active_users": 10}
-        assert format_vs_yesterday(current, None) == ""
+        assert format_vs_yesterday(current, None) == ""  # type: ignore[reportArgumentType]
 
     def test_increase(self):
         result = format_vs_yesterday({"active_users": 30}, {"active_users": 25})

@@ -29,14 +29,14 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture(autouse=True)
-def _mock_db_session():
+def _mock_db_session():  # type: ignore[reportUnusedFunction]
     """Mock the DB session lookups and router selection."""
     with (
         patch("bot.router_selector.get_user_session", return_value={}),
@@ -47,14 +47,14 @@ def _mock_db_session():
         yield
 
 
-def _ctx(user_data=None):
+def _ctx(user_data=None):  # type: ignore[reportMissingParameterType]
     ctx = MagicMock()
     ctx.user_data = user_data if user_data is not None else {}
     ctx.bot = MagicMock()
     return ctx
 
 
-def _query_update(callback_data=None):
+def _query_update(callback_data=None):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=ADMIN_ID)
     update.effective_chat = MagicMock(id=1)

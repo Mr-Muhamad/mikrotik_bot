@@ -32,7 +32,7 @@ class TestGetUserData:
 class TestGetQueryData:
     def test_returns_data_string(self):
         q = CallbackQueryMock(data="action:123")
-        assert get_query_data(q) == "action:123"
+        assert get_query_data(q) == "action:123"  # type: ignore[reportArgumentType]
 
     def test_raises_on_none(self):
         q = MagicMock()
@@ -99,7 +99,7 @@ class TestGetChatId:
 class TestGetFromUserId:
     def test_returns_from_user_id(self):
         q = CallbackQueryMock(from_user_id=789)
-        assert get_from_user_id(q) == 789
+        assert get_from_user_id(q) == 789  # type: ignore[reportArgumentType]
 
     def test_raises_on_none(self):
         q = MagicMock()
@@ -111,7 +111,7 @@ class TestGetFromUserId:
 class TestGetQueryMessage:
     def test_returns_message(self):
         q = CallbackQueryMock()
-        msg = get_query_message(q)
+        msg = get_query_message(q)  # type: ignore[reportArgumentType]
         assert msg is q.message
 
     def test_returns_none_for_none_query(self):
@@ -126,7 +126,7 @@ class TestGetQueryMessage:
 class TestGetQueryChatId:
     def test_returns_chat_id(self):
         q = CallbackQueryMock()
-        assert get_query_chat_id(q) == q.message.chat_id
+        assert get_query_chat_id(q) == q.message.chat_id  # type: ignore[reportArgumentType]
 
     def test_returns_none_for_none_query(self):
         assert get_query_chat_id(None) is None

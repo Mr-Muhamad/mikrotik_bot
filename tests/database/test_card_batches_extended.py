@@ -4,7 +4,7 @@ decode paths, update_batch_payment, get_sales_summary, and edge cases."""
 from unittest.mock import patch
 
 from database.repositories.card_batches import (
-    _decode_batch_cards,
+    _decode_batch_cards,  # type: ignore[reportPrivateUsage]
     get_card_batch,
     get_card_batches_count,
     get_sales_summary,
@@ -46,7 +46,7 @@ class TestDecodeBatchCards:
         )
         result = _decode_batch_cards(encrypted)
         assert len(result) == 2
-        assert result[0]["name"] == "u1"
+        assert result[0]["name"] == "u1"  # type: ignore[reportIndexIssue]
 
 
 class TestSaveCardBatchExtended:
@@ -56,7 +56,7 @@ class TestSaveCardBatchExtended:
             "discovered_1",
             "test_batch",
             "hotspot",
-            cards=cards,
+            cards=cards,  # type: ignore[reportArgumentType]
             unit_price=5.0,
         )
         assert isinstance(batch_id, int) and batch_id > 0
@@ -78,7 +78,7 @@ class TestSaveCardBatchExtended:
             "discovered_1",
             "str_batch",
             "hotspot",
-            cards=cards_str,
+            cards=cards_str,  # type: ignore[reportArgumentType]
         )
         assert isinstance(batch_id, int)
 
@@ -87,7 +87,7 @@ class TestSaveCardBatchExtended:
             "discovered_1",
             "bad_batch",
             "hotspot",
-            cards="not-valid-json",
+            cards="not-valid-json",  # type: ignore[reportArgumentType]
         )
         assert isinstance(batch_id, int)
 
@@ -96,8 +96,8 @@ class TestListCardBatchesExtended:
     def test_list_without_router_key(self):
         from utils.crypto import encrypt_data
 
-        save_card_batch("discovered_1", "a", "hotspot", cards=encrypt_data("[]"))
-        save_card_batch("discovered_2", "b", "hotspot", cards=encrypt_data("[]"))
+        save_card_batch("discovered_1", "a", "hotspot", cards=encrypt_data("[]"))  # type: ignore[reportArgumentType]
+        save_card_batch("discovered_2", "b", "hotspot", cards=encrypt_data("[]"))  # type: ignore[reportArgumentType]
         result = list_card_batches()
         assert len(result) >= 2
 
@@ -126,22 +126,22 @@ class TestGetCardBatchExtended:
 class TestUpdateBatchPayment:
     def test_paid_status(self):
         bid = save_card_batch("discovered_1", "pay", "hotspot")
-        result = update_batch_payment(bid, "paid", "John", 50.0)
+        result = update_batch_payment(bid, "paid", "John", 50.0)  # type: ignore[reportArgumentType]
         assert result is True
 
     def test_unpaid_status(self):
         bid = save_card_batch("discovered_1", "unpay", "hotspot")
-        result = update_batch_payment(bid, "unpaid")
+        result = update_batch_payment(bid, "unpaid")  # type: ignore[reportArgumentType]
         assert result is True
 
     def test_deferred_status(self):
         bid = save_card_batch("discovered_1", "def", "hotspot")
-        result = update_batch_payment(bid, "deferred")
+        result = update_batch_payment(bid, "deferred")  # type: ignore[reportArgumentType]
         assert result is True
 
     def test_invalid_status(self):
         bid = save_card_batch("discovered_1", "inv", "hotspot")
-        result = update_batch_payment(bid, "invalid")
+        result = update_batch_payment(bid, "invalid")  # type: ignore[reportArgumentType]
         assert result is False
 
     def test_update_non_existing(self):
@@ -169,7 +169,7 @@ class TestGetSalesSummary:
             "discovered_1", "sale", "hotspot",
             cards=[{"u": "1"}], unit_price=10.0,
         )
-        update_batch_payment(bid, "paid", "Customer", 10.0)
+        update_batch_payment(bid, "paid", "Customer", 10.0)  # type: ignore[reportArgumentType]
         result = get_sales_summary(days=30)
-        assert result["paid_count"] >= 1
-        assert result["total_revenue"] >= 10.0
+        assert result["paid_count"] >= 1  # type: ignore[reportOperatorIssue]
+        assert result["total_revenue"] >= 10.0  # type: ignore[reportOperatorIssue]

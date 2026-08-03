@@ -6,14 +6,14 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from core.backup.file_server import (
-    _MAX_UPLOAD_BYTES,
-    _FileRequestHandler,
+    _MAX_UPLOAD_BYTES,  # type: ignore[reportPrivateUsage]
+    _FileRequestHandler,  # type: ignore[reportPrivateUsage]
     cleanup_serve_file,
     prepare_serve_file,
 )
 
 
-def _make_handler(method: str, path: str, headers: dict, body: bytes = b""):
+def _make_handler(method: str, path: str, headers: dict, body: bytes = b""):  # type: ignore[reportUnusedFunction, reportMissingTypeArgument]
     handler = MagicMock(spec=_FileRequestHandler)
     handler.path = path
     handler.headers = headers
@@ -25,14 +25,14 @@ def _make_handler(method: str, path: str, headers: dict, body: bytes = b""):
     handler.send_error = MagicMock()
     handler.wfile = BytesIO()
 
-    def _send_error(code, msg=""):
+    def _send_error(code, msg=""):  # type: ignore[reportMissingParameterType]
         handler.send_error(code, msg)
 
     handler.send_error.side_effect = _send_error
     return handler
 
 
-def _auth_header() -> dict:
+def _auth_header() -> dict:  # type: ignore[reportUnusedFunction, reportMissingTypeArgument]
     return {"Authorization": "Bearer test-secret"}
 
 
@@ -45,26 +45,26 @@ class TestCheckAuth:
     def test_valid_token_passes(self):
         self.handler.headers = {"Authorization": "Bearer test-secret"}
         with patch("core.backup.file_server.FILE_SERVER_SECRET", "test-secret"):
-            result = _FileRequestHandler._check_auth(self.handler)
+            result = _FileRequestHandler._check_auth(self.handler)  # type: ignore[reportPrivateUsage]
         assert result is True
 
     def test_invalid_token_fails(self):
         self.handler.headers = {"Authorization": "Bearer wrong"}
         with patch("core.backup.file_server.FILE_SERVER_SECRET", "test-secret"):
-            result = _FileRequestHandler._check_auth(self.handler)
+            result = _FileRequestHandler._check_auth(self.handler)  # type: ignore[reportPrivateUsage]
         assert result is False
         self.handler.send_error.assert_called_once()
 
     def test_missing_header_fails(self):
         self.handler.headers = {}
         with patch("core.backup.file_server.FILE_SERVER_SECRET", "test-secret"):
-            result = _FileRequestHandler._check_auth(self.handler)
+            result = _FileRequestHandler._check_auth(self.handler)  # type: ignore[reportPrivateUsage]
         assert result is False
 
     def test_empty_auth_fails(self):
         self.handler.headers = {"Authorization": ""}
         with patch("core.backup.file_server.FILE_SERVER_SECRET", "test-secret"):
-            result = _FileRequestHandler._check_auth(self.handler)
+            result = _FileRequestHandler._check_auth(self.handler)  # type: ignore[reportPrivateUsage]
         assert result is False
 
 
@@ -157,42 +157,42 @@ class TestMaxUploadBytes:
 
 class TestAllowedExtensions:
     def test_backup_allowed(self):
-        from core.backup.file_server import _ALLOWED_EXTENSIONS
+        from core.backup.file_server import _ALLOWED_EXTENSIONS  # type: ignore[reportPrivateUsage]
 
         assert ".backup" in _ALLOWED_EXTENSIONS
 
     def test_rsc_allowed(self):
-        from core.backup.file_server import _ALLOWED_EXTENSIONS
+        from core.backup.file_server import _ALLOWED_EXTENSIONS  # type: ignore[reportPrivateUsage]
 
         assert ".rsc" in _ALLOWED_EXTENSIONS
 
     def test_tar_allowed(self):
-        from core.backup.file_server import _ALLOWED_EXTENSIONS
+        from core.backup.file_server import _ALLOWED_EXTENSIONS  # type: ignore[reportPrivateUsage]
 
         assert ".tar" in _ALLOWED_EXTENSIONS
 
     def test_umb_allowed(self):
-        from core.backup.file_server import _ALLOWED_EXTENSIONS
+        from core.backup.file_server import _ALLOWED_EXTENSIONS  # type: ignore[reportPrivateUsage]
 
         assert ".umb" in _ALLOWED_EXTENSIONS
 
 
 class TestPrepareAndServeFile:
-    def test_prepare_copies_file(self, tmp_path):
+    def test_prepare_copies_file(self, tmp_path):  # type: ignore[reportMissingParameterType]
         src = tmp_path / "source.backup"
         src.write_bytes(b"test data")
         with patch("core.backup.file_server.BACKUP_DIR", str(tmp_path)):
             result = prepare_serve_file(str(src), "dest.backup")
         assert result == "dest.backup"
 
-    def test_prepare_rejects_traversal(self, tmp_path):
+    def test_prepare_rejects_traversal(self, tmp_path):  # type: ignore[reportMissingParameterType]
         src = tmp_path / "source.backup"
         src.write_bytes(b"data")
         with patch("core.backup.file_server.BACKUP_DIR", str(tmp_path)):
             with pytest.raises(ValueError, match="path traversal"):
                 prepare_serve_file(str(src), "../escape.backup")
 
-    def test_cleanup_removes_file(self, tmp_path):
+    def test_cleanup_removes_file(self, tmp_path):  # type: ignore[reportMissingParameterType]
         serve_dir = tmp_path / "serves"
         serve_dir.mkdir()
         f = serve_dir / "test.backup"
@@ -201,6 +201,6 @@ class TestPrepareAndServeFile:
             cleanup_serve_file("test.backup")
         assert not f.exists()
 
-    def test_cleanup_ignores_missing(self, tmp_path):
+    def test_cleanup_ignores_missing(self, tmp_path):  # type: ignore[reportMissingParameterType]
         with patch("core.backup.file_server.BACKUP_DIR", str(tmp_path)):
             cleanup_serve_file("nonexistent.backup")

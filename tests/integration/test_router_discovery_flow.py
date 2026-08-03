@@ -23,10 +23,10 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _make_context():
@@ -38,7 +38,7 @@ def _make_context():
     return context
 
 
-def _fake_router(ip="192.168.88.1", identity="R1", version="7.15"):
+def _fake_router(ip="192.168.88.1", identity="R1", version="7.15"):  # type: ignore[reportMissingParameterType]
     return DiscoveredRouter(
         ip_address=ip,
         mac_address="AA:BB:CC:DD:EE:01",
@@ -57,7 +57,7 @@ def _fake_router(ip="192.168.88.1", identity="R1", version="7.15"):
 
 class TestDiscoverRoutersCallback:
     @pytest.mark.asyncio
-    async def test_discovery_saves_routers(self, mock_mikrotik_api):
+    async def test_discovery_saves_routers(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import get_saved_routers
 
         routers = [_fake_router("10.0.0.1"), _fake_router("10.0.0.2", identity="R2")]
@@ -75,7 +75,7 @@ class TestDiscoverRoutersCallback:
         assert update.callback_query.edit_message_text.called
 
     @pytest.mark.asyncio
-    async def test_discovery_no_results(self, mock_mikrotik_api):
+    async def test_discovery_no_results(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="discover_routers")
         context = _make_context()
 
@@ -88,7 +88,7 @@ class TestDiscoverRoutersCallback:
         assert update.callback_query.edit_message_text.called
 
     @pytest.mark.asyncio
-    async def test_discovery_updates_existing_router(self, mock_mikrotik_api):
+    async def test_discovery_updates_existing_router(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import get_router_by_ip, save_discovered_router
 
         save_discovered_router(
@@ -113,7 +113,7 @@ class TestDiscoverRoutersCallback:
         assert existing["identity"] == "OldName"
 
     @pytest.mark.asyncio
-    async def test_discovery_handles_exception(self, mock_mikrotik_api):
+    async def test_discovery_handles_exception(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="discover_routers")
         context = _make_context()
 
@@ -131,7 +131,7 @@ class TestDiscoverRoutersCallback:
 
 class TestSavedRoutersList:
     @pytest.mark.asyncio
-    async def test_list_empty(self, mock_mikrotik_api):
+    async def test_list_empty(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import delete_router
 
         for r in _all_saved_routers():
@@ -144,7 +144,7 @@ class TestSavedRoutersList:
         assert update.callback_query.edit_message_text.called
 
     @pytest.mark.asyncio
-    async def test_list_with_routers(self, mock_mikrotik_api):
+    async def test_list_with_routers(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_discovered_router
 
         save_discovered_router(
@@ -167,7 +167,7 @@ class TestSavedRoutersList:
 
 class TestConnectRouter:
     @pytest.mark.asyncio
-    async def test_connect_success_sets_router(self, mock_mikrotik_api):
+    async def test_connect_success_sets_router(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.router_selector import get_selected_router
         from database.models import save_discovered_router
 
@@ -192,7 +192,7 @@ class TestConnectRouter:
         assert get_selected_router(ADMIN_ID) == router_key
 
     @pytest.mark.asyncio
-    async def test_connect_failure_no_credentials(self, mock_mikrotik_api):
+    async def test_connect_failure_no_credentials(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_discovered_router
 
         router_id = save_discovered_router(
@@ -211,7 +211,7 @@ class TestConnectRouter:
         assert "بيانات" in text or "credentials" in text.lower() or "❌" in text
 
     @pytest.mark.asyncio
-    async def test_connect_invalid_id(self, mock_mikrotik_api):
+    async def test_connect_invalid_id(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="connect_router_abc")
         context = _make_context()
 
@@ -221,7 +221,7 @@ class TestConnectRouter:
 
 class TestDeleteRouterExecute:
     @pytest.mark.asyncio
-    async def test_confirm_yes_deletes_router(self, mock_mikrotik_api):
+    async def test_confirm_yes_deletes_router(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import get_router_by_id, save_discovered_router
 
         router_id = save_discovered_router(
@@ -239,7 +239,7 @@ class TestDeleteRouterExecute:
         assert get_router_by_id(router_id) is None
 
     @pytest.mark.asyncio
-    async def test_confirm_no_keeps_router(self, mock_mikrotik_api):
+    async def test_confirm_no_keeps_router(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import get_router_by_id, save_discovered_router
 
         router_id = save_discovered_router(
@@ -257,7 +257,7 @@ class TestDeleteRouterExecute:
         assert get_router_by_id(router_id) is not None
 
     @pytest.mark.asyncio
-    async def test_invalid_id_handled(self, mock_mikrotik_api):
+    async def test_invalid_id_handled(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="confirm_delete_router_yes_abc")
         context = _make_context()
 

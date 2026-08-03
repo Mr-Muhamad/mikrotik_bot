@@ -1,10 +1,9 @@
 {
-  "include": ["bot", "core", "database", "utils", "pdf", "main.py", "config.py"],
+  "include": ["bot", "core", "database", "utils", "pdf", "tests", "main.py", "config.py"],
   "exclude": [
     "**/__pycache__",
     "**/venv",
     "scripts",
-    "tests",
     "**/node_modules",
     "alembic"
   ],

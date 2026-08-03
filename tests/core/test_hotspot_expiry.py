@@ -6,7 +6,7 @@ import datetime as _dt
 from unittest.mock import MagicMock, patch
 
 from core.hotspot_expiry import (
-    _parse_uptime_to_seconds,
+    _parse_uptime_to_seconds,  # type: ignore[reportPrivateUsage]
     get_custom_expiring_users,
     get_expiring_users,
     parse_renewal_day_from_comment,
@@ -32,7 +32,7 @@ class TestParseUptimeToSeconds:
         assert _parse_uptime_to_seconds("") == 0
 
     def test_none(self):
-        assert _parse_uptime_to_seconds(None) == 0
+        assert _parse_uptime_to_seconds(None) == 0  # type: ignore[reportArgumentType]
 
     def test_zero_string(self):
         assert _parse_uptime_to_seconds("0") == 0
@@ -87,23 +87,23 @@ class TestParseUptimeToSeconds:
 
 def _make_user(
     name: str, profile: str = "default", limit_uptime: str = "3d00:00:00", disabled: str = "false"
-) -> dict:
+) -> dict:  # type: ignore[reportMissingTypeArgument]
     return {"name": name, "profile": profile, "limit-uptime": limit_uptime, "disabled": disabled}
 
 
-def _make_active(user: str, uptime: str = "1d00:00:00") -> dict:
+def _make_active(user: str, uptime: str = "1d00:00:00") -> dict:  # type: ignore[reportMissingTypeArgument]
     return {"user": user, "uptime": uptime}
 
 
 class TestGetExpiringUsers:
-    def _api(self, users=None, active=None):
+    def _api(self, users=None, active=None):  # type: ignore[reportMissingParameterType]
         api = MagicMock()
         calls = {}
         calls["user"] = users if users is not None else []
         calls["active"] = active if active is not None else []
         call_count = {"n": 0}
 
-        def execute(router_key, path, **kwargs):
+        def execute(router_key, path, **kwargs):  # type: ignore[reportMissingParameterType]
             call_count["n"] += 1
             if "user/print" in path:
                 return calls["user"]
@@ -146,7 +146,7 @@ class TestGetExpiringUsers:
         result = get_expiring_users(api, "rk", days=3)
         assert len(result) == 1
         assert result[0]["name"] == "u1"
-        assert result[0]["remaining_days"] <= 3
+        assert result[0]["remaining_days"] <= 3  # type: ignore[reportOperatorIssue]
 
     def test_user_outside_window(self):
         # 10 day limit, no active → 10 remaining > 3 → excluded
@@ -203,7 +203,7 @@ class TestGetExpiringUsers:
     def test_active_fetch_failure_graceful(self):
         api = MagicMock()
 
-        def execute(router_key, path, **kwargs):
+        def execute(router_key, path, **kwargs):  # type: ignore[reportMissingParameterType]
             if "user/print" in path:
                 return [_make_user("u1", limit_uptime="1d00:00:00")]
             raise ConnectionError("boom")
@@ -344,7 +344,7 @@ class TestParseRenewalDayFromComment:
         assert day is None
 
     def test_multiple_slashes_first_taken(self):
-        name, day = parse_renewal_day_from_comment("a/b/5")
+        name, day = parse_renewal_day_from_comment("a/b/5")  # type: ignore[reportUnusedVariable]
         assert day == 5
 
     def test_arabic_name_with_dash(self):
@@ -370,12 +370,12 @@ class TestParseRenewalDayFromComment:
 
 def _make_custom_user(
     name: str, profile: str = "default", comment: str = "", disabled: str = "false"
-) -> dict:
+) -> dict:  # type: ignore[reportMissingTypeArgument]
     return {"name": name, "profile": profile, "comment": comment, "disabled": disabled}
 
 
 class TestGetCustomExpiringUsers:
-    def _api(self, users=None):
+    def _api(self, users=None):  # type: ignore[reportMissingParameterType]
         api = MagicMock()
         api.execute.return_value = users if users is not None else []
         return api
@@ -443,7 +443,7 @@ class TestGetCustomExpiringUsers:
             )
             result = get_custom_expiring_users(api, "rk", days_window=5)
             days = [r["days_left"] for r in result]
-            assert days == sorted(days)
+            assert days == sorted(days)  # type: ignore[reportArgumentType]
 
     def test_display_name_from_comment(self):
         with _freeze_today(10):

@@ -42,7 +42,7 @@ def role_db():
         pass
 
 
-def _callback_update(user_id):
+def _callback_update(user_id):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=user_id)
     update.effective_chat = MagicMock(id=1, type="private")
@@ -56,11 +56,11 @@ def _callback_update(user_id):
 
 
 @pytest.mark.asyncio
-async def test_viewer_blocked_from_admin_command(role_db):
+async def test_viewer_blocked_from_admin_command(role_db):  # type: ignore[reportMissingParameterType]
     set_admin_role(OTHER_USER_ID, "viewer")
 
     @require_role("admin")
-    async def guarded(update, context):
+    async def guarded(update, context):  # type: ignore[reportMissingParameterType]
         return "allowed"
 
     update = _callback_update(OTHER_USER_ID)
@@ -71,11 +71,11 @@ async def test_viewer_blocked_from_admin_command(role_db):
 
 
 @pytest.mark.asyncio
-async def test_admin_passes_admin_command(role_db):
+async def test_admin_passes_admin_command(role_db):  # type: ignore[reportMissingParameterType]
     set_admin_role(ADMIN_ID, "admin")
 
     @require_role("admin")
-    async def guarded(update, context):
+    async def guarded(update, context):  # type: ignore[reportMissingParameterType]
         return "allowed"
 
     result = await guarded(_callback_update(ADMIN_ID), MagicMock())
@@ -83,11 +83,11 @@ async def test_admin_passes_admin_command(role_db):
 
 
 @pytest.mark.asyncio
-async def test_operator_blocked_from_admin_command(role_db):
+async def test_operator_blocked_from_admin_command(role_db):  # type: ignore[reportMissingParameterType]
     set_admin_role(OTHER_USER_ID, "operator")
 
     @require_role("admin")
-    async def guarded(update, context):
+    async def guarded(update, context):  # type: ignore[reportMissingParameterType]
         return "allowed"
 
     update = _callback_update(OTHER_USER_ID)
@@ -97,11 +97,11 @@ async def test_operator_blocked_from_admin_command(role_db):
 
 
 @pytest.mark.asyncio
-async def test_operator_passes_operator_command(role_db):
+async def test_operator_passes_operator_command(role_db):  # type: ignore[reportMissingParameterType]
     set_admin_role(ADMIN_ID, "operator")
 
     @require_role("operator")
-    async def guarded(update, context):
+    async def guarded(update, context):  # type: ignore[reportMissingParameterType]
         return "allowed"
 
     result = await guarded(_callback_update(ADMIN_ID), MagicMock())
@@ -109,9 +109,9 @@ async def test_operator_passes_operator_command(role_db):
 
 
 @pytest.mark.asyncio
-async def test_unknown_role_defaults_to_admin(role_db):
+async def test_unknown_role_defaults_to_admin(role_db):  # type: ignore[reportMissingParameterType]
     @require_role("admin")
-    async def guarded(update, context):
+    async def guarded(update, context):  # type: ignore[reportMissingParameterType]
         return "allowed"
 
     result = await guarded(_callback_update(ADMIN_ID), MagicMock())

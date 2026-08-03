@@ -169,9 +169,9 @@ class TestCardBatchesRepository:
         assert card_batches.get_card_batch(bid) is None
 
     def test_decode_handles_corrupt_payload(self):
-        assert card_batches._decode_batch_cards("") == []
-        assert card_batches._decode_batch_cards("not-json") == []
-        assert card_batches._decode_batch_cards("enc_garbage") == []
+        assert card_batches._decode_batch_cards("") == []  # type: ignore[reportPrivateUsage]
+        assert card_batches._decode_batch_cards("not-json") == []  # type: ignore[reportPrivateUsage]
+        assert card_batches._decode_batch_cards("enc_garbage") == []  # type: ignore[reportPrivateUsage]
 
 
 # ─── audit_logs repository ─────────────────────────────────────
@@ -185,7 +185,7 @@ class TestAuditLogsRepository:
         assert audit_logs.get_logs_count() == 1
 
     def test_where_clauses_bind_params_no_injection(self):
-        clauses, params = audit_logs._logs_where_clauses({"router": "r'; DROP TABLE logs;--"})
+        clauses, params = audit_logs._logs_where_clauses({"router": "r'; DROP TABLE logs;--"})  # type: ignore[reportPrivateUsage]
         assert clauses == ["router_name = ?"]
         assert params == ["r'; DROP TABLE logs;--"]  # value is a bound param, not concatenated
 

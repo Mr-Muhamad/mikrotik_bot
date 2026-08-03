@@ -105,23 +105,23 @@ class TestFormatUserList(unittest.TestCase):
 
     def test_single_user(self):
         users = [{"name": "test", "profile": "default"}]
-        result = format_user_list(users)
+        result = format_user_list(users)  # type: ignore[reportArgumentType]
         self.assertIn("test", result)
         self.assertIn("default", result)
 
     def test_user_with_comment(self):
         users = [{"name": "test", "profile": "default", "comment": "vip"}]
-        result = format_user_list(users)
+        result = format_user_list(users)  # type: ignore[reportArgumentType]
         self.assertIn("vip", result)
 
     def test_truncation_message(self):
         users = [{"name": str(i)} for i in range(25)]
-        result = format_user_list(users)
+        result = format_user_list(users)  # type: ignore[reportArgumentType]
         self.assertIn("5 مستخدمين آخرين", result)
 
     def test_under_limit_no_truncation(self):
         users = [{"name": str(i)} for i in range(5)]
-        result = format_user_list(users)
+        result = format_user_list(users)  # type: ignore[reportArgumentType]
         self.assertNotIn("مستخدمين آخرين", result)
 
 
@@ -138,7 +138,7 @@ class TestFormatHotspotUser(unittest.TestCase):
             "comment": "vip customer",
             ".id": "*1",
         }
-        result = format_hotspot_user(user)
+        result = format_hotspot_user(user)  # type: ignore[reportArgumentType]
         self.assertIn("testuser1", result)
         self.assertIn("premium", result)
         self.assertIn("vip customer", result)
@@ -154,7 +154,7 @@ class TestFormatHotspotUser(unittest.TestCase):
 
     def test_invalid_bytes_shows_unknown(self):
         user = {"bytes-in": "abc", "bytes-out": "xyz"}
-        result = format_hotspot_user(user)
+        result = format_hotspot_user(user)  # type: ignore[reportArgumentType]
         self.assertIn("غير معروف", result)
 
 
@@ -192,14 +192,14 @@ class TestSanitizeApiResponse(unittest.TestCase):
 
     def test_sensitive_fields_masked(self):
         rows = [{"name": "test", "password": "secret", "profile": "default"}]
-        result = sanitize_api_response(rows)
+        result = sanitize_api_response(rows)  # type: ignore[reportArgumentType]
         self.assertEqual(result[0]["password"], "***")
         self.assertEqual(result[0]["name"], "test")
         self.assertEqual(result[0]["profile"], "default")
 
     def test_no_sensitive_fields_unchanged(self):
         rows = [{"name": "test", "uptime": "1d"}]
-        result = sanitize_api_response(rows)
+        result = sanitize_api_response(rows)  # type: ignore[reportArgumentType]
         self.assertEqual(result, rows)
 
 
@@ -257,7 +257,7 @@ class TestFormatHotspotStats(unittest.TestCase):
 
     def test_valid_stats(self):
         stats = {"total_users": 10, "active_users": 5, "inactive_users": 5, "total_bytes": 1000000}
-        result = format_hotspot_stats(stats, "Router1")
+        result = format_hotspot_stats(stats, "Router1")  # type: ignore[reportArgumentType]
         self.assertIn("Router1", result)
         self.assertIn("10", result)
         self.assertIn("5", result)
@@ -270,7 +270,7 @@ class TestFormatUsermanStats(unittest.TestCase):
 
     def test_valid_stats(self):
         stats = {"total_users": 20, "enabled_users": 15, "disabled_users": 5}
-        result = format_userman_stats(stats, "Router1")
+        result = format_userman_stats(stats, "Router1")  # type: ignore[reportArgumentType]
         self.assertIn("Router1", result)
         self.assertIn("20", result)
         self.assertIn("15", result)
@@ -300,7 +300,7 @@ class TestFormatHotspotUsageReport(unittest.TestCase):
                 {"name": "heavy1", "total_str": "2.00 GB", "percent": 40.0},
             ],
         }
-        result = format_hotspot_usage_report(report, "Router1")
+        result = format_hotspot_usage_report(report, "Router1")  # type: ignore[reportArgumentType]
         self.assertIn("100", result)
         self.assertIn("40", result)
         self.assertIn("heavy1", result)
@@ -312,7 +312,7 @@ class TestFormatTrendChart(unittest.TestCase):
 
     def test_single_snapshot(self):
         snapshots = [{"snapshot_date": "2026-07-30", "active_users": 50}]
-        result = format_trend_chart(snapshots)
+        result = format_trend_chart(snapshots)  # type: ignore[reportArgumentType]
         self.assertIn("07-30", result)
 
     def test_multiple_snapshots(self):
@@ -321,7 +321,7 @@ class TestFormatTrendChart(unittest.TestCase):
             {"snapshot_date": "2026-07-29", "active_users": 50},
             {"snapshot_date": "2026-07-30", "active_users": 30},
         ]
-        result = format_trend_chart(snapshots)
+        result = format_trend_chart(snapshots)  # type: ignore[reportArgumentType]
         self.assertIn("07-28", result)
         self.assertIn("07-29", result)
         self.assertIn("07-30", result)
@@ -332,25 +332,25 @@ class TestFormatTrendChart(unittest.TestCase):
 class TestFormatVsYesterday(unittest.TestCase):
     def test_no_yesterday_returns_empty(self):
         current = {"active_users": 30}
-        self.assertEqual(format_vs_yesterday(current, None), "")
+        self.assertEqual(format_vs_yesterday(current, None), "")  # type: ignore[reportArgumentType]
 
     def test_positive_diff(self):
         current = {"active_users": 30}
         yesterday = {"active_users": 25}
-        result = format_vs_yesterday(current, yesterday)
+        result = format_vs_yesterday(current, yesterday)  # type: ignore[reportArgumentType]
         self.assertIn("↑", result)
         self.assertIn("5", result)
 
     def test_negative_diff(self):
         current = {"active_users": 20}
         yesterday = {"active_users": 25}
-        result = format_vs_yesterday(current, yesterday)
+        result = format_vs_yesterday(current, yesterday)  # type: ignore[reportArgumentType]
         self.assertIn("↓", result)
         self.assertIn("5", result)
 
     def test_zero_diff(self):
         current = {"active_users": 25}
         yesterday = {"active_users": 25}
-        result = format_vs_yesterday(current, yesterday)
+        result = format_vs_yesterday(current, yesterday)  # type: ignore[reportArgumentType]
         self.assertIn("↔", result)
         self.assertIn("0", result)

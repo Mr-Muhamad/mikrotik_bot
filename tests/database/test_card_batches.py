@@ -28,7 +28,7 @@ def test_save_and_get_card_batch_roundtrip():
         batch_type="hotspot",
         profile="10GB",
         comment_prefix="t",
-        cards=serialize_cards(SAMPLE_CARDS),
+        cards=serialize_cards(SAMPLE_CARDS),  # type: ignore[reportArgumentType]
         created_by=724730774,
     )
     assert isinstance(batch_id, int) and batch_id > 0
@@ -41,13 +41,13 @@ def test_save_and_get_card_batch_roundtrip():
     assert batch["created_by"] == 724730774
     # cards are decrypted and returned as list of dicts
     assert isinstance(batch["cards"], list)
-    assert batch["cards"][0]["username"] == "u1"
+    assert batch["cards"][0]["username"] == "u1"  # type: ignore[reportArgumentType]
     assert "cards_json" not in batch
 
 
 def test_list_card_batches_filters_by_router():
-    save_card_batch("discovered_1", "a", "hotspot", cards=serialize_cards(SAMPLE_CARDS))
-    save_card_batch("discovered_2", "b", "userman", cards=serialize_cards(SAMPLE_CARDS))
+    save_card_batch("discovered_1", "a", "hotspot", cards=serialize_cards(SAMPLE_CARDS))  # type: ignore[reportArgumentType]
+    save_card_batch("discovered_2", "b", "userman", cards=serialize_cards(SAMPLE_CARDS))  # type: ignore[reportArgumentType]
 
     r1 = list_card_batches("discovered_1")
     assert len(r1) >= 1
@@ -57,9 +57,9 @@ def test_list_card_batches_filters_by_router():
 
 
 def test_delete_card_batch():
-    bid = save_card_batch("discovered_1", "del", "hotspot", cards=serialize_cards(SAMPLE_CARDS))
-    assert delete_card_batch(bid) == 1
-    assert get_card_batch(bid) is None
+    bid = save_card_batch("discovered_1", "del", "hotspot", cards=serialize_cards(SAMPLE_CARDS))  # type: ignore[reportArgumentType]
+    assert delete_card_batch(bid) == 1  # type: ignore[reportArgumentType]
+    assert get_card_batch(bid) is None  # type: ignore[reportArgumentType]
 
 
 def test_serialize_deserialize_roundtrip():

@@ -7,23 +7,23 @@ import pytest
 from config import ADMIN_IDS
 from utils.admin_decorator import (
     INSUFFICIENT_ROLE_MSG,
-    _get_rate_limit,
-    _is_group_chat,
-    _rate_limit_data,
+    _get_rate_limit,  # type: ignore[reportPrivateUsage]
+    _is_group_chat,  # type: ignore[reportPrivateUsage]
+    _rate_limit_data,  # type: ignore[reportPrivateUsage]
     require_role,
     reset_rate_limit,
 )
 
 
 @pytest.fixture(autouse=True)
-def _clear_rate_limit():
+def _clear_rate_limit():  # type: ignore[reportUnusedFunction]
     _rate_limit_data.clear()
     _rate_limit_data["_test_enforce_rate_limit"] = True
     yield
     _rate_limit_data.clear()
 
 
-def _update(user_id=100, has_message=True, has_callback=False, chat_type="private"):
+def _update(user_id=100, has_message=True, has_callback=False, chat_type="private"):  # type: ignore[reportMissingParameterType]
     u = MagicMock()
     u.effective_user = MagicMock(id=user_id)
     u.message = MagicMock() if has_message else None
@@ -109,7 +109,7 @@ class TestRequireRole:
         admin_id = next(iter(ADMIN_IDS))
 
         @require_role("admin")
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         u = _update(user_id=admin_id)
@@ -119,7 +119,7 @@ class TestRequireRole:
     @pytest.mark.asyncio
     async def test_group_chat_returns_none(self):
         @require_role("viewer")
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         u = _update(chat_type="group")
@@ -129,7 +129,7 @@ class TestRequireRole:
     @pytest.mark.asyncio
     async def test_no_user_returns_none(self):
         @require_role("viewer")
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         u = MagicMock()
@@ -140,7 +140,7 @@ class TestRequireRole:
     @pytest.mark.asyncio
     async def test_unauthorized_user_blocked(self):
         @require_role("viewer")
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         u = _update(user_id=999999)
@@ -152,7 +152,7 @@ class TestRequireRole:
     @pytest.mark.asyncio
     async def test_insufficient_role_blocked(self):
         @require_role("admin")
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         u = _update(user_id=999999)
@@ -164,7 +164,7 @@ class TestRequireRole:
     @pytest.mark.asyncio
     async def test_sufficient_role_passes(self):
         @require_role("operator")
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         u = _update(user_id=999999)
@@ -175,7 +175,7 @@ class TestRequireRole:
     @pytest.mark.asyncio
     async def test_no_role_defaults_to_admin(self):
         @require_role("admin")
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
         u = _update(user_id=999999)

@@ -5,7 +5,7 @@ import io
 import openpyxl
 
 
-def _usage_rows(count=1):
+def _usage_rows(count=1):  # type: ignore[reportMissingParameterType]
     return [
         {
             "name": f"user{i}",
@@ -22,7 +22,7 @@ def _usage_rows(count=1):
     ]
 
 
-def _sales_rows(count=1):
+def _sales_rows(count=1):  # type: ignore[reportMissingParameterType]
     return [
         {
             "id": str(i),
@@ -40,7 +40,7 @@ class TestBuildUsageExcelReport:
     def test_returns_valid_xlsx_bytes(self):
         from core.reports_excel import build_usage_excel_report
 
-        result = build_usage_excel_report({"rows": _usage_rows(1)})
+        result = build_usage_excel_report({"rows": _usage_rows(1)})  # type: ignore[reportArgumentType]
         assert isinstance(result, bytes)
         assert len(result) > 100
         wb = openpyxl.load_workbook(filename=io.BytesIO(result))
@@ -51,7 +51,7 @@ class TestBuildUsageExcelReport:
     def test_empty_rows_returns_valid_xlsx(self):
         from core.reports_excel import build_usage_excel_report
 
-        result = build_usage_excel_report({"rows": []})
+        result = build_usage_excel_report({"rows": []})  # type: ignore[reportArgumentType]
         assert isinstance(result, bytes)
         wb = openpyxl.load_workbook(filename=io.BytesIO(result))
         assert wb.active is not None
@@ -66,7 +66,7 @@ class TestBuildUsageExcelReport:
         from core.reports_excel import build_usage_excel_report
 
         result = build_usage_excel_report(
-            {"rows": []}, title="تقرير خاص"
+            {"rows": []}, title="تقرير خاص"  # type: ignore[reportArgumentType]
         )
         assert isinstance(result, bytes)
         wb = openpyxl.load_workbook(filename=io.BytesIO(result))
@@ -76,7 +76,7 @@ class TestBuildUsageExcelReport:
         from core.reports_excel import build_usage_excel_report
 
         result = build_usage_excel_report(
-            {"rows": _usage_rows(5)}
+            {"rows": _usage_rows(5)}  # type: ignore[reportArgumentType]
         )
         assert isinstance(result, bytes)
 
@@ -85,7 +85,7 @@ class TestBuildSalesExcelReport:
     def test_returns_valid_xlsx_bytes(self):
         from core.reports_excel import build_sales_excel_report
 
-        result = build_sales_excel_report(_sales_rows(1))
+        result = build_sales_excel_report(_sales_rows(1))  # type: ignore[reportArgumentType]
         assert isinstance(result, bytes)
         wb = openpyxl.load_workbook(
             filename=io.BytesIO(result)
@@ -113,17 +113,17 @@ class TestBuildSalesExcelReport:
     def test_multiple_batches(self):
         from core.reports_excel import build_sales_excel_report
 
-        result = build_sales_excel_report(_sales_rows(4))
+        result = build_sales_excel_report(_sales_rows(4))  # type: ignore[reportArgumentType]
         assert isinstance(result, bytes)
 
 
 class TestAutoFitColumns:
     def test_columns_auto_adjusted(self):
-        from core.reports_excel import _auto_fit_columns
+        from core.reports_excel import _auto_fit_columns  # type: ignore[reportPrivateUsage]
 
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.append(["short"])
         ws.append(["a very long column header text"])
-        _auto_fit_columns(ws)
+        _auto_fit_columns(ws)  # type: ignore[reportArgumentType]
         assert ws.column_dimensions["A"].width >= 12

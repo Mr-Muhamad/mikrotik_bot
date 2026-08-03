@@ -17,10 +17,10 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 # ---------------------------------------------------------------------------
@@ -28,7 +28,7 @@ def _reset_rate_limit():
 # ---------------------------------------------------------------------------
 
 
-def _query(data="batch_regen:7"):
+def _query(data="batch_regen:7"):  # type: ignore[reportMissingParameterType]
     q = MagicMock()
     q.answer = AsyncMock()
     q.data = data
@@ -39,7 +39,7 @@ def _query(data="batch_regen:7"):
     return q
 
 
-def _update(callback_data=None, text=""):
+def _update(callback_data=None, text=""):  # type: ignore[reportMissingParameterType]
     u = MagicMock()
     u.effective_user = MagicMock(id=ADMIN_ID)
     u.effective_chat = MagicMock(id=ADMIN_ID)
@@ -55,7 +55,7 @@ def _update(callback_data=None, text=""):
     return u
 
 
-def _ctx(user_data=None):
+def _ctx(user_data=None):  # type: ignore[reportMissingParameterType]
     c = MagicMock()
     c.user_data = user_data if user_data is not None else {}
     c.bot = MagicMock()
@@ -99,13 +99,13 @@ USERMAN_BATCH = {
 # ===================================================================
 class TestBatchLabel:
     def test_hotspot_type(self):
-        assert "هوت سبوت" in batch_module._batch_label(SAMPLE_BATCH)
+        assert "هوت سبوت" in batch_module._batch_label(SAMPLE_BATCH)  # type: ignore[reportPrivateUsage]
 
     def test_userman_type(self):
-        assert "User Manager" in batch_module._batch_label(USERMAN_BATCH)
+        assert "User Manager" in batch_module._batch_label(USERMAN_BATCH)  # type: ignore[reportPrivateUsage]
 
     def test_missing_keys_uses_defaults(self):
-        label = batch_module._batch_label({"id": 1, "name": "X"})
+        label = batch_module._batch_label({"id": 1, "name": "X"})  # type: ignore[reportPrivateUsage]
         assert "#1" in label
         assert "X" in label
         assert "0 كارت" in label
@@ -118,14 +118,14 @@ class TestDump:
     def test_returns_json_string(self):
         import json
 
-        result = batch_module._dump([{"a": 1}])
+        result = batch_module._dump([{"a": 1}])  # type: ignore[reportPrivateUsage]
         assert json.loads(result) == [{"a": 1}]
 
     def test_empty_list(self):
-        assert batch_module._dump([]) == "[]"
+        assert batch_module._dump([]) == "[]"  # type: ignore[reportPrivateUsage]
 
     def test_unicode(self):
-        result = batch_module._dump([{"name": "عربي"}])
+        result = batch_module._dump([{"name": "عربي"}])  # type: ignore[reportPrivateUsage]
         assert "عربي" in result
 
 
@@ -188,7 +188,7 @@ class TestShowBatchesPage:
     async def test_no_router_key(self):
         u = _update(callback_data="batch_page:0")
         c = _ctx({})
-        result = await batch_module._show_batches_page(u, c, page=0)
+        result = await batch_module._show_batches_page(u, c, page=0)  # type: ignore[reportPrivateUsage]
         assert result is None
 
     @pytest.mark.asyncio
@@ -200,7 +200,7 @@ class TestShowBatchesPage:
             patch.object(batch_module, "run_blocking", new=AsyncMock(side_effect=[0, []])),
             patch.object(batch_module, "send_step", new=mock_send),
         ):
-            await batch_module._show_batches_page(u, c, page=0)
+            await batch_module._show_batches_page(u, c, page=0)  # type: ignore[reportPrivateUsage]
         mock_send.assert_awaited_once()
         text = mock_send.call_args.args[2]
         assert "لا توجد" in text
@@ -217,7 +217,7 @@ class TestShowBatchesPage:
             patch.object(batch_module, "send_step", new=mock_send),
             patch("bot.handlers.batch.get_batches_keyboard", return_value=MagicMock()),
         ):
-            await batch_module._show_batches_page(u, c, page=0)
+            await batch_module._show_batches_page(u, c, page=0)  # type: ignore[reportPrivateUsage]
         mock_send.assert_awaited_once()
         text = mock_send.call_args.args[2]
         assert "الدفعات" in text
@@ -232,7 +232,7 @@ class TestShowBatchesPage:
             ),
             patch("bot.handlers.batch.get_batches_keyboard", return_value=MagicMock()),
         ):
-            await batch_module._show_batches_page(u, c, page=1)
+            await batch_module._show_batches_page(u, c, page=1)  # type: ignore[reportPrivateUsage]
         u.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -246,7 +246,7 @@ class TestShowBatchesPage:
             ),
             patch.object(batch_module, "send_step", new=mock_send),
         ):
-            await batch_module._show_batches_page(u, c, page=0)
+            await batch_module._show_batches_page(u, c, page=0)  # type: ignore[reportPrivateUsage]
         mock_send.assert_awaited_once()
         text = mock_send.call_args.args[2]
         assert "فشل" in text
@@ -358,31 +358,31 @@ class TestBatchSelect:
 # ===================================================================
 class TestFormatBatchText:
     def test_hotspot_batch(self):
-        text = batch_module._format_batch_text(SAMPLE_BATCH)
+        text = batch_module._format_batch_text(SAMPLE_BATCH)  # type: ignore[reportPrivateUsage]
         assert "هوت سبوت" in text
         assert "TestBatch" in text
         assert "#5" in text
 
     def test_userman_batch(self):
-        text = batch_module._format_batch_text(USERMAN_BATCH)
+        text = batch_module._format_batch_text(USERMAN_BATCH)  # type: ignore[reportPrivateUsage]
         assert "User Manager" in text
         assert "UMBatch" in text
 
     def test_with_sold_at(self):
-        text = batch_module._format_batch_text(SAMPLE_BATCH)
+        text = batch_module._format_batch_text(SAMPLE_BATCH)  # type: ignore[reportPrivateUsage]
         assert "2026-01-16" in text
 
     def test_with_customer(self):
-        text = batch_module._format_batch_text(SAMPLE_BATCH)
+        text = batch_module._format_batch_text(SAMPLE_BATCH)  # type: ignore[reportPrivateUsage]
         assert "Alice" in text
 
     def test_created_by(self):
-        text = batch_module._format_batch_text(SAMPLE_BATCH)
+        text = batch_module._format_batch_text(SAMPLE_BATCH)  # type: ignore[reportPrivateUsage]
         assert "admin" in text
 
     def test_missing_optional_fields(self):
         minimal = {"id": 1, "name": "X", "cards": [], "batch_type": "hotspot"}
-        text = batch_module._format_batch_text(minimal)
+        text = batch_module._format_batch_text(minimal)  # type: ignore[reportPrivateUsage]
         assert "#1" in text
         assert "—" in text
 
@@ -393,7 +393,7 @@ class TestFormatBatchText:
             "batch_type": "hotspot",
             "cards": [{"limit_bytes": "not_a_number"}, {"limit_bytes": None}],
         }
-        text = batch_module._format_batch_text(batch)
+        text = batch_module._format_batch_text(batch)  # type: ignore[reportPrivateUsage]
         assert "#2" in text
 
     def test_no_customer_name(self):
@@ -404,7 +404,7 @@ class TestFormatBatchText:
             "cards": [],
             "customer_name": "",
         }
-        text = batch_module._format_batch_text(batch)
+        text = batch_module._format_batch_text(batch)  # type: ignore[reportPrivateUsage]
         assert "العميل" not in text
 
     def test_no_sold_at(self):
@@ -415,12 +415,12 @@ class TestFormatBatchText:
             "cards": [],
             "sold_at": None,
         }
-        text = batch_module._format_batch_text(batch)
+        text = batch_module._format_batch_text(batch)  # type: ignore[reportPrivateUsage]
         assert "البيع" not in text
 
     def test_default_payment_status(self):
         batch = {"id": 7, "name": "X", "batch_type": "hotspot", "cards": []}
-        text = batch_module._format_batch_text(batch)
+        text = batch_module._format_batch_text(batch)  # type: ignore[reportPrivateUsage]
         assert "غير مدفوع" in text
 
 
@@ -718,7 +718,7 @@ class TestShareCardStart:
 # TestShareCardSend
 # ===================================================================
 class TestShareCardSend:
-    def _make_share_ctx(self, user_data=None):
+    def _make_share_ctx(self, user_data=None):  # type: ignore[reportMissingParameterType]
         c = _ctx(user_data or {"share_batch_id": 123})
         return c
 

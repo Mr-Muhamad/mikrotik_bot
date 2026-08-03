@@ -11,7 +11,7 @@ from utils import admin_decorator
 P = "bot.handlers.router_flows.reboot"
 
 
-async def _call_through(fn, *args, **kwargs):
+async def _call_through(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
     result = fn(*args, **kwargs)
     if hasattr(result, "__await__"):
         return await result
@@ -45,12 +45,12 @@ def _start_patches():
 
 
 @pytest.fixture(autouse=True)
-def _all_patches():
-    admin_decorator._rate_limit_data.clear()
+def _all_patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     stack = _start_patches()
     yield
     stack.close()
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestRebootStart:

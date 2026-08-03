@@ -15,7 +15,7 @@ from bot.handlers.router_flows import manual_add
 
 
 def test_confirm_keyboard_uses_builder_not_handler():
-    kb = manual_add._confirm_keyboard()
+    kb = manual_add._confirm_keyboard()  # type: ignore[reportPrivateUsage]
     buttons = kb.inline_keyboard[0]
     assert [b.callback_data for b in buttons] == [
         build_manual_add_confirm(True),

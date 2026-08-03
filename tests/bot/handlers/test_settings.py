@@ -13,14 +13,14 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture(autouse=True)
-def _mock_db():
+def _mock_db():  # type: ignore[reportUnusedFunction]
     with (
         patch("bot.router_selector.get_user_session", return_value={}),
         patch("bot.router_selector.save_user_session"),
@@ -28,7 +28,7 @@ def _mock_db():
         yield
 
 
-def _query_update(callback_data):
+def _query_update(callback_data):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=ADMIN_ID)
     update.effective_chat = MagicMock(id=1)
@@ -41,7 +41,7 @@ def _query_update(callback_data):
     return update
 
 
-def _text_update(text):
+def _text_update(text):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=ADMIN_ID)
     update.effective_chat = MagicMock(id=1)
@@ -50,7 +50,7 @@ def _text_update(text):
     return update
 
 
-def _ctx(user_data=None):
+def _ctx(user_data=None):  # type: ignore[reportMissingParameterType]
     ctx = MagicMock()
     ctx.user_data = user_data if user_data is not None else {}
     ctx.bot = MagicMock()

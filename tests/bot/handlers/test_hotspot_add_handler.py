@@ -49,7 +49,7 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _patch_router(monkeypatch):
+def _patch_router(monkeypatch):  # type: ignore[reportUnusedFunction, reportMissingParameterType]
     """Patch router_selector AND clear admin_only rate limit cache.
 
     Patches both the canonical module path (used by require_router's
@@ -69,7 +69,7 @@ def _patch_router(monkeypatch):
     # Patch the local import in bot.handlers.hotspot_add
     monkeypatch.setattr("bot.handlers.hotspot_add.get_selected_router", router_lookup)
     # Clear rate-limit cache so consecutive tests aren't blocked
-    from utils.admin_decorator import _rate_limit_data
+    from utils.admin_decorator import _rate_limit_data  # type: ignore[reportPrivateUsage]
 
     _rate_limit_data.clear()
 
@@ -299,7 +299,7 @@ class TestHotspotAddComment:
         mock_reply.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_no_router_selected_ends(self, monkeypatch):
+    async def test_no_router_selected_ends(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         # Override fixture: no router for this test
         monkeypatch.setattr(
             "bot.router_selector.get_selected_router",
@@ -484,7 +484,7 @@ class TestUptimeValue:
 
 class TestSkipComment:
     @pytest.mark.asyncio
-    async def test_skip_with_no_router(self, monkeypatch):
+    async def test_skip_with_no_router(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         # Override fixture: make get_selected_router return None for this test
         monkeypatch.setattr(
             "bot.router_selector.get_selected_router",

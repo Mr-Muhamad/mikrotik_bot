@@ -72,5 +72,5 @@ class CallbackQueryMock:
         self.message.chat_id = from_user_id
         self.edit_message_text = AsyncMock()
 
-    async def answer(self, text=None, show_alert=False):
+    async def answer(self, text=None, show_alert=False):  # type: ignore[reportMissingParameterType]
         pass

@@ -15,8 +15,8 @@ P = "bot.handlers.menus"
 
 
 @pytest.fixture(autouse=True)
-def _all_patches():
-    admin_decorator._rate_limit_data.clear()
+def _all_patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     with ExitStack() as stack:
         stack.enter_context(patch("utils.admin_decorator.ADMIN_IDS", [724730774]))
         stack.enter_context(patch(f"{P}.safe_answer_callback", new_callable=AsyncMock))
@@ -28,7 +28,7 @@ def _all_patches():
         stack.enter_context(patch(f"{P}.get_router_part", new_callable=AsyncMock))
         stack.enter_context(patch(f"{P}._get_router_system_part", new_callable=AsyncMock))
         yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestMainMenu:

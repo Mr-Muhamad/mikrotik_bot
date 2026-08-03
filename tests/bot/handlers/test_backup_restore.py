@@ -13,14 +13,14 @@ END = ConversationHandler.END
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture(autouse=True)
-def _bypass_decorators():
+def _bypass_decorators():  # type: ignore[reportUnusedFunction]
     for attr in [
         "backup_restore_start",
         "backup_restore_select",
@@ -66,7 +66,7 @@ def _msg_update():
     return update
 
 
-def _ctx(**extra):
+def _ctx(**extra):  # type: ignore[reportMissingParameterType]
     ctx = MagicMock()
     ctx.user_data = {}
     ctx.bot_data = {}
@@ -528,7 +528,7 @@ class TestFormatRestoreSummary:
             "users_restored": 20,
             "skipped": {"profiles": 1, "users": 3},
         }
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert "5" in summary
         assert "20" in summary
         assert "4" in summary
@@ -539,7 +539,7 @@ class TestFormatRestoreSummary:
             "users_restored": 0,
             "skipped": {"profiles": 0, "users": 0},
         }
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert "3" in summary
 
     def test_only_users(self):
@@ -548,7 +548,7 @@ class TestFormatRestoreSummary:
             "users_restored": 10,
             "skipped": {"profiles": 0, "users": 0},
         }
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert "10" in summary
 
     def test_only_skipped(self):
@@ -557,17 +557,17 @@ class TestFormatRestoreSummary:
             "users_restored": 0,
             "skipped": {"profiles": 2, "users": 5},
         }
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert "7" in summary
 
     def test_empty_result(self):
         result = {}
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert summary is not None and len(summary) > 0
 
     def test_no_skipped_field(self):
         result = {"profiles_restored": 1, "users_restored": 1}
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert "1" in summary
 
     def test_skipped_none_values(self):
@@ -576,7 +576,7 @@ class TestFormatRestoreSummary:
             "users_restored": 0,
             "skipped": {"profiles": 0, "users": 0},
         }
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert summary is not None and len(summary) > 0
 
     def test_only_skipped_profiles(self):
@@ -585,7 +585,7 @@ class TestFormatRestoreSummary:
             "users_restored": 0,
             "skipped": {"profiles": 3, "users": 0},
         }
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert "3" in summary
 
     def test_only_skipped_users(self):
@@ -594,7 +594,7 @@ class TestFormatRestoreSummary:
             "users_restored": 0,
             "skipped": {"profiles": 0, "users": 2},
         }
-        summary = backup_restore_module._format_restore_summary(result)
+        summary = backup_restore_module._format_restore_summary(result)  # type: ignore[reportPrivateUsage]
         assert "2" in summary
 
 

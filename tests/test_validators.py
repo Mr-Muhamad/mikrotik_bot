@@ -99,7 +99,7 @@ class TestValidateMac(unittest.TestCase):
         self.assertEqual(value, "AA:BB:CC:DD:EE:FF")
 
     def test_dot_form_normalized(self):
-        valid, value = validate_mac("AABBCC.DDEEFF".replace(".", ""))
+        valid, value = validate_mac("AABBCC.DDEEFF".replace(".", ""))  # type: ignore[reportUnusedVariable]
         self.assertTrue(valid)
 
     def test_lowercase_normalized(self):
@@ -108,7 +108,7 @@ class TestValidateMac(unittest.TestCase):
         self.assertEqual(value, "AA:BB:CC:DD:EE:FF")
 
     def test_empty_rejected(self):
-        valid, msg = validate_mac("")
+        valid, msg = validate_mac("")  # type: ignore[reportUnusedVariable]
         self.assertFalse(valid)
 
     def test_too_short_rejected(self):

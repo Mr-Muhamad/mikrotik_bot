@@ -16,7 +16,7 @@ def _ftp_info():
 
 class TestRemovePartialFile:
     def test_removes_existing_file(self):
-        from core.backup.ftp import _remove_partial_file
+        from core.backup.ftp import _remove_partial_file  # type: ignore[reportPrivateUsage]
 
         with tempfile.NamedTemporaryFile(delete=False) as f:
             path = f.name
@@ -28,12 +28,12 @@ class TestRemovePartialFile:
                 os.unlink(path)
 
     def test_noop_when_file_missing(self):
-        from core.backup.ftp import _remove_partial_file
+        from core.backup.ftp import _remove_partial_file  # type: ignore[reportPrivateUsage]
 
         _remove_partial_file(os.path.join(tempfile.gettempdir(), "does-not-exist.backup"))
 
     def test_swallows_os_error(self):
-        from core.backup.ftp import _remove_partial_file
+        from core.backup.ftp import _remove_partial_file  # type: ignore[reportPrivateUsage]
 
         with (
             patch("core.backup.ftp.os.path.exists", return_value=True),
@@ -44,7 +44,7 @@ class TestRemovePartialFile:
         mock_debug.assert_called()
 
     def test_does_not_remove_when_path_missing(self):
-        from core.backup.ftp import _remove_partial_file
+        from core.backup.ftp import _remove_partial_file  # type: ignore[reportPrivateUsage]
 
         with (
             patch("core.backup.ftp.os.path.exists", return_value=False),
@@ -57,13 +57,13 @@ class TestRemovePartialFile:
 class TestDownloadPartialCleanup:
     @patch("core.backup.ftp.ftplib.FTP")
     @patch("core.backup.ftp.mikrotik_api")
-    def test_failed_file_removes_partial(self, mock_api, MockFTP):
+    def test_failed_file_removes_partial(self, mock_api, MockFTP):  # type: ignore[reportMissingParameterType]
         from core.backup.ftp import download_files_via_ftp
 
         mock_api.get_router_info.return_value = _ftp_info()
         ftp_inst = MockFTP.return_value
 
-        def fake_retrbinary(cmd, cb):
+        def fake_retrbinary(cmd, cb):  # type: ignore[reportMissingParameterType]
             if "bad" in cmd:
                 raise ftplib.Error("transfer aborted")
             cb(b"data")
@@ -81,7 +81,7 @@ class TestDownloadPartialCleanup:
 
     @patch("core.backup.ftp.ftplib.FTP")
     @patch("core.backup.ftp.mikrotik_api")
-    def test_all_failed_files_removed(self, mock_api, MockFTP):
+    def test_all_failed_files_removed(self, mock_api, MockFTP):  # type: ignore[reportMissingParameterType]
         from core.backup.ftp import download_files_via_ftp
 
         mock_api.get_router_info.return_value = _ftp_info()
@@ -101,7 +101,7 @@ class TestDownloadPartialCleanup:
 class TestSanitizedErrors:
     @patch("core.backup.ftp.logger")
     @patch("core.backup.ftp.mikrotik_api")
-    def test_credentials_masked_in_warning(self, mock_api, mock_logger):
+    def test_credentials_masked_in_warning(self, mock_api, mock_logger):  # type: ignore[reportMissingParameterType]
         from core.backup.ftp import get_router_ftp_info
 
         mock_api.get_router_info.side_effect = ConnectionError(
@@ -116,7 +116,7 @@ class TestSanitizedErrors:
 
     @patch("core.backup.ftp.logger")
     @patch("core.backup.ftp.mikrotik_api")
-    def test_unexpected_error_masked_in_warning(self, mock_api, mock_logger):
+    def test_unexpected_error_masked_in_warning(self, mock_api, mock_logger):  # type: ignore[reportMissingParameterType]
         from core.backup.ftp import get_router_ftp_info
 
         mock_api.get_router_info.side_effect = RuntimeError(

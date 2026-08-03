@@ -33,18 +33,18 @@ def _start_patches():
 
 
 @pytest.fixture(autouse=True)
-def _all_patches():
-    admin_decorator._rate_limit_data.clear()
+def _all_patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     stack = _start_patches()
     yield
     stack.close()
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestStart:
     @pytest.mark.asyncio
     @patch(f"{P}.send_and_track", new_callable=AsyncMock)
-    async def test_no_router_shows_welcome(self, mock_send):
+    async def test_no_router_shows_welcome(self, mock_send):  # type: ignore[reportMissingParameterType]
         update = make_mock_update()
         context = make_mock_context()
         from bot.handlers.commands_basic import start
@@ -59,7 +59,7 @@ class TestStart:
     @patch("bot.handlers.commands_basic._get_router_part", new_callable=AsyncMock)
     @patch("bot.handlers.commands_basic._get_router_system_part", new_callable=AsyncMock)
     @patch("bot.router_selector.fast_reachability_check", new_callable=AsyncMock)
-    async def test_with_router_reachable(self, mock_fast, mock_sys, mock_rp, mock_send, _rp):
+    async def test_with_router_reachable(self, mock_fast, mock_sys, mock_rp, mock_send, _rp):  # type: ignore[reportMissingParameterType]
         mock_fast.return_value = True
         update = make_mock_update()
         context = make_mock_context()
@@ -72,7 +72,7 @@ class TestStart:
     @patch(f"{P}.get_selected_router", return_value="discovered_1")
     @patch(f"{P}.send_and_track", new_callable=AsyncMock)
     @patch("bot.router_selector.fast_reachability_check", new_callable=AsyncMock)
-    async def test_with_router_offline(self, mock_fast, mock_send, _rp):
+    async def test_with_router_offline(self, mock_fast, mock_send, _rp):  # type: ignore[reportMissingParameterType]
         mock_fast.return_value = False
         update = make_mock_update()
         context = make_mock_context()
@@ -98,7 +98,7 @@ class TestCancel:
     @patch(f"{P}.get_selected_router", return_value="discovered_1")
     @patch("bot.handlers.commands_basic._get_router_part", new_callable=AsyncMock)
     @patch("bot.handlers.commands_basic._get_router_system_part", new_callable=AsyncMock)
-    async def test_callback_with_router(self, _rs, _rp, _rr):
+    async def test_callback_with_router(self, _rs, _rp, _rr):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="cancel")
         context = make_mock_context()
         from bot.handlers.commands_basic import cancel
@@ -108,7 +108,7 @@ class TestCancel:
 
     @pytest.mark.asyncio
     @patch(f"{P}.get_selected_router", return_value=None)
-    async def test_callback_no_router(self, _rr):
+    async def test_callback_no_router(self, _rr):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="cancel")
         context = make_mock_context()
         from bot.handlers.commands_basic import cancel
@@ -120,7 +120,7 @@ class TestCancel:
     @patch(f"{P}.get_selected_router", return_value="discovered_1")
     @patch("bot.handlers.commands_basic._get_router_part", new_callable=AsyncMock)
     @patch("bot.handlers.commands_basic._get_router_system_part", new_callable=AsyncMock)
-    async def test_message_with_router(self, _rs, _rp, _rr):
+    async def test_message_with_router(self, _rs, _rp, _rr):  # type: ignore[reportMissingParameterType]
         update = make_mock_update()
         context = make_mock_context()
         context.user_data["last_msg"] = 42
@@ -131,7 +131,7 @@ class TestCancel:
 
     @pytest.mark.asyncio
     @patch(f"{P}.get_selected_router", return_value=None)
-    async def test_message_no_router(self, _rr):
+    async def test_message_no_router(self, _rr):  # type: ignore[reportMissingParameterType]
         update = make_mock_update()
         context = make_mock_context()
         from bot.handlers.commands_basic import cancel
@@ -142,7 +142,7 @@ class TestCancel:
     @pytest.mark.asyncio
     @patch(f"{P}._resolve_nav_target")
     @patch(f"{P}.get_selected_router", return_value=None)
-    async def test_with_nav_target(self, _rr, mock_resolve):
+    async def test_with_nav_target(self, _rr, mock_resolve):  # type: ignore[reportMissingParameterType]
         mock_handler = AsyncMock()
         mock_resolve.return_value = mock_handler
         update = make_mock_update(callback_data="cancel")
@@ -168,7 +168,7 @@ class TestErrorHandler:
 
     @pytest.mark.asyncio
     @patch(f"{P}.send_and_track", new_callable=AsyncMock)
-    async def test_critical_error_sends_message(self, mock_send):
+    async def test_critical_error_sends_message(self, mock_send):  # type: ignore[reportMissingParameterType]
         update = make_mock_update()
         context = make_mock_context()
         context.error = Exception("something broke")
@@ -185,7 +185,7 @@ class TestErrorHandler:
             with patch("utils.error_response.sanitize_error_text", return_value="clean text"):
                 from bot.handlers.commands_basic import error_handler
 
-                await error_handler(None, context)
+                await error_handler(None, context)  # type: ignore[reportArgumentType]
         context.bot.send_message.assert_called_once()
 
     @pytest.mark.asyncio
@@ -197,7 +197,7 @@ class TestErrorHandler:
             with patch("utils.error_response.sanitize_error_text", return_value="clean text"):
                 from bot.handlers.commands_basic import error_handler
 
-                await error_handler(None, context)
+                await error_handler(None, context)  # type: ignore[reportArgumentType]
 
     @pytest.mark.asyncio
     async def test_no_error_attribute(self):
@@ -222,7 +222,7 @@ class TestErrorHandler:
 class TestHelpCommand:
     @pytest.mark.asyncio
     @patch(f"{P}.send_and_track", new_callable=AsyncMock)
-    async def test_sends_help(self, mock_send):
+    async def test_sends_help(self, mock_send):  # type: ignore[reportMissingParameterType]
         update = make_mock_update()
         context = make_mock_context()
         from bot.handlers.commands_basic import help_command
@@ -245,7 +245,7 @@ class TestCleanChat:
 class TestSyncCommands:
     @pytest.mark.asyncio
     @patch(f"{P}.set_bot_commands", new_callable=AsyncMock)
-    async def test_syncs_commands(self, mock_set):
+    async def test_syncs_commands(self, mock_set):  # type: ignore[reportMissingParameterType]
         update = make_mock_update()
         context = make_mock_context()
         context.application = MagicMock()
@@ -258,7 +258,7 @@ class TestSyncCommands:
 class TestMetricsCommand:
     @pytest.mark.asyncio
     @patch(f"{P}.mikrotik_api")
-    async def test_sends_metrics(self, mock_api):
+    async def test_sends_metrics(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.get_metrics.return_value = {
             "total_attempts": 100,
             "successful": 95,
@@ -276,7 +276,7 @@ class TestMetricsCommand:
 
     @pytest.mark.asyncio
     @patch(f"{P}.mikrotik_api")
-    async def test_metrics_psutil_import_error(self, mock_api):
+    async def test_metrics_psutil_import_error(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.get_metrics.return_value = {
             "total_attempts": 0,
             "successful": 0,

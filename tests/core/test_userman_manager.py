@@ -41,13 +41,13 @@ class TestApiProperty:
     def test_returns_injected_api(self):
         mock = MagicMock()
         mgr = UserManager(api=mock)
-        assert mgr._api is mock
+        assert mgr._api is mock  # type: ignore[reportPrivateUsage]
 
     def test_falls_back_to_singleton(self):
         mgr = UserManager(api=None)
         from core.mikrotik_api import mikrotik_api
 
-        assert mgr._api is mikrotik_api
+        assert mgr._api is mikrotik_api  # type: ignore[reportPrivateUsage]
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -61,8 +61,8 @@ class TestGetAllUsersCached:
         _v7_api(api)
         api.execute.return_value = [{"name": "u1"}]
 
-        r1 = mgr._get_all_users_cached(RK, V7)
-        r2 = mgr._get_all_users_cached(RK, V7)
+        r1 = mgr._get_all_users_cached(RK, V7)  # type: ignore[reportPrivateUsage]
+        r2 = mgr._get_all_users_cached(RK, V7)  # type: ignore[reportPrivateUsage]
 
         assert r1 == r2 == [{"name": "u1"}]
         assert api.execute.call_count == 1
@@ -72,8 +72,8 @@ class TestGetAllUsersCached:
         _v7_api(api)
         api.execute.return_value = [{"name": "u1"}]
 
-        mgr._get_all_users_cached("rk_a", V7)
-        mgr._get_all_users_cached("rk_b", V7)
+        mgr._get_all_users_cached("rk_a", V7)  # type: ignore[reportPrivateUsage]
+        mgr._get_all_users_cached("rk_b", V7)  # type: ignore[reportPrivateUsage]
 
         assert api.execute.call_count == 2
 
@@ -89,11 +89,11 @@ class TestInvalidateCache:
         _v7_api(api)
         api.execute.return_value = [{"name": "v1"}]
 
-        mgr._get_all_users_cached(RK, V7)
+        mgr._get_all_users_cached(RK, V7)  # type: ignore[reportPrivateUsage]
         mgr.invalidate_users_cache(RK)
         api.execute.return_value = [{"name": "v2"}]
 
-        result = mgr._get_all_users_cached(RK, V7)
+        result = mgr._get_all_users_cached(RK, V7)  # type: ignore[reportPrivateUsage]
         assert result == [{"name": "v2"}]
         assert api.execute.call_count == 2
 
@@ -104,10 +104,10 @@ class TestInvalidateCache:
 
 
 class TestCreateCards:
-    def _fake_execute(self, api, *, verify_user: str = "u", profile: str = "1M"):
+    def _fake_execute(self, api, *, verify_user: str = "u", profile: str = "1M"):  # type: ignore[reportMissingParameterType]
         """Side-effect that handles existing-users print, add, link, verify."""
 
-        def inner(rk, cmd, **kw):
+        def inner(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             if cmd.endswith("/user/print") and ".proplist" in kw:
                 proplist = kw[".proplist"]
                 if "name" in proplist and ".id" not in proplist:
@@ -174,7 +174,7 @@ class TestCreateCards:
 
         call_count = [0]
 
-        def side_effect(rk, cmd, **kw):
+        def side_effect(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             call_count[0] += 1
             if cmd.endswith("/user/print") and "name,username" in kw.get(
                 ".proplist", ""
@@ -201,7 +201,7 @@ class TestCreateCards:
 
         call_idx = [0]
 
-        def side_effect(rk, cmd, **kw):
+        def side_effect(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             call_idx[0] += 1
             if cmd.endswith("/user/print") and ".proplist" in kw:
                 proplist = kw[".proplist"]
@@ -258,13 +258,13 @@ class TestCreateUser:
         mgr, api = _make_manager()
         _v7_api(api)
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             if cmd.endswith("/user-profile/print"):
                 return [{"user": "u1", "profile": "1M"}]
             return None
 
         api.execute.side_effect = side
-        result = mgr._create_user(RK, "u1", "p1", "1M")
+        result = mgr._create_user(RK, "u1", "p1", "1M")  # type: ignore[reportPrivateUsage]
 
         calls = api.execute.call_args_list
         assert calls[0].args[1] == f"{V7}/user/add"
@@ -278,7 +278,7 @@ class TestCreateUser:
         _v7_api(api)
         api.execute.return_value = None
 
-        result = mgr._create_user(RK, "u1", "p1", "")
+        result = mgr._create_user(RK, "u1", "p1", "")  # type: ignore[reportPrivateUsage]
 
         assert api.execute.call_count == 1
         assert result["profile_linked"] is False
@@ -289,7 +289,7 @@ class TestCreateUser:
         _v6_api(api)
         api.execute.return_value = None
 
-        mgr._create_user(RK, "u1", "p1", "1M")
+        mgr._create_user(RK, "u1", "p1", "1M")  # type: ignore[reportPrivateUsage]
 
         calls = api.execute.call_args_list
         assert calls[0].args[1] == f"{V6}/user/add"
@@ -301,7 +301,7 @@ class TestCreateUser:
         _v6_api(api)
         api.execute.return_value = None
 
-        result = mgr._create_user(RK, "u1", "", "1M")
+        result = mgr._create_user(RK, "u1", "", "1M")  # type: ignore[reportPrivateUsage]
         add_call = api.execute.call_args_list[0]
         assert "password" not in add_call.kwargs
         assert result["password"] == ""
@@ -311,7 +311,7 @@ class TestCreateUser:
         _v7_api(api)
         api.execute.return_value = None
 
-        mgr._create_user(RK, "u1", "p1", "1M", comment="  test  ")
+        mgr._create_user(RK, "u1", "p1", "1M", comment="  test  ")  # type: ignore[reportPrivateUsage]
 
         add_call = api.execute.call_args_list[0]
         assert "comment" in add_call.kwargs
@@ -321,7 +321,7 @@ class TestCreateUser:
         _v7_api(api)
         api.execute.return_value = None
 
-        mgr._create_user(RK, "u1", "p1", "1M", caller_id="AA:BB")
+        mgr._create_user(RK, "u1", "p1", "1M", caller_id="AA:BB")  # type: ignore[reportPrivateUsage]
         add_call = api.execute.call_args_list[0]
         assert add_call.kwargs["caller-id"] == "AA:BB"
 
@@ -330,7 +330,7 @@ class TestCreateUser:
         _v7_api(api)
         api.execute.return_value = None
 
-        mgr._create_user(RK, "u1", "p1", "1M", comment="")
+        mgr._create_user(RK, "u1", "p1", "1M", comment="")  # type: ignore[reportPrivateUsage]
         add_call = api.execute.call_args_list[0]
         assert "comment" not in add_call.kwargs
 
@@ -339,7 +339,7 @@ class TestCreateUser:
         _v6_api(api)
         api.execute.return_value = None
 
-        mgr._create_user(RK, "u1", "p1", "1M", caller_id="")
+        mgr._create_user(RK, "u1", "p1", "1M", caller_id="")  # type: ignore[reportPrivateUsage]
         add_call = api.execute.call_args_list[0]
         assert "caller-id" not in add_call.kwargs
 
@@ -354,13 +354,13 @@ class TestAttachV7Profile:
         mgr, api = _make_manager()
         _v7_api(api)
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             if cmd.endswith("/user-profile/print"):
                 return [{"user": "u1", "profile": "1M"}]
             return None
 
         api.execute.side_effect = side
-        linked, err = mgr._attach_v7_profile(RK, V7, "u1", "1M")
+        linked, err = mgr._attach_v7_profile(RK, V7, "u1", "1M")  # type: ignore[reportPrivateUsage]
         assert linked is True
         assert err is None
 
@@ -369,7 +369,7 @@ class TestAttachV7Profile:
         _v7_api(api)
         api.execute.side_effect = Exception("connection lost")
 
-        linked, err = mgr._attach_v7_profile(RK, V7, "u1", "1M")
+        linked, err = mgr._attach_v7_profile(RK, V7, "u1", "1M")  # type: ignore[reportPrivateUsage]
         assert linked is False
         assert err is not None
         assert "connection lost" in err
@@ -380,13 +380,13 @@ class TestAttachV6Profile:
         mgr, api = _make_manager()
         _v6_api(api)
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             if cmd.endswith("/user-profile/print"):
                 return [{"user": "u1", "profile": "1M"}]
             return None
 
         api.execute.side_effect = side
-        linked, err = mgr._attach_v6_profile(RK, V6, "u1", "1M")
+        linked, err = mgr._attach_v6_profile(RK, V6, "u1", "1M")  # type: ignore[reportUnusedVariable, reportPrivateUsage]
         assert linked is True
 
     def test_api_exception(self):
@@ -394,7 +394,7 @@ class TestAttachV6Profile:
         _v6_api(api)
         api.execute.side_effect = Exception("fail")
 
-        linked, err = mgr._attach_v6_profile(RK, V6, "u1", "1M")
+        linked, err = mgr._attach_v6_profile(RK, V6, "u1", "1M")  # type: ignore[reportPrivateUsage]
         assert linked is False
         assert err is not None
         assert "fail" in err
@@ -409,20 +409,20 @@ class TestVerifyProfileLink:
     def test_matching_user_field(self):
         mgr, api = _make_manager()
         api.execute.return_value = [{"user": "u1", "profile": "1M"}]
-        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")
+        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")  # type: ignore[reportPrivateUsage]
         assert ok is True
         assert err is None
 
     def test_matching_username_field(self):
         mgr, api = _make_manager()
         api.execute.return_value = [{"username": "u1", "profile": "1M"}]
-        ok, err = mgr._verify_profile_link(RK, V6, "u1", "1M")
+        ok, err = mgr._verify_profile_link(RK, V6, "u1", "1M")  # type: ignore[reportUnusedVariable, reportPrivateUsage]
         assert ok is True
 
     def test_no_matching_profile(self):
         mgr, api = _make_manager()
         api.execute.return_value = [{"user": "u1", "profile": "2M"}]
-        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")
+        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")  # type: ignore[reportPrivateUsage]
         assert ok is False
         assert err is not None
         assert "not found" in err
@@ -430,25 +430,25 @@ class TestVerifyProfileLink:
     def test_empty_rows(self):
         mgr, api = _make_manager()
         api.execute.return_value = []
-        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")
+        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")  # type: ignore[reportUnusedVariable, reportPrivateUsage]
         assert ok is False
 
     def test_none_rows(self):
         mgr, api = _make_manager()
         api.execute.return_value = None
-        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")
+        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")  # type: ignore[reportUnusedVariable, reportPrivateUsage]
         assert ok is False
 
     def test_numeric_user_id_coercion(self):
         mgr, api = _make_manager()
         api.execute.return_value = [{"user": 5680538, "profile": "1M"}]
-        ok, err = mgr._verify_profile_link(RK, V7, "5680538", "1M")
+        ok, err = mgr._verify_profile_link(RK, V7, "5680538", "1M")  # type: ignore[reportUnusedVariable, reportPrivateUsage]
         assert ok is True
 
     def test_api_exception_during_verify(self):
         mgr, api = _make_manager()
         api.execute.side_effect = Exception("timeout")
-        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")
+        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")  # type: ignore[reportPrivateUsage]
         assert ok is False
         assert err is not None
         assert "verify failed" in err
@@ -456,7 +456,7 @@ class TestVerifyProfileLink:
     def test_user_not_in_profile_table(self):
         mgr, api = _make_manager()
         api.execute.return_value = [{"user": "other", "profile": "1M"}]
-        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")
+        ok, err = mgr._verify_profile_link(RK, V7, "u1", "1M")  # type: ignore[reportUnusedVariable, reportPrivateUsage]
         assert ok is False
 
 
@@ -471,7 +471,7 @@ class TestGetUserId:
         _v7_api(api)
         api.execute.return_value = [{".id": "*1", "name": "u1"}]
 
-        uid = mgr._get_user_id(RK, "u1")
+        uid = mgr._get_user_id(RK, "u1")  # type: ignore[reportPrivateUsage]
         assert uid == "*1"
 
     def test_v6_resolves_via_username(self):
@@ -479,7 +479,7 @@ class TestGetUserId:
         _v6_api(api)
         api.execute.return_value = [{".id": "*2", "username": "u1"}]
 
-        uid = mgr._get_user_id(RK, "u1")
+        uid = mgr._get_user_id(RK, "u1")  # type: ignore[reportPrivateUsage]
         assert uid == "*2"
 
     def test_filter_fails_fallback_to_cache(self):
@@ -488,14 +488,14 @@ class TestGetUserId:
 
         call_count = [0]
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             call_count[0] += 1
             if call_count[0] == 1:
                 raise Exception("filter unsupported")
             return [{".id": "*5", "name": "u1"}]
 
         api.execute.side_effect = side
-        uid = mgr._get_user_id(RK, "u1")
+        uid = mgr._get_user_id(RK, "u1")  # type: ignore[reportPrivateUsage]
         assert uid == "*5"
 
     def test_not_found(self):
@@ -503,7 +503,7 @@ class TestGetUserId:
         _v7_api(api)
         api.execute.return_value = [{".id": "*1", "name": "other"}]
 
-        uid = mgr._get_user_id(RK, "u1")
+        uid = mgr._get_user_id(RK, "u1")  # type: ignore[reportPrivateUsage]
         assert uid is None
 
     def test_both_attempts_fail(self):
@@ -511,7 +511,7 @@ class TestGetUserId:
         _v7_api(api)
         api.execute.side_effect = Exception("network error")
 
-        uid = mgr._get_user_id(RK, "u1")
+        uid = mgr._get_user_id(RK, "u1")  # type: ignore[reportPrivateUsage]
         assert uid is None
 
 
@@ -695,26 +695,26 @@ class TestAddProfileToUser:
         mgr, api = _make_manager()
         _v7_api(api)
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             if cmd.endswith("/user-profile/print"):
                 return [{"user": "u1", "profile": "2M"}]
             return None
 
         api.execute.side_effect = side
-        linked, err = mgr.add_profile_to_user(RK, "u1", "2M")
+        linked, err = mgr.add_profile_to_user(RK, "u1", "2M")  # type: ignore[reportUnusedVariable]
         assert linked is True
 
     def test_v6_adds_profile(self):
         mgr, api = _make_manager()
         _v6_api(api)
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             if cmd.endswith("/user-profile/print"):
                 return [{"username": "u1", "profile": "2M"}]
             return None
 
         api.execute.side_effect = side
-        linked, err = mgr.add_profile_to_user(RK, "u1", "2M")
+        linked, err = mgr.add_profile_to_user(RK, "u1", "2M")  # type: ignore[reportUnusedVariable]
         assert linked is True
 
 
@@ -866,7 +866,7 @@ class TestGetActiveSessions:
 
         call_idx = [0]
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             call_idx[0] += 1
             if call_idx[0] == 1:
                 return []
@@ -894,7 +894,7 @@ class TestGetActiveSessions:
 
         call_idx = [0]
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             call_idx[0] += 1
             if call_idx[0] == 1:
                 return []
@@ -1039,14 +1039,14 @@ class TestEdgeCases:
         sessions_data = [{"user": "u1", "active": "true"}]
         api.execute.side_effect = [users_data, sessions_data, [], []]
 
-        mgr._get_all_users_cached(RK, V7)
+        mgr._get_all_users_cached(RK, V7)  # type: ignore[reportPrivateUsage]
         mgr.get_active_sessions(RK)
         assert api.execute.call_count == 2
 
         mgr.invalidate_users_cache(RK)
 
         api.execute.side_effect = [[{"name": "u2"}], []]
-        result = mgr._get_all_users_cached(RK, V7)
+        result = mgr._get_all_users_cached(RK, V7)  # type: ignore[reportPrivateUsage]
         assert result == [{"name": "u2"}]
 
     def test_get_user_id_v6_field_is_username(self):
@@ -1054,7 +1054,7 @@ class TestEdgeCases:
         _v6_api(api)
         api.execute.return_value = [{".id": "*3", "username": "u1"}]
 
-        uid = mgr._get_user_id(RK, "u1")
+        uid = mgr._get_user_id(RK, "u1")  # type: ignore[reportPrivateUsage]
         assert uid == "*3"
         call_kwargs = api.execute.call_args_list[0].kwargs
         assert "?username" in call_kwargs
@@ -1064,7 +1064,7 @@ class TestEdgeCases:
         _v7_api(api)
         api.execute.return_value = [{".id": "*3", "name": "u1"}]
 
-        uid = mgr._get_user_id(RK, "u1")
+        uid = mgr._get_user_id(RK, "u1")  # type: ignore[reportPrivateUsage]
         assert uid == "*3"
         call_kwargs = api.execute.call_args_list[0].kwargs
         assert "?name" in call_kwargs
@@ -1085,7 +1085,7 @@ class TestEdgeCases:
 
         existing_names = ["u"]
 
-        def side(rk, cmd, **kw):
+        def side(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             if cmd.endswith("/user/print"):
                 proplist = kw.get(".proplist", "")
                 if ".id" not in proplist:
@@ -1180,7 +1180,7 @@ class TestEdgeCases:
             {"user": "u1", "profile": "2M"},
             {"user": "u1", "profile": "1M"},
         ]
-        ok, _ = mgr._verify_profile_link(RK, V7, "u1", "1M")
+        ok, _ = mgr._verify_profile_link(RK, V7, "u1", "1M")  # type: ignore[reportPrivateUsage]
         assert ok is True
 
     def test_create_user_v7_comment_with_prefix(self):
@@ -1188,7 +1188,7 @@ class TestEdgeCases:
         _v7_api(api)
         api.execute.return_value = None
 
-        mgr._create_user(RK, "u1", "p1", "1M", comment="test_batch_001")
+        mgr._create_user(RK, "u1", "p1", "1M", comment="test_batch_001")  # type: ignore[reportPrivateUsage]
         add_call = api.execute.call_args_list[0]
         assert "comment" in add_call.kwargs
 

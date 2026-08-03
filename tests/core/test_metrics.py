@@ -5,35 +5,35 @@ import core.metrics as m
 
 class TestRecordMessageType:
     def setup_method(self):
-        m._messages_total.clear()
+        m._messages_total.clear()  # type: ignore[reportPrivateUsage]
 
     def test_increments_counter(self):
         m.record_message_type("text")
         m.record_message_type("text")
-        assert m._messages_total["text"] == 2
+        assert m._messages_total["text"] == 2  # type: ignore[reportPrivateUsage]
 
     def test_different_types(self):
         m.record_message_type("text")
         m.record_message_type("photo")
-        assert m._messages_total["text"] == 1
-        assert m._messages_total["photo"] == 1
+        assert m._messages_total["text"] == 1  # type: ignore[reportPrivateUsage]
+        assert m._messages_total["photo"] == 1  # type: ignore[reportPrivateUsage]
 
 
 class TestRecordMikrotikRequest:
     def setup_method(self):
-        m._mikrotik_requests_total.clear()
-        m._request_latencies.clear()
+        m._mikrotik_requests_total.clear()  # type: ignore[reportPrivateUsage]
+        m._request_latencies.clear()  # type: ignore[reportPrivateUsage]
 
     def test_increments_and_stores_latency(self):
         m.record_mikrotik_request("router1", 0.25)
-        assert m._mikrotik_requests_total["router1"] == 1
-        assert m._request_latencies == [0.25]
+        assert m._mikrotik_requests_total["router1"] == 1  # type: ignore[reportPrivateUsage]
+        assert m._request_latencies == [0.25]  # type: ignore[reportPrivateUsage]
 
     def test_evicts_old_latencies_at_1000(self):
         for i in range(1005):
             m.record_mikrotik_request("r", float(i))
-        assert len(m._request_latencies) == 1000
-        assert m._request_latencies[0] == 5.0
+        assert len(m._request_latencies) == 1000  # type: ignore[reportPrivateUsage]
+        assert m._request_latencies[0] == 5.0  # type: ignore[reportPrivateUsage]
 
 
 class TestGetUptime:
@@ -43,9 +43,9 @@ class TestGetUptime:
 
 class TestGetMetricsText:
     def setup_method(self):
-        m._messages_total.clear()
-        m._mikrotik_requests_total.clear()
-        m._request_latencies.clear()
+        m._messages_total.clear()  # type: ignore[reportPrivateUsage]
+        m._mikrotik_requests_total.clear()  # type: ignore[reportPrivateUsage]
+        m._request_latencies.clear()  # type: ignore[reportPrivateUsage]
 
     def test_empty_metrics(self):
         text = m.get_metrics_text()
@@ -86,7 +86,7 @@ class TestGetMetricsText:
             "successful": 10,
             "failed": 2,
         }
-        text = m.get_metrics_text(pool_metrics=pool)
+        text = m.get_metrics_text(pool_metrics=pool)  # type: ignore[reportArgumentType]
         assert "bot_connection_pool_active 3" in text
         assert "bot_connection_pool_stale 1" in text
         assert "bot_connection_pool_successful 10" in text

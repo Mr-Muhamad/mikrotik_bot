@@ -14,10 +14,10 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 # ── helpers ────────────────────────────────────────────────────
@@ -59,7 +59,7 @@ def _ctx():
     return ctx
 
 
-def _router(db_id=1, **extra):
+def _router(db_id=1, **extra):  # type: ignore[reportMissingParameterType]
     base = {"id": db_id, "ip_address": "10.0.0.1", "identity": "Router1"}
     base.update(extra)
     return base
@@ -332,7 +332,7 @@ class TestWatchdogStatus:
             "active_users": 2,
         }
 
-        async def fake_blocking(fn, *args, **kwargs):
+        async def fake_blocking(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             from database.models import get_last_backup as _glb
 
             if fn is _glb:
@@ -376,7 +376,7 @@ class TestWatchdogRefresh:
             "active_users": 1,
         }
 
-        async def fake_blocking(fn, *args, **kwargs):
+        async def fake_blocking(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             from core.watchdog import get_router_status_detail as _grsd
             from database.models import get_last_backup as _glb
             from database.models import get_saved_routers as _gsr
@@ -406,14 +406,14 @@ class TestCheckAllRouters:
     async def test_no_routers(self):
         ctx = _ctx()
         with patch("bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=[]):
-            await watchdog_module._check_all_routers(ctx)
+            await watchdog_module._check_all_routers(ctx)  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_router_online_no_alert(self):
         ctx = _ctx()
         router = _router(username="admin", identity="R1")
 
-        async def fake_blocking(fn, *args, **kwargs):
+        async def fake_blocking(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             from database.models import get_saved_routers as _gsr
 
             if fn is _gsr:
@@ -424,14 +424,14 @@ class TestCheckAllRouters:
             patch("bot.handlers.watchdog.run_blocking", side_effect=fake_blocking),
             patch("bot.handlers.watchdog.record_check_result", return_value=ALERT_NONE),
         ):
-            await watchdog_module._check_all_routers(ctx)
+            await watchdog_module._check_all_routers(ctx)  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_router_went_offline(self):
         ctx = _ctx()
         router = _router(username="admin", identity="R1")
 
-        async def fake_blocking(fn, *args, **kwargs):
+        async def fake_blocking(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             from database.models import get_saved_routers as _gsr
 
             if fn is _gsr:
@@ -443,14 +443,14 @@ class TestCheckAllRouters:
             patch("bot.handlers.watchdog.record_check_result", return_value=ALERT_WENT_OFFLINE),
             patch("bot.handlers.watchdog._notify_admins", new_callable=AsyncMock),
         ):
-            await watchdog_module._check_all_routers(ctx)
+            await watchdog_module._check_all_routers(ctx)  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_router_recovered(self):
         ctx = _ctx()
         router = _router(username="admin", identity="R1")
 
-        async def fake_blocking(fn, *args, **kwargs):
+        async def fake_blocking(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             from database.models import get_saved_routers as _gsr
 
             if fn is _gsr:
@@ -462,7 +462,7 @@ class TestCheckAllRouters:
             patch("bot.handlers.watchdog.record_check_result", return_value=ALERT_RECOVERED),
             patch("bot.handlers.watchdog._notify_admins", new_callable=AsyncMock),
         ):
-            await watchdog_module._check_all_routers(ctx)
+            await watchdog_module._check_all_routers(ctx)  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_router_exception_during_check(self):
@@ -470,7 +470,7 @@ class TestCheckAllRouters:
         router = _router(username="admin", identity="R1")
         call_count = 0
 
-        async def fake_blocking(fn, *args, **kwargs):
+        async def fake_blocking(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -481,7 +481,7 @@ class TestCheckAllRouters:
             patch("bot.handlers.watchdog.run_blocking", side_effect=fake_blocking),
             patch("bot.handlers.watchdog.record_check_result", return_value=ALERT_NONE),
         ):
-            await watchdog_module._check_all_routers(ctx)
+            await watchdog_module._check_all_routers(ctx)  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_router_no_username_skipped(self):
@@ -490,7 +490,7 @@ class TestCheckAllRouters:
         with patch(
             "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=[router]
         ):
-            await watchdog_module._check_all_routers(ctx)
+            await watchdog_module._check_all_routers(ctx)  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_router_none_username_skipped(self):
@@ -500,7 +500,7 @@ class TestCheckAllRouters:
         with patch(
             "bot.handlers.watchdog.run_blocking", new_callable=AsyncMock, return_value=[router]
         ):
-            await watchdog_module._check_all_routers(ctx)
+            await watchdog_module._check_all_routers(ctx)  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_multiple_routers_mixed(self):
@@ -508,7 +508,7 @@ class TestCheckAllRouters:
         r1 = _router(db_id=1, username="admin")
         r2 = _router(db_id=2, username="admin")
 
-        async def fake_blocking(fn, *args, **kwargs):
+        async def fake_blocking(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             from database.models import get_saved_routers as _gsr
 
             if fn is _gsr:
@@ -519,11 +519,11 @@ class TestCheckAllRouters:
             patch("bot.handlers.watchdog.run_blocking", side_effect=fake_blocking),
             patch("bot.handlers.watchdog.record_check_result", return_value=ALERT_NONE),
         ):
-            await watchdog_module._check_all_routers(ctx)
+            await watchdog_module._check_all_routers(ctx)  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_public_alias(self):
-        assert watchdog_module.check_all_routers is watchdog_module._check_all_routers
+        assert watchdog_module.check_all_routers is watchdog_module._check_all_routers  # type: ignore[reportPrivateUsage]
 
 
 # ── TestNotifyAdmins ───────────────────────────────────────────
@@ -534,7 +534,7 @@ class TestNotifyAdmins:
     async def test_success(self):
         ctx = _ctx()
         with patch("bot.handlers.watchdog.ADMIN_IDS", [ADMIN_ID]):
-            await watchdog_module._notify_admins(ctx, "<b>test</b>")
+            await watchdog_module._notify_admins(ctx, "<b>test</b>")  # type: ignore[reportPrivateUsage]
         ctx.bot.send_message.assert_called_once_with(ADMIN_ID, "<b>test</b>", parse_mode="HTML")
 
     @pytest.mark.asyncio
@@ -544,7 +544,7 @@ class TestNotifyAdmins:
         ctx = _ctx()
         call_count = 0
 
-        def side_effect(uid, text, parse_mode=None):
+        def side_effect(uid, text, parse_mode=None):  # type: ignore[reportMissingParameterType]
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -556,7 +556,7 @@ class TestNotifyAdmins:
             patch("bot.handlers.watchdog.ADMIN_IDS", [ADMIN_ID]),
             patch("bot.handlers.watchdog.asyncio.sleep", new_callable=AsyncMock),
         ):
-            await watchdog_module._notify_admins(ctx, "test")
+            await watchdog_module._notify_admins(ctx, "test")  # type: ignore[reportPrivateUsage]
         assert ctx.bot.send_message.call_count == 2
 
     @pytest.mark.asyncio
@@ -566,7 +566,7 @@ class TestNotifyAdmins:
         ctx = _ctx()
         call_count = 0
 
-        def side_effect(uid, text, parse_mode=None):
+        def side_effect(uid, text, parse_mode=None):  # type: ignore[reportMissingParameterType]
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -578,7 +578,7 @@ class TestNotifyAdmins:
             patch("bot.handlers.watchdog.ADMIN_IDS", [ADMIN_ID]),
             patch("bot.handlers.watchdog.asyncio.sleep", new_callable=AsyncMock),
         ):
-            await watchdog_module._notify_admins(ctx, "test")
+            await watchdog_module._notify_admins(ctx, "test")  # type: ignore[reportPrivateUsage]
         assert ctx.bot.send_message.call_count == 2
 
     @pytest.mark.asyncio
@@ -588,7 +588,7 @@ class TestNotifyAdmins:
         ctx = _ctx()
         call_count = 0
 
-        def side_effect(uid, text, parse_mode=None):
+        def side_effect(uid, text, parse_mode=None):  # type: ignore[reportMissingParameterType]
             nonlocal call_count
             call_count += 1
             if call_count == 1:
@@ -600,20 +600,20 @@ class TestNotifyAdmins:
             patch("bot.handlers.watchdog.ADMIN_IDS", [ADMIN_ID]),
             patch("bot.handlers.watchdog.asyncio.sleep", new_callable=AsyncMock),
         ):
-            await watchdog_module._notify_admins(ctx, "test")
+            await watchdog_module._notify_admins(ctx, "test")  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_general_exception(self):
         ctx = _ctx()
         ctx.bot.send_message = AsyncMock(side_effect=TelegramError("network"))
         with patch("bot.handlers.watchdog.ADMIN_IDS", [ADMIN_ID]):
-            await watchdog_module._notify_admins(ctx, "test")
+            await watchdog_module._notify_admins(ctx, "test")  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_multiple_admins(self):
         ctx = _ctx()
         with patch("bot.handlers.watchdog.ADMIN_IDS", [111, 222]):
-            await watchdog_module._notify_admins(ctx, "hi")
+            await watchdog_module._notify_admins(ctx, "hi")  # type: ignore[reportPrivateUsage]
         assert ctx.bot.send_message.call_count == 2
 
 
@@ -627,7 +627,7 @@ class TestReply:
         ctx = _ctx()
         query = update.callback_query
         with patch("bot.handlers.watchdog.safe_edit_or_send", new_callable=AsyncMock) as mock_edit:
-            await watchdog_module._reply(update, ctx, query, "hello")
+            await watchdog_module._reply(update, ctx, query, "hello")  # type: ignore[reportPrivateUsage]
         mock_edit.assert_called_once_with(query, ctx, "hello")
 
     @pytest.mark.asyncio
@@ -635,5 +635,5 @@ class TestReply:
         update = _msg_update()
         ctx = _ctx()
         with patch("bot.handlers.watchdog.send_step", new_callable=AsyncMock) as mock_send:
-            await watchdog_module._reply(update, ctx, None, "world")
+            await watchdog_module._reply(update, ctx, None, "world")  # type: ignore[reportPrivateUsage]
         mock_send.assert_called_once_with(update, ctx, "world")

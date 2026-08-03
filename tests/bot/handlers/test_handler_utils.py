@@ -23,12 +23,12 @@ def _start_patches():
 
 
 @pytest.fixture(autouse=True)
-def _all_patches():
-    admin_decorator._rate_limit_data.clear()
+def _all_patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     stack = _start_patches()
     yield
     stack.close()
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestGetUserId:
@@ -137,7 +137,7 @@ class TestAckCallback:
         assert query is not None
         import bot.handlers.handler_utils as mod
 
-        mod.safe_answer_callback.assert_awaited_once()
+        mod.safe_answer_callback.assert_awaited_once()  # type: ignore[reportFunctionMemberAccess]
 
     @pytest.mark.asyncio
     async def test_returns_none_for_message(self):

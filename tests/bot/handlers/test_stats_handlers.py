@@ -12,26 +12,26 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture(autouse=True)
-def _mock_deps():
+def _mock_deps():  # type: ignore[reportUnusedFunction]
     """Replace stats_hotspot/stats_userman with direct function references.
 
     Since @admin_only/@require_router wrap the original functions at import time,
     we replace the module-level names with the original _show_stats function
     so the tests can drive the handlers directly.
     """
-    original_show_stats = stats_module._show_stats
+    original_show_stats = stats_module._show_stats  # type: ignore[reportPrivateUsage]
 
-    async def stats_hotspot_direct(update, context):
+    async def stats_hotspot_direct(update, context):  # type: ignore[reportMissingParameterType]
         return await original_show_stats(update, context, "hotspot")
 
-    async def stats_userman_direct(update, context):
+    async def stats_userman_direct(update, context):  # type: ignore[reportMissingParameterType]
         return await original_show_stats(update, context, "userman")
 
     # Mutate module dict directly so the new references survive decorator wrapping
@@ -50,7 +50,7 @@ def _mock_deps():
         finally:
             stats_module.stats_hotspot = saved_hotspot
             stats_module.stats_userman = saved_userman
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _query_update():

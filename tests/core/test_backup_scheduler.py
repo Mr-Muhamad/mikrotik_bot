@@ -29,29 +29,29 @@ class MockJob:
 
 @pytest.mark.asyncio
 class TestBackupScheduler:
-    async def test_start_daily_schedules_job(self, mock_job_queue):
+    async def test_start_daily_schedules_job(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         scheduler = BackupScheduler()
         scheduler.start_daily(mock_job_queue, hour=3, minute=0, persist=False)
-        assert scheduler._running is True
+        assert scheduler._running is True  # type: ignore[reportPrivateUsage]
         # run_daily يُستدعى 3 مرات: backup + expiry check + stats snapshot
         assert mock_job_queue.run_daily.call_count == 3
 
-    async def test_start_daily_persists(self, mock_job_queue):
+    async def test_start_daily_persists(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         with patch("database.models.save_backup_schedule") as mock_save:
             scheduler = BackupScheduler()
             scheduler.start_daily(mock_job_queue, hour=8, minute=15, persist=True)
             mock_save.assert_called_once_with(True, 8, 15)
 
-    async def test_stop_removes_jobs(self, mock_job_queue):
+    async def test_stop_removes_jobs(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         job = MockJob()
         mock_job_queue.get_jobs_by_name.return_value = [job]
         scheduler = BackupScheduler()
-        scheduler._running = True
+        scheduler._running = True  # type: ignore[reportPrivateUsage]
         scheduler.stop(mock_job_queue, persist=False)
         assert job.removed is True
-        assert scheduler._running is False
+        assert scheduler._running is False  # type: ignore[reportPrivateUsage]
 
-    async def test_stop_persists_disabled(self, mock_job_queue):
+    async def test_stop_persists_disabled(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_backup_schedule") as mock_get,
             patch("database.models.save_backup_schedule") as mock_save,
@@ -67,16 +67,16 @@ class TestBackupScheduler:
 
     async def test_stop_without_job_queue(self):
         scheduler = BackupScheduler()
-        scheduler._running = True
+        scheduler._running = True  # type: ignore[reportPrivateUsage]
         scheduler.stop(None, persist=False)
-        assert scheduler._running is False
+        assert scheduler._running is False  # type: ignore[reportPrivateUsage]
 
-    async def test_is_running_true_when_job_exists(self, mock_job_queue):
+    async def test_is_running_true_when_job_exists(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         mock_job_queue.get_jobs_by_name.return_value = [MagicMock()]
         scheduler = BackupScheduler()
         assert scheduler.is_running(mock_job_queue) is True
 
-    async def test_is_running_false_when_no_job(self, mock_job_queue):
+    async def test_is_running_false_when_no_job(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         mock_job_queue.get_jobs_by_name.return_value = []
         with patch("database.models.get_backup_schedule") as mock_get:
             mock_get.return_value = {
@@ -87,7 +87,7 @@ class TestBackupScheduler:
             scheduler = BackupScheduler()
             assert scheduler.is_running(mock_job_queue) is False
 
-    async def test_is_running_fallback_to_db(self, mock_job_queue):
+    async def test_is_running_fallback_to_db(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         mock_job_queue.get_jobs_by_name.return_value = []
         with patch("database.models.get_backup_schedule") as mock_get:
             mock_get.return_value = {
@@ -98,7 +98,7 @@ class TestBackupScheduler:
             scheduler = BackupScheduler()
             assert scheduler.is_running(None) is True
 
-    async def test_restore_starts_when_enabled(self, mock_job_queue):
+    async def test_restore_starts_when_enabled(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         with patch("database.models.get_backup_schedule") as mock_get:
             mock_get.return_value = {
                 "schedule_enabled": True,
@@ -109,9 +109,9 @@ class TestBackupScheduler:
             scheduler.restore(mock_job_queue)
             # run_daily يُستدعى 3 مرات: backup + expiry check + stats snapshot
             assert mock_job_queue.run_daily.call_count == 3
-            assert scheduler._running is True
+            assert scheduler._running is True  # type: ignore[reportPrivateUsage]
 
-    async def test_restore_skips_when_disabled(self, mock_job_queue):
+    async def test_restore_skips_when_disabled(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         with patch("database.models.get_backup_schedule") as mock_get:
             mock_get.return_value = {
                 "schedule_enabled": False,
@@ -122,7 +122,7 @@ class TestBackupScheduler:
             scheduler.restore(mock_job_queue)
             mock_job_queue.run_daily.assert_not_called()
 
-    async def test_do_backup_calls_service_for_each_router(self, mock_job_queue):
+    async def test_do_backup_calls_service_for_each_router(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
         with (
@@ -149,10 +149,10 @@ class TestBackupScheduler:
                 4,
             ]
             scheduler = BackupScheduler()
-            await scheduler._do_backup(mock_context)
+            await scheduler._do_backup(mock_context)  # type: ignore[reportPrivateUsage]
             assert mock_run.call_count == 11
 
-    async def test_do_backup_skips_routers_without_username(self, mock_job_queue):
+    async def test_do_backup_skips_routers_without_username(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
         with (
@@ -173,10 +173,10 @@ class TestBackupScheduler:
                 2,
             ]
             scheduler = BackupScheduler()
-            await scheduler._do_backup(mock_context)
+            await scheduler._do_backup(mock_context)  # type: ignore[reportPrivateUsage]
             assert mock_run.call_count == 6
 
-    async def test_do_backup_handles_exception_gracefully(self, mock_job_queue):
+    async def test_do_backup_handles_exception_gracefully(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
         mock_context.bot.send_message = AsyncMock()
@@ -199,10 +199,10 @@ class TestBackupScheduler:
                 2,
             ]
             scheduler = BackupScheduler()
-            await scheduler._do_backup(mock_context)
+            await scheduler._do_backup(mock_context)  # type: ignore[reportPrivateUsage]
             assert mock_run.call_count == 6
 
-    async def test_do_backup_runs_full_backup_when_flag_enabled(self, mock_job_queue):
+    async def test_do_backup_runs_full_backup_when_flag_enabled(self, mock_job_queue):  # type: ignore[reportMissingParameterType]
         mock_context = MagicMock()
         mock_context.job_queue = mock_job_queue
         with (
@@ -221,6 +221,6 @@ class TestBackupScheduler:
                 None,
             ]
             scheduler = BackupScheduler()
-            await scheduler._do_backup(mock_context)
+            await scheduler._do_backup(mock_context)  # type: ignore[reportPrivateUsage]
             assert mock_run.call_count == 6
             mock_run.assert_any_call(mock_svc.full_backup, "discovered_1")

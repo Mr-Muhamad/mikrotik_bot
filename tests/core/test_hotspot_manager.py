@@ -15,7 +15,7 @@ class TestHotspotManager:
 
     ROUTER_KEY = "discovered_1"
 
-    def test_add_user_minimal(self, mock_mikrotik_api):
+    def test_add_user_minimal(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         result = hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="newuser",
@@ -24,7 +24,7 @@ class TestHotspotManager:
         )
         assert isinstance(result, list)
 
-    def test_add_user_with_all_options(self, mock_mikrotik_api):
+    def test_add_user_with_all_options(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         result = hotspot_manager.add_user(
             self.ROUTER_KEY,
             name="fulluser",
@@ -36,51 +36,51 @@ class TestHotspotManager:
         )
         assert isinstance(result, list)
 
-    def test_delete_existing_user(self, mock_mikrotik_api):
+    def test_delete_existing_user(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         result = hotspot_manager.delete_user(self.ROUTER_KEY, "*1")
         assert isinstance(result, list)
         user = hotspot_manager.get_user(self.ROUTER_KEY, "*1")
         assert user is None
 
-    def test_delete_nonexistent_user(self, mock_mikrotik_api):
+    def test_delete_nonexistent_user(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         result = hotspot_manager.delete_user(self.ROUTER_KEY, "*999")
         assert isinstance(result, list)
 
-    def test_search_users_by_name(self, mock_mikrotik_api):
+    def test_search_users_by_name(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         results = hotspot_manager.search_users(self.ROUTER_KEY, "testuser1")
         assert len(results) >= 1
         assert any(u.get("name") == "testuser1" for u in results)
 
-    def test_search_users_by_comment(self, mock_mikrotik_api):
+    def test_search_users_by_comment(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         results = hotspot_manager.search_users(self.ROUTER_KEY, "vip")
         assert len(results) >= 1
 
-    def test_search_users_no_results(self, mock_mikrotik_api):
+    def test_search_users_no_results(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         results = hotspot_manager.search_users(self.ROUTER_KEY, "zzz_no_match")
         assert len(results) == 0
 
-    def test_get_existing_user(self, mock_mikrotik_api):
+    def test_get_existing_user(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         user = hotspot_manager.get_user(self.ROUTER_KEY, "*1")
         assert user is not None
         assert user.get("name") == "testuser1"
 
-    def test_get_nonexistent_user(self, mock_mikrotik_api):
+    def test_get_nonexistent_user(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         user = hotspot_manager.get_user(self.ROUTER_KEY, "*999")
         assert user is None
 
-    def test_list_users(self, mock_mikrotik_api):
+    def test_list_users(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         users = hotspot_manager.list_users(self.ROUTER_KEY, limit=10)
         assert len(users) >= 1
 
-    def test_get_profiles(self, mock_mikrotik_api):
+    def test_get_profiles(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         profiles = hotspot_manager.get_profiles(self.ROUTER_KEY)
         assert len(profiles) >= 1
 
-    def test_search_hosts_by_ip(self, mock_mikrotik_api):
+    def test_search_hosts_by_ip(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         hosts = hotspot_manager.search_hosts(self.ROUTER_KEY, "192.168.88.10")
         assert len(hosts) >= 1
 
-    def test_search_hosts_by_mac(self, mock_mikrotik_api):
+    def test_search_hosts_by_mac(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         hosts = hotspot_manager.search_hosts(self.ROUTER_KEY, "AA:BB:CC:DD:EE:01")
         found = [h for h in hosts if str(h.get("mac-address", "")).lower() == "aa:bb:cc:dd:ee:01"]
         assert len(found) >= 1
@@ -112,7 +112,7 @@ class TestHotspotManager:
         assert mikrotik_api.execute.call_args_list[1].args[1] == "ip/hotspot/host/print"
         assert mikrotik_api.execute.call_args_list[2].args[1] == "ip/hotspot/host/print"
 
-    def test_create_cards(self, mock_mikrotik_api):
+    def test_create_cards(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         cards = hotspot_manager.create_cards(
             self.ROUTER_KEY,
             count=3,
@@ -126,7 +126,7 @@ class TestHotspotManager:
         usernames = [c.username for c in cards]
         assert len(set(usernames)) == 3
 
-    def test_create_cards_unique_usernames(self, mock_mikrotik_api):
+    def test_create_cards_unique_usernames(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         cards = hotspot_manager.create_cards(
             self.ROUTER_KEY,
             count=5,
@@ -137,7 +137,7 @@ class TestHotspotManager:
         usernames = [c.username for c in cards]
         assert len(set(usernames)) == 5
 
-    def test_create_cards_same_credentials(self, mock_mikrotik_api):
+    def test_create_cards_same_credentials(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         cards = hotspot_manager.create_cards(
             self.ROUTER_KEY,
             count=2,
@@ -148,7 +148,7 @@ class TestHotspotManager:
         for c in cards:
             assert c.username == c.password
 
-    def test_create_cards_empty_credentials(self, mock_mikrotik_api):
+    def test_create_cards_empty_credentials(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         cards = hotspot_manager.create_cards(
             self.ROUTER_KEY,
             count=2,
@@ -159,7 +159,7 @@ class TestHotspotManager:
         for c in cards:
             assert c.password == ""
 
-    def test_get_hotspot_stats(self, mock_mikrotik_api):
+    def test_get_hotspot_stats(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         stats = hotspot_manager.get_hotspot_stats(self.ROUTER_KEY)
         assert stats is not None
         assert cast(int, stats["total"]) >= 1
@@ -170,10 +170,10 @@ class TestHotspotManager:
         from core.hotspot_expiry import parse_renewal_day_from_comment
         from core.hotspot_manager import hotspot_manager as hm
 
-        assert hm._parse_reset_day("BATCH_2026-07-05_10:00") == 5
-        assert hm._parse_reset_day("PREFIX_2026-12-31_23:59") == 31
-        assert hm._parse_reset_day("foo/12") == 12
-        assert hm._parse_reset_day("no date here") is None
+        assert hm._parse_reset_day("BATCH_2026-07-05_10:00") == 5  # type: ignore[reportPrivateUsage]
+        assert hm._parse_reset_day("PREFIX_2026-12-31_23:59") == 31  # type: ignore[reportPrivateUsage]
+        assert hm._parse_reset_day("foo/12") == 12  # type: ignore[reportPrivateUsage]
+        assert hm._parse_reset_day("no date here") is None  # type: ignore[reportPrivateUsage]
 
         # Test parse_renewal_day_from_comment for slash and dash
         name1, day1 = parse_renewal_day_from_comment("user/22")

@@ -34,7 +34,7 @@ class TestRecordHealth:
     def test_records_none_error_as_empty(self):
         from database.repositories.router_health import get_latest_health, record_health
 
-        record_health("router_D", "online", error_msg=None)
+        record_health("router_D", "online", error_msg=None)  # type: ignore[reportArgumentType]
         result = get_latest_health("router_D")
         assert result is not None
         assert result["error_msg"] == ""

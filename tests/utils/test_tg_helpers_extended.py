@@ -17,13 +17,13 @@ from utils.tg_helpers import (
 )
 
 
-def _mock_context(user_data=None):
+def _mock_context(user_data=None):  # type: ignore[reportMissingParameterType]
     ctx = MagicMock()
     ctx.user_data = user_data
     return ctx
 
 
-def _mock_update(text="hello", user_id=1, chat_id=1, message_id=10):
+def _mock_update(text="hello", user_id=1, chat_id=1, message_id=10):  # type: ignore[reportMissingParameterType]
     u = MagicMock()
     u.message = MagicMock()
     u.message.text = text

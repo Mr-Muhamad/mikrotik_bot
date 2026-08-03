@@ -6,7 +6,7 @@ import pytest
 from telegram import Chat, Message
 
 
-def _run(coro):
+def _run(coro):  # type: ignore[reportMissingParameterType]
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(coro)
@@ -14,7 +14,7 @@ def _run(coro):
         loop.close()
 
 
-def _ctx(job_queue=None, user_data=None, bot_data=None):
+def _ctx(job_queue=None, user_data=None, bot_data=None):  # type: ignore[reportMissingParameterType]
     ctx = MagicMock()
     ctx.user_data = user_data if user_data is not None else {}
     ctx.bot_data = bot_data if bot_data is not None else {}
@@ -36,7 +36,7 @@ def _ctx(job_queue=None, user_data=None, bot_data=None):
     return ctx
 
 
-def _update(text="/clean", chat_type="private", msg_id=50):
+def _update(text="/clean", chat_type="private", msg_id=50):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.message = MagicMock()
     update.message.message_id = msg_id
@@ -45,7 +45,7 @@ def _update(text="/clean", chat_type="private", msg_id=50):
     return update
 
 
-def _callback_query(chat_id=10, msg_id=60):
+def _callback_query(chat_id=10, msg_id=60):  # type: ignore[reportMissingParameterType]
     query = MagicMock()
     query.message = MagicMock()
     query.message.chat_id = chat_id
@@ -62,39 +62,39 @@ def _callback_query(chat_id=10, msg_id=60):
 
 class TestIsBenignEditError:
     def test_matches_not_modified(self):
-        from utils.chat_cleaner import _is_benign_edit_error
+        from utils.chat_cleaner import _is_benign_edit_error  # type: ignore[reportPrivateUsage]
 
         assert _is_benign_edit_error(Exception("Message is not modified")) is True
 
     def test_matches_not_found(self):
-        from utils.chat_cleaner import _is_benign_edit_error
+        from utils.chat_cleaner import _is_benign_edit_error  # type: ignore[reportPrivateUsage]
 
         assert _is_benign_edit_error(Exception("Message to edit not found")) is True
 
     def test_matches_same_content(self):
-        from utils.chat_cleaner import _is_benign_edit_error
+        from utils.chat_cleaner import _is_benign_edit_error  # type: ignore[reportPrivateUsage]
 
         assert _is_benign_edit_error(Exception("message is exactly the same as before")) is True
 
     def test_no_match_on_unrelated_error(self):
-        from utils.chat_cleaner import _is_benign_edit_error
+        from utils.chat_cleaner import _is_benign_edit_error  # type: ignore[reportPrivateUsage]
 
         assert _is_benign_edit_error(Exception("Flood control exceeded")) is False
 
     def test_no_match_on_empty_string(self):
-        from utils.chat_cleaner import _is_benign_edit_error
+        from utils.chat_cleaner import _is_benign_edit_error  # type: ignore[reportPrivateUsage]
 
         assert _is_benign_edit_error(Exception("")) is False
 
     def test_partial_match_inside_longer_message(self):
-        from utils.chat_cleaner import _is_benign_edit_error
+        from utils.chat_cleaner import _is_benign_edit_error  # type: ignore[reportPrivateUsage]
 
         assert _is_benign_edit_error(Exception("Error: Message to edit not found (404)")) is True
 
 
 class TestTrackMsg:
     def test_skips_channel_type(self):
-        from utils.chat_cleaner import _track_msg
+        from utils.chat_cleaner import _track_msg  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         with patch("database.models.add_tracked_message") as mock_add:
@@ -102,7 +102,7 @@ class TestTrackMsg:
             mock_add.assert_not_called()
 
     def test_proceeds_with_none_type(self):
-        from utils.chat_cleaner import _track_msg
+        from utils.chat_cleaner import _track_msg  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         with patch("database.models.add_tracked_message") as mock_add:
@@ -110,7 +110,7 @@ class TestTrackMsg:
             mock_add.assert_called_once_with(1, 10)
 
     def test_proceeds_with_group_type(self):
-        from utils.chat_cleaner import _track_msg
+        from utils.chat_cleaner import _track_msg  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         with patch("database.models.add_tracked_message") as mock_add:
@@ -118,7 +118,7 @@ class TestTrackMsg:
             mock_add.assert_called_once_with(1, 10)
 
     def test_proceeds_with_private_type(self):
-        from utils.chat_cleaner import _track_msg
+        from utils.chat_cleaner import _track_msg  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         with patch("database.models.add_tracked_message") as mock_add:
@@ -126,7 +126,7 @@ class TestTrackMsg:
             mock_add.assert_called_once_with(1, 10)
 
     def test_proceeds_without_chat_type_argument(self):
-        from utils.chat_cleaner import _track_msg
+        from utils.chat_cleaner import _track_msg  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         with patch("database.models.add_tracked_message") as mock_add:
@@ -136,7 +136,7 @@ class TestTrackMsg:
 
 class TestTrackMsgStats:
     def test_increments_stats_counter(self):
-        from utils.chat_cleaner import _track_msg, get_cleanup_stats
+        from utils.chat_cleaner import _track_msg, get_cleanup_stats  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         before = get_cleanup_stats()["messages_tracked"]
@@ -146,7 +146,7 @@ class TestTrackMsgStats:
         assert after == before + 1
 
     def test_channel_skip_does_not_increment(self):
-        from utils.chat_cleaner import _track_msg, get_cleanup_stats
+        from utils.chat_cleaner import _track_msg, get_cleanup_stats  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         before = get_cleanup_stats()["messages_tracked"]
@@ -168,31 +168,31 @@ class TestTrackMessagePublicWrapper:
 
 class TestChunks:
     def test_exact_division(self):
-        from utils.chat_cleaner import _chunks
+        from utils.chat_cleaner import _chunks  # type: ignore[reportPrivateUsage]
 
         result = list(_chunks([1, 2, 3, 4], 2))
         assert result == [[1, 2], [3, 4]]
 
     def test_remainder(self):
-        from utils.chat_cleaner import _chunks
+        from utils.chat_cleaner import _chunks  # type: ignore[reportPrivateUsage]
 
         result = list(_chunks([1, 2, 3, 4, 5], 2))
         assert result == [[1, 2], [3, 4], [5]]
 
     def test_single_chunk(self):
-        from utils.chat_cleaner import _chunks
+        from utils.chat_cleaner import _chunks  # type: ignore[reportPrivateUsage]
 
         result = list(_chunks([1, 2, 3], 10))
         assert result == [[1, 2, 3]]
 
     def test_empty_sequence(self):
-        from utils.chat_cleaner import _chunks
+        from utils.chat_cleaner import _chunks  # type: ignore[reportPrivateUsage]
 
         result = list(_chunks([], 5))
         assert result == []
 
     def test_size_one(self):
-        from utils.chat_cleaner import _chunks
+        from utils.chat_cleaner import _chunks  # type: ignore[reportPrivateUsage]
 
         result = list(_chunks([10, 20, 30], 1))
         assert result == [[10], [20], [30]]
@@ -200,14 +200,14 @@ class TestChunks:
 
 class TestDeleteMessageIds:
     def test_empty_list_returns_zero(self):
-        from utils.chat_cleaner import _delete_message_ids
+        from utils.chat_cleaner import _delete_message_ids  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         result = _run(_delete_message_ids(ctx, 1, []))
         assert result == 0
 
     def test_single_message_success(self):
-        from utils.chat_cleaner import _delete_message_ids
+        from utils.chat_cleaner import _delete_message_ids  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         result = _run(_delete_message_ids(ctx, 1, [42]))
@@ -215,7 +215,7 @@ class TestDeleteMessageIds:
         ctx.bot.delete_message.assert_awaited_once_with(chat_id=1, message_id=42)
 
     def test_single_message_failure(self):
-        from utils.chat_cleaner import _delete_message_ids
+        from utils.chat_cleaner import _delete_message_ids  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         ctx.bot.delete_message = AsyncMock(side_effect=Exception("gone"))
@@ -223,7 +223,7 @@ class TestDeleteMessageIds:
         assert result == 0
 
     def test_batch_success(self):
-        from utils.chat_cleaner import _delete_message_ids
+        from utils.chat_cleaner import _delete_message_ids  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         ctx.bot.delete_messages = AsyncMock(return_value=True)
@@ -232,7 +232,7 @@ class TestDeleteMessageIds:
         ctx.bot.delete_messages.assert_awaited_once_with(chat_id=1, message_ids=[10, 20, 30])
 
     def test_batch_returns_non_true_falls_back(self):
-        from utils.chat_cleaner import _delete_message_ids
+        from utils.chat_cleaner import _delete_message_ids  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         ctx.bot.delete_messages = AsyncMock(return_value=False)
@@ -242,7 +242,7 @@ class TestDeleteMessageIds:
         assert ctx.bot.delete_message.await_count == 2
 
     def test_batch_exception_falls_back(self):
-        from utils.chat_cleaner import _delete_message_ids
+        from utils.chat_cleaner import _delete_message_ids  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         ctx.bot.delete_messages = AsyncMock(side_effect=Exception("API error"))
@@ -251,7 +251,7 @@ class TestDeleteMessageIds:
         assert result == 2
 
     def test_batch_partial_individual_failure(self):
-        from utils.chat_cleaner import _delete_message_ids
+        from utils.chat_cleaner import _delete_message_ids  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         ctx.bot.delete_messages = AsyncMock(side_effect=Exception("fail"))
@@ -264,19 +264,19 @@ class TestDeleteMessageIds:
 
 class TestDeleteJobName:
     def test_format(self):
-        from utils.chat_cleaner import _delete_job_name
+        from utils.chat_cleaner import _delete_job_name  # type: ignore[reportPrivateUsage]
 
         assert _delete_job_name(123, 456) == "del_123_456"
 
     def test_zero_ids(self):
-        from utils.chat_cleaner import _delete_job_name
+        from utils.chat_cleaner import _delete_job_name  # type: ignore[reportPrivateUsage]
 
         assert _delete_job_name(0, 0) == "del_0_0"
 
 
 class TestDeleteJob:
     def test_success(self):
-        from utils.chat_cleaner import _delete_job, get_cleanup_stats
+        from utils.chat_cleaner import _delete_job, get_cleanup_stats  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         ctx.job = MagicMock()
@@ -287,7 +287,7 @@ class TestDeleteJob:
         assert get_cleanup_stats()["messages_deleted"] == before + 1
 
     def test_failure_swallows_exception(self):
-        from utils.chat_cleaner import _delete_job
+        from utils.chat_cleaner import _delete_job  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         ctx.job = MagicMock()
@@ -713,7 +713,7 @@ class TestCleanChatMessagesExtended:
 
 class TestSendReplacingLast:
     def test_private_chat_deletes_user_message(self):
-        from utils.chat_cleaner import _send_replacing_last
+        from utils.chat_cleaner import _send_replacing_last  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         update = _update(chat_type="private")
@@ -721,7 +721,7 @@ class TestSendReplacingLast:
         ctx.bot.delete_message.assert_any_await(chat_id=10, message_id=50)
 
     def test_non_private_chat_skips_user_message(self):
-        from utils.chat_cleaner import _send_replacing_last
+        from utils.chat_cleaner import _send_replacing_last  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         update = _update(chat_type="group")
@@ -735,7 +735,7 @@ class TestSendReplacingLast:
         ctx.bot.send_message.assert_awaited_once()
 
     def test_deletes_previous_last_msg(self):
-        from utils.chat_cleaner import _send_replacing_last
+        from utils.chat_cleaner import _send_replacing_last  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx(user_data={"last_msg": 99})
         update = _update()
@@ -743,7 +743,7 @@ class TestSendReplacingLast:
         ctx.bot.delete_message.assert_any_await(chat_id=10, message_id=99)
 
     def test_sends_new_message(self):
-        from utils.chat_cleaner import _send_replacing_last
+        from utils.chat_cleaner import _send_replacing_last  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         update = _update()
@@ -753,7 +753,7 @@ class TestSendReplacingLast:
         )
 
     def test_channel_type_skips_user_message(self):
-        from utils.chat_cleaner import _send_replacing_last
+        from utils.chat_cleaner import _send_replacing_last  # type: ignore[reportPrivateUsage]
 
         ctx = _ctx()
         update = _update(chat_type="channel")
@@ -1024,7 +1024,7 @@ class TestConstants:
         assert DELETE_MESSAGES_CHUNK == 100
 
     def test_protected_chat_types(self):
-        from utils.chat_cleaner import _PROTECTED_CHAT_TYPES
+        from utils.chat_cleaner import _PROTECTED_CHAT_TYPES  # type: ignore[reportPrivateUsage]
 
         assert "channel" in _PROTECTED_CHAT_TYPES
         assert "group" not in _PROTECTED_CHAT_TYPES
@@ -1032,7 +1032,7 @@ class TestConstants:
         assert "private" not in _PROTECTED_CHAT_TYPES
 
     def test_benign_edit_errors(self):
-        from utils.chat_cleaner import _BENIGN_EDIT_ERRORS
+        from utils.chat_cleaner import _BENIGN_EDIT_ERRORS  # type: ignore[reportPrivateUsage]
 
         assert len(_BENIGN_EDIT_ERRORS) == 3
         assert "Message is not modified" in _BENIGN_EDIT_ERRORS

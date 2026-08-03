@@ -9,12 +9,12 @@ import utils.crypto as crypto
 
 class TestCryptoRoundtrip(unittest.TestCase):
     def setUp(self):
-        self._orig_key = crypto._key
-        crypto._key = None
+        self._orig_key = crypto._key  # type: ignore[reportPrivateUsage]
+        crypto._key = None  # type: ignore[reportPrivateUsage]
         self.test_key = Fernet.generate_key().decode()
 
     def tearDown(self):
-        crypto._key = self._orig_key
+        crypto._key = self._orig_key  # type: ignore[reportPrivateUsage]
 
     @patch.dict(os.environ, {}, clear=False)
     def test_encrypt_decrypt_roundtrip(self):

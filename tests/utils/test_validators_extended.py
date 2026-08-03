@@ -19,7 +19,7 @@ from utils.validators import (
 class TestSanitizeComment:
     def test_empty_returns_empty(self):
         assert sanitize_comment("") == ""
-        assert sanitize_comment(None) == ""
+        assert sanitize_comment(None) == ""  # type: ignore[reportArgumentType]
 
     def test_strips_control_chars(self):
         result = sanitize_comment("hello\x00\x01\x02world")
@@ -69,11 +69,11 @@ class TestValidateIp:
         assert "مطلوب" in msg
 
     def test_valid_ipv4(self):
-        ok, msg = validate_ip("192.168.1.1")
+        ok, msg = validate_ip("192.168.1.1")  # type: ignore[reportUnusedVariable]
         assert ok is True
 
     def test_valid_ipv6(self):
-        ok, msg = validate_ip("::1")
+        ok, msg = validate_ip("::1")  # type: ignore[reportUnusedVariable]
         assert ok is True
 
     def test_invalid_ip(self):
@@ -82,7 +82,7 @@ class TestValidateIp:
         assert "غير صالح" in msg
 
     def test_invalid_string(self):
-        ok, msg = validate_ip("not-an-ip")
+        ok, msg = validate_ip("not-an-ip")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
 
@@ -96,7 +96,7 @@ class TestValidatePort:
         assert "مطلوب" in msg
 
     def test_valid_port(self):
-        ok, msg = validate_port("80")
+        ok, msg = validate_port("80")  # type: ignore[reportUnusedVariable]
         assert ok is True
 
     def test_min_port(self):
@@ -108,11 +108,11 @@ class TestValidatePort:
         assert ok is True
 
     def test_zero_port(self):
-        ok, msg = validate_port("0")
+        ok, msg = validate_port("0")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_over_max(self):
-        ok, msg = validate_port("65536")
+        ok, msg = validate_port("65536")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_non_numeric(self):
@@ -130,15 +130,15 @@ class TestValidatePort:
 
 class TestValidateUsername:
     def test_empty_returns_invalid(self):
-        ok, msg = validate_username("")
+        ok, msg = validate_username("")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_too_short(self):
-        ok, msg = validate_username("ab")
+        ok, msg = validate_username("ab")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_too_long(self):
-        ok, msg = validate_username("a" * 65)
+        ok, msg = validate_username("a" * 65)  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_valid(self):
@@ -162,7 +162,7 @@ class TestValidateUsername:
         assert ok is True
 
     def test_special_chars_rejected(self):
-        ok, msg = validate_username("user@name")
+        ok, msg = validate_username("user@name")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
 
@@ -176,11 +176,11 @@ class TestValidatePassword:
         assert "4 أحرف" in msg
 
     def test_too_short(self):
-        ok, msg = validate_password("abc")
+        ok, msg = validate_password("abc")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_too_long(self):
-        ok, msg = validate_password("a" * 65)
+        ok, msg = validate_password("a" * 65)  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_valid(self):
@@ -193,11 +193,11 @@ class TestValidatePassword:
         assert "غير مسموحة" in msg
 
     def test_carriage_return_rejected(self):
-        ok, msg = validate_password("pass\rword")
+        ok, msg = validate_password("pass\rword")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_tab_rejected(self):
-        ok, msg = validate_password("pass\tword")
+        ok, msg = validate_password("pass\tword")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
 
@@ -215,7 +215,7 @@ class TestValidatePositiveInt:
         assert "موجب" in msg
 
     def test_negative_invalid(self):
-        ok, msg = validate_positive_int("-5")
+        ok, msg = validate_positive_int("-5")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_non_numeric(self):
@@ -249,17 +249,17 @@ class TestValidateMac:
         assert mac == "AA:BB:CC:DD:EE:FF"
 
     def test_empty_returns_invalid(self):
-        ok, msg = validate_mac("")
+        ok, msg = validate_mac("")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_whitespace_only_invalid(self):
-        ok, msg = validate_mac("   ")
+        ok, msg = validate_mac("   ")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_wrong_length(self):
-        ok, msg = validate_mac("AA:BB:CC")
+        ok, msg = validate_mac("AA:BB:CC")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
     def test_invalid_hex(self):
-        ok, msg = validate_mac("GG:HH:II:JJ:KK:LL")
+        ok, msg = validate_mac("GG:HH:II:JJ:KK:LL")  # type: ignore[reportUnusedVariable]
         assert ok is False

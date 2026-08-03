@@ -22,10 +22,10 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _ctx():
@@ -35,7 +35,7 @@ def _ctx():
     return ctx
 
 
-def _admin_update(**kwargs):
+def _admin_update(**kwargs):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=ADMIN_ID)
     chat = MagicMock()
@@ -75,8 +75,8 @@ class TestUsermanSearchStart:
 
     @pytest.mark.asyncio
     async def test_registered_as_main_entry_point(self):
-        import bot.registrations  # noqa: F401  (populates the handler registry)
-        from utils.handler_registry import _registry
+        import bot.registrations  # noqa: F401  (populates the handler registry)  # type: ignore[reportUnusedImport]
+        from utils.handler_registry import _registry  # type: ignore[reportPrivateUsage]
 
         matches = [
             e for e in _registry["entry_points"] if e["func"].__name__ == "userman_search_start"
@@ -597,7 +597,7 @@ class TestUsermanSearchFlowE2E:
         # The @admin_only decorator enforces a 1s rate limit per user, so the
         # instant calls in this simulation must be cleared between steps.
         def _allow():
-            admin_decorator._rate_limit_data.clear()
+            admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
         # 1) Press "بحث عن مستخدم" button
         _allow()

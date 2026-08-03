@@ -153,7 +153,7 @@ class TestARPTableProbe:
         assert result == []
 
     def test_discover_handles_subprocess_error(self):
-        def failing_run(*a, **kw):
+        def failing_run(*a, **kw):  # type: ignore[reportMissingParameterType]
             raise OSError("no such command")
 
         probe = ARPTableProbe(run_fn=failing_run, system="Windows")
@@ -164,7 +164,7 @@ class TestARPTableProbe:
 class TestPortScanProbe:
     @pytest.mark.asyncio
     async def test_returns_open_ips(self):
-        async def fake_open(ip, port):
+        async def fake_open(ip, port):  # type: ignore[reportMissingParameterType]
             return (MagicMock(), MagicMock())
 
         probe = PortScanProbe(
@@ -181,7 +181,7 @@ class TestPortScanProbe:
 
     @pytest.mark.asyncio
     async def test_filters_closed_ips(self):
-        async def selective_open(ip, port):
+        async def selective_open(ip, port):  # type: ignore[reportMissingParameterType]
             if ip == "1.2.3.4":
                 return (MagicMock(), MagicMock())
             raise ConnectionRefusedError("nope")
@@ -199,7 +199,7 @@ class TestPortScanProbe:
 
     @pytest.mark.asyncio
     async def test_all_closed(self):
-        async def always_fail(ip, port):
+        async def always_fail(ip, port):  # type: ignore[reportMissingParameterType]
             raise ConnectionRefusedError()
 
         probe = PortScanProbe(ips=["1.2.3.4"], open_connection=always_fail)
@@ -232,14 +232,14 @@ class TestMNDPListenerProbe:
 class TestMergeProbeResults:
     def test_port_only(self):
         port = [{"ip": "1.2.3.4", "port": 8728, "source": "port_check"}]
-        result = merge_probe_results([], port, [])
+        result = merge_probe_results([], port, [])  # type: ignore[reportArgumentType]
         assert len(result) == 1
         assert result[0].ip_address == "1.2.3.4"
         assert result[0].source == "port_check"
 
     def test_arp_only_ignored_without_verified_port(self):
         arp = [{"ip": "1.2.3.4", "mac": "aa:bb:cc:dd:ee:ff", "source": "arp"}]
-        result = merge_probe_results(arp, [], [])
+        result = merge_probe_results(arp, [], [])  # type: ignore[reportArgumentType]
         assert result == []
 
     def test_mndp_only(self):
@@ -251,7 +251,7 @@ class TestMergeProbeResults:
                 "source": "mndp",
             }
         ]
-        result = merge_probe_results([], [], mndp)
+        result = merge_probe_results([], [], mndp)  # type: ignore[reportArgumentType]
         assert len(result) == 1
         assert result[0].identity == "Router1"
         assert result[0].version == "6.48"
@@ -259,7 +259,7 @@ class TestMergeProbeResults:
     def test_arp_plus_port_enriches_mac(self):
         arp = [{"ip": "1.2.3.4", "mac": "aa:bb:cc:dd:ee:ff", "source": "arp"}]
         port = [{"ip": "1.2.3.4", "port": 8728, "source": "port_check"}]
-        result = merge_probe_results(arp, port, [])
+        result = merge_probe_results(arp, port, [])  # type: ignore[reportArgumentType]
         assert len(result) == 1
         assert result[0].mac_address == "aa:bb:cc:dd:ee:ff"
         assert "port" in result[0].source
@@ -274,7 +274,7 @@ class TestMergeProbeResults:
                 "source": "mndp",
             }
         ]
-        result = merge_probe_results([], port, mndp)
+        result = merge_probe_results([], port, mndp)  # type: ignore[reportArgumentType]
         assert len(result) == 1
         assert result[0].identity == "MyRouter"
         assert result[0].version == "6.48.6"
@@ -285,7 +285,7 @@ class TestMergeProbeResults:
             {"ip": "1.2.3.5", "mac": "11:22:33:44:55:66", "source": "arp"},
         ]
         port = [{"ip": "1.2.3.4", "port": 8728, "source": "port_check"}]
-        result = merge_probe_results(arp, port, [])
+        result = merge_probe_results(arp, port, [])  # type: ignore[reportArgumentType]
         assert len(result) == 1
         assert result[0].ip_address == "1.2.3.4"
         assert result[0].mac_address == "aa:bb:cc:dd:ee:ff"

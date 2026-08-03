@@ -111,7 +111,7 @@ class TestConfigureLogging:
         captured = []
 
         class CaptureHandler(logging.Handler):
-            def emit(self, record):
+            def emit(self, record):  # type: ignore[reportMissingParameterType]
                 captured.append(getattr(record, "request_id", "<MISSING>"))
 
         root = logging.getLogger()

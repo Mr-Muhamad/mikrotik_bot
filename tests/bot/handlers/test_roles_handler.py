@@ -11,14 +11,14 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture(autouse=True)
-def _bypass_decorators():
+def _bypass_decorators():  # type: ignore[reportUnusedFunction]
     """Unwrap @admin_only / @require_role so tests hit the real function body."""
     for attr in [
         "roles_command",
@@ -72,7 +72,7 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = None
         msg.text = "/role 123456 operator"
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target == 123456
         assert role == "operator"
 
@@ -80,7 +80,7 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = MagicMock(id=999999)
         msg.text = "/role admin"
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target == 999999
         assert role == "admin"
 
@@ -88,7 +88,7 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = MagicMock(id=111111)
         msg.text = "/role"
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target == 111111
         assert role == ""
 
@@ -96,7 +96,7 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = MagicMock(id=222222)
         msg.text = None
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target == 222222
         assert role == ""
 
@@ -104,7 +104,7 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = None
         msg.text = None
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target is None
         assert role == ""
 
@@ -112,7 +112,7 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = None
         msg.text = ""
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target is None
         assert role == ""
 
@@ -120,7 +120,7 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = None
         msg.text = "/role abc operator"
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target is None
         assert role == ""
 
@@ -128,12 +128,12 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = None
         msg.text = "/role 123456"
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target is None
         assert role == ""
 
     def test_none_msg(self):
-        target, role = roles_module._parse_role_target(None)
+        target, role = roles_module._parse_role_target(None)  # type: ignore[reportPrivateUsage]
         assert target is None
         assert role == ""
 
@@ -141,7 +141,7 @@ class TestParseRoleTarget:
         msg = MagicMock()
         msg.forward_from = None
         msg.text = "/role 123456 viewer extra"
-        target, role = roles_module._parse_role_target(msg)
+        target, role = roles_module._parse_role_target(msg)  # type: ignore[reportPrivateUsage]
         assert target == 123456
         assert role == "viewer"
 

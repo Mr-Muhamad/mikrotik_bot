@@ -23,7 +23,7 @@ MOCK_ROUTER_INFO = {
 }
 
 
-def _patch_pool_for_retry(api_obj, exc_class, exc_msg):
+def _patch_pool_for_retry(api_obj, exc_class, exc_msg):  # type: ignore[reportMissingParameterType]
     """Return a tuple of context-manager patches to exhaust retries for execute."""
     return (
         patch.object(api_obj._pool, "get_connection", side_effect=exc_class(exc_msg)),
@@ -35,7 +35,7 @@ def _patch_pool_for_retry(api_obj, exc_class, exc_msg):
 
 
 class TestGetVersionOSError:
-    def test_os_error_returns_unknown(self, api):
+    def test_os_error_returns_unknown(self, api):  # type: ignore[reportMissingParameterType]
         with ExitStack() as stack:
             stack.enter_context(patch.object(api._pool, "get_version", return_value=""))
             for cm in _patch_pool_for_retry(api, OSError, "network down"):
@@ -43,7 +43,7 @@ class TestGetVersionOSError:
             result = api.get_version("r1")
         assert result == "unknown"
 
-    def test_connection_error_returns_unknown(self, api):
+    def test_connection_error_returns_unknown(self, api):  # type: ignore[reportMissingParameterType]
         with ExitStack() as stack:
             stack.enter_context(patch.object(api._pool, "get_version", return_value=""))
             for cm in _patch_pool_for_retry(api, ConnectionError, "reset"):
@@ -53,55 +53,55 @@ class TestGetVersionOSError:
 
 
 class TestGetUsermanBasePathUnknown:
-    def test_unknown_version_defaults_to_v6(self, api):
+    def test_unknown_version_defaults_to_v6(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api, "get_version", return_value="unknown"):
             assert api.get_userman_base_path("r1") == "tool/user-manager"
 
-    def test_empty_version_defaults_to_v6(self, api):
+    def test_empty_version_defaults_to_v6(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api, "get_version", return_value=""):
             assert api.get_userman_base_path("r1") == "tool/user-manager"
 
-    def test_version_above_7_returns_v7_path(self, api):
+    def test_version_above_7_returns_v7_path(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api, "get_version", return_value="8.0"):
             assert api.get_userman_base_path("r1") == "user-manager"
 
 
 class TestGetUsermanBasePathParseError:
-    def test_value_error_on_non_numeric(self, api):
+    def test_value_error_on_non_numeric(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api, "get_version", return_value="abc.def"):
             assert api.get_userman_base_path("r1") == "tool/user-manager"
 
-    def test_index_error_on_empty_split(self, api):
+    def test_index_error_on_empty_split(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api, "get_version", return_value=""):
             assert api.get_userman_base_path("r1") == "tool/user-manager"
 
 
 class TestClose:
-    def test_close_delegates_to_pool(self, api):
+    def test_close_delegates_to_pool(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api._pool, "close_all") as mock_close:
             api.close()
         mock_close.assert_called_once()
 
 
 class TestGetRouterInfo:
-    def test_delegates_to_pool(self, api):
+    def test_delegates_to_pool(self, api):  # type: ignore[reportMissingParameterType]
         info = {"host": "1.2.3.4", "port": 8728}
         with patch.object(api._pool, "get_router_info", return_value=info):
             assert api.get_router_info("r1") == info
 
 
 class TestHasActiveConnection:
-    def test_returns_true(self, api):
+    def test_returns_true(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api._pool, "has_active_connection", return_value=True):
             assert api.has_active_connection("r1") is True
 
-    def test_returns_false(self, api):
+    def test_returns_false(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api._pool, "has_active_connection", return_value=False):
             assert api.has_active_connection("r1") is False
 
 
 class TestCheckConnectionHealth:
-    def test_healthy(self, api):
+    def test_healthy(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.return_value = MagicMock(return_value=[{"version": "7.10"}])
         with patch.object(api._pool, "get_connection", return_value=fake):
@@ -109,7 +109,7 @@ class TestCheckConnectionHealth:
         assert ok is True
         assert msg == "healthy"
 
-    def test_empty_response(self, api):
+    def test_empty_response(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.return_value = MagicMock(return_value=[])
         with patch.object(api._pool, "get_connection", return_value=fake):
@@ -117,7 +117,7 @@ class TestCheckConnectionHealth:
         assert ok is False
         assert msg == "empty_response"
 
-    def test_librouteros_error(self, api):
+    def test_librouteros_error(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch.object(api._pool, "get_connection", side_effect=LibRouterosError("fail")),
             patch.object(api._pool, "close_connection"),
@@ -128,29 +128,29 @@ class TestCheckConnectionHealth:
         assert ok is False
         assert "fail" in msg
 
-    def test_connection_error(self, api):
+    def test_connection_error(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch.object(api._pool, "get_connection", side_effect=ConnectionError("reset")),
             patch.object(api._pool, "close_connection"),
             patch.object(api._pool, "get_router_info", return_value=MOCK_ROUTER_INFO),
             patch.object(api._pool, "_connect", return_value=MagicMock()),
         ):
-            ok, msg = api.check_connection_health("r1")
+            ok, msg = api.check_connection_health("r1")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
-    def test_os_error(self, api):
+    def test_os_error(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch.object(api._pool, "get_connection", side_effect=OSError("network")),
             patch.object(api._pool, "close_connection"),
             patch.object(api._pool, "get_router_info", return_value=MOCK_ROUTER_INFO),
             patch.object(api._pool, "_connect", return_value=MagicMock()),
         ):
-            ok, msg = api.check_connection_health("r1")
+            ok, msg = api.check_connection_health("r1")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
 
 class TestThrottleSleep:
-    def test_sleeps_when_needed(self, api):
+    def test_sleeps_when_needed(self, api):  # type: ignore[reportMissingParameterType]
         api._last_api_call["r1"] = 0.0
         with patch("core.mikrotik_api.time") as mock_time:
             mock_time.monotonic.return_value = 0.05
@@ -158,7 +158,7 @@ class TestThrottleSleep:
             api._throttle("r1")
             mock_time.sleep.assert_called_once()
 
-    def test_no_sleep_when_enough_time_passed(self, api):
+    def test_no_sleep_when_enough_time_passed(self, api):  # type: ignore[reportMissingParameterType]
         api._last_api_call["r1"] = 0.0
         with patch("core.mikrotik_api.time") as mock_time:
             mock_time.monotonic.return_value = 1.0
@@ -168,7 +168,7 @@ class TestThrottleSleep:
 
 
 class TestExecuteWithRetryLastExc:
-    def test_raises_last_exc_after_all_retries_oserror(self, api):
+    def test_raises_last_exc_after_all_retries_oserror(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch.object(api._pool, "get_connection", side_effect=OSError("persistent")),
             patch.object(api._pool, "close_connection"),
@@ -179,7 +179,7 @@ class TestExecuteWithRetryLastExc:
             with pytest.raises(OSError, match="persistent"):
                 api.execute("r1", "ip/hotspot/user/print")
 
-    def test_raises_last_exc_connection_error(self, api):
+    def test_raises_last_exc_connection_error(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch.object(api._pool, "get_connection", side_effect=ConnectionError("fail")),
             patch.object(api._pool, "close_connection"),
@@ -192,24 +192,24 @@ class TestExecuteWithRetryLastExc:
 
 
 class TestTestConnectionSocketFailure:
-    def test_socket_oserror_returns_false(self, api):
+    def test_socket_oserror_returns_false(self, api):  # type: ignore[reportMissingParameterType]
         with patch("socket.create_connection", side_effect=OSError("Connection refused")):
             ok, msg, ident = api.test_connection("10.0.0.1", "admin", "pass", 8728)
         assert ok is False
         assert "closed/unreachable" in msg
         assert ident == ""
 
-    def test_socket_timeout_returns_false(self, api):
+    def test_socket_timeout_returns_false(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("timed out")
         exc.errno = 10060
         with patch("socket.create_connection", side_effect=exc):
-            ok, msg, ident = api.test_connection("10.0.0.1", "admin", "pass", 8728)
+            ok, msg, ident = api.test_connection("10.0.0.1", "admin", "pass", 8728)  # type: ignore[reportUnusedVariable]
         assert ok is False
         assert "closed/unreachable" in msg
 
 
 class TestTestConnectionApiCloseError:
-    def test_close_error_is_caught(self, api):
+    def test_close_error_is_caught(self, api):  # type: ignore[reportMissingParameterType]
         mock_api = MagicMock()
         mock_api.path.return_value = MagicMock(return_value=[{"version": "7.10"}])
         mock_api.close.side_effect = RuntimeError("close failed")
@@ -217,10 +217,10 @@ class TestTestConnectionApiCloseError:
             patch("socket.create_connection", return_value=MagicMock()),
             patch("core.mikrotik_api.connect", return_value=mock_api),
         ):
-            ok, msg, ident = api.test_connection("10.0.0.1", "admin", "pass")
+            ok, msg, ident = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert ok is True
 
-    def test_close_error_with_identity_result(self, api):
+    def test_close_error_with_identity_result(self, api):  # type: ignore[reportMissingParameterType]
         mock_api = MagicMock()
         mock_api.path.side_effect = [
             MagicMock(return_value=[{"version": "6.49"}]),
@@ -238,55 +238,55 @@ class TestTestConnectionApiCloseError:
 
 
 class TestSanitizeConnectDetail:
-    def test_empty_string_returns_empty(self, api):
+    def test_empty_string_returns_empty(self, api):  # type: ignore[reportMissingParameterType]
         assert api._sanitize_connect_detail("") == ""
 
-    def test_password_in_detail_masked(self, api):
+    def test_password_in_detail_masked(self, api):  # type: ignore[reportMissingParameterType]
         raw = "Authentication failed: password=secret123"
         result = api._sanitize_connect_detail(raw)
         assert "secret123" not in result
         assert "password=***" in result
 
-    def test_long_string_truncated(self, api):
+    def test_long_string_truncated(self, api):  # type: ignore[reportMissingParameterType]
         raw = "x" * 500
         result = api._sanitize_connect_detail(raw)
         assert len(result) == 300
 
-    def test_token_masked(self, api):
+    def test_token_masked(self, api):  # type: ignore[reportMissingParameterType]
         raw = "token: abcdef123456"
         result = api._sanitize_connect_detail(raw)
         assert "abcdef123456" not in result
 
-    def test_secret_masked(self, api):
+    def test_secret_masked(self, api):  # type: ignore[reportMissingParameterType]
         raw = "secret=mysupersecret"
         result = api._sanitize_connect_detail(raw)
         assert "mysupersecret" not in result
 
-    def test_passwd_masked(self, api):
+    def test_passwd_masked(self, api):  # type: ignore[reportMissingParameterType]
         raw = "passwd=abc123"
         result = api._sanitize_connect_detail(raw)
         assert "abc123" not in result
 
 
 class TestGetBotHostForRouter:
-    def test_returns_bot_host(self, api):
+    def test_returns_bot_host(self, api):  # type: ignore[reportMissingParameterType]
         with patch("config.BOT_HOST", "192.168.1.100"):
             result = api._get_bot_host_for_router("r1")
         assert result == "192.168.1.100"
 
-    def test_returns_empty_when_not_set(self, api):
+    def test_returns_empty_when_not_set(self, api):  # type: ignore[reportMissingParameterType]
         with patch("config.BOT_HOST", ""):
             result = api._get_bot_host_for_router("r1")
         assert result == ""
 
 
 class TestUploadFileToRouter:
-    def test_returns_false_when_no_bot_host(self, api):
+    def test_returns_false_when_no_bot_host(self, api):  # type: ignore[reportMissingParameterType]
         with patch("config.BOT_HOST", ""):
             result = api.upload_file_to_router("r1", "/tmp/file.backup", "file.backup")
         assert result is False
 
-    def test_returns_false_on_prepare_failure(self, api):
+    def test_returns_false_on_prepare_failure(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "10.0.0.1"),
             patch("core.backup.file_server.prepare_serve_file", side_effect=OSError("disk full")),
@@ -294,7 +294,7 @@ class TestUploadFileToRouter:
             result = api.upload_file_to_router("r1", "/tmp/file.backup", "file.backup")
         assert result is False
 
-    def test_returns_false_on_fetch_failure(self, api):
+    def test_returns_false_on_fetch_failure(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "10.0.0.1"),
             patch("core.backup.file_server.prepare_serve_file", return_value="staged_file.backup"),
@@ -304,7 +304,7 @@ class TestUploadFileToRouter:
             result = api.upload_file_to_router("r1", "/tmp/file.backup", "file.backup")
         assert result is False
 
-    def test_success(self, api):
+    def test_success(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "10.0.0.1"),
             patch("core.backup.file_server.prepare_serve_file", return_value="staged_file.backup"),
@@ -315,7 +315,7 @@ class TestUploadFileToRouter:
         assert result is True
         mock_cleanup.assert_called_once_with("staged_file.backup")
 
-    def test_cleanup_called_even_on_failure(self, api):
+    def test_cleanup_called_even_on_failure(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "10.0.0.1"),
             patch("core.backup.file_server.prepare_serve_file", return_value="staged_file.backup"),
@@ -327,12 +327,12 @@ class TestUploadFileToRouter:
 
 
 class TestDownloadFileFromRouter:
-    def test_returns_false_when_no_bot_host(self, api):
+    def test_returns_false_when_no_bot_host(self, api):  # type: ignore[reportMissingParameterType]
         with patch("config.BOT_HOST", ""):
             result = api.download_file_from_router("r1", "file.backup", "/tmp/backups")
         assert result is False
 
-    def test_returns_false_on_fetch_failure(self, api):
+    def test_returns_false_on_fetch_failure(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "10.0.0.1"),
             patch.object(api, "execute_long", side_effect=OSError("timeout")),
@@ -340,7 +340,7 @@ class TestDownloadFileFromRouter:
             result = api.download_file_from_router("r1", "file.backup", "/tmp/backups")
         assert result is False
 
-    def test_success_file_found(self, api):
+    def test_success_file_found(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "10.0.0.1"),
             patch.object(api, "execute_long", return_value=[]),
@@ -351,7 +351,7 @@ class TestDownloadFileFromRouter:
             result = api.download_file_from_router("r1", "file.backup", "/tmp/backups")
         assert result is True
 
-    def test_file_not_found_in_upload_dir(self, api):
+    def test_file_not_found_in_upload_dir(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "10.0.0.1"),
             patch.object(api, "execute_long", return_value=[]),
@@ -362,62 +362,62 @@ class TestDownloadFileFromRouter:
 
 
 class TestProbeApiSslSuccess:
-    def test_ssl_probe_success_returns_hint(self, api):
+    def test_ssl_probe_success_returns_hint(self, api):  # type: ignore[reportMissingParameterType]
         mock_probe = MagicMock()
         with patch("core.mikrotik_api.connect", return_value=mock_probe):
             result = api._probe_api_ssl("10.0.0.1", "admin", "pass")
         assert "8729" in result
         mock_probe.close.assert_called_once()
 
-    def test_ssl_probe_close_error_still_returns_hint(self, api):
+    def test_ssl_probe_close_error_still_returns_hint(self, api):  # type: ignore[reportMissingParameterType]
         mock_probe = MagicMock()
         mock_probe.close.side_effect = RuntimeError("close error")
         with patch("core.mikrotik_api.connect", return_value=mock_probe):
             result = api._probe_api_ssl("10.0.0.1", "admin", "pass")
         assert "8729" in result
 
-    def test_ssl_probe_failure_returns_empty(self, api):
+    def test_ssl_probe_failure_returns_empty(self, api):  # type: ignore[reportMissingParameterType]
         with patch("core.mikrotik_api.connect", side_effect=ConnectionError("refused")):
             result = api._probe_api_ssl("10.0.0.1", "admin", "pass")
         assert result == ""
 
 
 class TestClassifyConnectFailure:
-    def test_timeout_winerror_10060(self, api):
+    def test_timeout_winerror_10060(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("Connection timed out")
         exc.winerror = 10060
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728)
         assert "مهلة" in msg
 
-    def test_refused_winerror_10061(self, api):
+    def test_refused_winerror_10061(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("Connection refused")
         exc.winerror = 10061
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728)
         assert "refused" in msg.lower()
 
-    def test_auth_error(self, api):
+    def test_auth_error(self, api):  # type: ignore[reportMissingParameterType]
         exc = LibRouterosError("invalid user or password")
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728)
         assert "تسجيل الدخول" in msg
 
-    def test_generic_error(self, api):
+    def test_generic_error(self, api):  # type: ignore[reportMissingParameterType]
         exc = LibRouterosError("something weird")
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728)
         assert "10.0.0.1" in msg
 
-    def test_timeout_with_ssl_hint(self, api):
+    def test_timeout_with_ssl_hint(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("timed out")
         exc.errno = 10060
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728, ssl_hint="HINT")
         assert "HINT" in msg
 
-    def test_refused_errno_10061(self, api):
+    def test_refused_errno_10061(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("Connection refused")
         exc.errno = 10061
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728)
         assert "refused" in msg.lower()
 
-    def test_timeout_errno_10060(self, api):
+    def test_timeout_errno_10060(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("timed out")
         exc.errno = 10060
         msg = api._classify_connect_failure(exc, "10.0.0.1", 8728)
@@ -425,34 +425,34 @@ class TestClassifyConnectFailure:
 
 
 class TestIsTimeoutError:
-    def test_winerror_10060(self, api):
+    def test_winerror_10060(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("fail")
         exc.winerror = 10060
         assert api._is_timeout_error(exc) is True
 
-    def test_errno_10060(self, api):
+    def test_errno_10060(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("fail")
         exc.errno = 10060
         assert api._is_timeout_error(exc) is True
 
-    def test_timed_out_in_message(self, api):
+    def test_timed_out_in_message(self, api):  # type: ignore[reportMissingParameterType]
         assert api._is_timeout_error(OSError("Connection timed out")) is True
 
-    def test_timeout_in_message(self, api):
+    def test_timeout_in_message(self, api):  # type: ignore[reportMissingParameterType]
         assert api._is_timeout_error(OSError("Read timeout")) is True
 
-    def test_10060_in_message(self, api):
+    def test_10060_in_message(self, api):  # type: ignore[reportMissingParameterType]
         assert api._is_timeout_error(OSError("Error 10060")) is True
 
-    def test_non_timeout_error(self, api):
+    def test_non_timeout_error(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("Connection refused")
-        exc.winerror = None
+        exc.winerror = None  # type: ignore[reportAttributeAccessIssue]
         exc.errno = None
         assert api._is_timeout_error(exc) is False
 
 
 class TestTestConnectionTimeoutClassification:
-    def test_timeout_oserror_winerror(self, api):
+    def test_timeout_oserror_winerror(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("Connection timed out")
         exc.winerror = 10060
         with (
@@ -464,7 +464,7 @@ class TestTestConnectionTimeoutClassification:
         assert ok is False
         assert "مهلة" in msg or "api" in msg
 
-    def test_refused_oserror_winerror(self, api):
+    def test_refused_oserror_winerror(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("Connection refused")
         exc.winerror = 10061
         with (
@@ -475,19 +475,19 @@ class TestTestConnectionTimeoutClassification:
         assert ok is False
         assert "refused" in msg.lower()
 
-    def test_non_timeout_oserror(self, api):
+    def test_non_timeout_oserror(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("Address already in use")
-        exc.winerror = None
+        exc.winerror = None  # type: ignore[reportAttributeAccessIssue]
         exc.errno = None
         with (
             patch("socket.create_connection", return_value=MagicMock()),
             patch("core.mikrotik_api.connect", side_effect=exc),
             patch.object(api, "_probe_api_ssl", return_value=""),
         ):
-            ok, msg, _ = api.test_connection("10.0.0.1", "admin", "pass")
+            ok, msg, _ = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
-    def test_librouteros_login_hint(self, api):
+    def test_librouteros_login_hint(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("socket.create_connection", return_value=MagicMock()),
             patch("core.mikrotik_api.connect", side_effect=LibRouterosError("invalid user: admin")),
@@ -498,7 +498,7 @@ class TestTestConnectionTimeoutClassification:
 
 
 class TestCallCommand:
-    def test_command_with_kwargs(self, api):
+    def test_command_with_kwargs(self, api):  # type: ignore[reportMissingParameterType]
         mock_cmd_path = MagicMock(return_value=[{"name": "u1"}])
         mock_api = MagicMock()
         mock_api.path.return_value = mock_cmd_path
@@ -507,7 +507,7 @@ class TestCallCommand:
         mock_api.path.assert_called_once_with("ip", "hotspot", "user")
         mock_cmd_path.assert_called_once_with("add", name="u1")
 
-    def test_command_without_kwargs(self, api):
+    def test_command_without_kwargs(self, api):  # type: ignore[reportMissingParameterType]
         mock_cmd_path = MagicMock(return_value=[{"version": "7.10"}])
         mock_api = MagicMock()
         mock_api.path.return_value = mock_cmd_path
@@ -517,7 +517,7 @@ class TestCallCommand:
 
 
 class TestDebugLog:
-    def test_masks_password_in_kwargs(self, api):
+    def test_masks_password_in_kwargs(self, api):  # type: ignore[reportMissingParameterType]
         logger = MagicMock()
         with patch("core.mikrotik_api.logger", logger):
             api._debug_log("execute", "user/add", {"name": "u1", "password": "secret"})
@@ -526,7 +526,7 @@ class TestDebugLog:
         assert "secret" not in str(sanitized)
         assert sanitized.get("password") == "***"
 
-    def test_empty_kwargs(self, api):
+    def test_empty_kwargs(self, api):  # type: ignore[reportMissingParameterType]
         logger = MagicMock()
         with patch("core.mikrotik_api.logger", logger):
             api._debug_log("execute", "print", {})
@@ -534,17 +534,17 @@ class TestDebugLog:
 
 
 class TestGetCachedVersion:
-    def test_returns_none_for_empty(self, api):
+    def test_returns_none_for_empty(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api._pool, "get_version", return_value=""):
             assert api.get_cached_version("r1") == ""
 
-    def test_returns_cached(self, api):
+    def test_returns_cached(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api._pool, "get_version", return_value="7.10"):
             assert api.get_cached_version("r1") == "7.10"
 
 
 class TestConnectionContextBrokenFlag:
-    def test_non_retryable_does_not_mark_broken(self, api):
+    def test_non_retryable_does_not_mark_broken(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.side_effect = LibRouterosError("unknown parameter")
         with (
@@ -557,7 +557,7 @@ class TestConnectionContextBrokenFlag:
         call_kwargs = mock_release.call_args[1]
         assert call_kwargs.get("broken") is False
 
-    def test_generic_exception_marks_broken(self, api):
+    def test_generic_exception_marks_broken(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.side_effect = ValueError("weird")
         with (
@@ -572,14 +572,14 @@ class TestConnectionContextBrokenFlag:
 
 
 class TestForceReconnect:
-    def test_retry_uses_reconnect(self, api):
+    def test_retry_uses_reconnect(self, api):  # type: ignore[reportMissingParameterType]
         fail_api = MagicMock()
         fail_api.path.side_effect = OSError("connection lost")
         ok_api = MagicMock()
         ok_api.path.return_value = MagicMock(return_value=[])
         call_count = [0]
 
-        def get_conn_side_effect(key, timeout=None):
+        def get_conn_side_effect(key, timeout=None):  # type: ignore[reportMissingParameterType]
             call_count[0] += 1
             if call_count[0] == 1:
                 return fail_api
@@ -595,7 +595,7 @@ class TestForceReconnect:
         assert result == []
         mock_reconnect.assert_called_once()
 
-    def test_first_attempt_uses_get_connection(self, api):
+    def test_first_attempt_uses_get_connection(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.return_value = MagicMock(return_value=[])
         with (
@@ -607,7 +607,7 @@ class TestForceReconnect:
 
 
 class TestExecuteLongDelegation:
-    def test_execute_long_uses_long_timeout(self, api):
+    def test_execute_long_uses_long_timeout(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.return_value = MagicMock(return_value=[])
         with (
@@ -620,7 +620,7 @@ class TestExecuteLongDelegation:
                 api.execute_long("r1", "system/resource/print")
                 assert mock_exec.call_args[0][2] == 120
 
-    def test_execute_uses_api_timeout(self, api):
+    def test_execute_uses_api_timeout(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.return_value = MagicMock(return_value=[])
         with (
@@ -635,21 +635,21 @@ class TestExecuteLongDelegation:
 
 
 class TestVersion7Detection:
-    def test_version_7(self, api):
+    def test_version_7(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api, "get_version", return_value="7.0"):
             assert api.is_version_7() is True
 
-    def test_version_6(self, api):
+    def test_version_6(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api, "get_version", return_value="6.49.6"):
             assert api.is_version_7() is False
 
-    def test_unknown(self, api):
+    def test_unknown(self, api):  # type: ignore[reportMissingParameterType]
         with patch.object(api, "get_version", return_value="unknown"):
             assert api.is_version_7() is False
 
 
 class TestUploadFullFlow:
-    def test_url_construction(self, api):
+    def test_url_construction(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "192.168.88.1"),
             patch("core.backup.file_server.prepare_serve_file", return_value="serve.backup"),
@@ -666,7 +666,7 @@ class TestUploadFullFlow:
 
 
 class TestDownloadFullFlow:
-    def test_executes_tool_fetch(self, api):
+    def test_executes_tool_fetch(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("config.BOT_HOST", "192.168.88.1"),
             patch.object(api, "execute_long") as mock_exec,
@@ -679,7 +679,7 @@ class TestDownloadFullFlow:
 
 
 class TestProbeSslFullFlow:
-    def test_probe_connect_success_close_error(self, api):
+    def test_probe_connect_success_close_error(self, api):  # type: ignore[reportMissingParameterType]
         mock_probe = MagicMock()
         mock_probe.close.side_effect = OSError("already closed")
         with patch("core.mikrotik_api.connect", return_value=mock_probe) as mock_connect:
@@ -694,14 +694,14 @@ class TestProbeSslFullFlow:
         )
         assert "8729" in result
 
-    def test_probe_connect_raises(self, api):
+    def test_probe_connect_raises(self, api):  # type: ignore[reportMissingParameterType]
         with patch("core.mikrotik_api.connect", side_effect=OSError("no route")):
             result = api._probe_api_ssl("10.0.0.1", "admin", "pass")
         assert result == ""
 
 
 class TestTestConnectionFullFlow:
-    def test_full_success_with_identity(self, api):
+    def test_full_success_with_identity(self, api):  # type: ignore[reportMissingParameterType]
         mock_api = MagicMock()
         mock_api.path.side_effect = [
             MagicMock(return_value=[{"version": "7.12"}]),
@@ -716,7 +716,7 @@ class TestTestConnectionFullFlow:
         assert version == "7.12"
         assert identity == "MikroTik-Router"
 
-    def test_empty_resource_and_identity(self, api):
+    def test_empty_resource_and_identity(self, api):  # type: ignore[reportMissingParameterType]
         mock_api = MagicMock()
         mock_api.path.side_effect = [
             MagicMock(return_value=[]),
@@ -731,35 +731,35 @@ class TestTestConnectionFullFlow:
         assert version == "unknown"
         assert identity == "192.168.1.1"
 
-    def test_os_error_non_timeout_with_ssl_probe(self, api):
+    def test_os_error_non_timeout_with_ssl_probe(self, api):  # type: ignore[reportMissingParameterType]
         exc = OSError("Connection reset")
-        exc.winerror = None
+        exc.winerror = None  # type: ignore[reportAttributeAccessIssue]
         exc.errno = None
         with (
             patch("socket.create_connection", return_value=MagicMock()),
             patch("core.mikrotik_api.connect", side_effect=exc),
             patch.object(api, "_probe_api_ssl", return_value="SSL_HINT"),
         ):
-            ok, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")
+            ok, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert ok is False
         assert "SSL_HINT" in msg
 
-    def test_unexpected_exception(self, api):
+    def test_unexpected_exception(self, api):  # type: ignore[reportMissingParameterType]
         with (
             patch("socket.create_connection", return_value=MagicMock()),
             patch("core.mikrotik_api.connect", side_effect=RuntimeError("unexpected")),
         ):
-            ok, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")
+            ok, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
-    def test_no_api_obj_in_finally(self, api):
+    def test_no_api_obj_in_finally(self, api):  # type: ignore[reportMissingParameterType]
         with patch("socket.create_connection", side_effect=OSError("refused")):
-            ok, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")
+            ok, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert ok is False
 
 
 class TestRebootSwallow:
-    def test_reboot_on_os_error(self, api):
+    def test_reboot_on_os_error(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.side_effect = OSError("network")
         with (
@@ -771,7 +771,7 @@ class TestRebootSwallow:
 
 
 class TestNonBlockingSuccess:
-    def test_non_blocking_successful(self, api):
+    def test_non_blocking_successful(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.return_value = MagicMock(return_value=[{"done": True}])
         with patch.object(api._pool, "get_connection", return_value=fake):
@@ -779,7 +779,7 @@ class TestNonBlockingSuccess:
 
 
 class TestDebugLogMasking:
-    def test_masks_all_password_keys(self, api):
+    def test_masks_all_password_keys(self, api):  # type: ignore[reportMissingParameterType]
         logger = MagicMock()
         with patch("core.mikrotik_api.logger", logger):
             api._debug_log("method", "cmd", {"user_password": "x", "secret_key": "y"})
@@ -788,7 +788,7 @@ class TestDebugLogMasking:
 
 
 class TestGetVersionEmptyResult:
-    def test_no_version_key_in_result(self, api):
+    def test_no_version_key_in_result(self, api):  # type: ignore[reportMissingParameterType]
         fake = MagicMock()
         fake.path.return_value = MagicMock(return_value=[{"identity": "Router"}])
         with (

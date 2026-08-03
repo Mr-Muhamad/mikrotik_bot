@@ -11,7 +11,7 @@ def _fake_arp():
     return MagicMock(discover=MagicMock(return_value=[]))
 
 
-def _fake_port(results=None):
+def _fake_port(results=None):  # type: ignore[reportMissingParameterType]
     return MagicMock(discover=AsyncMock(return_value=results or []))
 
 

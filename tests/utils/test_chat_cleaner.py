@@ -21,7 +21,7 @@ from utils.chat_cleaner import (
 )
 
 
-def _ctx(chat_id: int = 1, job_queue=None, user_data=None, bot_data=None):
+def _ctx(chat_id: int = 1, job_queue=None, user_data=None, bot_data=None):  # type: ignore[reportMissingParameterType]
     ctx = MagicMock()
     ctx.user_data = user_data if user_data is not None else {}
     ctx.bot_data = bot_data if bot_data is not None else {}

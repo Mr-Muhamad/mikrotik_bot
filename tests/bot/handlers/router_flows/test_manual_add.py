@@ -11,14 +11,14 @@ from utils import admin_decorator
 P = "bot.handlers.router_flows.manual_add"
 
 
-async def _call_through(fn, *args, **kwargs):
+async def _call_through(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
     result = fn(*args, **kwargs)
     if hasattr(result, "__await__"):
         return await result
     return result
 
 
-def _make_patches(**overrides):
+def _make_patches(**overrides):  # type: ignore[reportUnusedFunction, reportMissingParameterType]
     """Return a list of context managers for patching all deps."""
     patches = [
         ("admin_decorator.ADMIN_IDS", [724730774]),
@@ -54,21 +54,21 @@ def _make_patches(**overrides):
 
 
 @pytest.fixture(autouse=True)
-def _clean_rate_limits():
-    admin_decorator._rate_limit_data.clear()
+def _clean_rate_limits():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestManualAddStart:
     def setup_method(self):
         self.stack = ExitStack()
         self.stack.enter_context(patch("utils.admin_decorator.ADMIN_IDS", [724730774]))
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     def teardown_method(self):
         self.stack.close()
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_from_callback(self):
@@ -108,11 +108,11 @@ class TestManualAddIp:
         self.stack.enter_context(patch(
             f"{P}.run_blocking", new_callable=AsyncMock, side_effect=_call_through
         ))
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     def teardown_method(self):
         self.stack.close()
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_valid_ip_stores_and_advances(self):
@@ -170,11 +170,11 @@ class TestManualAddPort:
     def setup_method(self):
         self.stack = ExitStack()
         self.stack.enter_context(patch("utils.admin_decorator.ADMIN_IDS", [724730774]))
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     def teardown_method(self):
         self.stack.close()
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_empty_uses_default_port(self):
@@ -224,11 +224,11 @@ class TestManualAddUser:
     def setup_method(self):
         self.stack = ExitStack()
         self.stack.enter_context(patch("utils.admin_decorator.ADMIN_IDS", [724730774]))
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     def teardown_method(self):
         self.stack.close()
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_valid_username(self):
@@ -264,11 +264,11 @@ class TestManualAddPass:
     def setup_method(self):
         self.stack = ExitStack()
         self.stack.enter_context(patch("utils.admin_decorator.ADMIN_IDS", [724730774]))
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     def teardown_method(self):
         self.stack.close()
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_valid_password(self):
@@ -304,11 +304,11 @@ class TestManualAddAlias:
     def setup_method(self):
         self.stack = ExitStack()
         self.stack.enter_context(patch("utils.admin_decorator.ADMIN_IDS", [724730774]))
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     def teardown_method(self):
         self.stack.close()
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_with_alias(self):
@@ -361,10 +361,10 @@ class TestManualAddAlias:
 
 class TestManualAddConfirm:
     def setup_method(self):
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     def teardown_method(self):
-        admin_decorator._rate_limit_data.clear()
+        admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
     @pytest.mark.asyncio
     async def test_cancel_returns_end(self):

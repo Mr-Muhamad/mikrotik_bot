@@ -437,7 +437,7 @@ class TestBackupJobs:
 
 class TestSQLInjectionPrevention:
     def test_valid_table_names_accepted(self):
-        from database.models import _validate_table_name
+        from database.models import _validate_table_name  # type: ignore[reportPrivateUsage]
 
         _validate_table_name("discovered_routers")
         _validate_table_name("user_sessions")
@@ -445,7 +445,7 @@ class TestSQLInjectionPrevention:
         _validate_table_name("backup_settings")
 
     def test_valid_column_names_accepted(self):
-        from database.models import _validate_column_name
+        from database.models import _validate_column_name  # type: ignore[reportPrivateUsage]
 
         _validate_column_name("ip_address")
         _validate_column_name("username")
@@ -453,13 +453,13 @@ class TestSQLInjectionPrevention:
         _validate_column_name("is_active")
 
     def test_sql_injection_table_name_rejected(self):
-        from database.models import _validate_table_name
+        from database.models import _validate_table_name  # type: ignore[reportPrivateUsage]
 
         with pytest.raises(ValueError, match="Invalid table name"):
             _validate_table_name("routers; DROP TABLE logs; --")
 
     def test_sql_injection_column_name_rejected(self):
-        from database.models import _validate_column_name
+        from database.models import _validate_column_name  # type: ignore[reportPrivateUsage]
 
         with pytest.raises(ValueError, match="Invalid column name"):
             _validate_column_name("ip; DELETE FROM routers; --")
@@ -468,7 +468,7 @@ class TestSQLInjectionPrevention:
         with get_db() as conn:
             cursor = conn.cursor()
             with pytest.raises(ValueError, match="Invalid table name"):
-                from database.models import _column_exists
+                from database.models import _column_exists  # type: ignore[reportPrivateUsage]
 
                 _column_exists(cursor, "logs; DROP TABLE logs; --", "id")
 
@@ -476,7 +476,7 @@ class TestSQLInjectionPrevention:
         with get_db() as conn:
             cursor = conn.cursor()
             with pytest.raises(ValueError, match="Invalid table name"):
-                from database.models import _add_column_if_missing
+                from database.models import _add_column_if_missing  # type: ignore[reportPrivateUsage]
 
                 _add_column_if_missing(cursor, "fake; DROP TABLE logs; --", "x TEXT")
 
@@ -484,14 +484,14 @@ class TestSQLInjectionPrevention:
         with get_db() as conn:
             cursor = conn.cursor()
             with pytest.raises(ValueError, match="Invalid column name"):
-                from database.models import _add_column_if_missing
+                from database.models import _add_column_if_missing  # type: ignore[reportPrivateUsage]
 
                 _add_column_if_missing(cursor, "discovered_routers", "x; DROP TABLE logs; -- TEXT")
 
     def test_existing_column_migrations_still_work(self):
         with get_db() as conn:
             cursor = conn.cursor()
-            from database.models import _add_column_if_missing
+            from database.models import _add_column_if_missing  # type: ignore[reportPrivateUsage]
 
             _add_column_if_missing(
                 cursor, "discovered_routers", "test_col_migration INTEGER DEFAULT 0"

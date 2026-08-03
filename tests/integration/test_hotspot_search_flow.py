@@ -20,10 +20,10 @@ ROUTER_KEY = "discovered_1"
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _make_context():
@@ -37,7 +37,7 @@ def _make_context():
 
 class TestHotspotSearchStart:
     @pytest.mark.asyncio
-    async def test_start_prompts_for_term(self, mock_mikrotik_api):
+    async def test_start_prompts_for_term(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
         from database.models import save_user_session
 
@@ -51,7 +51,7 @@ class TestHotspotSearchStart:
 
 class TestHotspotSearchQuery:
     @pytest.mark.asyncio
-    async def test_search_no_router_ends(self, mock_mikrotik_api):
+    async def test_search_no_router_ends(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.router_selector import clear_router
 
         clear_router(ADMIN_ID)
@@ -62,7 +62,7 @@ class TestHotspotSearchQuery:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_search_returns_results(self, mock_mikrotik_api):
+    async def test_search_returns_results(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
         from database.models import save_user_session
 
@@ -85,7 +85,7 @@ class TestHotspotSearchQuery:
         assert "search_hosts" in context.user_data
 
     @pytest.mark.asyncio
-    async def test_search_error_ends_conversation(self, mock_mikrotik_api):
+    async def test_search_error_ends_conversation(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
         from database.models import save_user_session
 

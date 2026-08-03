@@ -25,7 +25,7 @@ def fake_api():
     return api
 
 
-def _router_db_row(router_id=1, ip="10.0.0.1"):
+def _router_db_row(router_id=1, ip="10.0.0.1"):  # type: ignore[reportMissingParameterType]
     return {
         "ip_address": ip,
         "port": 8728,
@@ -36,7 +36,7 @@ def _router_db_row(router_id=1, ip="10.0.0.1"):
 
 
 class TestConnectionPoolInit:
-    def test_initial_state(self, pool):
+    def test_initial_state(self, pool):  # type: ignore[reportMissingParameterType]
         assert pool.pools == {}
         assert pool.active_counts == {}
         assert len(pool.router_versions) == 0
@@ -48,17 +48,17 @@ class TestConnectionPoolInit:
 
 
 class TestRouterInfo:
-    def test_invalid_key_raises(self, pool):
+    def test_invalid_key_raises(self, pool):  # type: ignore[reportMissingParameterType]
         with pytest.raises(RouterNotFoundError, match="not configured"):
             pool.get_router_info("invalid_key")
 
-    def test_nonexistent_id_raises(self, pool):
+    def test_nonexistent_id_raises(self, pool):  # type: ignore[reportMissingParameterType]
         with pytest.raises(RouterNotFoundError, match="not found"):
             pool.get_router_info("discovered_99999")
 
 
 class TestGetConnection:
-    def test_first_call_creates_connection(self, pool, fake_api):
+    def test_first_call_creates_connection(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
@@ -68,7 +68,7 @@ class TestGetConnection:
             assert "discovered_1" in pool.pools
             assert mock_connect.called
 
-    def test_repeated_calls_use_cache(self, pool, fake_api):
+    def test_repeated_calls_use_cache(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
@@ -87,7 +87,7 @@ class TestGetConnection:
 
 
 class TestRetry:
-    def test_connect_fails_after_max_retries(self, pool):
+    def test_connect_fails_after_max_retries(self, pool):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch(
@@ -100,7 +100,7 @@ class TestRetry:
             assert mock_connect.call_count == 1 + MAX_RETRIES
             assert pool.failed_connections == 1 + MAX_RETRIES
 
-    def test_connect_succeeds_on_retry(self, pool, fake_api):
+    def test_connect_succeeds_on_retry(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch(
@@ -116,7 +116,7 @@ class TestRetry:
 
 
 class TestReleaseConnection:
-    def test_release_connection_adds_to_queue(self, pool, fake_api):
+    def test_release_connection_adds_to_queue(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -129,7 +129,7 @@ class TestReleaseConnection:
             assert not q.empty()
             assert pool.active_counts["discovered_1"] == 1
 
-    def test_release_broken_connection_closes_and_discards(self, pool, fake_api):
+    def test_release_broken_connection_closes_and_discards(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -144,7 +144,7 @@ class TestReleaseConnection:
 
 
 class TestCloseAll:
-    def test_close_all_clears_everything(self, pool, fake_api):
+    def test_close_all_clears_everything(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -165,7 +165,7 @@ class TestCloseAll:
 class TestStaleConnectionHealthCheck:
     """Pooled stale-connection health check with timed executor."""
 
-    def test_healthy_connection_reused(self, pool, fake_api):
+    def test_healthy_connection_reused(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
@@ -179,7 +179,7 @@ class TestStaleConnectionHealthCheck:
             assert mock_connect.call_count == 1
             assert pool.cache_hits == 1
 
-    def test_stale_librouteros_error_discards_and_reconnects(self, pool, fake_api):
+    def test_stale_librouteros_error_discards_and_reconnects(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
@@ -195,7 +195,7 @@ class TestStaleConnectionHealthCheck:
             fake_api.close.assert_called()
             assert pool.active_counts["discovered_1"] == 1
 
-    def test_stale_discard_close_error_ignored(self, pool, fake_api):
+    def test_stale_discard_close_error_ignored(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         fake_api.close = MagicMock(side_effect=OSError("already closed"))
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
@@ -212,7 +212,7 @@ class TestStaleConnectionHealthCheck:
             assert mock_connect.call_count == 2
             assert pool.active_counts["discovered_1"] == 1
 
-    def test_stale_os_error_discards_and_reconnects(self, pool, fake_api):
+    def test_stale_os_error_discards_and_reconnects(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
@@ -227,7 +227,7 @@ class TestStaleConnectionHealthCheck:
             assert mock_connect.call_count == 2
             assert pool.active_counts["discovered_1"] == 1
 
-    def test_stale_active_count_decremented_correctly(self, pool, fake_api):
+    def test_stale_active_count_decremented_correctly(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -242,7 +242,7 @@ class TestStaleConnectionHealthCheck:
 
             assert pool.active_counts["discovered_1"] == 1
 
-    def test_health_check_timeout_triggers_reconnect(self, pool, fake_api):
+    def test_health_check_timeout_triggers_reconnect(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api) as mock_connect,
@@ -258,7 +258,7 @@ class TestStaleConnectionHealthCheck:
             assert mock_connect.call_count == 2
             assert pool.active_counts["discovered_1"] == 1
 
-    def test_pool_timeout_raises_timeout_error(self, pool, fake_api):
+    def test_pool_timeout_raises_timeout_error(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -274,7 +274,7 @@ class TestStaleConnectionHealthCheck:
 
 
 class TestReleaseConnectionEdgeCases:
-    def test_release_broken_close_error_logged(self, pool, fake_api):
+    def test_release_broken_close_error_logged(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         fake_api.close = MagicMock(side_effect=LibRouterosError("close failed"))
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
@@ -286,7 +286,7 @@ class TestReleaseConnectionEdgeCases:
             mock_debug.assert_called()
             assert pool.active_counts["discovered_1"] == 0
 
-    def test_release_connection_queue_full_closes_api(self, pool, fake_api):
+    def test_release_connection_queue_full_closes_api(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -305,7 +305,7 @@ class TestReleaseConnectionEdgeCases:
 
 
 class TestReconnect:
-    def test_reconnect_success(self, pool, fake_api):
+    def test_reconnect_success(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -314,7 +314,7 @@ class TestReconnect:
             assert api is fake_api
             assert pool.active_counts["discovered_1"] == 1
 
-    def test_reconnect_failure_decrements_and_raises(self, pool):
+    def test_reconnect_failure_decrements_and_raises(self, pool):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", side_effect=LibRouterosError("refused")),
@@ -326,10 +326,10 @@ class TestReconnect:
 
 
 class TestCloseConnection:
-    def test_close_connection_missing_router_returns(self, pool):
+    def test_close_connection_missing_router_returns(self, pool):  # type: ignore[reportMissingParameterType]
         pool.close_connection("discovered_1")
 
-    def test_close_connection_drain_empty_breaks(self, pool, fake_api):
+    def test_close_connection_drain_empty_breaks(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -340,7 +340,7 @@ class TestCloseConnection:
             # Concurrent taker already claimed the item -> get_nowait raises Empty
             pool.close_connection("discovered_1")  # must not raise
 
-    def test_close_connection_close_error_logged(self, pool, fake_api):
+    def test_close_connection_close_error_logged(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         fake_api.close = MagicMock(side_effect=OSError("close error"))
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
@@ -354,10 +354,10 @@ class TestCloseConnection:
 
 
 class TestHasActiveConnection:
-    def test_no_connection(self, pool):
+    def test_no_connection(self, pool):  # type: ignore[reportMissingParameterType]
         assert pool.has_active_connection("discovered_1") is False
 
-    def test_with_connection(self, pool, fake_api):
+    def test_with_connection(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),
@@ -369,35 +369,35 @@ class TestHasActiveConnection:
 
 
 class TestVersionCache:
-    def test_get_version_uninitialized_returns_empty(self, pool):
+    def test_get_version_uninitialized_returns_empty(self, pool):  # type: ignore[reportMissingParameterType]
         assert pool.get_version("discovered_1") == ""
 
-    def test_set_and_get_version(self, pool):
+    def test_set_and_get_version(self, pool):  # type: ignore[reportMissingParameterType]
         pool.set_version("discovered_1", "7.15")
         assert pool.get_version("discovered_1") == "7.15"
 
-    def test_invalidate_version(self, pool):
+    def test_invalidate_version(self, pool):  # type: ignore[reportMissingParameterType]
         pool.set_version("discovered_1", "7.15")
         pool.invalidate_version("discovered_1")
         assert pool.get_version("discovered_1") == ""
 
 
 class TestNameCache:
-    def test_get_cached_name_uninitialized(self, pool):
+    def test_get_cached_name_uninitialized(self, pool):  # type: ignore[reportMissingParameterType]
         assert pool.get_cached_name("discovered_1") is None
 
-    def test_set_and_get_cached_name(self, pool):
+    def test_set_and_get_cached_name(self, pool):  # type: ignore[reportMissingParameterType]
         pool.set_cached_name("discovered_1", "MyRouter")
         assert pool.get_cached_name("discovered_1") == "MyRouter"
 
-    def test_invalidate_name(self, pool):
+    def test_invalidate_name(self, pool):  # type: ignore[reportMissingParameterType]
         pool.set_cached_name("discovered_1", "MyRouter")
         pool.invalidate_name("discovered_1")
         assert pool.get_cached_name("discovered_1") is None
 
 
 class TestMetrics:
-    def test_get_metrics_initial(self, pool):
+    def test_get_metrics_initial(self, pool):  # type: ignore[reportMissingParameterType]
         metrics = pool.get_metrics()
         assert metrics["total_attempts"] == 0
         assert metrics["successful"] == 0
@@ -407,7 +407,7 @@ class TestMetrics:
         assert metrics["idle_connections"] == 0
         assert metrics["active_connections"] == 0
 
-    def test_get_metrics_after_connection(self, pool, fake_api):
+    def test_get_metrics_after_connection(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
         with (
             patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
             patch("core.connection_pool.connect", return_value=fake_api),

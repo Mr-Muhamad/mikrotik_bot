@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from core.watchdog import (
-    _router_status,
+    _router_status,  # type: ignore[reportPrivateUsage]
     check_router_health,
     clear_status,
     get_router_status,
@@ -26,21 +26,21 @@ def reset_status():
 
 class TestCheckRouterHealth:
     @patch("core.watchdog.mikrotik_api")
-    def test_online_returns_true(self, mock_api):
+    def test_online_returns_true(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute.return_value = [{"version": "7.12"}]
         result = check_router_health("router1")
         assert result["online"] is True
         assert result["error"] is None
 
     @patch("core.watchdog.mikrotik_api")
-    def test_offline_returns_false(self, mock_api):
+    def test_offline_returns_false(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute.side_effect = ConnectionError("Connection refused")
         result = check_router_health("router1")
         assert result["online"] is False
-        assert "Connection refused" in result["error"]
+        assert "Connection refused" in result["error"]  # type: ignore[reportOperatorIssue]
 
     @patch("core.watchdog.mikrotik_api")
-    def test_online_updates_status(self, mock_api):
+    def test_online_updates_status(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute.return_value = [{"version": "7.12"}]
         check_router_health("router1")
         status = get_router_status("router1")
@@ -48,7 +48,7 @@ class TestCheckRouterHealth:
         assert status["alert_sent"] is False
 
     @patch("core.watchdog.mikrotik_api")
-    def test_offline_updates_status(self, mock_api):
+    def test_offline_updates_status(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute.side_effect = ConnectionError("timeout")
         check_router_health("router1")
         status = get_router_status("router1")
@@ -61,7 +61,7 @@ class TestGetRouterStatus:
         assert status == {}
 
     def test_returns_status_for_known(self):
-        _router_status["router1"] = {"last_ok": datetime.now()}
+        _router_status["router1"] = {"last_ok": datetime.now()}  # type: ignore[reportArgumentType]
         status = get_router_status("router1")
         assert "last_ok" in status
 
@@ -75,8 +75,8 @@ class TestGetRouterStatusDetail:
 
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
-    def test_online_enriches_version_and_users(self, mock_api, mock_stats):
-        _router_status["router1"] = {"last_ok": datetime.now()}
+    def test_online_enriches_version_and_users(self, mock_api, mock_stats):  # type: ignore[reportMissingParameterType]
+        _router_status["router1"] = {"last_ok": datetime.now()}  # type: ignore[reportArgumentType]
         mock_api.get_version.return_value = "7.15.3"
         mock_stats.get_hotspot_stats.return_value = {
             "active_users": 12,
@@ -91,10 +91,10 @@ class TestGetRouterStatusDetail:
 
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
-    def test_offline_skips_live_queries(self, mock_api, mock_stats):
+    def test_offline_skips_live_queries(self, mock_api, mock_stats):  # type: ignore[reportMissingParameterType]
         mock_api.has_active_connection.return_value = False
         mock_api.get_cached_version.return_value = None
-        _router_status["router1"] = {"last_fail": datetime.now()}
+        _router_status["router1"] = {"last_fail": datetime.now()}  # type: ignore[reportArgumentType]
         detail = get_router_status_detail("router1")
         assert detail["online"] is False
         assert detail["version"] is None
@@ -104,9 +104,9 @@ class TestGetRouterStatusDetail:
 
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
-    def test_version_unknown_normalized_to_none(self, mock_api, mock_stats):
+    def test_version_unknown_normalized_to_none(self, mock_api, mock_stats):  # type: ignore[reportMissingParameterType]
         mock_api.has_active_connection.return_value = False
-        _router_status["router1"] = {"last_ok": datetime.now()}
+        _router_status["router1"] = {"last_ok": datetime.now()}  # type: ignore[reportArgumentType]
         mock_api.get_cached_version.return_value = "unknown"
         mock_stats.get_hotspot_stats.return_value = None
         detail = get_router_status_detail("router1")
@@ -140,7 +140,7 @@ class TestMarkAlertSent:
 
 class TestClearStatus:
     def test_clears_existing_status(self):
-        _router_status["router1"] = {"last_ok": datetime.now()}
+        _router_status["router1"] = {"last_ok": datetime.now()}  # type: ignore[reportArgumentType]
         clear_status("router1")
         assert "router1" not in _router_status
 

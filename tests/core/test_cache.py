@@ -8,14 +8,14 @@ from core.cache import TTLCache
 class TestTTLCacheInit:
     def test_default_values(self):
         c = TTLCache()
-        assert c._max_size == 100
-        assert c._ttl == 3600
+        assert c._max_size == 100  # type: ignore[reportPrivateUsage]
+        assert c._ttl == 3600  # type: ignore[reportPrivateUsage]
         assert len(c) == 0
 
     def test_custom_values(self):
         c = TTLCache(max_size=5, ttl=10)
-        assert c._max_size == 5
-        assert c._ttl == 10
+        assert c._max_size == 5  # type: ignore[reportPrivateUsage]
+        assert c._ttl == 10  # type: ignore[reportPrivateUsage]
 
 
 class TestTTLCacheSetGet:

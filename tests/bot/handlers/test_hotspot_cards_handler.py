@@ -16,7 +16,7 @@ from bot.handlers.constants import (
     WAITING_HOTSPOT_CARD_UPTIME,
 )
 from bot.handlers.hotspot_cards import (
-    _create_cards,
+    _create_cards,  # type: ignore[reportPrivateUsage]
     get_card_type_keyboard,
     hotspot_cards_bytes,
     hotspot_cards_count,
@@ -43,7 +43,7 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _patch_router(monkeypatch):
+def _patch_router(monkeypatch):  # type: ignore[reportUnusedFunction, reportMissingParameterType]
     """Patch router_selector and clear rate-limit for all tests."""
     router_lookup = lambda uid: "discovered_1" if uid == ADMIN_ID else None  # noqa: E731
     monkeypatch.setattr("bot.router_selector.get_selected_router", router_lookup)
@@ -54,7 +54,7 @@ def _patch_router(monkeypatch):
     )
     monkeypatch.setattr("bot.router_selector.clear_action", lambda uid: None)
     monkeypatch.setattr("bot.router_selector.clear_router", lambda uid: None)
-    from utils.admin_decorator import _rate_limit_data
+    from utils.admin_decorator import _rate_limit_data  # type: ignore[reportPrivateUsage]
 
     _rate_limit_data.clear()
 
@@ -334,7 +334,7 @@ class TestHotspotCardsSkipUptime:
 
 class TestHotspotCardsBytes:
     @pytest.mark.asyncio
-    async def test_valid_bytes_creates_cards(self, tmp_path):
+    async def test_valid_bytes_creates_cards(self, tmp_path):  # type: ignore[reportMissingParameterType]
         u = make_mock_update(user_id=ADMIN_ID, text="1G")
         c = make_mock_context()
         c.user_data.update(
@@ -407,7 +407,7 @@ class TestHotspotCardsSkipBytes:
 
 class TestCreateCards:
     @pytest.mark.asyncio
-    async def test_no_router_ends(self, monkeypatch):
+    async def test_no_router_ends(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setattr("bot.router_selector.get_selected_router", lambda uid: None)
         monkeypatch.setattr("bot.handlers.hotspot_cards.get_selected_router", lambda uid: None)
         u = make_mock_update(user_id=ADMIN_ID, callback_data="hs_skip_bytes")

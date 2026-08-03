@@ -19,7 +19,7 @@ class TestCacheGetSet:
     def setup_method(self):
         import core.router_info as mod
 
-        mod._router_system_cache.clear()
+        mod._router_system_cache.clear()  # type: ignore[reportPrivateUsage]
 
     def test_set_and_get(self):
         cache_set("rk1", SYSTEM_HOTSPOT)
@@ -38,25 +38,25 @@ class TestDetectRouterSystem:
     def setup_method(self):
         import core.router_info as mod
 
-        mod._router_system_cache.clear()
+        mod._router_system_cache.clear()  # type: ignore[reportPrivateUsage]
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_none_key_returns_unknown(self, mock_api):
+    def test_none_key_returns_unknown(self, mock_api):  # type: ignore[reportMissingParameterType]
         assert detect_router_system(None) == SYSTEM_UNKNOWN
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_empty_key_returns_unknown(self, mock_api):
+    def test_empty_key_returns_unknown(self, mock_api):  # type: ignore[reportMissingParameterType]
         assert detect_router_system("") == SYSTEM_UNKNOWN
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_returns_cached_value(self, mock_api):
+    def test_returns_cached_value(self, mock_api):  # type: ignore[reportMissingParameterType]
         cache_set("rk1", SYSTEM_BOTH)
         result = detect_router_system("rk1")
         assert result == SYSTEM_BOTH
         mock_api.check_connection_health.assert_not_called()
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_healthy_router_nothing_found(self, mock_api):
+    def test_healthy_router_nothing_found(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.check_connection_health.return_value = (True, None)
         mock_api.get_userman_base_path.return_value = "/tool/user-manager"
         mock_api.execute.side_effect = Exception("no such item")
@@ -64,7 +64,7 @@ class TestDetectRouterSystem:
         assert result == SYSTEM_UNKNOWN
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_hotspot_only(self, mock_api):
+    def test_hotspot_only(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.check_connection_health.return_value = (True, None)
         mock_api.get_userman_base_path.return_value = "/tool/user-manager"
         mock_api.execute.side_effect = [
@@ -75,7 +75,7 @@ class TestDetectRouterSystem:
         assert result == SYSTEM_HOTSPOT
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_userman_only(self, mock_api):
+    def test_userman_only(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.check_connection_health.return_value = (True, None)
         mock_api.get_userman_base_path.return_value = "/tool/user-manager"
         mock_api.execute.side_effect = [
@@ -86,7 +86,7 @@ class TestDetectRouterSystem:
         assert result == SYSTEM_USERMAN
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_both_subsystems(self, mock_api):
+    def test_both_subsystems(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.check_connection_health.return_value = (True, None)
         mock_api.get_userman_base_path.return_value = "/tool/user-manager"
         mock_api.execute.side_effect = [[], []]
@@ -94,19 +94,19 @@ class TestDetectRouterSystem:
         assert result == SYSTEM_BOTH
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_unhealthy_router_returns_unknown(self, mock_api):
+    def test_unhealthy_router_returns_unknown(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.check_connection_health.return_value = (False, "timeout")
         result = detect_router_system("rk1")
         assert result == SYSTEM_UNKNOWN
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_exception_returns_unknown(self, mock_api):
+    def test_exception_returns_unknown(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.check_connection_health.side_effect = Exception("network")
         result = detect_router_system("rk1")
         assert result == SYSTEM_UNKNOWN
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_result_is_cached(self, mock_api):
+    def test_result_is_cached(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.check_connection_health.return_value = (True, None)
         mock_api.get_userman_base_path.return_value = "/tool/user-manager"
         mock_api.execute.side_effect = [[], []]

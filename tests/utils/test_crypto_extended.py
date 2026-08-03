@@ -8,10 +8,10 @@ from utils.crypto import decrypt_data, decrypt_password, encrypt_data, encrypt_p
 
 
 @pytest.fixture(autouse=True)
-def _reset_crypto_state():
-    crypto._key = None
+def _reset_crypto_state():  # type: ignore[reportUnusedFunction]
+    crypto._key = None  # type: ignore[reportPrivateUsage]
     yield
-    crypto._key = None
+    crypto._key = None  # type: ignore[reportPrivateUsage]
 
 
 def _valid_key() -> str:
@@ -22,22 +22,22 @@ def _valid_key() -> str:
 
 
 class TestEncryptDecryptData:
-    def test_empty_returns_empty(self, monkeypatch):
+    def test_empty_returns_empty(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         assert encrypt_data("") == ""
         assert decrypt_data("") == ""
 
-    def test_round_trip(self, monkeypatch):
+    def test_round_trip(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         token = encrypt_data("my batch payload")
         assert token != "my batch payload"
         assert decrypt_data(token) == "my batch payload"
 
-    def test_invalid_token_returns_empty(self, monkeypatch):
+    def test_invalid_token_returns_empty(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         assert decrypt_data("not-a-valid-token!!!") == ""
 
-    def test_encrypted_tokens_start_with_gAAAAA(self, monkeypatch):
+    def test_encrypted_tokens_start_with_gAAAAA(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         assert encrypt_data("test").startswith("gAAAAA")
 
@@ -46,7 +46,7 @@ class TestEncryptDecryptData:
 
 
 class TestPasswordExtra:
-    def test_different_encryptions_differ(self, monkeypatch):
+    def test_different_encryptions_differ(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         t1 = encrypt_password("secret")
         t2 = encrypt_password("secret")

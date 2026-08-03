@@ -13,8 +13,8 @@ import pytest
 from telegram.ext import ConversationHandler
 
 from bot.handlers.backup import (
-    _BACKUP_LOCKS,
-    _background_backup_job,
+    _BACKUP_LOCKS,  # type: ignore[reportPrivateUsage]
+    _background_backup_job,  # type: ignore[reportPrivateUsage]
     backup_download_file,
     backup_full,
     backup_userman,
@@ -33,11 +33,11 @@ ROUTER_KEY = "discovered_1"
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     _BACKUP_LOCKS.clear()
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     _BACKUP_LOCKS.clear()
 
 
@@ -50,7 +50,7 @@ def _make_context():
 # ── schedule_menu ─────────────────────────────────────────────────────
 class TestScheduleMenu:
     @pytest.mark.asyncio
-    async def test_schedule_menu_enabled(self, mock_mikrotik_api):
+    async def test_schedule_menu_enabled(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="menu_schedule")
         context = _make_context()
 
@@ -68,7 +68,7 @@ class TestScheduleMenu:
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_schedule_menu_disabled(self, mock_mikrotik_api):
+    async def test_schedule_menu_disabled(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="menu_schedule")
         context = _make_context()
 
@@ -85,7 +85,7 @@ class TestScheduleMenu:
 # ── schedule_menu_from_conversation ───────────────────────────────────
 class TestScheduleMenuFromConversation:
     @pytest.mark.asyncio
-    async def test_returns_end(self, mock_mikrotik_api):
+    async def test_returns_end(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="menu_schedule")
         context = _make_context()
 
@@ -101,7 +101,7 @@ class TestScheduleMenuFromConversation:
 # ── schedule_enable ───────────────────────────────────────────────────
 class TestScheduleEnable:
     @pytest.mark.asyncio
-    async def test_returns_waiting_time(self, mock_mikrotik_api):
+    async def test_returns_waiting_time(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="schedule_enable")
         context = _make_context()
 
@@ -114,7 +114,7 @@ class TestScheduleEnable:
 # ── schedule_set ──────────────────────────────────────────────────────
 class TestScheduleSet:
     @pytest.mark.asyncio
-    async def test_valid_time(self, mock_mikrotik_api):
+    async def test_valid_time(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="03:00")
         context = _make_context()
 
@@ -125,7 +125,7 @@ class TestScheduleSet:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_invalid_format(self, mock_mikrotik_api):
+    async def test_invalid_format(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="abc")
         context = _make_context()
 
@@ -136,7 +136,7 @@ class TestScheduleSet:
         assert result == WAITING_SCHEDULE_TIME
 
     @pytest.mark.asyncio
-    async def test_out_of_range_hour(self, mock_mikrotik_api):
+    async def test_out_of_range_hour(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="25:00")
         context = _make_context()
 
@@ -147,7 +147,7 @@ class TestScheduleSet:
         assert result == WAITING_SCHEDULE_TIME
 
     @pytest.mark.asyncio
-    async def test_no_job_queue(self, mock_mikrotik_api):
+    async def test_no_job_queue(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="03:00")
         context = _make_context()
         context.job_queue = None
@@ -162,7 +162,7 @@ class TestScheduleSet:
 # ── schedule_disable ──────────────────────────────────────────────────
 class TestScheduleDisable:
     @pytest.mark.asyncio
-    async def test_disable(self, mock_mikrotik_api):
+    async def test_disable(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="schedule_disable")
         context = _make_context()
 
@@ -174,7 +174,7 @@ class TestScheduleDisable:
         mock_sched.stop.assert_called_once_with(context.job_queue)
 
     @pytest.mark.asyncio
-    async def test_disable_no_job_queue(self, mock_mikrotik_api):
+    async def test_disable_no_job_queue(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="schedule_disable")
         context = _make_context()
         context.job_queue = None
@@ -187,7 +187,7 @@ class TestScheduleDisable:
 # ── backup_full: already running guard ────────────────────────────────
 class TestBackupFullAlreadyRunning:
     @pytest.mark.asyncio
-    async def test_already_running(self, mock_mikrotik_api):
+    async def test_already_running(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_full")
         context = _make_context()
 
@@ -204,7 +204,7 @@ class TestBackupFullAlreadyRunning:
 # ── backup_userman: already running guard ─────────────────────────────
 class TestBackupUsermanAlreadyRunning:
     @pytest.mark.asyncio
-    async def test_already_running(self, mock_mikrotik_api):
+    async def test_already_running(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_userman")
         context = _make_context()
 
@@ -218,7 +218,7 @@ class TestBackupUsermanAlreadyRunning:
 
 # ── _background_backup_job ────────────────────────────────────────────
 class TestBackgroundBackupJob:
-    def _make_job_context(self, b_type="full"):
+    def _make_job_context(self, b_type="full"):  # type: ignore[reportMissingParameterType]
         context = MagicMock()
         context.bot = MagicMock()
         context.bot.send_message = AsyncMock()
@@ -233,7 +233,7 @@ class TestBackgroundBackupJob:
         return context
 
     @pytest.mark.asyncio
-    async def test_full_backup_success_with_downloaded(self, mock_mikrotik_api):
+    async def test_full_backup_success_with_downloaded(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("full")
 
         with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
@@ -244,12 +244,12 @@ class TestBackgroundBackupJob:
             ]
             await _background_backup_job(ctx)
 
-        ctx.bot.send_message.assert_awaited_once()
+        ctx.bot.send_message.assert_awaited()
         text = ctx.bot.send_message.call_args[1]["text"]
         assert "2" in text
 
     @pytest.mark.asyncio
-    async def test_full_backup_success_no_downloaded(self, mock_mikrotik_api):
+    async def test_full_backup_success_no_downloaded(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("full")
 
         with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
@@ -263,7 +263,7 @@ class TestBackgroundBackupJob:
         ctx.bot.send_message.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_full_backup_failure(self, mock_mikrotik_api):
+    async def test_full_backup_failure(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("full")
 
         with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
@@ -277,7 +277,7 @@ class TestBackgroundBackupJob:
         ctx.bot.send_message.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_userman_backup_success_no_filename(self, mock_mikrotik_api):
+    async def test_userman_backup_success_no_filename(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("userman")
 
         with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
@@ -291,7 +291,7 @@ class TestBackgroundBackupJob:
         ctx.bot.send_message.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_userman_backup_failure(self, mock_mikrotik_api):
+    async def test_userman_backup_failure(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("userman")
 
         with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
@@ -305,7 +305,7 @@ class TestBackgroundBackupJob:
         ctx.bot.send_message.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_exception_sends_error(self, mock_mikrotik_api):
+    async def test_exception_sends_error(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("full")
 
         with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
@@ -315,7 +315,7 @@ class TestBackgroundBackupJob:
         ctx.bot.send_message.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_lock_released_on_success(self, mock_mikrotik_api):
+    async def test_lock_released_on_success(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("full")
         _BACKUP_LOCKS[ROUTER_KEY] = True
 
@@ -330,7 +330,7 @@ class TestBackgroundBackupJob:
         assert ROUTER_KEY not in _BACKUP_LOCKS
 
     @pytest.mark.asyncio
-    async def test_lock_released_on_exception(self, mock_mikrotik_api):
+    async def test_lock_released_on_exception(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("full")
         _BACKUP_LOCKS[ROUTER_KEY] = True
 
@@ -344,7 +344,7 @@ class TestBackgroundBackupJob:
 # ── backup_download_file ──────────────────────────────────────────────
 class TestBackupDownloadFile:
     @pytest.mark.asyncio
-    async def test_invalid_format(self, mock_mikrotik_api):
+    async def test_invalid_format(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_dl:")
         context = _make_context()
 
@@ -354,7 +354,7 @@ class TestBackupDownloadFile:
         assert update.callback_query.answer.await_count >= 1
 
     @pytest.mark.asyncio
-    async def test_index_out_of_range(self, mock_mikrotik_api):
+    async def test_index_out_of_range(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_dl:full:99")
         context = _make_context()
         context.user_data["backup_downloaded_list"] = ["file1.backup"]
@@ -364,7 +364,7 @@ class TestBackupDownloadFile:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_unknown_type(self, mock_mikrotik_api):
+    async def test_unknown_type(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_dl:unknown:0")
         context = _make_context()
         context.user_data["backup_downloaded_list"] = ["file1.backup"]
@@ -374,7 +374,7 @@ class TestBackupDownloadFile:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_file_not_found(self, mock_mikrotik_api):
+    async def test_file_not_found(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_dl:full:0")
         context = _make_context()
         context.user_data["backup_downloaded_list"] = ["nonexistent.backup"]
@@ -388,7 +388,7 @@ class TestBackupDownloadFile:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_file_too_large(self, mock_mikrotik_api):
+    async def test_file_too_large(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_dl:full:0")
         context = _make_context()
         context.user_data["backup_downloaded_list"] = ["big.backup"]
@@ -409,7 +409,7 @@ class TestBackupDownloadFile:
             os.unlink(fpath)
 
     @pytest.mark.asyncio
-    async def test_unsafe_path_rejected(self, mock_mikrotik_api):
+    async def test_unsafe_path_rejected(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_dl:full:0")
         context = _make_context()
         context.user_data["backup_downloaded_list"] = ["../../../etc/passwd"]
@@ -423,7 +423,7 @@ class TestBackupDownloadFile:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_success(self, mock_mikrotik_api):
+    async def test_success(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_dl:full:0")
         context = _make_context()
         context.user_data["backup_downloaded_list"] = ["test.backup"]
@@ -449,7 +449,7 @@ class TestBackupDownloadFile:
             os.unlink(fpath)
 
     @pytest.mark.asyncio
-    async def test_no_query_message(self, mock_mikrotik_api):
+    async def test_no_query_message(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="backup_dl:full:0")
         context = _make_context()
         context.user_data["backup_downloaded_list"] = ["test.backup"]

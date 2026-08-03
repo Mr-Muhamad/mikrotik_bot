@@ -6,11 +6,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from utils import request_id
-from utils.logging_setup import _request_id_var
+from utils.logging_setup import _request_id_var  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture(autouse=True)
-def _reset_request_id():
+def _reset_request_id():  # type: ignore[reportUnusedFunction]
     _request_id_var.set("-")
     yield
     _request_id_var.set("-")
@@ -52,7 +52,7 @@ class TestBindRequestIdDecorator:
         captured = []
 
         @request_id.bind_request_id_from_update
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             captured.append(_request_id_var.get())
             return "ok"
 
@@ -68,7 +68,7 @@ class TestBindRequestIdDecorator:
         captured = []
 
         @request_id.bind_request_id_from_update
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             captured.append(_request_id_var.get())
             return "ok"
 
@@ -77,11 +77,11 @@ class TestBindRequestIdDecorator:
         assert captured[0] == "-"
 
     @pytest.mark.asyncio
-    async def test_logs_carry_request_id(self, caplog):
+    async def test_logs_carry_request_id(self, caplog):  # type: ignore[reportMissingParameterType]
         log = logging.getLogger("test_request_id_bind")
 
         @request_id.bind_request_id_from_update
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             log.info("work happening")
             return "ok"
 
@@ -103,7 +103,7 @@ class TestBindRequestIdDecorator:
     @pytest.mark.asyncio
     async def test_passes_args_kwargs_through(self):
         @request_id.bind_request_id_from_update
-        async def handler(update, context, *args, **kwargs):
+        async def handler(update, context, *args, **kwargs):  # type: ignore[reportMissingParameterType]
             return (args, kwargs)
 
         u = MagicMock()
@@ -116,7 +116,7 @@ class TestBindRequestIdDecorator:
         captured = []
 
         @request_id.bind_request_id_from_update
-        async def handler(update, context):
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
             captured.append(_request_id_var.get())
             return "ok"
 

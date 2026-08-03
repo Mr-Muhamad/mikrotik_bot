@@ -18,7 +18,7 @@ class TestPDFRenderer:
             r = PDFRenderer()
         assert r.font_name == "ArabicFont"
 
-    def test_generate_cards_pdf_creates_file(self, tmp_path):
+    def test_generate_cards_pdf_creates_file(self, tmp_path):  # type: ignore[reportMissingParameterType]
         output_path = str(tmp_path / "cards.pdf")
         settings = {
             "cards_per_row": 2,
@@ -40,11 +40,11 @@ class TestPDFRenderer:
             patch("pdf.pdf_renderer.CardRenderer") as mock_cr,
         ):
             mock_cr.return_value.render_card = MagicMock()
-            result = self.renderer.generate_cards_pdf(self.cards, output_path)
+            result = self.renderer.generate_cards_pdf(self.cards, output_path)  # type: ignore[reportArgumentType]
         assert result == output_path
         assert mock_cr.return_value.render_card.call_count == len(self.cards)
 
-    def test_generate_cards_pdf_with_footer(self, tmp_path):
+    def test_generate_cards_pdf_with_footer(self, tmp_path):  # type: ignore[reportMissingParameterType]
         output_path = str(tmp_path / "cards.pdf")
         settings = {
             "cards_per_row": 2,
@@ -65,10 +65,10 @@ class TestPDFRenderer:
             patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings),
             patch("pdf.pdf_renderer.CardRenderer"),
         ):
-            result = self.renderer.generate_cards_pdf(self.cards, output_path)
+            result = self.renderer.generate_cards_pdf(self.cards, output_path)  # type: ignore[reportArgumentType]
         assert result == output_path
 
-    def test_generate_cards_pdf_multi_page(self, tmp_path):
+    def test_generate_cards_pdf_multi_page(self, tmp_path):  # type: ignore[reportMissingParameterType]
         output_path = str(tmp_path / "cards.pdf")
         cards = [{"username": f"u{i}", "password": f"p{i}"} for i in range(10)]
         settings = {
@@ -90,10 +90,10 @@ class TestPDFRenderer:
             patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings),
             patch("pdf.pdf_renderer.CardRenderer"),
         ):
-            result = self.renderer.generate_cards_pdf(cards, output_path)
+            result = self.renderer.generate_cards_pdf(cards, output_path)  # type: ignore[reportArgumentType]
         assert result == output_path
 
-    def test_generate_cards_pdf_uses_defaults_for_missing_settings(self, tmp_path):
+    def test_generate_cards_pdf_uses_defaults_for_missing_settings(self, tmp_path):  # type: ignore[reportMissingParameterType]
         output_path = str(tmp_path / "cards.pdf")
         settings = {}  # empty settings - should use defaults
 
@@ -101,7 +101,7 @@ class TestPDFRenderer:
             patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings),
             patch("pdf.pdf_renderer.CardRenderer"),
         ):
-            result = self.renderer.generate_cards_pdf(self.cards, output_path)
+            result = self.renderer.generate_cards_pdf(self.cards, output_path)  # type: ignore[reportArgumentType]
         assert result == output_path
 
     def test_singleton_instance(self):

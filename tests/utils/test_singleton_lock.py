@@ -8,7 +8,7 @@ import pytest
 
 from utils import singleton_lock
 from utils.singleton_lock import (
-    _get_lock_path,
+    _get_lock_path,  # type: ignore[reportPrivateUsage]
     acquire_lock,
     release_lock,
     single_instance,
@@ -16,7 +16,7 @@ from utils.singleton_lock import (
 
 
 @pytest.fixture(autouse=True)
-def _reset_lock():
+def _reset_lock():  # type: ignore[reportUnusedFunction]
     """Ensure lock is released after each test."""
     yield
     release_lock()
@@ -30,14 +30,14 @@ class TestAcquireLock:
         assert acquire_lock(force=True) is True
         release_lock()
 
-    def test_acquire_and_release(self, monkeypatch):
+    def test_acquire_and_release(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         # Use a unique lock path for isolation
         test_path = os.path.join(tempfile.gettempdir(), "test_mikrotik_bot.lock")
         monkeypatch.setattr(singleton_lock, "_get_lock_path", lambda: test_path)
         assert acquire_lock() is True
         release_lock()
 
-    def test_second_acquire_fails(self, monkeypatch):
+    def test_second_acquire_fails(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         test_path = os.path.join(tempfile.gettempdir(), "test_double_lock.lock")
         monkeypatch.setattr(singleton_lock, "_get_lock_path", lambda: test_path)
         # First instance acquires
@@ -69,7 +69,7 @@ class TestReleaseLock:
         release_lock()
         # No exception
 
-    def test_release_after_acquire(self, monkeypatch):
+    def test_release_after_acquire(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         test_path = os.path.join(tempfile.gettempdir(), "test_release.lock")
         monkeypatch.setattr(singleton_lock, "_get_lock_path", lambda: test_path)
         acquire_lock()
@@ -87,7 +87,7 @@ class TestSingleInstanceContext:
         with single_instance(force=True):
             pass  # No exception
 
-    def test_second_instance_exits(self, monkeypatch):
+    def test_second_instance_exits(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         # Simulate an existing lock by monkey-patching acquire_lock to return False
         monkeypatch.setattr(
             "utils.singleton_lock.acquire_lock",

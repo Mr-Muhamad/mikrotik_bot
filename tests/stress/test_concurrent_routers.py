@@ -31,8 +31,8 @@ class TestHalfOpenConcurrency:
     def test_open_to_half_open_allows_single_trial_under_concurrency(self):
         clock = [1000.0]
         breaker = CircuitBreaker(failure_threshold=3, reset_timeout=30.0)
-        breaker._state["router-fault-1"] = CircuitState.OPEN
-        breaker._last_failure_time["router-fault-1"] = clock[0] - 31.0
+        breaker._state["router-fault-1"] = CircuitState.OPEN  # type: ignore[reportPrivateUsage]
+        breaker._last_failure_time["router-fault-1"] = clock[0] - 31.0  # type: ignore[reportPrivateUsage]
 
         n_threads = 16
         barrier = threading.Barrier(n_threads)
@@ -67,7 +67,7 @@ class TestHalfOpenConcurrency:
         assert outcomes.count("allowed") == 1
         assert outcomes.count("blocked") == n_threads - 1
         assert breaker.get_state("router-fault-1") is CircuitState.HALF_OPEN
-        assert breaker._in_trial["router-fault-1"] is True
+        assert breaker._in_trial["router-fault-1"] is True  # type: ignore[reportPrivateUsage]
 
 
 class TestConnectionPoolCeiling:
@@ -114,24 +114,24 @@ class TestConnectionPoolCeiling:
 class TestRetryStormShortCircuit:
     def test_concurrent_requests_short_circuit_after_open(self):
         api = MikrotikAPI()
-        api._circuit_breaker = CircuitBreaker(failure_threshold=1, reset_timeout=30.0)
+        api._circuit_breaker = CircuitBreaker(failure_threshold=1, reset_timeout=30.0)  # type: ignore[reportPrivateUsage]
         fake_connection = MagicMock()
 
         with (
-            patch.object(api._pool, "get_connection", return_value=fake_connection) as mock_get,
-            patch.object(api._pool, "reconnect", return_value=fake_connection) as mock_reconnect,
+            patch.object(api._pool, "get_connection", return_value=fake_connection) as mock_get,  # type: ignore[reportPrivateUsage]
+            patch.object(api._pool, "reconnect", return_value=fake_connection) as mock_reconnect,  # type: ignore[reportPrivateUsage]
             patch.object(
                 api, "_call_command", side_effect=LibRouterosError("connection reset")
             ) as mock_call,
             patch("core.mikrotik_api.time.sleep"),
         ):
             with pytest.raises(LibRouterosError):
-                api._execute_with_retry("router-storm-1", "ip/hotspot/active/print", 30)
+                api._execute_with_retry("router-storm-1", "ip/hotspot/active/print", 30)  # type: ignore[reportPrivateUsage]
 
             assert mock_call.call_count == 3
             assert mock_get.call_count == 1
             assert mock_reconnect.call_count == 2
-            assert api._circuit_breaker.get_state("router-storm-1") is CircuitState.OPEN
+            assert api._circuit_breaker.get_state("router-storm-1") is CircuitState.OPEN  # type: ignore[reportPrivateUsage]
 
             n_threads = 12
             barrier = threading.Barrier(n_threads)
@@ -141,7 +141,7 @@ class TestRetryStormShortCircuit:
             def worker() -> None:
                 try:
                     barrier.wait(timeout=10)
-                    api._execute_with_retry("router-storm-1", "ip/hotspot/active/print", 30)
+                    api._execute_with_retry("router-storm-1", "ip/hotspot/active/print", 30)  # type: ignore[reportPrivateUsage]
                     outcome = "ran"
                 except CircuitBreakerOpenError:
                     outcome = "short-circuited"

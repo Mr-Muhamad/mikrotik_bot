@@ -20,10 +20,10 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _make_context():
@@ -39,7 +39,7 @@ def _make_context():
 
 class TestStart:
     @pytest.mark.asyncio
-    async def test_start_clears_router_and_state(self, mock_mikrotik_api):
+    async def test_start_clears_router_and_state(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, "discovered_1")
@@ -55,7 +55,7 @@ class TestStart:
         assert "add_username" not in context.user_data
 
     @pytest.mark.asyncio
-    async def test_start_sends_welcome(self, mock_mikrotik_api):
+    async def test_start_sends_welcome(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="/start")
         context = _make_context()
 
@@ -66,7 +66,7 @@ class TestStart:
 
 class TestHelpCommand:
     @pytest.mark.asyncio
-    async def test_help_sends_message(self, mock_mikrotik_api):
+    async def test_help_sends_message(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="/help")
         context = _make_context()
 
@@ -76,7 +76,7 @@ class TestHelpCommand:
 
 class TestMainMenu:
     @pytest.mark.asyncio
-    async def test_main_menu_with_router(self, mock_mikrotik_api):
+    async def test_main_menu_with_router(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, "discovered_1")
@@ -87,7 +87,7 @@ class TestMainMenu:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_main_menu_without_router(self, mock_mikrotik_api):
+    async def test_main_menu_without_router(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.router_selector import clear_router
 
         clear_router(ADMIN_ID)
@@ -100,7 +100,7 @@ class TestMainMenu:
 
 class TestSelectRouterCallback:
     @pytest.mark.asyncio
-    async def test_select_router(self, mock_mikrotik_api):
+    async def test_select_router(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="select_router")
         context = _make_context()
 
@@ -111,7 +111,7 @@ class TestSelectRouterCallback:
 
 class TestCancel:
     @pytest.mark.asyncio
-    async def test_cancel_with_callback(self, mock_mikrotik_api):
+    async def test_cancel_with_callback(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(callback_data="cancel_edit")
         context = _make_context()
 
@@ -119,7 +119,7 @@ class TestCancel:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_cancel_with_message(self, mock_mikrotik_api):
+    async def test_cancel_with_message(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, "discovered_1")
@@ -134,7 +134,7 @@ class TestCancel:
 
 class TestCleanChat:
     @pytest.mark.asyncio
-    async def test_clean_chat_sends_confirmation(self, mock_mikrotik_api):
+    async def test_clean_chat_sends_confirmation(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         update = make_mock_update(text="/clean")
         context = _make_context()
         sent_msg = MagicMock()

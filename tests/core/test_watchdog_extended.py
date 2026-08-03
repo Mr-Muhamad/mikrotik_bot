@@ -11,8 +11,8 @@ from core.watchdog import (
     ALERT_NONE,
     ALERT_RECOVERED,
     ALERT_WENT_OFFLINE,
-    _last_known_status,
-    _router_status,
+    _last_known_status,  # type: ignore[reportPrivateUsage]
+    _router_status,  # type: ignore[reportPrivateUsage]
     check_router_health,
     clear_alert_sent,
     get_router_status_detail,
@@ -22,7 +22,7 @@ from core.watchdog import (
 
 
 @pytest.fixture(autouse=True)
-def _reset():
+def _reset():  # type: ignore[reportUnusedFunction]
     _router_status.clear()
     _last_known_status.clear()
     yield
@@ -69,7 +69,7 @@ class TestRecordCheckResultBranches:
 class TestCheckRouterHealthExtended:
     @patch("core.watchdog.record_health")
     @patch("core.watchdog.mikrotik_api")
-    def test_successful_with_cpu_and_memory(self, mock_api, mock_rh):
+    def test_successful_with_cpu_and_memory(self, mock_api, mock_rh):  # type: ignore[reportMissingParameterType]
         mock_api.execute.return_value = [
             {"cpu-load": "15", "free-memory": "52428800"}
         ]
@@ -81,7 +81,7 @@ class TestCheckRouterHealthExtended:
 
     @patch("core.watchdog.record_health")
     @patch("core.watchdog.mikrotik_api")
-    def test_cpu_load_value_error_falls_back(self, mock_api, mock_rh):
+    def test_cpu_load_value_error_falls_back(self, mock_api, mock_rh):  # type: ignore[reportMissingParameterType]
         mock_api.execute.return_value = [
             {"cpu-load": "bad", "free-memory": "also-bad"}
         ]
@@ -92,25 +92,25 @@ class TestCheckRouterHealthExtended:
 
     @patch("core.watchdog.record_health")
     @patch("core.watchdog.mikrotik_api")
-    def test_librouteros_error(self, mock_api, mock_rh):
+    def test_librouteros_error(self, mock_api, mock_rh):  # type: ignore[reportMissingParameterType]
         from librouteros.exceptions import LibRouterosError
 
         mock_api.execute.side_effect = LibRouterosError("auth failed")
         result = check_router_health("r1")
         assert result["online"] is False
-        assert "auth failed" in result["error"]
+        assert "auth failed" in result["error"]  # type: ignore[reportOperatorIssue]
         mock_rh.assert_called_once_with("r1", "offline", "auth failed")
 
     @patch("core.watchdog.record_health")
     @patch("core.watchdog.mikrotik_api")
-    def test_os_error(self, mock_api, mock_rh):
+    def test_os_error(self, mock_api, mock_rh):  # type: ignore[reportMissingParameterType]
         mock_api.execute.side_effect = OSError("Network unreachable")
         result = check_router_health("r1")
         assert result["online"] is False
 
     @patch("core.watchdog.record_health")
     @patch("core.watchdog.mikrotik_api")
-    def test_empty_response(self, mock_api, mock_rh):
+    def test_empty_response(self, mock_api, mock_rh):  # type: ignore[reportMissingParameterType]
         mock_api.execute.return_value = []
         result = check_router_health("r1")
         assert result["online"] is True
@@ -118,7 +118,7 @@ class TestCheckRouterHealthExtended:
 
     @patch("core.watchdog.record_health")
     @patch("core.watchdog.mikrotik_api")
-    def test_none_response(self, mock_api, mock_rh):
+    def test_none_response(self, mock_api, mock_rh):  # type: ignore[reportMissingParameterType]
         mock_api.execute.return_value = None
         result = check_router_health("r1")
         assert result["online"] is True
@@ -137,7 +137,7 @@ class TestClearAlertSent:
 class TestGetRouterStatusDetailExtended:
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
-    def test_has_active_version_exception(self, mock_api, mock_stats):
+    def test_has_active_version_exception(self, mock_api, mock_stats):  # type: ignore[reportMissingParameterType]
         from librouteros.exceptions import LibRouterosError
 
         mock_api.has_active_connection.return_value = True
@@ -151,7 +151,7 @@ class TestGetRouterStatusDetailExtended:
 
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
-    def test_has_active_stats_exception(self, mock_api, mock_stats):
+    def test_has_active_stats_exception(self, mock_api, mock_stats):  # type: ignore[reportMissingParameterType]
         mock_api.has_active_connection.return_value = True
         mock_api.get_version.return_value = "7.15"
         mock_stats.get_hotspot_stats.side_effect = ConnectionError("timeout")
@@ -162,7 +162,7 @@ class TestGetRouterStatusDetailExtended:
 
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
-    def test_has_active_with_last_fail_newer(self, mock_api, mock_stats):
+    def test_has_active_with_last_fail_newer(self, mock_api, mock_stats):  # type: ignore[reportMissingParameterType]
         mock_api.has_active_connection.return_value = True
         mock_api.get_version.return_value = "7.15"
         mock_stats.get_hotspot_stats.return_value = None
@@ -176,7 +176,7 @@ class TestGetRouterStatusDetailExtended:
 
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
-    def test_has_active_get_version_os_error(self, mock_api, mock_stats):
+    def test_has_active_get_version_os_error(self, mock_api, mock_stats):  # type: ignore[reportMissingParameterType]
         mock_api.has_active_connection.return_value = True
         mock_api.get_version.side_effect = OSError("network")
         mock_stats.get_hotspot_stats.return_value = {"active_users": 3}
@@ -187,7 +187,7 @@ class TestGetRouterStatusDetailExtended:
 
     @patch("core.watchdog.stats_manager")
     @patch("core.watchdog.mikrotik_api")
-    def test_has_active_get_stats_connection_error(self, mock_api, mock_stats):
+    def test_has_active_get_stats_connection_error(self, mock_api, mock_stats):  # type: ignore[reportMissingParameterType]
         mock_api.has_active_connection.return_value = True
         mock_api.get_version.return_value = "7.15"
         mock_stats.get_hotspot_stats.side_effect = OSError("fail")
@@ -198,7 +198,7 @@ class TestGetRouterStatusDetailExtended:
 
 class TestLoadStatusFromDb:
     @patch("core.watchdog.get_all_latest_health")
-    def test_loads_online_router(self, mock_health):
+    def test_loads_online_router(self, mock_health):  # type: ignore[reportMissingParameterType]
         mock_health.return_value = {
             "r1": {"status": "online", "checked_at": "2024-06-15 10:30:00"}
         }
@@ -208,7 +208,7 @@ class TestLoadStatusFromDb:
         assert _router_status["r1"]["alert_sent"] is False
 
     @patch("core.watchdog.get_all_latest_health")
-    def test_loads_offline_router(self, mock_health):
+    def test_loads_offline_router(self, mock_health):  # type: ignore[reportMissingParameterType]
         mock_health.return_value = {
             "r1": {"status": "offline", "checked_at": "2024-06-15 10:30:00"}
         }
@@ -217,7 +217,7 @@ class TestLoadStatusFromDb:
         assert "last_fail" in _router_status["r1"]
 
     @patch("core.watchdog.get_all_latest_health")
-    def test_handles_bad_datetime(self, mock_health):
+    def test_handles_bad_datetime(self, mock_health):  # type: ignore[reportMissingParameterType]
         mock_health.return_value = {
             "r1": {"status": "online", "checked_at": "not-a-date"}
         }
@@ -226,7 +226,7 @@ class TestLoadStatusFromDb:
         assert "last_ok" not in _router_status["r1"]
 
     @patch("core.watchdog.get_all_latest_health")
-    def test_handles_none_checked_at(self, mock_health):
+    def test_handles_none_checked_at(self, mock_health):  # type: ignore[reportMissingParameterType]
         mock_health.return_value = {
             "r1": {"status": "online", "checked_at": None}
         }
@@ -234,6 +234,6 @@ class TestLoadStatusFromDb:
         assert _last_known_status["r1"] is True
 
     @patch("core.watchdog.get_all_latest_health", side_effect=Exception("db fail"))
-    def test_handles_exception_gracefully(self, mock_health):
+    def test_handles_exception_gracefully(self, mock_health):  # type: ignore[reportMissingParameterType]
         load_status_from_db()
         assert len(_router_status) == 0

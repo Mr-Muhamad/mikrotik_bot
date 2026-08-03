@@ -12,7 +12,7 @@ class TestGenerateHotspotUsersCsv:
         self.rk = "discovered_1"
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_returns_csv_with_header_and_rows(self, mock_api):
+    def test_returns_csv_with_header_and_rows(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute_long.return_value = [
             {
                 "name": "user1",
@@ -31,13 +31,13 @@ class TestGenerateHotspotUsersCsv:
         assert "Ahmed" in result
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_returns_empty_string_on_fetch_error(self, mock_api):
+    def test_returns_empty_string_on_fetch_error(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute_long.side_effect = Exception("API failure")
         result = generate_hotspot_users_csv(self.rk)
         assert result == ""
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_empty_user_list_returns_header_only(self, mock_api):
+    def test_empty_user_list_returns_header_only(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute_long.return_value = []
         result = generate_hotspot_users_csv(self.rk)
         assert "Username" in result
@@ -45,7 +45,7 @@ class TestGenerateHotspotUsersCsv:
         assert len(lines) == 1
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_disabled_user_shows_disabled_status(self, mock_api):
+    def test_disabled_user_shows_disabled_status(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute_long.return_value = [
             {
                 "name": "user2",
@@ -62,7 +62,7 @@ class TestGenerateHotspotUsersCsv:
         assert "Disabled" in result
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_active_user_shows_active_status(self, mock_api):
+    def test_active_user_shows_active_status(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute_long.return_value = [
             {
                 "name": "user3",
@@ -79,7 +79,7 @@ class TestGenerateHotspotUsersCsv:
         assert "Active" in result
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_no_limit_shows_unlimited(self, mock_api):
+    def test_no_limit_shows_unlimited(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute_long.return_value = [
             {
                 "name": "user4",
@@ -96,7 +96,7 @@ class TestGenerateHotspotUsersCsv:
         assert "غير محدد" in result
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_multiple_users_all_present(self, mock_api):
+    def test_multiple_users_all_present(self, mock_api):  # type: ignore[reportMissingParameterType]
         mock_api.execute_long.return_value = [
             {
                 "name": f"user{i}",

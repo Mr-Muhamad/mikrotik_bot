@@ -9,7 +9,7 @@ from bot.profile_callbacks import (
 )
 
 
-def _ctx(profile_names=None):
+def _ctx(profile_names=None):  # type: ignore[reportMissingParameterType]
     ctx = MagicMock()
     ctx.user_data = {PROFILE_NAMES_KEY: profile_names} if profile_names is not None else {}
     return ctx

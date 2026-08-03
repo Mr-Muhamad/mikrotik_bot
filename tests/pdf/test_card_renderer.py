@@ -9,8 +9,8 @@ from core.card_models import CardData
 from pdf.card_generator import CardGenerator
 from pdf.card_renderer import (
     CardRenderer,
-    _arabic_text,
-    _setup_arabic_support,
+    _arabic_text,  # type: ignore[reportPrivateUsage]
+    _setup_arabic_support,  # type: ignore[reportPrivateUsage]
 )
 
 
@@ -88,23 +88,23 @@ class TestCardRendererInit:
 class TestDynamicFontSize:
     def test_empty_text_returns_max(self):
         r = CardRenderer(font_name="Helvetica")
-        assert r._dynamic_font_size("", max_width_mm=20) == 11
+        assert r._dynamic_font_size("", max_width_mm=20) == 11  # type: ignore[reportPrivateUsage]
 
     def test_short_text_returns_max(self):
         r = CardRenderer(font_name="Helvetica")
-        result = r._dynamic_font_size("hi", max_width_mm=100)
+        result = r._dynamic_font_size("hi", max_width_mm=100)  # type: ignore[reportPrivateUsage]
         # Should fit at the largest size
         assert result == 11
 
     def test_long_text_returns_min(self):
         r = CardRenderer(font_name="Helvetica")
-        result = r._dynamic_font_size("x" * 1000, max_width_mm=1)
+        result = r._dynamic_font_size("x" * 1000, max_width_mm=1)  # type: ignore[reportPrivateUsage]
         # Should fall back to minimum (default min_font=6)
         assert result == 6
 
     def test_custom_min_font(self):
         r = CardRenderer(font_name="Helvetica")
-        result = r._dynamic_font_size("x" * 1000, max_width_mm=1, min_font=7)
+        result = r._dynamic_font_size("x" * 1000, max_width_mm=1, min_font=7)  # type: ignore[reportPrivateUsage]
         assert result == 7
 
 
@@ -128,7 +128,7 @@ class TestCardRendererDraw:
     def test_draw_border_sets_styling(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
-        r._draw_border(c, 10, 10, 50, 80)
+        r._draw_border(c, 10, 10, 50, 80)  # type: ignore[reportPrivateUsage]
         c.setStrokeColorRGB.assert_called_with(0, 0, 0)
         c.setLineWidth.assert_called_with(1.2)
         c.roundRect.assert_called_once()
@@ -136,14 +136,14 @@ class TestCardRendererDraw:
     def test_draw_header_skips_when_no_brand(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica", brand_name="")
-        r._draw_header(c, 10, 10, 50, 80)
+        r._draw_header(c, 10, 10, 50, 80)  # type: ignore[reportPrivateUsage]
         # No draw should be called
         c.setFont.assert_not_called()
 
     def test_draw_header_draws_when_brand_set(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica", brand_name="MyNet")
-        r._draw_header(c, 10, 10, 50, 80)
+        r._draw_header(c, 10, 10, 50, 80)  # type: ignore[reportPrivateUsage]
         c.setFont.assert_called()
         c.drawCentredString.assert_called()
         c.line.assert_called()
@@ -151,7 +151,7 @@ class TestCardRendererDraw:
     def test_draw_title_renders_arabic(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
-        r._draw_title(c, 10, 10, 50, 80)
+        r._draw_title(c, 10, 10, 50, 80)  # type: ignore[reportPrivateUsage]
         c.drawCentredString.assert_called()
 
     def test_draw_credentials_username_only(self):
@@ -164,7 +164,7 @@ class TestCardRendererDraw:
             card_number=1,
             profile="default",
         )
-        r._draw_credentials(c, 10, 10, 50, 80, card)
+        r._draw_credentials(c, 10, 10, 50, 80, card)  # type: ignore[reportPrivateUsage]
         # Should call drawString for label and value
         assert c.drawString.call_count >= 2
 
@@ -178,7 +178,7 @@ class TestCardRendererDraw:
             card_number=1,
             profile="default",
         )
-        r._draw_credentials(c, 10, 10, 50, 80, card)
+        r._draw_credentials(c, 10, 10, 50, 80, card)  # type: ignore[reportPrivateUsage]
         # Should draw both label-username and label-password
         assert c.drawString.call_count >= 4
 
@@ -197,7 +197,7 @@ class TestCardRendererDraw:
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
         # card can also be a dict
-        r._draw_credentials(
+        r._draw_credentials(  # type: ignore[reportPrivateUsage]
             c,
             10,
             10,
@@ -221,7 +221,7 @@ class TestCardRendererDraw:
             card_number=1,
             profile="default",
         )
-        r._draw_credentials(c, 10, 10, 50, 80, card)
+        r._draw_credentials(c, 10, 10, 50, 80, card)  # type: ignore[reportPrivateUsage]
         # Should not raise and should draw only the username label+value
         assert c.drawString.call_count >= 2
 
@@ -234,14 +234,14 @@ class TestCardRendererDraw:
             card_number=1,
             profile="default",
         )
-        r._draw_credentials(c, 10, 10, 50, 80, card)
+        r._draw_credentials(c, 10, 10, 50, 80, card)  # type: ignore[reportPrivateUsage]
         labels = [args[0][0] for args in c.drawString.call_args_list if args[0]]
         assert not any("الباسورد" in str(label) for label in labels)
 
     def test_draw_credentials_dict_empty_password_show_password_false(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
-        r._draw_credentials(
+        r._draw_credentials(  # type: ignore[reportPrivateUsage]
             c,
             10,
             10,
@@ -260,7 +260,7 @@ class TestCardRendererDraw:
         r = CardRenderer(font_name="Helvetica")
         # show_password=True with an empty password is an inconsistent card state
         with pytest.raises(ValueError, match="Password is required"):
-            r._draw_credentials(
+            r._draw_credentials(  # type: ignore[reportPrivateUsage]
                 c,
                 10,
                 10,
@@ -282,20 +282,20 @@ class TestCardRendererDraw:
             tmp.name = "fake.png"
             mock_tmp.return_value = tmp
             with patch("os.unlink"):
-                r._draw_qr(c, 10, 10, 50, 80, card)
+                r._draw_qr(c, 10, 10, 50, 80, card)  # type: ignore[reportPrivateUsage]
         c.drawImage.assert_called_once()
 
     def test_draw_qr_no_username_skips(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica", hotspot_dns="login.com")
         card = CardData(username="", password="p", card_number=1, profile="default")
-        r._draw_qr(c, 10, 10, 50, 80, card)
+        r._draw_qr(c, 10, 10, 50, 80, card)  # type: ignore[reportPrivateUsage]
         c.drawImage.assert_not_called()
 
     def test_draw_footer_draws_line(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
-        r._draw_footer(c, 10, 10, 50)
+        r._draw_footer(c, 10, 10, 50)  # type: ignore[reportPrivateUsage]
         c.line.assert_called_once()
 
 
@@ -303,28 +303,28 @@ class TestCardRendererDraw:
 
 
 class TestCardGenerator:
-    def test_generates_pdf_with_default_dir(self, tmp_path):
+    def test_generates_pdf_with_default_dir(self, tmp_path):  # type: ignore[reportMissingParameterType]
         gen = CardGenerator()
         cards = [_sample_card()]
         with patch("pdf.card_generator.pdf_renderer") as mock_renderer:
-            result = gen.generate_pdf(cards, output_dir=str(tmp_path))
+            result = gen.generate_pdf(cards, output_dir=str(tmp_path))  # type: ignore[reportArgumentType]
         # Should call renderer and return path
         mock_renderer.generate_cards_pdf.assert_called_once()
         # Result is in tmp_path
         assert str(tmp_path) in result or os.path.dirname(result) == str(tmp_path)
 
-    def test_generates_pdf_with_custom_dir(self, tmp_path):
+    def test_generates_pdf_with_custom_dir(self, tmp_path):  # type: ignore[reportMissingParameterType]
         gen = CardGenerator()
         cards = [_sample_card()]
         custom_dir = str(tmp_path / "custom")
         with patch("pdf.card_generator.pdf_renderer") as mock_renderer:
-            result = gen.generate_pdf(cards, output_dir=custom_dir)
+            result = gen.generate_pdf(cards, output_dir=custom_dir)  # type: ignore[reportArgumentType]
         mock_renderer.generate_cards_pdf.assert_called_once()
         # Custom dir was created
         assert os.path.isdir(custom_dir)
         assert custom_dir in result
 
-    def test_pdf_filename_uses_timestamp(self, tmp_path):
+    def test_pdf_filename_uses_timestamp(self, tmp_path):  # type: ignore[reportMissingParameterType]
         gen = CardGenerator()
         with patch("pdf.card_generator.pdf_renderer"):
             with patch("time.time", return_value=1234567890):
@@ -332,16 +332,16 @@ class TestCardGenerator:
         assert "1234567890" in result
         assert result.endswith(".pdf")
 
-    def test_passes_cards_to_renderer(self, tmp_path):
+    def test_passes_cards_to_renderer(self, tmp_path):  # type: ignore[reportMissingParameterType]
         gen = CardGenerator()
         cards = [_sample_card(), _sample_card()]
         with patch("pdf.card_generator.pdf_renderer") as mock_renderer:
-            gen.generate_pdf(cards, output_dir=str(tmp_path))
+            gen.generate_pdf(cards, output_dir=str(tmp_path))  # type: ignore[reportArgumentType]
         call_args = mock_renderer.generate_cards_pdf.call_args
         # First positional should be the cards list
         assert call_args.args[0] == cards or call_args.kwargs.get("cards") == cards
 
-    def test_generate_pdf_accepts_empty_password_cards(self, tmp_path):
+    def test_generate_pdf_accepts_empty_password_cards(self, tmp_path):  # type: ignore[reportMissingParameterType]
         """EMPTY_PASSWORD cards must render through the real pipeline end-to-end."""
         gen = CardGenerator()
         cards = [
@@ -363,7 +363,7 @@ class TestCardGenerator:
             "show_qr": 0,
         }
         with patch("pdf.pdf_renderer.get_pdf_settings", return_value=settings):
-            result = gen.generate_pdf(cards, output_dir=str(tmp_path))
+            result = gen.generate_pdf(cards, output_dir=str(tmp_path))  # type: ignore[reportArgumentType]
         assert os.path.exists(result)
         assert result.endswith(".pdf")
 
@@ -372,20 +372,20 @@ class TestDrawFooterCallerId:
     def test_no_mac_drawn_even_when_caller_id_set(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
-        r._draw_footer(c, 10, 10, 50, card={"caller_id": "AA:BB:CC:DD:EE:FF"})
+        r._draw_footer(c, 10, 10, 50, card={"caller_id": "AA:BB:CC:DD:EE:FF"})  # type: ignore[reportPrivateUsage]
         mac_calls = [a for a in c.drawCentredString.call_args_list if "MAC" in str(a)]
         assert not mac_calls
 
     def test_no_mac_when_caller_id_empty(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
-        r._draw_footer(c, 10, 10, 50, card={"caller_id": ""})
+        r._draw_footer(c, 10, 10, 50, card={"caller_id": ""})  # type: ignore[reportPrivateUsage]
         mac_calls = [a for a in c.drawCentredString.call_args_list if "MAC" in str(a)]
         assert not mac_calls
 
     def test_no_mac_when_card_none(self):
         c = _mock_canvas()
         r = CardRenderer(font_name="Helvetica")
-        r._draw_footer(c, 10, 10, 50)
+        r._draw_footer(c, 10, 10, 50)  # type: ignore[reportPrivateUsage]
         mac_calls = [a for a in c.drawCentredString.call_args_list if "MAC" in str(a)]
         assert not mac_calls

@@ -25,7 +25,7 @@ class TestUsermanBackup:
     @patch(f"{MODULE}.mikrotik_api")
     @patch(f"{MODULE}.sanitize_router_name", return_value="Router1")
     def test_userman_backup_success(
-        self, _sanitize, mock_api, _cleanup_r, _cleanup_l, _makedirs, svc, tmp_path
+        self, _sanitize, mock_api, _cleanup_r, _cleanup_l, _makedirs, svc, tmp_path  # type: ignore[reportMissingParameterType]
     ):
         mock_api.get_router_name.return_value = "Router1"
         mock_api.get_userman_base_path.return_value = "/user-manager"
@@ -46,7 +46,7 @@ class TestUsermanBackup:
     @patch(f"{MODULE}.mikrotik_api")
     @patch(f"{MODULE}.sanitize_router_name", return_value="R")
     def test_userman_backup_download_fails_adds_warning(
-        self, _s, mock_api, _cr, _cl, _md, svc, tmp_path
+        self, _s, mock_api, _cr, _cl, _md, svc, tmp_path  # type: ignore[reportMissingParameterType]
     ):
         mock_api.get_router_name.return_value = "R"
         mock_api.get_userman_base_path.return_value = "/um"
@@ -63,7 +63,7 @@ class TestUsermanBackup:
     @patch(f"{MODULE}.mikrotik_api")
     @patch(f"{MODULE}.sanitize_router_name", return_value="R")
     def test_userman_backup_api_exception_cleans_up(
-        self, _s, mock_api, _cr, _cl, _md, svc, tmp_path
+        self, _s, mock_api, _cr, _cl, _md, svc, tmp_path  # type: ignore[reportMissingParameterType]
     ):
         mock_api.get_router_name.return_value = "R"
         mock_api.get_userman_base_path.side_effect = Exception("api boom")
@@ -78,7 +78,7 @@ class TestUsermanBackup:
     @patch(f"{MODULE}.cleanup_router_files")
     @patch(f"{MODULE}.mikrotik_api")
     @patch(f"{MODULE}.sanitize_router_name", return_value="R")
-    def test_userman_backup_default_backup_root(self, _s, mock_api, _cr, _cl, _md, svc):
+    def test_userman_backup_default_backup_root(self, _s, mock_api, _cr, _cl, _md, svc):  # type: ignore[reportMissingParameterType]
         mock_api.get_router_name.return_value = "R"
         mock_api.get_userman_base_path.return_value = "/um"
         with patch(f"{MODULE}.download_backup_file", return_value=(True, "http")):
@@ -95,7 +95,7 @@ class TestUsermanBackup:
     @patch(f"{MODULE}.mikrotik_api")
     @patch(f"{MODULE}.sanitize_router_name", return_value="R")
     def test_userman_backup_cleanup_error_on_partial_file(
-        self, _s, mock_api, _cr, _cl, _md, svc, tmp_path
+        self, _s, mock_api, _cr, _cl, _md, svc, tmp_path  # type: ignore[reportMissingParameterType]
     ):
         rdir = tmp_path / "R" / "userman"
         rdir.mkdir(parents=True)
@@ -116,7 +116,7 @@ class TestUsermanBackup:
 
 class TestUsermanRestore:
     @patch(f"{MODULE}.mikrotik_api")
-    def test_userman_restore_success(self, mock_api, svc, tmp_path):
+    def test_userman_restore_success(self, mock_api, svc, tmp_path):  # type: ignore[reportMissingParameterType]
         umb = tmp_path / f"{PREFIX}R_20260101.umb"
         umb.write_text("data")
         mock_api.get_router_name.return_value = "R"
@@ -130,13 +130,13 @@ class TestUsermanRestore:
         mock_api.execute_long.assert_called_once()
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_userman_restore_missing_file(self, mock_api, svc):
+    def test_userman_restore_missing_file(self, mock_api, svc):  # type: ignore[reportMissingParameterType]
         result = svc.userman_restore("rk", "/nonexistent/file.umb")
         assert result["success"] is False
         assert "غير موجود" in result["message"]
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_userman_restore_upload_fails(self, mock_api, svc, tmp_path):
+    def test_userman_restore_upload_fails(self, mock_api, svc, tmp_path):  # type: ignore[reportMissingParameterType]
         umb = tmp_path / f"{PREFIX}R.umb"
         umb.write_text("d")
         mock_api.get_router_name.return_value = "R"
@@ -148,7 +148,7 @@ class TestUsermanRestore:
         mock_api.execute_long.assert_not_called()
 
     @patch(f"{MODULE}.mikrotik_api")
-    def test_userman_restore_api_exception(self, mock_api, svc, tmp_path):
+    def test_userman_restore_api_exception(self, mock_api, svc, tmp_path):  # type: ignore[reportMissingParameterType]
         umb = tmp_path / f"{PREFIX}R.umb"
         umb.write_text("d")
         mock_api.get_router_name.return_value = "R"
@@ -164,13 +164,13 @@ class TestUsermanRestore:
 
 
 class TestListLocalUsermanBackups:
-    def test_list_no_directory(self, tmp_path):
+    def test_list_no_directory(self, tmp_path):  # type: ignore[reportMissingParameterType]
         result = UserManagerBackupService.list_local_userman_backups(
             str(tmp_path / "missing")
         )
         assert result == []
 
-    def test_list_with_files(self, tmp_path):
+    def test_list_with_files(self, tmp_path):  # type: ignore[reportMissingParameterType]
         ud = tmp_path / "userman"
         ud.mkdir()
         f1 = ud / f"{PREFIX}R1_20260101.umb"
@@ -180,7 +180,7 @@ class TestListLocalUsermanBackups:
         assert result[0]["filename"] == f1.name
         assert result[0]["size"] == 1
 
-    def test_list_mixed_extensions(self, tmp_path):
+    def test_list_mixed_extensions(self, tmp_path):  # type: ignore[reportMissingParameterType]
         ud = tmp_path / "userman"
         ud.mkdir()
         (ud / f"{PREFIX}a.umb").write_text("x")
@@ -192,7 +192,7 @@ class TestListLocalUsermanBackups:
         exts = {os.path.splitext(str(r["filename"]))[1] for r in result}
         assert exts == {".umb", ".tar"}
 
-    def test_list_sorted_by_mtime(self, tmp_path):
+    def test_list_sorted_by_mtime(self, tmp_path):  # type: ignore[reportMissingParameterType]
         ud = tmp_path / "userman"
         ud.mkdir()
         f_old = ud / f"{PREFIX}old.umb"
@@ -204,7 +204,7 @@ class TestListLocalUsermanBackups:
         assert result[0]["filename"] == f_new.name
         assert result[1]["filename"] == f_old.name
 
-    def test_list_skips_dirs_and_wrong_prefix(self, tmp_path):
+    def test_list_skips_dirs_and_wrong_prefix(self, tmp_path):  # type: ignore[reportMissingParameterType]
         ud = tmp_path / "userman"
         ud.mkdir()
         (ud / "subdir").mkdir()
@@ -220,7 +220,7 @@ class TestListLocalUsermanBackups:
                 result = UserManagerBackupService.list_local_userman_backups()
         assert result == []
 
-    def test_list_with_router_key(self, tmp_path):
+    def test_list_with_router_key(self, tmp_path):  # type: ignore[reportMissingParameterType]
         rdir = tmp_path / "MyTestRouter" / "userman"
         rdir.mkdir(parents=True)
         (rdir / f"{PREFIX}MyTestRouter_20260101.umb").write_text("x")
@@ -234,4 +234,4 @@ class TestListLocalUsermanBackups:
             )
 
         assert len(result) == 2
-        assert all(f["filename"].startswith(PREFIX) for f in result)
+        assert all(f["filename"].startswith(PREFIX) for f in result)  # type: ignore[reportAttributeAccessIssue]

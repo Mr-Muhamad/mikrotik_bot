@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from core.backup.file_server import (
-    _FileRequestHandler,
+    _FileRequestHandler,  # type: ignore[reportPrivateUsage]
     cleanup_serve_file,
     prepare_serve_file,
     start_file_server,
@@ -15,7 +15,7 @@ from core.backup.file_server import (
 )
 
 
-def _make_handler(method, path, headers, body=b""):
+def _make_handler(method, path, headers, body=b""):  # type: ignore[reportMissingParameterType]
     handler = MagicMock(spec=_FileRequestHandler)
     handler.path = path
     handler.headers = headers
@@ -30,7 +30,7 @@ def _make_handler(method, path, headers, body=b""):
 
 
 class TestDoPostSuccess:
-    def test_successful_upload(self, tmp_path):
+    def test_successful_upload(self, tmp_path):  # type: ignore[reportMissingParameterType]
         handler = _make_handler(
             "POST",
             "/upload",
@@ -52,7 +52,7 @@ class TestDoPostSuccess:
         assert upload_file.exists()
         assert upload_file.read_bytes() == b"data"
 
-    def test_upload_missing_content_length_defaults_zero(self, tmp_path):
+    def test_upload_missing_content_length_defaults_zero(self, tmp_path):  # type: ignore[reportMissingParameterType]
         handler = _make_handler(
             "POST",
             "/upload",
@@ -86,7 +86,7 @@ class TestDoPostSuccess:
 
 
 class TestDoGetSuccess:
-    def test_successful_download(self, tmp_path):
+    def test_successful_download(self, tmp_path):  # type: ignore[reportMissingParameterType]
         serves_dir = tmp_path / "serves"
         serves_dir.mkdir()
         f = serves_dir / "test.backup"
@@ -130,41 +130,41 @@ class TestStartStopServer:
     def test_start_creates_server(self):
         import core.backup.file_server as fs
 
-        fs._server = None
-        fs._server_thread = None
+        fs._server = None  # type: ignore[reportPrivateUsage]
+        fs._server_thread = None  # type: ignore[reportPrivateUsage]
         with patch.object(fs, "_ThreadingHTTPServer") as mock_cls:
             mock_server = MagicMock()
             mock_cls.return_value = mock_server
             start_file_server()
             mock_cls.assert_called_once()
-            fs._server = None
-            fs._server_thread = None
+            fs._server = None  # type: ignore[reportPrivateUsage]
+            fs._server_thread = None  # type: ignore[reportPrivateUsage]
 
     def test_start_already_running(self):
         import core.backup.file_server as fs
 
-        fs._server = MagicMock()
-        fs._server_thread = MagicMock()
+        fs._server = MagicMock()  # type: ignore[reportPrivateUsage]
+        fs._server_thread = MagicMock()  # type: ignore[reportPrivateUsage]
         start_file_server()
-        fs._server = None
-        fs._server_thread = None
+        fs._server = None  # type: ignore[reportPrivateUsage]
+        fs._server_thread = None  # type: ignore[reportPrivateUsage]
 
     def test_stop_shuts_down(self):
         import core.backup.file_server as fs
 
         mock_server = MagicMock()
-        fs._server = mock_server
-        fs._server_thread = MagicMock()
+        fs._server = mock_server  # type: ignore[reportPrivateUsage]
+        fs._server_thread = MagicMock()  # type: ignore[reportPrivateUsage]
         stop_file_server()
         mock_server.shutdown.assert_called_once()
-        assert fs._server is None
-        assert fs._server_thread is None
+        assert fs._server is None  # type: ignore[reportPrivateUsage]
+        assert fs._server_thread is None  # type: ignore[reportPrivateUsage]
 
     def test_stop_when_no_server(self):
         import core.backup.file_server as fs
 
-        fs._server = None
-        fs._server_thread = None
+        fs._server = None  # type: ignore[reportPrivateUsage]
+        fs._server_thread = None  # type: ignore[reportPrivateUsage]
         stop_file_server()
 
 
@@ -177,7 +177,7 @@ class TestLogMessage:
 
 
 class TestCleanupServeFileExtended:
-    def test_cleanup_oserror_handled(self, tmp_path):
+    def test_cleanup_oserror_handled(self, tmp_path):  # type: ignore[reportMissingParameterType]
         serves_dir = tmp_path / "serves"
         serves_dir.mkdir()
         f = serves_dir / "test.backup"
@@ -188,7 +188,7 @@ class TestCleanupServeFileExtended:
         ):
             cleanup_serve_file("test.backup")
 
-    def test_prepare_creates_serves_dir(self, tmp_path):
+    def test_prepare_creates_serves_dir(self, tmp_path):  # type: ignore[reportMissingParameterType]
         src = tmp_path / "source.backup"
         src.write_bytes(b"content")
         serve_dir = tmp_path / "serves"
@@ -197,7 +197,7 @@ class TestCleanupServeFileExtended:
         assert result == "out.backup"
         assert (serve_dir / "out.backup").exists()
 
-    def test_prepare_backslash_traversal(self, tmp_path):
+    def test_prepare_backslash_traversal(self, tmp_path):  # type: ignore[reportMissingParameterType]
         src = tmp_path / "x.backup"
         src.write_bytes(b"d")
         with patch("core.backup.file_server.BACKUP_DIR", str(tmp_path)):

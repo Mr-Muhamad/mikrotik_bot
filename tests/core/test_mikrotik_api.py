@@ -29,7 +29,7 @@ class TestGetRouterName:
         assert api.get_router_name("nonexistent") == "لم يتم اختيار روتر"
 
     def test_returns_cached(self, api: MikrotikAPI) -> None:
-        with patch.object(api._pool, "get_cached_name", return_value="CachedRouter"):
+        with patch.object(api._pool, "get_cached_name", return_value="CachedRouter"):  # type: ignore[reportPrivateUsage]
             assert api.get_router_name("any") == "CachedRouter"
 
     def test_returns_db_name_for_discovered_key(self, api: MikrotikAPI) -> None:
@@ -43,14 +43,14 @@ class TestGetRouterName:
             last_seen="2024-01-01 00:00:00",
             owner_id=12345,
         )
-        with patch.object(api._pool, "get_cached_name", return_value=None):
+        with patch.object(api._pool, "get_cached_name", return_value=None):  # type: ignore[reportPrivateUsage]
             name = api.get_router_name(f"discovered_{rid}")
         assert name in ("DBRouter", "10.0.0.1")
 
 
 class TestInvalidateRouterName:
     def test_delegates_to_pool(self, api: MikrotikAPI) -> None:
-        with patch.object(api._pool, "invalidate_name") as mock_inv:
+        with patch.object(api._pool, "invalidate_name") as mock_inv:  # type: ignore[reportPrivateUsage]
             api.invalidate_router_name("r1")
         mock_inv.assert_called_once_with("r1")
 
@@ -58,13 +58,13 @@ class TestInvalidateRouterName:
 class TestExecute:
     def test_successful_execute(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.return_value = MagicMock(return_value=[])
-        with patch.object(api._pool, "get_connection", return_value=fake_api):
+        with patch.object(api._pool, "get_connection", return_value=fake_api):  # type: ignore[reportPrivateUsage]
             result = api.execute("r1", "ip/hotspot/user/print")
         assert result == []
 
     def test_execute_with_kwargs(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.return_value = MagicMock(return_value=[{"name": "x"}])
-        with patch.object(api._pool, "get_connection", return_value=fake_api):
+        with patch.object(api._pool, "get_connection", return_value=fake_api):  # type: ignore[reportPrivateUsage]
             result = api.execute("r1", "ip/hotspot/user/add", name="u1")
         assert result == [{"name": "x"}]
 
@@ -73,7 +73,7 @@ class TestExecute:
     ) -> None:
         fake_api.path.return_value = MagicMock(return_value=[])
         with (
-            patch.object(api._pool, "get_connection", return_value=fake_api),
+            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
             caplog.at_level("DEBUG"),
         ):
             api.execute("r1", "ip/hotspot/user/add", password="secret")
@@ -92,10 +92,10 @@ class TestExecute:
         new_fake_api = MagicMock()
         new_fake_api.path.return_value = MagicMock(return_value=[])
         with (
-            patch.object(api._pool, "get_connection", return_value=fake_api),
-            patch.object(api._pool, "close_connection"),
+            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
+            patch.object(api._pool, "close_connection"),  # type: ignore[reportPrivateUsage]
             patch.object(
-                api._pool,
+                api._pool,  # type: ignore[reportPrivateUsage]
                 "get_router_info",
                 return_value={
                     "host": "1.2.3.4",
@@ -105,28 +105,28 @@ class TestExecute:
                     "name": "r1",
                 },
             ),
-            patch.object(api._pool, "_connect", return_value=new_fake_api),
+            patch.object(api._pool, "_connect", return_value=new_fake_api),  # type: ignore[reportPrivateUsage]
         ):
             result = api.execute("r1", "ip/hotspot/user/print")
         assert result == []
 
     def test_reboot_command_swallows_error(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.side_effect = LibRouterosError("reset")
-        with patch.object(api._pool, "get_connection", return_value=fake_api):
+        with patch.object(api._pool, "get_connection", return_value=fake_api):  # type: ignore[reportPrivateUsage]
             result = api.execute("r1", "system/reboot")
         assert result == []
 
     def test_unexpected_error_raises(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.side_effect = ValueError("weird")
-        with patch.object(api._pool, "get_connection", return_value=fake_api):
+        with patch.object(api._pool, "get_connection", return_value=fake_api):  # type: ignore[reportPrivateUsage]
             with pytest.raises(ValueError):
                 api.execute("r1", "ip/hotspot/user/print")
 
     def test_non_retryable_error_skips_retry(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.side_effect = LibRouterosError("unknown parameter 'name'")
         with (
-            patch.object(api._pool, "get_connection", return_value=fake_api),
-            patch.object(api._pool, "close_connection") as mock_close,
+            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
+            patch.object(api._pool, "close_connection") as mock_close,  # type: ignore[reportPrivateUsage]
         ):
             with pytest.raises(LibRouterosError):
                 api.execute("r1", "ip/hotspot/user/print")
@@ -136,19 +136,19 @@ class TestExecute:
 class TestExecuteNonBlocking:
     def test_swallows_connection_error(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.side_effect = LibRouterosError("reset")
-        with patch.object(api._pool, "get_connection", return_value=fake_api):
+        with patch.object(api._pool, "get_connection", return_value=fake_api):  # type: ignore[reportPrivateUsage]
             api.execute_non_blocking("r1", "system/reboot")
 
     def test_swallows_unexpected_error(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.side_effect = ValueError("anything")
-        with patch.object(api._pool, "get_connection", return_value=fake_api):
+        with patch.object(api._pool, "get_connection", return_value=fake_api):  # type: ignore[reportPrivateUsage]
             api.execute_non_blocking("r1", "ip/hotspot/user/print")
 
     def test_sanitizes_password(
         self, api: MikrotikAPI, fake_api: MagicMock, caplog: pytest.LogCaptureFixture
     ) -> None:
         with (
-            patch.object(api._pool, "get_connection", return_value=fake_api),
+            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
             caplog.at_level("DEBUG"),
         ):
             api.execute_non_blocking("r1", "ip/hotspot/user/add", password="x")
@@ -156,22 +156,22 @@ class TestExecuteNonBlocking:
 
 class TestInvalidateVersion:
     def test_delegates_to_pool(self, api: MikrotikAPI) -> None:
-        with patch.object(api._pool, "invalidate_version") as mock_inv:
+        with patch.object(api._pool, "invalidate_version") as mock_inv:  # type: ignore[reportPrivateUsage]
             api.invalidate_version("r1")
         mock_inv.assert_called_once_with("r1")
 
 
 class TestGetVersion:
     def test_returns_cached(self, api: MikrotikAPI) -> None:
-        with patch.object(api._pool, "get_version", return_value="7.10"):
+        with patch.object(api._pool, "get_version", return_value="7.10"):  # type: ignore[reportPrivateUsage]
             assert api.get_version("r1") == "7.10"
 
     def test_caches_and_returns(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.return_value = MagicMock(return_value=[{"version": "7.20"}])
         with (
-            patch.object(api._pool, "get_version", return_value=""),
-            patch.object(api._pool, "get_connection", return_value=fake_api),
-            patch.object(api._pool, "set_version") as mock_set,
+            patch.object(api._pool, "get_version", return_value=""),  # type: ignore[reportPrivateUsage]
+            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
+            patch.object(api._pool, "set_version") as mock_set,  # type: ignore[reportPrivateUsage]
         ):
             v = api.get_version("r1")
         assert v == "7.20"
@@ -182,10 +182,10 @@ class TestGetVersion:
         new_fake_api = MagicMock()
         new_fake_api.path.return_value = MagicMock(return_value=[])
         with (
-            patch.object(api._pool, "get_version", return_value=""),
-            patch.object(api._pool, "get_connection", return_value=fake_api),
+            patch.object(api._pool, "get_version", return_value=""),  # type: ignore[reportPrivateUsage]
+            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
             patch.object(
-                api._pool,
+                api._pool,  # type: ignore[reportPrivateUsage]
                 "get_router_info",
                 return_value={
                     "host": "1.2.3.4",
@@ -195,15 +195,15 @@ class TestGetVersion:
                     "name": "test",
                 },
             ),
-            patch.object(api._pool, "_connect", return_value=new_fake_api),
+            patch.object(api._pool, "_connect", return_value=new_fake_api),  # type: ignore[reportPrivateUsage]
         ):
             assert api.get_version("r1") == "unknown"
 
     def test_returns_unknown_when_empty(self, api: MikrotikAPI, fake_api: MagicMock) -> None:
         fake_api.path.return_value = MagicMock(return_value=[])
         with (
-            patch.object(api._pool, "get_version", return_value=""),
-            patch.object(api._pool, "get_connection", return_value=fake_api),
+            patch.object(api._pool, "get_version", return_value=""),  # type: ignore[reportPrivateUsage]
+            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
         ):
             assert api.get_version("r1") == "unknown"
 
@@ -222,7 +222,7 @@ class TestGetUsermanBasePath:
     def test_v7_path(self, api: MikrotikAPI) -> None:
         with (
             patch.object(
-                api._pool,
+                api._pool,  # type: ignore[reportPrivateUsage]
                 "get_router_info",
                 return_value={
                     "host": "1.2.3.4",
@@ -239,7 +239,7 @@ class TestGetUsermanBasePath:
     def test_v6_path(self, api: MikrotikAPI) -> None:
         with (
             patch.object(
-                api._pool,
+                api._pool,  # type: ignore[reportPrivateUsage]
                 "get_router_info",
                 return_value={
                     "host": "1.2.3.4",
@@ -264,7 +264,7 @@ class TestTestConnection:
         mock_api = MagicMock()
         mock_api.path.return_value = MagicMock(return_value=[{"version": "7.10"}])
         with patch("core.mikrotik_api.connect", return_value=mock_api):
-            success, version, identity = api.test_connection("10.0.0.1", "admin", "pass")
+            success, version, identity = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert success is True
         assert version == "7.10"
 
@@ -273,32 +273,32 @@ class TestTestConnection:
             "core.mikrotik_api.connect",
             side_effect=LibRouterosError("invalid user or wrong password"),
         ):
-            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")
+            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert success is False
         assert "تسجيل الدخول" in msg
 
     def test_unexpected_error(self, api: MikrotikAPI) -> None:
         with patch("core.mikrotik_api.connect", side_effect=ValueError("weird")):
-            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")
+            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert success is False
 
     def test_empty_results(self, api: MikrotikAPI) -> None:
         mock_api = MagicMock()
         mock_api.path.return_value = MagicMock(return_value=[])
         with patch("core.mikrotik_api.connect", return_value=mock_api):
-            success, version, identity = api.test_connection("10.0.0.1", "admin", "pass")
+            success, version, identity = api.test_connection("10.0.0.1", "admin", "pass")  # type: ignore[reportUnusedVariable]
         assert success is True
         assert version == "unknown"
 
     def test_timeout_classification(self, api: MikrotikAPI) -> None:
         with patch("core.mikrotik_api.connect", side_effect=OSError("Connection timed out")):
-            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass", 8728)
+            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass", 8728)  # type: ignore[reportUnusedVariable]
         assert success is False
         assert "مهلة" in msg or "api" in msg
 
     def test_refused_classification(self, api: MikrotikAPI) -> None:
         with patch("core.mikrotik_api.connect", side_effect=OSError("Connection refused")):
-            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass", 8728)
+            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass", 8728)  # type: ignore[reportUnusedVariable]
         assert success is False
         assert "refused" in msg.lower()
 
@@ -308,12 +308,12 @@ class TestTestConnection:
             "core.mikrotik_api.connect",
             side_effect=[OSError("Connection timed out"), mock_ssl],
         ):
-            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass", 8728)
+            success, msg, identity = api.test_connection("10.0.0.1", "admin", "pass", 8728)  # type: ignore[reportUnusedVariable]
         assert success is False
         assert "8729" in msg
 
 
 class TestGetMetrics:
     def test_delegates_to_pool(self, api: MikrotikAPI) -> None:
-        with patch.object(api._pool, "get_metrics", return_value={"active_connections": 5}):
+        with patch.object(api._pool, "get_metrics", return_value={"active_connections": 5}):  # type: ignore[reportPrivateUsage]
             assert api.get_metrics() == {"active_connections": 5}

@@ -28,7 +28,7 @@ def _top_level_handlers():
     app = Application.builder().token("123456:ABC-fake-token-for-test").build()
     registrations.build_all(app)
     handlers = app.handlers
-    if isinstance(handlers, dict):
+    if isinstance(handlers, dict):  # type: ignore[reportUnnecessaryIsInstance]
         return handlers.get(0, [])
     return list(handlers)
 

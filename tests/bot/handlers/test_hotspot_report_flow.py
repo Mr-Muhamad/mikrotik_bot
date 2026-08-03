@@ -11,7 +11,7 @@ from utils import admin_decorator
 P = "bot.handlers.hotspot_report"
 
 
-async def _call_through(fn, *args, **kwargs):
+async def _call_through(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
     result = fn(*args, **kwargs)
     if hasattr(result, "__await__"):
         return await result
@@ -39,7 +39,7 @@ class TestBuildCsv:
         from bot.handlers.hotspot_report import build_csv
 
         report = {"rows": REPORT_ROWS}
-        result = build_csv(report)
+        result = build_csv(report)  # type: ignore[reportArgumentType]
         assert "name,profile" in result
         assert "u1" in result
         assert "Basic" in result
@@ -47,21 +47,21 @@ class TestBuildCsv:
     def test_generates_csv_with_no_rows(self):
         from bot.handlers.hotspot_report import build_csv
 
-        result = build_csv({"rows": []})
+        result = build_csv({"rows": []})  # type: ignore[reportArgumentType]
         lines = result.strip().split("\n")
         assert len(lines) == 1
 
     def test_generates_csv_with_missing_keys(self):
         from bot.handlers.hotspot_report import build_csv
 
-        result = build_csv({"rows": [{}]})
+        result = build_csv({"rows": [{}]})  # type: ignore[reportArgumentType]
         lines = result.strip().split("\n")
         assert len(lines) == 2
 
 
 @pytest.fixture(autouse=True)
-def _patches():
-    admin_decorator._rate_limit_data.clear()
+def _patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     with ExitStack() as stack:
         stack.enter_context(
             patch("utils.admin_decorator.ADMIN_IDS", [724730774])
@@ -85,7 +85,7 @@ def _patches():
         stack.enter_context(patch(f"{P}.mikrotik_api"))
         stack.enter_context(patch(f"{P}.stats_manager"))
         yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestReportCommand:

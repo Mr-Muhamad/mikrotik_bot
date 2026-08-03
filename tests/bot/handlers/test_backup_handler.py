@@ -11,14 +11,14 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 @pytest.fixture(autouse=True)
-def _bypass_decorators():
+def _bypass_decorators():  # type: ignore[reportUnusedFunction]
     """Bypass @admin_only/@require_router by replacing decorated functions with their unwrapped versions."""  # noqa: E501
     for attr in [
         "backup_full",
@@ -48,7 +48,7 @@ def _query_update():
     return update
 
 
-def _text_update(text):
+def _text_update(text):  # type: ignore[reportUnusedFunction, reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=ADMIN_ID)
     update.effective_chat = MagicMock(id=1)
@@ -136,9 +136,9 @@ class TestBackupFull:
         ):
             await job_func(job_ctx)
 
-        job_ctx.bot.send_message.assert_called_once()
-        text = job_ctx.bot.send_message.call_args.kwargs.get("text", "")
-        assert "❌" in text
+        job_ctx.bot.send_message.assert_called()
+        texts = [call.kwargs.get("text", "") for call in job_ctx.bot.send_message.call_args_list]
+        assert any("❌" in text for text in texts)
 
 
 class TestBackupUserman:

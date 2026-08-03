@@ -23,4 +23,4 @@ def test_managers_default_to_protocol_client():
     from core.userman_manager import UserManager
 
     for manager in (HotspotManager(), UserManager(), ProfileSync(), StatsManager()):
-        assert isinstance(manager._api, MikrotikClient)
+        assert isinstance(manager._api, MikrotikClient)  # type: ignore[reportPrivateUsage]

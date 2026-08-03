@@ -13,7 +13,7 @@ from utils import admin_decorator
 P = "bot.handlers.hotspot_edit"
 
 
-async def _call_through(fn, *args, **kwargs):
+async def _call_through(fn, *args, **kwargs):  # type: ignore[reportMissingParameterType]
     result = fn(*args, **kwargs)
     if hasattr(result, "__await__"):
         return await result
@@ -41,12 +41,12 @@ def _start_patches():
 
 
 @pytest.fixture(autouse=True)
-def _all_patches():
-    admin_decorator._rate_limit_data.clear()
+def _all_patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     stack = _start_patches()
     yield
     stack.close()
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestHotspotEditStart:
@@ -683,25 +683,25 @@ class TestEditBackToFields:
 
 class TestTransformRenewalDay:
     def test_valid_day(self):
-        from bot.handlers.hotspot_edit import _transform_renewal_day
+        from bot.handlers.hotspot_edit import _transform_renewal_day  # type: ignore[reportPrivateUsage]
 
         result = _transform_renewal_day("15", {"name": "user1", "comment": ""})
         assert result == "user1/15"
 
     def test_invalid_day(self):
-        from bot.handlers.hotspot_edit import _transform_renewal_day
+        from bot.handlers.hotspot_edit import _transform_renewal_day  # type: ignore[reportPrivateUsage]
 
         result = _transform_renewal_day("abc", {"name": "user1"})
         assert result is None
 
     def test_day_out_of_range(self):
-        from bot.handlers.hotspot_edit import _transform_renewal_day
+        from bot.handlers.hotspot_edit import _transform_renewal_day  # type: ignore[reportPrivateUsage]
 
         result = _transform_renewal_day("32", {"name": "user1"})
         assert result is None
 
     def test_day_zero(self):
-        from bot.handlers.hotspot_edit import _transform_renewal_day
+        from bot.handlers.hotspot_edit import _transform_renewal_day  # type: ignore[reportPrivateUsage]
 
         result = _transform_renewal_day("0", {"name": "user1"})
         assert result is None

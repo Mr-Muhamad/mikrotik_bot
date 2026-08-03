@@ -54,8 +54,8 @@ def mock_mikrotik_api():
     mock = MikrotikAPIMock()
     from core.hotspot_manager import hotspot_manager
 
-    hotspot_manager._users_cache.clear()
-    hotspot_manager._profiles_cache.clear()
+    hotspot_manager._users_cache.clear()  # type: ignore[reportPrivateUsage]
+    hotspot_manager._profiles_cache.clear()  # type: ignore[reportPrivateUsage]
     patches = [
         patch("core.mikrotik_api.mikrotik_api", mock),
         patch("core.hotspot_manager.mikrotik_api", mock),

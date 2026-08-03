@@ -8,11 +8,11 @@ from utils.crypto import decrypt_password, encrypt_password
 
 
 @pytest.fixture(autouse=True)
-def _reset_crypto_state():
+def _reset_crypto_state():  # type: ignore[reportUnusedFunction]
     """Reset crypto module state between tests."""
-    crypto._key = None
+    crypto._key = None  # type: ignore[reportPrivateUsage]
     yield
-    crypto._key = None
+    crypto._key = None  # type: ignore[reportPrivateUsage]
 
 
 def _valid_key() -> str:
@@ -23,24 +23,24 @@ def _valid_key() -> str:
 
 
 class TestEncryptPassword:
-    def test_empty_password_returns_empty(self, monkeypatch):
+    def test_empty_password_returns_empty(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         assert encrypt_password("") == ""
 
-    def test_encrypts_with_valid_key(self, monkeypatch):
+    def test_encrypts_with_valid_key(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         token = encrypt_password("secret123")
         assert token != "secret123"
         # Fernet tokens start with 'gAAAAA'
         assert token.startswith("gAAAAA")
 
-    def test_no_fallback_when_key_missing(self, monkeypatch):
+    def test_no_fallback_when_key_missing(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         """ENCRYPTION_KEY is REQUIRED - no session fallback."""
         monkeypatch.delenv("ENCRYPTION_KEY", raising=False)
         with pytest.raises(RuntimeError, match="ENCRYPTION_KEY not set"):
             encrypt_password("secret123")
 
-    def test_invalid_key_raises(self, monkeypatch):
+    def test_invalid_key_raises(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", "not-a-valid-fernet-key!!!")
         with pytest.raises(ValueError, match="ENCRYPTION_KEY in .env is invalid"):
             encrypt_password("secret")
@@ -50,26 +50,26 @@ class TestEncryptPassword:
 
 
 class TestDecryptPassword:
-    def test_empty_token_returns_empty(self, monkeypatch):
+    def test_empty_token_returns_empty(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         assert decrypt_password("") == ""
 
-    def test_round_trip(self, monkeypatch):
+    def test_round_trip(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         token = encrypt_password("my-password")
         assert decrypt_password(token) == "my-password"
 
-    def test_invalid_token_returns_empty(self, monkeypatch):
+    def test_invalid_token_returns_empty(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         assert decrypt_password("not-a-valid-fernet-token!!!") == ""
 
-    def test_garbage_returns_empty_not_raises(self, monkeypatch):
+    def test_garbage_returns_empty_not_raises(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
         # Should NEVER raise — returns empty string
         assert decrypt_password("💀 garbage") == ""
         assert decrypt_password("gAAAAAinvalidsuffix") == ""
 
-    def test_no_fallback_when_key_missing(self, monkeypatch):
+    def test_no_fallback_when_key_missing(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.delenv("ENCRYPTION_KEY", raising=False)
         # decrypt_password catches all exceptions and returns empty string
         assert decrypt_password("some-token") == ""
@@ -79,13 +79,13 @@ class TestDecryptPassword:
 
 
 class TestGetKey:
-    def test_caches_key_after_first_call(self, monkeypatch):
+    def test_caches_key_after_first_call(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.setenv("ENCRYPTION_KEY", _valid_key())
-        k1 = crypto._get_key()
-        k2 = crypto._get_key()
+        k1 = crypto._get_key()  # type: ignore[reportPrivateUsage]
+        k2 = crypto._get_key()  # type: ignore[reportPrivateUsage]
         assert k1 is k2  # cached
 
-    def test_raises_when_env_unset(self, monkeypatch):
+    def test_raises_when_env_unset(self, monkeypatch):  # type: ignore[reportMissingParameterType]
         monkeypatch.delenv("ENCRYPTION_KEY", raising=False)
         with pytest.raises(RuntimeError, match="ENCRYPTION_KEY not set"):
-            crypto._get_key()
+            crypto._get_key()  # type: ignore[reportPrivateUsage]

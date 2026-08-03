@@ -19,18 +19,18 @@ from bot.router_selector import cleanup_state
 from core.hotspot_manager import hotspot_manager
 from tests.fixtures.telegram_mocks import make_mock_update
 from utils import admin_decorator
-from utils.callback_utils import _CALLBACK_DEDUP
+from utils.callback_utils import _CALLBACK_DEDUP  # type: ignore[reportPrivateUsage]
 
 ADMIN_ID = 724730774
 ROUTER_KEY = "discovered_1"
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     _CALLBACK_DEDUP.clear()
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     _CALLBACK_DEDUP.clear()
 
 
@@ -43,7 +43,7 @@ def _make_context():
     return context
 
 
-def _seed_user(name="del_user", uid="*1"):
+def _seed_user(name="del_user", uid="*1"):  # type: ignore[reportMissingParameterType]
     hotspot_manager.add_user(ROUTER_KEY, name=name, password="1234", profile="default")
     users = hotspot_manager.search_users(ROUTER_KEY, name)
     if users:
@@ -53,7 +53,7 @@ def _seed_user(name="del_user", uid="*1"):
 
 class TestHotspotDeleteStart:
     @pytest.mark.asyncio
-    async def test_start_prompts_for_user_id(self, mock_mikrotik_api):
+    async def test_start_prompts_for_user_id(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import get_user_session, save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -71,7 +71,7 @@ class TestHotspotDeleteStart:
             cleanup_state(ADMIN_ID, {})
 
     @pytest.mark.asyncio
-    async def test_start_clears_conversation_state(self, mock_mikrotik_api):
+    async def test_start_clears_conversation_state(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -87,7 +87,7 @@ class TestHotspotDeleteStart:
 
 class TestHotspotDeleteSelect:
     @pytest.mark.asyncio
-    async def test_delete_user_shows_confirm(self, mock_mikrotik_api):
+    async def test_delete_user_shows_confirm(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -104,7 +104,7 @@ class TestHotspotDeleteSelect:
         assert update.callback_query.edit_message_text.called
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_user_ends_conversation(self, mock_mikrotik_api):
+    async def test_delete_nonexistent_user_ends_conversation(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -116,7 +116,7 @@ class TestHotspotDeleteSelect:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_delete_error_path_calls_send_error(self, mock_mikrotik_api):
+    async def test_delete_error_path_calls_send_error(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -140,7 +140,7 @@ class TestHotspotDeleteSelect:
 
 class TestConfirmCallback:
     @pytest.mark.asyncio
-    async def test_confirm_yes_deletes_user(self, mock_mikrotik_api):
+    async def test_confirm_yes_deletes_user(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -157,7 +157,7 @@ class TestConfirmCallback:
         assert hotspot_manager.get_user(ROUTER_KEY, uid) is None
 
     @pytest.mark.asyncio
-    async def test_confirm_no_keeps_user(self, mock_mikrotik_api):
+    async def test_confirm_no_keeps_user(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -174,7 +174,7 @@ class TestConfirmCallback:
         assert hotspot_manager.get_user(ROUTER_KEY, uid) is not None
 
     @pytest.mark.asyncio
-    async def test_confirm_without_context_data_ends(self, mock_mikrotik_api):
+    async def test_confirm_without_context_data_ends(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -187,7 +187,7 @@ class TestConfirmCallback:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_confirm_yes_delete_failure_calls_send_error(self, mock_mikrotik_api):
+    async def test_confirm_yes_delete_failure_calls_send_error(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -209,7 +209,7 @@ class TestConfirmCallback:
         assert "net down" in str(mock_err.call_args)
 
     @pytest.mark.asyncio
-    async def test_confirm_yes_nonexistent_user_ends_with_message(self, mock_mikrotik_api):
+    async def test_confirm_yes_nonexistent_user_ends_with_message(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.messages import USER_NOT_FOUND_ANYMORE
         from database.models import save_user_session
 

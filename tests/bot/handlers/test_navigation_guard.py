@@ -43,7 +43,7 @@ async def test_navigation_guard_blocks_without_router():
     called = AsyncMock()
 
     @navigation_guard
-    async def handler(update, context):
+    async def handler(update, context):  # type: ignore[reportMissingParameterType]
         called()
 
     update = MagicMock()
@@ -78,7 +78,7 @@ async def test_navigation_guard_allows_with_router():
     ran = []
 
     @navigation_guard
-    async def handler(update, context):
+    async def handler(update, context):  # type: ignore[reportMissingParameterType]
         ran.append(True)
 
     update = MagicMock()

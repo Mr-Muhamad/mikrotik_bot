@@ -5,9 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from core.hotspot_stats import (
-    _categorize_user,
-    _classify_limit_gb,
-    _safe_day,
+    _categorize_user,  # type: ignore[reportPrivateUsage]
+    _classify_limit_gb,  # type: ignore[reportPrivateUsage]
+    _safe_day,  # type: ignore[reportPrivateUsage]
     build_usage_report,
     get_hotspot_stats,
     parse_reset_day,
@@ -60,7 +60,7 @@ class TestParseResetDay:
         assert parse_reset_day("") is None
 
     def test_none_input(self):
-        assert parse_reset_day(None) is None
+        assert parse_reset_day(None) is None  # type: ignore[reportArgumentType]
 
     def test_no_match(self):
         assert parse_reset_day("no numbers here") is None
@@ -87,7 +87,7 @@ class TestCategorizeUser:
     def test_disabled_user(self):
         user = {"disabled": "true"}
         cats = {}
-        active, day = _categorize_user(user, cats)
+        active, day = _categorize_user(user, cats)  # type: ignore[reportArgumentType]
         assert active is False
         assert day is None
 
@@ -98,7 +98,7 @@ class TestCategorizeUser:
             "comment": "15",
         }
         cats = {}
-        active, day = _categorize_user(user, cats)
+        active, day = _categorize_user(user, cats)  # type: ignore[reportArgumentType]
         assert active is True
         assert cats["10.00 GB"] == 1
         assert day == 15
@@ -106,7 +106,7 @@ class TestCategorizeUser:
     def test_active_without_limit(self):
         user = {"disabled": "false", "limit-bytes-total": "0", "comment": ""}
         cats = {}
-        active, day = _categorize_user(user, cats)
+        active, day = _categorize_user(user, cats)  # type: ignore[reportArgumentType]
         assert active is True
         assert cats["غير محدودة"] == 1
         assert day is None
@@ -164,7 +164,7 @@ class TestBuildUsageReport:
             result = build_usage_report(mock_api, "r1")
         assert result["total"] == 1
         assert result["active"] == 1
-        assert result["rows"][0]["total_bytes"] == 1500
+        assert result["rows"][0]["total_bytes"] == 1500  # type: ignore[reportIndexIssue]
 
     @pytest.mark.asyncio
     async def test_expired_user(self):
@@ -178,7 +178,7 @@ class TestBuildUsageReport:
         ]
         with patch("core.hotspot_stats.format_bytes", side_effect=lambda s: str(s)):
             result = build_usage_report(mock_api, "r1")
-        assert len(result["expired"]) == 1
+        assert len(result["expired"]) == 1  # type: ignore[reportArgumentType]
 
     @pytest.mark.asyncio
     async def test_disabled_user_counted(self):
@@ -193,7 +193,7 @@ class TestBuildUsageReport:
         with patch("core.hotspot_stats.format_bytes", side_effect=lambda s: str(s)):
             result = build_usage_report(mock_api, "r1")
         assert result["disabled"] == 1
-        assert len(result["inactive"]) == 1
+        assert len(result["inactive"]) == 1  # type: ignore[reportArgumentType]
 
     @pytest.mark.asyncio
     async def test_invalid_bytes_handled(self):
@@ -207,4 +207,4 @@ class TestBuildUsageReport:
         ]
         with patch("core.hotspot_stats.format_bytes", side_effect=lambda s: str(s)):
             result = build_usage_report(mock_api, "r1")
-        assert result["rows"][0]["total_bytes"] == 0
+        assert result["rows"][0]["total_bytes"] == 0  # type: ignore[reportIndexIssue]

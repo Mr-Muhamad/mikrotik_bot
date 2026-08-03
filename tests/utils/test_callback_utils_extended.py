@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from utils.callback_utils import (
-    _CALLBACK_DEDUP,
+    _CALLBACK_DEDUP,  # type: ignore[reportPrivateUsage]
     is_duplicate_callback,
     safe_answer_callback,
 )
@@ -16,7 +16,7 @@ def reset_dedup():
     _CALLBACK_DEDUP.clear()
     import utils.callback_utils as mod
 
-    mod._last_cleanup = 0.0
+    mod._last_cleanup = 0.0  # type: ignore[reportPrivateUsage]
     yield
     _CALLBACK_DEDUP.clear()
 

@@ -21,12 +21,12 @@ def _start_patches():
 
 
 @pytest.fixture(autouse=True)
-def _all_patches():
-    admin_decorator._rate_limit_data.clear()
+def _all_patches():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     stack = _start_patches()
     yield
     stack.close()
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 class TestCmdTimeout:
@@ -58,7 +58,7 @@ class TestHandleTimeoutSelection:
         update = make_mock_update(callback_data="set_timeout:15")
         ctx = make_mock_context()
         await mod.handle_timeout_selection(update, ctx)
-        mod.set_session_timeout.assert_called_once_with(724730774, 15)
+        mod.set_session_timeout.assert_called_once_with(724730774, 15)  # type: ignore[reportFunctionMemberAccess]
         update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
@@ -68,7 +68,7 @@ class TestHandleTimeoutSelection:
         update = make_mock_update(callback_data="set_timeout:0")
         ctx = make_mock_context()
         await mod.handle_timeout_selection(update, ctx)
-        mod.set_session_timeout.assert_called_once_with(724730774, 0)
+        mod.set_session_timeout.assert_called_once_with(724730774, 0)  # type: ignore[reportFunctionMemberAccess]
 
     @pytest.mark.asyncio
     async def test_cancel_timeout(self):

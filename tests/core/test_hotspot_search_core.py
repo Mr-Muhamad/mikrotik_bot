@@ -10,11 +10,11 @@ from core.hotspot_search import (
 )
 
 
-def _host(mid: str, mac: str, ip: str, user: str = "") -> dict:
+def _host(mid: str, mac: str, ip: str, user: str = "") -> dict:  # type: ignore[reportMissingTypeArgument]
     return {".id": mid, "mac-address": mac, "address": ip, "user": user}
 
 
-def _lease(mac: str, host_name: str = "") -> dict:
+def _lease(mac: str, host_name: str = "") -> dict:  # type: ignore[reportMissingTypeArgument]
     return {"mac-address": mac, "host-name": host_name}
 
 
@@ -110,7 +110,7 @@ class TestKickHost:
     def test_kicks_host_by_ip_fallback(self):
         hosts = [_host("1", "aa:bb:cc:dd:ee:ff", "10.0.0.1")]
         self.api.execute.side_effect = [[], hosts, [], []]
-        ok, name = kick_host(self.api, self.rk, "10.0.0.1")
+        ok, name = kick_host(self.api, self.rk, "10.0.0.1")  # type: ignore[reportUnusedVariable]
         assert ok is True
 
     def test_sends_remove_command(self):
@@ -124,7 +124,7 @@ class TestKickHost:
         host = _host("1", "aa:bb:cc:dd:ee:ff", "10.0.0.1")
         lease = [_lease("aa:bb:cc:dd:ee:ff", "RouterDevice")]
         self.api.execute.side_effect = [[host], lease, []]
-        ok, name = kick_host(self.api, self.rk, "aa:bb:cc:dd:ee:ff")
+        ok, name = kick_host(self.api, self.rk, "aa:bb:cc:dd:ee:ff")  # type: ignore[reportUnusedVariable]
         assert name == "RouterDevice"
 
 

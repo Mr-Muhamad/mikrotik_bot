@@ -26,10 +26,10 @@ ROUTER_KEY = "discovered_1"
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _make_context():
@@ -41,7 +41,7 @@ def _make_context():
     return context
 
 
-def _seed_user(name="edit_user", uid_hint="*99"):
+def _seed_user(name="edit_user", uid_hint="*99"):  # type: ignore[reportMissingParameterType]
     hotspot_manager.add_user(ROUTER_KEY, name=name, password="1234", profile="default")
     users = hotspot_manager.search_users(ROUTER_KEY, name)
     if users:
@@ -51,7 +51,7 @@ def _seed_user(name="edit_user", uid_hint="*99"):
 
 class TestHotspotEditStart:
     @pytest.mark.asyncio
-    async def test_start_prompts_for_search(self, mock_mikrotik_api):
+    async def test_start_prompts_for_search(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_FIELD
         from database.models import save_user_session
 
@@ -66,7 +66,7 @@ class TestHotspotEditStart:
 
 class TestHotspotEditSelect:
     @pytest.mark.asyncio
-    async def test_select_user_populates_edit_state(self, mock_mikrotik_api):
+    async def test_select_user_populates_edit_state(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_VALUE
         from database.models import save_user_session
 
@@ -84,7 +84,7 @@ class TestHotspotEditSelect:
         assert get_hotspot_edit_session(context.user_data).user_data == user
 
     @pytest.mark.asyncio
-    async def test_select_nonexistent_user_ends(self, mock_mikrotik_api):
+    async def test_select_nonexistent_user_ends(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -95,7 +95,7 @@ class TestHotspotEditSelect:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_select_error_calls_send_error(self, mock_mikrotik_api):
+    async def test_select_error_calls_send_error(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -114,7 +114,7 @@ class TestHotspotEditSelect:
 
 class TestHotspotEditField:
     @pytest.mark.asyncio
-    async def test_select_password_field_prompts_for_value(self, mock_mikrotik_api):
+    async def test_select_password_field_prompts_for_value(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_VALUE
         from database.models import save_user_session
 
@@ -130,7 +130,7 @@ class TestHotspotEditField:
         assert result == WAITING_EDIT_VALUE
 
     @pytest.mark.asyncio
-    async def test_select_profile_field_loads_profiles(self, mock_mikrotik_api):
+    async def test_select_profile_field_loads_profiles(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_VALUE
         from database.models import save_user_session
 
@@ -147,7 +147,7 @@ class TestHotspotEditField:
         assert update.callback_query.edit_message_text.called
 
     @pytest.mark.asyncio
-    async def test_profile_fetch_error_calls_send_error(self, mock_mikrotik_api):
+    async def test_profile_fetch_error_calls_send_error(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_VALUE
         from database.models import save_user_session
 
@@ -169,7 +169,7 @@ class TestHotspotEditField:
         mock_err.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_toggle_disabled_nonexistent_user_ends_with_message(self, mock_mikrotik_api):
+    async def test_toggle_disabled_nonexistent_user_ends_with_message(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.messages import USER_NOT_FOUND_ANYMORE
         from database.models import save_user_session
 
@@ -188,7 +188,7 @@ class TestHotspotEditField:
 
 class TestEditProfileSelected:
     @pytest.mark.asyncio
-    async def test_profile_selected_nonexistent_user_ends_with_message(self, mock_mikrotik_api):
+    async def test_profile_selected_nonexistent_user_ends_with_message(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.messages import USER_NOT_FOUND_ANYMORE
         from database.models import save_user_session
 
@@ -208,7 +208,7 @@ class TestEditProfileSelected:
 
 class TestHotspotEditValue:
     @pytest.mark.asyncio
-    async def test_update_password_persists(self, mock_mikrotik_api):
+    async def test_update_password_persists(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_VALUE
         from database.models import save_user_session
 
@@ -230,7 +230,7 @@ class TestHotspotEditValue:
         assert updated.get("password") == "newpass"
 
     @pytest.mark.asyncio
-    async def test_update_profile_persists(self, mock_mikrotik_api):
+    async def test_update_profile_persists(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_VALUE
         from database.models import save_user_session
 
@@ -252,7 +252,7 @@ class TestHotspotEditValue:
         assert updated.get("profile") == "premium"
 
     @pytest.mark.asyncio
-    async def test_update_bytes_persists(self, mock_mikrotik_api):
+    async def test_update_bytes_persists(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_VALUE
         from database.models import save_user_session
 
@@ -274,7 +274,7 @@ class TestHotspotEditValue:
         assert updated.get("limit-bytes-total") == "1000000000"
 
     @pytest.mark.asyncio
-    async def test_update_without_context_data_ends(self, mock_mikrotik_api):
+    async def test_update_without_context_data_ends(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from database.models import save_user_session
 
         save_user_session(ADMIN_ID, ROUTER_KEY)
@@ -286,7 +286,7 @@ class TestHotspotEditValue:
         assert result == ConversationHandler.END
 
     @pytest.mark.asyncio
-    async def test_update_error_calls_send_error(self, mock_mikrotik_api):
+    async def test_update_error_calls_send_error(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.handlers.constants import WAITING_EDIT_VALUE
         from database.models import save_user_session
 
@@ -310,7 +310,7 @@ class TestHotspotEditValue:
         mock_err.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_update_nonexistent_user_ends_with_message(self, mock_mikrotik_api):
+    async def test_update_nonexistent_user_ends_with_message(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         from bot.messages import USER_NOT_FOUND_ANYMORE
         from database.models import save_user_session
 

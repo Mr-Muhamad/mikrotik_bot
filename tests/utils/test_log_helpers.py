@@ -21,7 +21,7 @@ from utils.request_id import request_id_scope
 
 
 @pytest.fixture(autouse=True)
-def _reset_request_id():
+def _reset_request_id():  # type: ignore[reportUnusedFunction]
     set_request_id("-")
     yield
     set_request_id("-")
@@ -87,8 +87,8 @@ class TestLogApiCall:
         (6000.0, True, "WARNING"),
         (200.0, False, "ERROR"),
     ])
-    def test_api_call(self, capture_log, duration, success, exp_level):
-        logger, stream = capture_log
+    def test_api_call(self, capture_log, duration, success, exp_level):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         with patch("core.metrics.record_mikrotik_request") as mock_metric:
             log_api_call("router_1", "/ip/hotspot/print", duration, success)
 
@@ -98,16 +98,16 @@ class TestLogApiCall:
         assert f"{exp_level}|" in output
         assert "OK" in output if success else "FAILED" in output
 
-    def test_api_call_request_id(self, capture_log):
-        logger, stream = capture_log
+    def test_api_call_request_id(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         with patch("core.metrics.record_mikrotik_request"):
             with request_id_scope("trace-api-42"):
                 log_api_call("r1", "cmd", 10.0, True)
 
         assert "trace-api-42" in stream.getvalue()
 
-    def test_api_call_includes_error_category(self, capture_log):
-        logger, stream = capture_log
+    def test_api_call_includes_error_category(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         with patch("core.metrics.record_mikrotik_request"):
             log_api_call("r1", "cmd", 50.0, False, error=ConnectionError("timeout"))
 
@@ -116,27 +116,27 @@ class TestLogApiCall:
 
 
 class TestLogHandlerEntry:
-    def test_entry_with_context(self, capture_log):
-        logger, stream = capture_log
+    def test_entry_with_context(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         log_handler_entry("start_handler", user_id=123, chat_id=456)
 
         output = stream.getvalue()
         assert "ENTER start_handler" in output
 
-    def test_entry_minimal(self, capture_log):
-        logger, stream = capture_log
+    def test_entry_minimal(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         log_handler_entry("simple_handler")
         assert "ENTER simple_handler" in stream.getvalue()
 
 
 class TestLogHandlerExit:
-    def test_exit_success(self, capture_log):
-        logger, stream = capture_log
+    def test_exit_success(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         log_handler_exit("start_handler", 100.0, True)
         assert "EXIT start_handler" in capture_log[1].getvalue()
 
-    def test_exit_failure(self, capture_log):
-        logger, stream = capture_log
+    def test_exit_failure(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         log_handler_exit("start_handler", 200.0, False)
         output = stream.getvalue()
         assert "EXIT start_handler" in output
@@ -144,13 +144,13 @@ class TestLogHandlerExit:
 
 
 class TestLogServiceCall:
-    def test_success(self, capture_log):
-        logger, stream = capture_log
+    def test_success(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         log_service_call("BackupService", "run", 500.0, True)
         assert "BackupService.run" in stream.getvalue()
 
-    def test_failure_with_error(self, capture_log):
-        logger, stream = capture_log
+    def test_failure_with_error(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         log_service_call("BackupService", "run", 500.0, False,
                          error=RuntimeError("backup failed"))
         output = stream.getvalue()
@@ -159,16 +159,16 @@ class TestLogServiceCall:
 
 
 class TestLogDbOperation:
-    def test_db_operation(self, capture_log):
-        logger, stream = capture_log
+    def test_db_operation(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         with patch("core.metrics.record_db_query") as mock_metric:
             log_db_operation("SELECT", "routers", 3.0, True)
 
         mock_metric.assert_called_once_with("SELECT", "routers", True, 3.0)
         assert "DB SELECT.routers" in stream.getvalue()
 
-    def test_db_operation_failure(self, capture_log):
-        logger, stream = capture_log
+    def test_db_operation_failure(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         with patch("core.metrics.record_db_query"):
             log_db_operation("INSERT", "logs", 10.0, False)
         assert "ERROR" in stream.getvalue()
@@ -185,8 +185,8 @@ class TestLogRouterCommand:
 
 
 class TestTimedOperation:
-    def test_measures_duration_and_logs(self, capture_log):
-        logger, stream = capture_log
+    def test_measures_duration_and_logs(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         with timed_operation("test_op", component="service"):
             time.sleep(0.01)
 
@@ -194,8 +194,8 @@ class TestTimedOperation:
         assert "test_op" in output
         assert "INFO" in output
 
-    def test_logs_error_on_exception(self, capture_log):
-        logger, stream = capture_log
+    def test_logs_error_on_exception(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         try:
             with timed_operation("failing_op", component="service"):
                 msg = "something broke"
@@ -207,8 +207,8 @@ class TestTimedOperation:
         assert "failing_op" in output
         assert "ERROR" in output
 
-    def test_context_fields_included(self, capture_log):
-        logger, stream = capture_log
+    def test_context_fields_included(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         with timed_operation(
             "backup_op", component="service", router_key="discovered_1"
         ):
@@ -217,8 +217,8 @@ class TestTimedOperation:
         output = stream.getvalue()
         assert "discovered_1" in output
 
-    def test_manual_class(self, capture_log):
-        logger, stream = capture_log
+    def test_manual_class(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         op = TimedOperation("manual_op", "handler")
         op.__enter__()
         time.sleep(0.005)
@@ -226,8 +226,8 @@ class TestTimedOperation:
 
         assert "manual_op" in stream.getvalue()
 
-    def test_double_enter_no_crash(self, capture_log):
-        logger, stream = capture_log
+    def test_double_enter_no_crash(self, capture_log):  # type: ignore[reportMissingParameterType]
+        logger, stream = capture_log  # type: ignore[reportUnusedVariable]
         op = TimedOperation("double", "service")
         op.__enter__()
         op.__enter__()

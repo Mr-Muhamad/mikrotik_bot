@@ -10,7 +10,7 @@ from unittest.mock import patch
 import pytest
 from librouteros.exceptions import LibRouterosError
 
-from core.hotspot_manager import _parse_uptime_seconds
+from core.hotspot_manager import _parse_uptime_seconds  # type: ignore[reportPrivateUsage]
 
 
 @pytest.mark.usefixtures("mock_mikrotik_api")
@@ -19,7 +19,7 @@ class TestParseUptimeSeconds:
         assert _parse_uptime_seconds("") == 0
 
     def test_none_input(self):
-        assert _parse_uptime_seconds(None) == 0
+        assert _parse_uptime_seconds(None) == 0  # type: ignore[reportArgumentType]
 
     def test_days_only(self):
         assert _parse_uptime_seconds("1d") == 86400
@@ -63,7 +63,7 @@ class TestUserExists:
         assert hotspot_manager.user_exists(self.ROUTER_KEY, "   ") is False
 
     def test_none_name(self):
-        assert hotspot_manager.user_exists(self.ROUTER_KEY, None) is False
+        assert hotspot_manager.user_exists(self.ROUTER_KEY, None) is False  # type: ignore[reportArgumentType]
 
     def test_existing_user(self):
         hotspot_manager.add_user(
@@ -76,7 +76,7 @@ class TestUserExists:
 
     def test_api_error_returns_false(self):
         with patch.object(
-            hotspot_manager._api,
+            hotspot_manager._api,  # type: ignore[reportPrivateUsage]
             "execute",
             side_effect=LibRouterosError("timeout"),
         ):
@@ -94,8 +94,8 @@ class TestEditUser:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "edtpw")
         uid = users[0][".id"]
-        hotspot_manager.edit_user(self.ROUTER_KEY, uid, password="new")
-        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)
+        hotspot_manager.edit_user(self.ROUTER_KEY, uid, password="new")  # type: ignore[reportArgumentType]
+        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
         assert updated["password"] == "new"
 
     def test_edit_profile(self):
@@ -104,8 +104,8 @@ class TestEditUser:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "edtprof")
         uid = users[0][".id"]
-        hotspot_manager.edit_user(self.ROUTER_KEY, uid, profile="vip")
-        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)
+        hotspot_manager.edit_user(self.ROUTER_KEY, uid, profile="vip")  # type: ignore[reportArgumentType]
+        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
         assert updated["profile"] == "vip"
 
     def test_edit_comment_sanitized(self):
@@ -114,8 +114,8 @@ class TestEditUser:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "edtcomm")
         uid = users[0][".id"]
-        hotspot_manager.edit_user(self.ROUTER_KEY, uid, comment="test comment")
-        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)
+        hotspot_manager.edit_user(self.ROUTER_KEY, uid, comment="test comment")  # type: ignore[reportArgumentType]
+        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
         assert updated.get("comment") is not None
 
     def test_edit_disabled(self):
@@ -124,8 +124,8 @@ class TestEditUser:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "edtdis")
         uid = users[0][".id"]
-        hotspot_manager.edit_user(self.ROUTER_KEY, uid, disabled="yes")
-        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)
+        hotspot_manager.edit_user(self.ROUTER_KEY, uid, disabled="yes")  # type: ignore[reportArgumentType]
+        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
         assert updated.get("disabled") == "yes"
 
     def test_edit_underscore_key_normalization(self):
@@ -134,8 +134,8 @@ class TestEditUser:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "edtnorm")
         uid = users[0][".id"]
-        hotspot_manager.edit_user(self.ROUTER_KEY, uid, limit_bytes_total="500")
-        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)
+        hotspot_manager.edit_user(self.ROUTER_KEY, uid, limit_bytes_total="500")  # type: ignore[reportArgumentType]
+        updated = hotspot_manager.get_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
         assert updated.get("limit-bytes-total") == "500"
 
     def test_edit_disallowed_field_ignored(self):
@@ -144,7 +144,7 @@ class TestEditUser:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "edtdisf")
         uid = users[0][".id"]
-        hotspot_manager.edit_user(self.ROUTER_KEY, uid, nonexistent_field="value")
+        hotspot_manager.edit_user(self.ROUTER_KEY, uid, nonexistent_field="value")  # type: ignore[reportArgumentType]
 
     def test_edit_none_value_ignored(self):
         hotspot_manager.add_user(
@@ -152,7 +152,7 @@ class TestEditUser:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "edtnone")
         uid = users[0][".id"]
-        hotspot_manager.edit_user(self.ROUTER_KEY, uid, password=None)
+        hotspot_manager.edit_user(self.ROUTER_KEY, uid, password=None)  # type: ignore[reportArgumentType]
 
     def test_edit_non_string_value_converted(self):
         hotspot_manager.add_user(
@@ -160,7 +160,7 @@ class TestEditUser:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "edtint")
         uid = users[0][".id"]
-        hotspot_manager.edit_user(self.ROUTER_KEY, uid, limit_uptime="1d")
+        hotspot_manager.edit_user(self.ROUTER_KEY, uid, limit_uptime="1d")  # type: ignore[reportArgumentType]
 
 
 @pytest.mark.usefixtures("mock_mikrotik_api")
@@ -173,7 +173,7 @@ class TestResetEnableDisable:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "rstcnt")
         uid = users[0][".id"]
-        result = hotspot_manager.reset_user_counters(self.ROUTER_KEY, uid)
+        result = hotspot_manager.reset_user_counters(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
         assert result is not None
 
     def test_enable_user(self):
@@ -182,7 +182,7 @@ class TestResetEnableDisable:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "enuser")
         uid = users[0][".id"]
-        result = hotspot_manager.enable_user(self.ROUTER_KEY, uid)
+        result = hotspot_manager.enable_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
         assert result is not None
 
     def test_disable_user(self):
@@ -191,7 +191,7 @@ class TestResetEnableDisable:
         )
         users = hotspot_manager.search_users(self.ROUTER_KEY, "disuser")
         uid = users[0][".id"]
-        result = hotspot_manager.disable_user(self.ROUTER_KEY, uid)
+        result = hotspot_manager.disable_user(self.ROUTER_KEY, uid)  # type: ignore[reportArgumentType]
         assert result is not None
 
 
@@ -214,7 +214,7 @@ class TestPurgeExpiredUsers:
         users = hotspot_manager.search_users(self.ROUTER_KEY, "purgebytes")
         uid = users[0][".id"]
         hotspot_manager.edit_user(
-            self.ROUTER_KEY, uid, limit_bytes_total="50"
+            self.ROUTER_KEY, uid, limit_bytes_total="50"  # type: ignore[reportArgumentType]
         )
 
         result = hotspot_manager.purge_expired_users(self.ROUTER_KEY)
@@ -222,7 +222,7 @@ class TestPurgeExpiredUsers:
 
     def test_purge_api_error_returns_zero(self):
         with patch.object(
-            hotspot_manager._api,
+            hotspot_manager._api,  # type: ignore[reportPrivateUsage]
             "execute",
             side_effect=Exception("fail"),
         ):
@@ -231,7 +231,7 @@ class TestPurgeExpiredUsers:
 
     def test_purge_user_without_id_skipped(self):
         with patch.object(
-            hotspot_manager._api,
+            hotspot_manager._api,  # type: ignore[reportPrivateUsage]
             "execute",
             return_value=[{"limit-bytes-total": "0", "uptime": "", "limit-uptime": ""}],
         ):
@@ -245,7 +245,7 @@ class TestGetProfilesError:
 
     def test_api_error_returns_empty(self):
         with patch.object(
-            hotspot_manager._api,
+            hotspot_manager._api,  # type: ignore[reportPrivateUsage]
             "execute",
             side_effect=LibRouterosError("fail"),
         ):
@@ -262,18 +262,18 @@ class TestSearchUsersFallback:
             self.ROUTER_KEY, name="fallbackuser", password="1234", profile="default"
         )
 
-        original_execute = hotspot_manager._api.execute
+        original_execute = hotspot_manager._api.execute  # type: ignore[reportPrivateUsage]
 
         call_count = 0
 
-        def failing_execute(router_key, path, **kwargs):
+        def failing_execute(router_key, path, **kwargs):  # type: ignore[reportMissingParameterType]
             nonlocal call_count
             call_count += 1
             if "name" in path and "user/print" in path and call_count <= 2:
                 raise LibRouterosError("filter not supported")
             return original_execute(router_key, path, **kwargs)
 
-        with patch.object(hotspot_manager._api, "execute", side_effect=failing_execute):
+        with patch.object(hotspot_manager._api, "execute", side_effect=failing_execute):  # type: ignore[reportPrivateUsage]
             results = hotspot_manager.search_users(self.ROUTER_KEY, "fallbackuser")
 
         assert len(results) >= 1
@@ -284,7 +284,7 @@ class TestGetLeasesByMac:
     ROUTER_KEY = "discovered_1"
 
     def test_empty_macs(self):
-        result = hotspot_manager._get_leases_by_mac(self.ROUTER_KEY, set())
+        result = hotspot_manager._get_leases_by_mac(self.ROUTER_KEY, set())  # type: ignore[reportPrivateUsage]
         assert result == {}
 
 

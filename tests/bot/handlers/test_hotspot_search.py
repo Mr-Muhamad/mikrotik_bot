@@ -7,11 +7,11 @@ from telegram.ext import ConversationHandler
 
 from bot.handlers.constants import WAITING_HOTSPOT_SEARCH
 from bot.handlers.hotspot_search import (
-    _enrich_hosts,
-    _format_search_results_text,
-    _search_hosts_by_field,
-    _search_hosts_with_users,
-    _search_users,
+    _enrich_hosts,  # type: ignore[reportPrivateUsage]
+    _format_search_results_text,  # type: ignore[reportPrivateUsage]
+    _search_hosts_by_field,  # type: ignore[reportPrivateUsage]
+    _search_hosts_with_users,  # type: ignore[reportPrivateUsage]
+    _search_users,  # type: ignore[reportPrivateUsage]
     block_mac_handler,
     hotspot_host_action,
     hotspot_search_back,
@@ -35,10 +35,10 @@ ADMIN_ID = 724730774
 
 
 @pytest.fixture(autouse=True)
-def _reset_rate_limit():
-    admin_decorator._rate_limit_data.clear()
+def _reset_rate_limit():  # type: ignore[reportUnusedFunction]
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
     yield
-    admin_decorator._rate_limit_data.clear()
+    admin_decorator._rate_limit_data.clear()  # type: ignore[reportPrivateUsage]
 
 
 def _ctx():
@@ -48,7 +48,7 @@ def _ctx():
     return ctx
 
 
-def _admin_update(**kwargs):
+def _admin_update(**kwargs):  # type: ignore[reportMissingParameterType]
     update = MagicMock()
     update.effective_user = MagicMock(id=ADMIN_ID)
     chat = MagicMock()
@@ -59,7 +59,7 @@ def _admin_update(**kwargs):
     return update
 
 
-def _make_query(data=""):
+def _make_query(data=""):  # type: ignore[reportMissingParameterType]
     query = MagicMock()
     query.answer = AsyncMock()
     query.data = data
@@ -68,14 +68,14 @@ def _make_query(data=""):
     return query
 
 
-def _make_update_with_query(data=""):
+def _make_update_with_query(data=""):  # type: ignore[reportMissingParameterType]
     update = _admin_update()
     query = _make_query(data)
     update.callback_query = query
     return update
 
 
-def _make_update_with_message(text=""):
+def _make_update_with_message(text=""):  # type: ignore[reportMissingParameterType]
     update = _admin_update()
     update.message = MagicMock()
     update.message.text = text
@@ -118,12 +118,12 @@ class TestSearchStart:
 
 
 class TestSearchQuery:
-    def _make_search_update(self, text="ali"):
+    def _make_search_update(self, text="ali"):  # type: ignore[reportMissingParameterType]
         update = _make_update_with_message(text)
         update.effective_chat.id = 123
         return update
 
-    def _patch_query_deps(self, hosts=None):
+    def _patch_query_deps(self, hosts=None):  # type: ignore[reportMissingParameterType]
         if hosts is None:
             hosts = []
         loading_mock = MagicMock()
@@ -229,6 +229,8 @@ class TestSearchQuery:
             "bot.handlers.hotspot_search.run_blocking", new=AsyncMock(side_effect=OSError("net"))
         ), patch(
             "bot.handlers.hotspot_search.send_step", new=AsyncMock()
+        ), patch(
+            "bot.handlers.hotspot_search.send_error", new=AsyncMock()
         ):
             result = await hotspot_search_query(update, ctx)
         assert result == WAITING_HOTSPOT_SEARCH
@@ -485,7 +487,7 @@ class TestEnrichHosts:
                 "disabled": "true",
             }
         ]
-        result = _enrich_hosts(hosts, users)
+        result = _enrich_hosts(hosts, users)  # type: ignore[reportArgumentType]
         assert result[0]["_limit"] == "5000"
         assert result[0]["_uptime"] == "1d"
         assert result[0]["_comment"] == "tester"
@@ -494,7 +496,7 @@ class TestEnrichHosts:
     def test_no_matching_user(self):
         hosts = [{"host-name": "h1", "user": "guest", "address": "1.1.1.1", "mac-address": "AA"}]
         users = [{"name": "admin", "limit-bytes-total": "5000"}]
-        result = _enrich_hosts(hosts, users)
+        result = _enrich_hosts(hosts, users)  # type: ignore[reportArgumentType]
         assert "_limit" not in result[0]
 
     def test_empty_hosts(self):
@@ -502,25 +504,25 @@ class TestEnrichHosts:
 
     def test_empty_users(self):
         hosts = [{"host-name": "h1", "user": "admin"}]
-        result = _enrich_hosts(hosts, [])
+        result = _enrich_hosts(hosts, [])  # type: ignore[reportArgumentType]
         assert "_limit" not in result[0]
 
     def test_user_no_name(self):
         hosts = [{"host-name": "h1", "user": "admin"}]
         users = [{"name": "", "limit-bytes-total": "999"}]
-        result = _enrich_hosts(hosts, users)
+        result = _enrich_hosts(hosts, users)  # type: ignore[reportArgumentType]
         assert "_limit" not in result[0]
 
     def test_host_no_user_field(self):
         hosts = [{"host-name": "h1", "address": "1.1.1.1", "mac-address": "AA"}]
         users = [{"name": "admin", "limit-bytes-total": "100"}]
-        result = _enrich_hosts(hosts, users)
+        result = _enrich_hosts(hosts, users)  # type: ignore[reportArgumentType]
         assert "_limit" not in result[0]
 
     def test_host_user_none(self):
         hosts = [{"host-name": "h1", "user": None, "address": "1.1.1.1", "mac-address": "AA"}]
         users = [{"name": "admin", "limit-bytes-total": "100"}]
-        result = _enrich_hosts(hosts, users)
+        result = _enrich_hosts(hosts, users)  # type: ignore[reportArgumentType]
         assert "_limit" not in result[0]
 
     def test_multiple_hosts_partial_match(self):
@@ -529,7 +531,7 @@ class TestEnrichHosts:
             {"host-name": "h2", "user": "guest", "address": "1.1.1.2", "mac-address": "BB"},
         ]
         users = [{"name": "admin", "limit-bytes-total": "5000", "limit-uptime": "1d"}]
-        result = _enrich_hosts(hosts, users)
+        result = _enrich_hosts(hosts, users)  # type: ignore[reportArgumentType]
         assert result[0]["_limit"] == "5000"
         assert "_limit" not in result[1]
 
@@ -543,7 +545,7 @@ class TestFormatSearchResultsText:
     def test_with_results(self):
         hosts = [{"host-name": "Phone", "address": "10.0.0.5", "mac-address": "AA:BB:CC:DD:EE:FF"}]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "Phone" in text
         assert "10.0.0.5" in text
         assert "AA:BB:CC:DD:EE:FF" in text
@@ -560,7 +562,7 @@ class TestFormatSearchResultsText:
             }
         ]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "Dev" in text
         assert "2h30m" in text
 
@@ -574,7 +576,7 @@ class TestFormatSearchResultsText:
             }
         ]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "User1" in text
 
     def test_disabled_host(self):
@@ -587,37 +589,37 @@ class TestFormatSearchResultsText:
             }
         ]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert HOTSPOT_SEARCH_OFFLINE.strip() in text
 
     def test_no_hostname_uses_user(self):
         hosts = [{"user": "testuser", "address": "10.0.0.1", "mac-address": "AA:BB"}]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "testuser" in text
 
     def test_no_name_no_user_uses_unknown(self):
         hosts = [{"address": "10.0.0.1", "mac-address": "AA:BB"}]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert UNKNOWN_NAME in text
 
     def test_no_ip(self):
         hosts = [{"host-name": "h1", "mac-address": "AA:BB"}]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "\u2014" in text
 
     def test_no_mac(self):
         hosts = [{"host-name": "h1", "address": "10.0.0.1"}]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "\u2014" in text
 
     def test_header_format(self):
         hosts = [{"host-name": "h1", "address": "1.1.1.1", "mac-address": "AA:BB"}]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert HOTSPOT_SEARCH_FOUND.format(count=1) in text
         assert "1" in text
 
@@ -627,7 +629,7 @@ class TestFormatSearchResultsText:
             for i in range(15)
         ]
         paginator = Paginator(hosts, page=1)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "2" in text
         assert "11" in text
 
@@ -636,19 +638,19 @@ class TestFormatSearchResultsText:
             {"host-name": "h1", "address": "1.1.1.1", "mac-address": "AA", "_disabled": "false"}
         ]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert HOTSPOT_SEARCH_OFFLINE.strip() not in text
 
     def test_empty_comment_not_shown(self):
         hosts = [{"host-name": "h1", "address": "1.1.1.1", "mac-address": "AA", "_comment": ""}]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "\U0001f4ac" not in text
 
     def test_empty_limit_not_shown(self):
         hosts = [{"host-name": "h1", "address": "1.1.1.1", "mac-address": "AA", "_limit": ""}]
         paginator = Paginator(hosts, page=0)
-        text = _format_search_results_text(paginator)
+        text = _format_search_results_text(paginator)  # type: ignore[reportArgumentType]
         assert "\U0001f4ca" not in text
 
 

@@ -95,7 +95,7 @@ class TestProfileCacheStats:
     def test_stats_fresh_vs_stale(self):
         # ساعة حتمية: r1 منتهية (فارق > ttl) و r2 جديدة (فارق <= ttl).
         with patch("core.profile_cache.time.time", side_effect=[1000.0, 1000.01, 1000.02]):
-            cache = ProfileCache(ttl=0.01)
+            cache = ProfileCache(ttl=0.01)  # type: ignore[reportArgumentType]
             cache.set("r1", ["a"])  # time() -> 1000.0
             cache.set("r2", ["b"])  # time() -> 1000.01
             stats = cache.stats()   # time() -> 1000.02
@@ -108,14 +108,14 @@ class TestProfileCacheThreadSafety:
         cache = ProfileCache(ttl=60, max_size=50)
         errors = []
 
-        def writer(key):
+        def writer(key):  # type: ignore[reportMissingParameterType]
             try:
                 for i in range(100):
                     cache.set(key, [f"v{i}"])
             except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
                 errors.append(e)
 
-        def reader(key):
+        def reader(key):  # type: ignore[reportMissingParameterType]
             try:
                 for _ in range(100):
                     cache.get(key)

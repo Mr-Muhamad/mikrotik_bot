@@ -11,8 +11,8 @@ from telegram import InlineKeyboardMarkup
 from bot.keyboards import (
     SUBMENU_PAGE_SIZE,
     TIME_OPTIONS,
-    _logs_time_label,
-    _user_button_label,
+    _logs_time_label,  # type: ignore[reportPrivateUsage]
+    _user_button_label,  # type: ignore[reportPrivateUsage]
     get_back_keyboard,
     get_backup_download_keyboard,
     get_backup_keyboard,
@@ -69,7 +69,7 @@ from bot.keyboards import (
 
 def _btns(markup: InlineKeyboardMarkup) -> list[str]:
     """Extract all callback_data strings from a markup (flattened, row order)."""
-    return [btn.callback_data for row in markup.inline_keyboard for btn in row]
+    return [btn.callback_data for row in markup.inline_keyboard for btn in row]  # type: ignore[reportReturnType]
 
 
 def _row_count(markup: InlineKeyboardMarkup) -> int:
@@ -262,35 +262,35 @@ class TestGetBatchesKeyboard:
 
     def test_single_page_no_nav(self):
         batches = [{"id": 1, "name": "A", "count": 5}]
-        m = get_batches_keyboard(batches, page=0, total=1, page_size=10)
+        m = get_batches_keyboard(batches, page=0, total=1, page_size=10)  # type: ignore[reportArgumentType]
         # 1 batch row + 1 search row + 1 back row
         assert _row_count(m) == 3
         assert "batch_sel:1" in _btns(m)
 
     def test_multi_page_shows_next(self):
         batches = [{"id": i, "name": f"B{i}", "count": i} for i in range(10)]
-        m = get_batches_keyboard(batches, page=0, total=20, page_size=10)
+        m = get_batches_keyboard(batches, page=0, total=20, page_size=10)  # type: ignore[reportArgumentType]
         assert any("التالي" in t for t in _flat_btns(m))
         # no prev on first page
         assert not any("السابق" in t for t in _flat_btns(m))
 
     def test_multi_page_shows_prev_and_next(self):
         batches = [{"id": i, "name": f"B{i}", "count": i} for i in range(10)]
-        m = get_batches_keyboard(batches, page=1, total=25, page_size=10)
+        m = get_batches_keyboard(batches, page=1, total=25, page_size=10)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("السابق" in t for t in flat)
         assert any("التالي" in t for t in flat)
 
     def test_last_page_no_next(self):
         batches = [{"id": 20, "name": "Last", "count": 1}]
-        m = get_batches_keyboard(batches, page=2, total=21, page_size=10)
+        m = get_batches_keyboard(batches, page=2, total=21, page_size=10)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("السابق" in t for t in flat)
         assert not any("التالي" in t for t in flat)
 
     def test_batch_label_format(self):
         batches = [{"id": 42, "name": "MyBatch", "count": 99}]
-        m = get_batches_keyboard(batches)
+        m = get_batches_keyboard(batches)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("MyBatch" in t and "99" in t for t in flat)
 
@@ -587,24 +587,24 @@ class TestGetSavedRoutersKeyboard:
 
     def test_router_with_version(self):
         r = {"id": 1, "name_alias": "Main", "ip_address": "10.0.0.1", "version": "7.12"}
-        m = get_saved_routers_keyboard([r])
+        m = get_saved_routers_keyboard([r])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("Main" in t and "v7.12" in t for t in flat)
 
     def test_router_without_version(self):
         r = {"id": 2, "identity": "Core", "ip_address": "192.168.1.1"}
-        m = get_saved_routers_keyboard([r])
+        m = get_saved_routers_keyboard([r])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("Core" in t for t in flat)
 
     def test_callback_format(self):
         r = {"id": 42, "name_alias": "R", "ip_address": "1.1.1.1"}
-        m = get_saved_routers_keyboard([r])
+        m = get_saved_routers_keyboard([r])  # type: ignore[reportArgumentType]
         assert "saved_router_42" in _btns(m)
 
     def test_refresh_and_back(self):
         r = {"id": 1, "ip_address": "1.1.1.1"}
-        m = get_saved_routers_keyboard([r])
+        m = get_saved_routers_keyboard([r])  # type: ignore[reportArgumentType]
         all_data = _btns(m)
         assert "refresh_routers" in all_data
         assert "main_menu" in all_data
@@ -614,13 +614,13 @@ class TestGetSavedRoutersKeyboard:
             {"id": i, "name_alias": f"R{i}", "ip_address": f"10.0.0.{i}"}
             for i in range(5)
         ]
-        m = get_saved_routers_keyboard(routers)
+        m = get_saved_routers_keyboard(routers)  # type: ignore[reportArgumentType]
         # 5 routers + refresh + back = 7 rows
         assert _row_count(m) == 7
 
     def test_alias_takes_priority(self):
         r = {"id": 1, "name_alias": "Alias", "identity": "Identity", "ip_address": "1.1.1.1"}
-        m = get_saved_routers_keyboard([r])
+        m = get_saved_routers_keyboard([r])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("Alias" in t for t in flat)
 
@@ -753,14 +753,14 @@ class TestGetUserSelectionKeyboard:
             {".id": "*1", "name": "Alice"},
             {".id": "*2", "name": "Bob"},
         ]
-        m = get_user_selection_keyboard(users, "edit_user")
+        m = get_user_selection_keyboard(users, "edit_user")  # type: ignore[reportArgumentType]
         all_data = _btns(m)
         assert "edit_user_*1" in all_data
         assert "edit_user_*2" in all_data
 
     def test_user_id_fallback(self):
         users = [{"name": "NoId"}]
-        m = get_user_selection_keyboard(users, "del_user")
+        m = get_user_selection_keyboard(users, "del_user")  # type: ignore[reportArgumentType]
         assert "del_user_*0" in _btns(m)
 
     def test_custom_back_callback(self):
@@ -773,7 +773,7 @@ class TestGetUserSelectionKeyboard:
 
     def test_user_names_in_text(self):
         users = [{".id": "*1", "name": "Charlie"}]
-        m = get_user_selection_keyboard(users, "edit_user")
+        m = get_user_selection_keyboard(users, "edit_user")  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert "Charlie" in flat
 
@@ -798,7 +798,7 @@ class TestGetPaginatedUserKeyboard:
     def test_with_users(self):
         users = [{".id": "*1", "name": "Alice"}, {".id": "*2", "name": "Bob"}]
         p = _mock_paginator(items=users, page=0, has_prev=False, has_next=False)
-        m = get_paginated_user_keyboard(users, "edit_user", p)
+        m = get_paginated_user_keyboard(users, "edit_user", p)  # type: ignore[reportArgumentType]
         all_data = _btns(m)
         assert "edit_user_*1" in all_data
         assert "edit_user_*2" in all_data
@@ -806,7 +806,7 @@ class TestGetPaginatedUserKeyboard:
     def test_pagination_with_prev_and_next(self):
         users = [{".id": "*1", "name": "X"}]
         p = _mock_paginator(items=users, page=1, has_prev=True, has_next=True)
-        m = get_paginated_user_keyboard(users, "hs_del", p)
+        m = get_paginated_user_keyboard(users, "hs_del", p)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("السابق" in t for t in flat)
         assert any("التالي" in t for t in flat)
@@ -814,7 +814,7 @@ class TestGetPaginatedUserKeyboard:
     def test_pagination_prev_only(self):
         users = [{".id": "*1", "name": "X"}]
         p = _mock_paginator(items=users, page=2, has_prev=True, has_next=False)
-        m = get_paginated_user_keyboard(users, "hs_del", p)
+        m = get_paginated_user_keyboard(users, "hs_del", p)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("السابق" in t for t in flat)
         assert not any("التالي" in t for t in flat)
@@ -822,7 +822,7 @@ class TestGetPaginatedUserKeyboard:
     def test_pagination_next_only(self):
         users = [{".id": "*1", "name": "X"}]
         p = _mock_paginator(items=users, page=0, has_prev=False, has_next=True)
-        m = get_paginated_user_keyboard(users, "hs_del", p)
+        m = get_paginated_user_keyboard(users, "hs_del", p)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert not any("السابق" in t for t in flat)
         assert any("التالي" in t for t in flat)
@@ -835,7 +835,7 @@ class TestGetPaginatedUserKeyboard:
     def test_page_numbers_in_nav(self):
         users = [{".id": "*1", "name": "X"}]
         p = _mock_paginator(items=users, page=1, has_prev=True, has_next=True)
-        m = get_paginated_user_keyboard(users, "edit_user", p)
+        m = get_paginated_user_keyboard(users, "edit_user", p)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         # prev page label should show current page (1)
         assert any("1" in t and "السابق" in t for t in flat)
@@ -854,7 +854,7 @@ class TestGetEditUserKeyboard:
 
     def test_uses_edit_user_prefix(self):
         users = [{".id": "*5", "name": "Test"}]
-        m = get_edit_user_keyboard(users)
+        m = get_edit_user_keyboard(users)  # type: ignore[reportArgumentType]
         assert "edit_user_*5" in _btns(m)
 
     def test_back_is_menu_hotspot(self):
@@ -868,7 +868,7 @@ class TestGetDeleteUserKeyboard:
 
     def test_uses_delete_user_prefix(self):
         users = [{".id": "*3", "name": "Del"}]
-        m = get_delete_user_keyboard(users)
+        m = get_delete_user_keyboard(users)  # type: ignore[reportArgumentType]
         assert "delete_user_*3" in _btns(m)
 
     def test_back_is_menu_hotspot(self):
@@ -1114,7 +1114,7 @@ class TestGetBlockedMacsKeyboard:
             {"address": "AA:BB:CC:DD:EE:FF", "comment": "Spam"},
             {"address": "11:22:33:44:55:66", "comment": ""},
         ]
-        m = get_blocked_macs_keyboard(blocked)
+        m = get_blocked_macs_keyboard(blocked)  # type: ignore[reportArgumentType]
         all_data = _btns(m)
         assert "unblock_mac:AA:BB:CC:DD:EE:FF" in all_data
         assert "unblock_mac:11:22:33:44:55:66" in all_data
@@ -1122,13 +1122,13 @@ class TestGetBlockedMacsKeyboard:
 
     def test_label_format_with_comment(self):
         blocked = [{"address": "AA:BB:CC:DD:EE:FF", "comment": "EvilDevice"}]
-        m = get_blocked_macs_keyboard(blocked)
+        m = get_blocked_macs_keyboard(blocked)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("AA:BB:CC:DD:EE:FF" in t for t in flat)
 
     def test_comment_truncation(self):
         blocked = [{"address": "AA:BB:CC:DD:EE:FF", "comment": "A" * 30}]
-        m = get_blocked_macs_keyboard(blocked)
+        m = get_blocked_macs_keyboard(blocked)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("A" * 15 in t for t in flat)
 
@@ -1207,7 +1207,7 @@ class TestGetLogsFilterKeyboard:
 
     def test_with_filters(self):
         f = {"router": "R1", "admin_label": "Admin", "action": "backup", "since_days": 7}
-        m = get_logs_filter_keyboard(f)
+        m = get_logs_filter_keyboard(f)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("R1" in t for t in flat)
         assert any("Admin" in t for t in flat)
@@ -1223,7 +1223,7 @@ class TestGetLogsFilterKeyboard:
 
     def test_clear_button_when_filters_active(self):
         f = {"router": "R1"}
-        m = get_logs_filter_keyboard(f)
+        m = get_logs_filter_keyboard(f)  # type: ignore[reportArgumentType]
         all_data = _btns(m)
         assert "logs_clear" in all_data
 
@@ -1258,7 +1258,7 @@ class TestGetLogsFilterKeyboard:
 
     def test_admin_id_fallback(self):
         f = {"admin_id": "12345"}
-        m = get_logs_filter_keyboard(f)
+        m = get_logs_filter_keyboard(f)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("12345" in t for t in flat)
 
@@ -1291,13 +1291,13 @@ class TestGetLogsSubmenuKeyboard:
 
     def test_pagination_shows_next(self):
         opts = list(range(25))
-        m = get_logs_submenu_keyboard("admin", opts, page=0, page_size=20)
+        m = get_logs_submenu_keyboard("admin", opts, page=0, page_size=20)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("التالي" in t for t in flat)
 
     def test_pagination_shows_prev_and_next(self):
         opts = list(range(45))
-        m = get_logs_submenu_keyboard("action", opts, page=1, page_size=20)
+        m = get_logs_submenu_keyboard("action", opts, page=1, page_size=20)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("السابق" in t for t in flat)
         assert any("التالي" in t for t in flat)
@@ -1336,7 +1336,7 @@ class TestGetBackupRestoreKeyboard:
             {"name": "backup1.rsc", "type": "system"},
             {"name": "backup2.tar", "type": "userman"},
         ]
-        m = get_backup_restore_keyboard(backups)
+        m = get_backup_restore_keyboard(backups)  # type: ignore[reportArgumentType]
         all_data = _btns(m)
         assert "restore:0" in all_data
         assert "restore:1" in all_data
@@ -1344,19 +1344,19 @@ class TestGetBackupRestoreKeyboard:
 
     def test_system_type_icon(self):
         backups = [{"name": "b.rsc", "type": "system"}]
-        m = get_backup_restore_keyboard(backups)
+        m = get_backup_restore_keyboard(backups)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("📦" in t for t in flat)
 
     def test_non_system_type_icon(self):
         backups = [{"name": "b.tar", "type": "other"}]
-        m = get_backup_restore_keyboard(backups)
+        m = get_backup_restore_keyboard(backups)  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("📄" in t for t in flat)
 
     def test_max_10_backups(self):
         backups = [{"name": f"b{i}.rsc", "type": "system"} for i in range(20)]
-        m = get_backup_restore_keyboard(backups)
+        m = get_backup_restore_keyboard(backups)  # type: ignore[reportArgumentType]
         # 10 backups + back
         assert _row_count(m) == 11
 
@@ -1417,7 +1417,7 @@ class TestGetUsermanRestoreKeyboard:
             {"filename": "um_backup.tar", "size": 204800},
             {"filename": "um_small.tar", "size": 1024},
         ]
-        m = get_userman_restore_keyboard(files)
+        m = get_userman_restore_keyboard(files)  # type: ignore[reportArgumentType]
         all_data = _btns(m)
         assert "userman_restore_tar:0" in all_data
         assert "userman_restore_tar:1" in all_data
@@ -1431,7 +1431,7 @@ class TestGetUsermanRestoreKeyboard:
 
     def test_row_count(self):
         files = [{"filename": "a.tar", "size": 1024}]
-        m = get_userman_restore_keyboard(files)
+        m = get_userman_restore_keyboard(files)  # type: ignore[reportArgumentType]
         assert _row_count(m) == 2
 
 
@@ -1462,7 +1462,7 @@ class TestGetOperatorRouterAssignmentKeyboard:
 
     def test_assigned_router(self):
         routers = [{"id": 10, "name_alias": "R1", "ip_address": "1.1.1.1"}]
-        m = get_operator_router_assignment_keyboard(1, routers, [10])
+        m = get_operator_router_assignment_keyboard(1, routers, [10])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("✅" in t for t in flat)
         all_data = _btns(m)
@@ -1470,7 +1470,7 @@ class TestGetOperatorRouterAssignmentKeyboard:
 
     def test_unassigned_router(self):
         routers = [{"id": 10, "name_alias": "R1", "ip_address": "1.1.1.1"}]
-        m = get_operator_router_assignment_keyboard(1, routers, [])
+        m = get_operator_router_assignment_keyboard(1, routers, [])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("⬜" in t for t in flat)
         all_data = _btns(m)
@@ -1481,21 +1481,21 @@ class TestGetOperatorRouterAssignmentKeyboard:
             {"id": 1, "name_alias": "A", "ip_address": "1.1.1.1"},
             {"id": 2, "name_alias": "B", "ip_address": "2.2.2.2"},
         ]
-        m = get_operator_router_assignment_keyboard(5, routers, [1])
+        m = get_operator_router_assignment_keyboard(5, routers, [1])  # type: ignore[reportArgumentType]
         all_data = _btns(m)
         assert "op_revoke:5:1" in all_data
         assert "op_assign:5:2" in all_data
 
     def test_router_without_id_skipped(self):
         routers = [{"name_alias": "NoId", "ip_address": "1.1.1.1"}]
-        m = get_operator_router_assignment_keyboard(1, routers, [])
+        m = get_operator_router_assignment_keyboard(1, routers, [])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         # only back button
         assert not any("NoId" in t for t in flat)
 
     def test_fallback_name_fields(self):
         routers = [{"id": 3, "identity": "IdentityOnly", "ip_address": "1.1.1.1"}]
-        m = get_operator_router_assignment_keyboard(1, routers, [])
+        m = get_operator_router_assignment_keyboard(1, routers, [])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("IdentityOnly" in t for t in flat)
 
@@ -1503,24 +1503,24 @@ class TestGetOperatorRouterAssignmentKeyboard:
         routers = [
             {"id": 3, "name_alias": "Alias", "identity": "Identity", "ip_address": "1.1.1.1"}
         ]
-        m = get_operator_router_assignment_keyboard(1, routers, [])
+        m = get_operator_router_assignment_keyboard(1, routers, [])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("Alias" in t for t in flat)
 
     def test_ip_in_label_when_present(self):
         routers = [{"id": 1, "name_alias": "R", "ip_address": "10.0.0.1"}]
-        m = get_operator_router_assignment_keyboard(1, routers, [])
+        m = get_operator_router_assignment_keyboard(1, routers, [])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("10.0.0.1" in t for t in flat)
 
     def test_missing_ip_raises_value_error(self):
         routers = [{"id": 1, "name_alias": "R", "ip_address": ""}]
         with pytest.raises(ValueError, match="IP address is required for router listing"):
-            get_operator_router_assignment_keyboard(1, routers, [])
+            get_operator_router_assignment_keyboard(1, routers, [])  # type: ignore[reportArgumentType]
 
     def test_id_fallback_name(self):
         routers = [{"id": 42, "ip_address": "1.1.1.1"}]
-        m = get_operator_router_assignment_keyboard(1, routers, [])
+        m = get_operator_router_assignment_keyboard(1, routers, [])  # type: ignore[reportArgumentType]
         flat = _flat_btns(m)
         assert any("42" in t for t in flat)
 
