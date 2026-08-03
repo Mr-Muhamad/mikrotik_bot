@@ -16,11 +16,6 @@ logger = logging.getLogger(__name__)
 
 JOB_NAME = "scheduled_backup"
 
-_JOB_QUEUE_DOC = """JobQueue-like object from telegram.ext (passed from Application.job_queue).
-                   Typed as Any to avoid a direct telegram.ext dependency in core/ layer."""
-_JOB_CONTEXT_DOC = """CallbackContext-like object from telegram.ext.
-                      Typed as Any to avoid a direct telegram.ext dependency in core/ layer."""
-
 
 class BackupScheduler:
     def __init__(self) -> None:

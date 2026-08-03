@@ -38,9 +38,10 @@ Analysis and verification of critical components in Mikrotik admin bot telegram 
 ## Remaining Tasks (Not Blocking)
 
 ### Architecture Violation Fix (MEDIUM PRIORITY)
-- **Status**: RESOLVED (no code change — closed by decision)
+- **Status**: RESOLVED — closed
 - **Issue**: `core/backup_scheduler.py` imports `telegram.ext`
-- **Decision**: Extracting the `JobLike` Protocol or moving the scheduler to `bot/` is a broad refactor with cross-cutting impact and no functional benefit today. The import is isolated to one file and type-erased via `Any` (Task 4). Closed as accepted tech debt; revisit if `core/` is ever imported outside a Telegram runtime.
+- **Resolution**: The `telegram.ext` import was replaced with `Any` type annotations (Task 4) and the remaining stale doc constants (`_JOB_QUEUE_DOC`, `_JOB_CONTEXT_DOC`) that referenced `telegram.ext` were removed. `core/backup_scheduler.py` now has zero `telegram` imports; verified via `rg -n "telegram" core/`.
+- **Decision**: Extracting the `JobLike` Protocol or moving the scheduler to `bot/` remains a broad refactor with cross-cutting impact and no functional benefit today. The `JobQueue`/`CallbackContext` objects are passed in as `Any` to keep the core layer Telegram-free. Revisit if `core/` is ever imported outside a Telegram runtime.
 
 ### Stress Testing Implementation (LOW PRIORITY)
 - **Status**: COMPLETE
@@ -80,5 +81,5 @@ Analysis and verification of critical components in Mikrotik admin bot telegram 
 ## Risk Assessment
 
 - **No blocking risks**: All current code passes quality gates
-- **Architecture note**: telegram.ext import in core layer violates clean architecture but is isolated to one file
+- **Architecture note**: telegram.ext dependency fully removed from core layer; scheduler receives JobQueue/CallbackContext as `Any` to stay Telegram-free
 - **Thread-safety**: Verified through code review, not stress tests (recommendation for future)
