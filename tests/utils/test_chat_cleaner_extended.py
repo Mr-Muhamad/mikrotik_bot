@@ -1034,7 +1034,8 @@ class TestConstants:
     def test_benign_edit_errors(self):
         from utils.chat_cleaner import _BENIGN_EDIT_ERRORS  # type: ignore[reportPrivateUsage]
 
-        assert len(_BENIGN_EDIT_ERRORS) == 3
+        assert len(_BENIGN_EDIT_ERRORS) >= 3
         assert "Message is not modified" in _BENIGN_EDIT_ERRORS
         assert "Message to edit not found" in _BENIGN_EDIT_ERRORS
         assert "exactly the same" in _BENIGN_EDIT_ERRORS
+        assert "no text in the message" in _BENIGN_EDIT_ERRORS
