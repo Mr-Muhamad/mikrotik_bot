@@ -59,6 +59,7 @@ MikroTik Telegram Bot — بوت إدارة عن بُعد لموجّهات Mikro
 - كل start handler في تدفق جديد ينظّف الحالة عبر `cleanup_state()` ويضبط `nav_set()`.
 - المفاتيح المؤقتة في `context.user_data` محددة في `CONVERSATION_USER_DATA_KEYS` (`bot/router_selector.py`).
 - العمليات الثقيلة (backup/جلب قوائم كبيرة) تستخدم `execute_long()`.
+- أوامر MikroTik الكتابية تُقفل لكل راوتر: `core/mikrotik_api.py` يفرض RLock عبر `_get_cmd_lock()` في `_execute_with_retry` و`execute_non_blocking` للأوامر الكاتبة فقط. الأفعال `print`/`get`/`monitor`/`listen`/`export` قراءة وتعمل بالتوازي على نفس الراوتر؛ كل ما عداها (بما فيه الأفعال غير المعروفة) يُقفل (Fail-safe). الكتابة على راوترين مختلفين تعمل بالتوازي. الاختبارات: `tests/stress/test_router_write_lock.py`.
 - أوامر MikroTik: `reset-counters` يستخدم `numbers=` لا `.id`؛ User Manager يختلف مساره بين v6 (`tool/user-manager`) وv7 (`user-manager`) عبر `get_userman_base_path()`.
 - إعدادات logging حصراً في `main.py` قبل `configure_logging()`؛ لا تضف `logging.basicConfig` جديداً.
 
