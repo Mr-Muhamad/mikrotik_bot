@@ -15,6 +15,7 @@ from config import DEFAULT_API_PORT, ROUTER_KEY_PREFIX
 from core.cache import TTLCache
 from core.exceptions import RouterNotFoundError
 from core.mikrotik_client import RouterOSRow
+from utils.formatters import sanitize_log_data
 from utils.log_helpers import log_api_call
 
 logger = logging.getLogger(__name__)
@@ -119,7 +120,8 @@ class ConnectionPool:
                 )
                 logger.warning(
                     "Connection attempt %d/%d failed for %s: %s",
-                    attempt + 1, 1 + MAX_RETRIES, router_info['name'], e,
+                    attempt + 1, 1 + MAX_RETRIES, router_info['name'],
+                    sanitize_log_data(str(e)),
                     extra={"component": "ROUTER"},
                 )
                 if attempt < MAX_RETRIES:
@@ -134,8 +136,9 @@ class ConnectionPool:
             component="ROUTER",
         )
         logger.error(
-            "Failed to connect to %s after %d attempts",
+            "Failed to connect to %s after %d attempts (error type: %s): %s",
             router_info['name'], 1 + MAX_RETRIES,
+            type(last_error).__name__, sanitize_log_data(str(last_error)),
             extra={"component": "ROUTER"},
         )
         raise last_error  # type: ignore[misc]

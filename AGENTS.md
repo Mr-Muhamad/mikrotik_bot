@@ -414,6 +414,7 @@ mikrotik_bot/
 - مسار User Manager يختلف بين RouterOS v6 وv7، ويحدد عبر `mikrotik_api.get_userman_base_path()`.
 - كاش الإصدار (`router_versions`) له صلاحية 24 ساعة؛ بعد ترقية RouterOS أو إعادة تسمية الراوتر نادِ `mikrotik_api.invalidate_version(router_key)` لإبطال الكاش وإعادة اختيار المسار الصحيح. المرجع الكامل في `docs/routeros-v6-v7-compatibility.md`.
 - استخدم `execute_long()` للعمليات الثقيلة مثل backup أو جلب قوائم كبيرة.
+- **قفل الكتابة لكل راوتر**: `core/mikrotik_api.py` يفرض RLock واحداً لكل راوتر عبر `_get_cmd_lock()` ويطبّقه في `_execute_with_retry` و`execute_non_blocking` حصراً على الأوامر الكاتبة. تصنيف القراءة/الكتابة عبر `_is_write_command()`: الأفعال `print`/`get`/`monitor`/`listen`/`export` قراءة فقط وتعمل بالتوازي على نفس الراوتر، وكل ما عداها (بما فيه الأفعال غير المعروفة) كتابة ويُقفل (Fail-safe). الكتابة على راوترين مختلفين تعملان بالتوازي. الاختبارات الحتمية في `tests/stress/test_router_write_lock.py`.
 
 ## إعدادات الاتصال ومهلة النسخ الاحتياطي
 

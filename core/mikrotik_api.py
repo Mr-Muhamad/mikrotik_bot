@@ -37,6 +37,17 @@ _RETRY_DELAYS = (1.0, 2.0)  # تأخير exponential backoff بين المحاو
 # أخطاء نهائية: إعادة المحاولة لن تفيدين لأن السبب في أمر الراوتر نفسه وليس في الاتصال
 NON_RETRYABLE_ERRORS = {"unknown parameter", "no such command"}
 
+# أفعال القراءة فقط لا تخضع لقفل الكتابة لكل راوتر. أي أمر آخر (بما فيه الأفعال
+# غير المعروفة) يعامل ككتابة — الفشل في الاتجاه الآمن: أمر قراءة مجهول يكلف قفلاً
+# بسيطاً فقط، بينما أمر كتابة مجهول لا يُنفذ أبداً بالتزامن مع كتابة أخرى.
+_READ_VERBS = frozenset({"print", "get", "monitor", "listen", "export"})
+
+
+def _is_write_command(command: str) -> bool:
+    """Returns True when the RouterOS verb is not a known read-only verb."""
+    verb = command.rsplit("/", 1)[-1].strip().lower()
+    return verb not in _READ_VERBS
+
 
 class MikrotikAPI:
     """Facade over ConnectionPool providing command execution and router metadata.
@@ -49,6 +60,8 @@ class MikrotikAPI:
         self._rate_lock = threading.Lock()
         self._last_api_call: dict[str, float] = {}
         self._circuit_breaker = CircuitBreaker(failure_threshold=3, reset_timeout=30.0)
+        self._cmd_lock_guard = threading.Lock()
+        self._cmd_locks: dict[str, threading.RLock] = {}
 
     # ──────────────────────────────────────────────────────────────
     #  Metadata helpers (unchanged)
@@ -253,7 +266,31 @@ class MikrotikAPI:
     #  Core execution template
     # ──────────────────────────────────────────────────────────────
 
+    def _get_cmd_lock(self, router_key: str) -> threading.RLock:
+        """Per-router re-entrant lock guarding write commands (lazy, thread-safe)."""
+        with self._cmd_lock_guard:
+            if router_key not in self._cmd_locks:
+                self._cmd_locks[router_key] = threading.RLock()
+            return self._cmd_locks[router_key]
+
     def _execute_with_retry(
+        self, router_key: str, command: str, timeout: int, **kwargs: object
+    ) -> RouterOSResponse:
+        """Serializes write commands per router, then runs the retry template.
+
+        Read-only verbs bypass the lock so parallel reads keep using the
+        connection pool ceiling; unknown verbs are treated as writes (fail-safe).
+        """
+        write_lock = self._get_cmd_lock(router_key) if _is_write_command(command) else None
+        if write_lock is not None:
+            write_lock.acquire()
+        try:
+            return self._execute_locked(router_key, command, timeout, **kwargs)
+        finally:
+            if write_lock is not None:
+                write_lock.release()
+
+    def _execute_locked(
         self, router_key: str, command: str, timeout: int, **kwargs: object
     ) -> RouterOSResponse:
         """القالب الأساسي: circuit-breaker → throttle → تنفيذ → retry مع exponential backoff."""
@@ -344,6 +381,18 @@ class MikrotikAPI:
 
     def execute_non_blocking(self, router_key: str, command: str, **kwargs: object) -> None:
         """أمر غير متزامن — لا يعيد المحاولة، يسجل الخطأ ويتجاوز."""
+        write_lock = self._get_cmd_lock(router_key) if _is_write_command(command) else None
+        if write_lock is not None:
+            write_lock.acquire()
+        try:
+            self._execute_non_blocking_locked(router_key, command, **kwargs)
+        finally:
+            if write_lock is not None:
+                write_lock.release()
+
+    def _execute_non_blocking_locked(
+        self, router_key: str, command: str, **kwargs: object
+    ) -> None:
         from database.models import log_action  # noqa: PLC0415
 
         start = time.monotonic()
