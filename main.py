@@ -16,10 +16,10 @@ from core.backup_scheduler import backup_scheduler
 from core.mikrotik_api import mikrotik_api
 from database.models import init_db
 from utils.bot_commands import set_bot_commands
-from utils.logging_setup import COMPONENT_SYSTEM, bind_component, configure_logging
+from utils.logging_setup import COMPONENT_SYSTEM, LOG_LEVEL, bind_component, configure_logging
 from utils.singleton_lock import single_instance
 
-configure_logging(logging.INFO)
+configure_logging(LOG_LEVEL)
 # Silence noisy third-party loggers AFTER configure_logging so the root logger
 # and its handlers are fully set up before we adjust child logger levels.
 logging.getLogger("httpx").setLevel(logging.WARNING)

@@ -38,11 +38,8 @@ async def cmd_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Entry point for /timeout command to configure session timeout."""
     user_id = update.effective_user.id if update.effective_user else 0
     session = get_user_session(user_id) if user_id else None
-    current_val = (
-        int(session["session_timeout"])
-        if session and session.get("session_timeout") is not None
-        else 15
-    )
+    raw_val = session.get("session_timeout") if session else None
+    current_val = int(str(raw_val)) if raw_val is not None else 15
 
     current_label = next(
         (label for label, val in TIMEOUT_OPTIONS if val == current_val),
