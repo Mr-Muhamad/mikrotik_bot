@@ -126,3 +126,32 @@ class TestWrap:
         wrapped = breaker.wrap("r1", lambda: "never")
         with pytest.raises(CircuitBreakerOpenError):
             wrapped()
+
+
+class TestHalfOpenLeakedTrial:
+    def test_unexpected_exception_does_not_wedge_circuit(self, breaker, frozen_clock):  # type: ignore[reportMissingParameterType]
+        """An unreported trial (unexpected exception) must not wedge HALF-OPEN forever."""
+        # Open the circuit with 3 consecutive failures
+        for _ in range(3):
+            breaker.on_failure("r1")
+        assert breaker.get_state("r1") is CircuitState.OPEN
+
+        # After the reset window a trial request is admitted (half-open)
+        frozen_clock[0] += 31.0
+        breaker.before_request("r1")
+        assert breaker.get_state("r1") is CircuitState.HALF_OPEN
+
+        # Simulate an unexpected exception: neither on_success nor on_failure
+        # is reported back, so the trial slot would otherwise stay wedged.
+
+        # After another reset window the next request must NOT be permanently
+        # blocked — the leaked trial must be discarded and the circuit re-opened.
+        frozen_clock[0] += 31.0
+        with pytest.raises(CircuitBreakerOpenError):
+            breaker.before_request("r1")
+        assert breaker.get_state("r1") is CircuitState.OPEN
+
+        # And after yet another reset window a fresh trial is allowed again.
+        frozen_clock[0] += 31.0
+        breaker.before_request("r1")
+        assert breaker.get_state("r1") is CircuitState.HALF_OPEN

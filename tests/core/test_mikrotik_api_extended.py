@@ -332,6 +332,24 @@ class TestUploadFileToRouter:
             api.upload_file_to_router("r1", "/tmp/file.backup", "file.backup")
         mock_cleanup.assert_called_once_with("staged_file.backup")
 
+    def test_secret_not_leaked_in_debug_logs(
+        self, api, caplog  # type: ignore[reportMissingParameterType]
+    ) -> None:
+        secret = "SUPERSECRET_BEARER_TOKEN_98765"
+        fake_api = MagicMock()
+        fake_api.path.return_value = MagicMock(return_value=[])
+        with (
+            patch("config.BOT_HOST", "10.0.0.1"),
+            patch("core.backup.file_server.prepare_serve_file", return_value="staged.backup"),
+            patch("core.backup.file_server.cleanup_serve_file"),
+            patch.object(api._pool, "get_connection", return_value=fake_api),  # type: ignore[reportPrivateUsage]
+            patch("core.mikrotik_api.FILE_SERVER_SECRET", secret),
+            caplog.at_level("DEBUG"),
+        ):
+            result = api.upload_file_to_router("r1", "/tmp/f.backup", "f.backup")
+        assert result is True
+        assert secret not in caplog.text
+
 
 class TestDownloadFileFromRouter:
     def test_returns_false_when_no_bot_host(self, api):  # type: ignore[reportMissingParameterType]

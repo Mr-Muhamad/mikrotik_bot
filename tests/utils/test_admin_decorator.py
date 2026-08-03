@@ -289,16 +289,62 @@ class TestRequireOwnership:
             u.message.reply_text.assert_called_once_with(NOT_OWNER_MSG)
 
     @pytest.mark.asyncio
-    async def test_no_router_id_passes_through(self):
+    async def test_unresolvable_router_id_rejects_non_superadmin(self):
         @require_ownership
         async def handler(update, context):  # type: ignore[reportMissingParameterType]
             return "ok"
 
-        u = _update(user_id=100, has_message=True, has_callback=True)
+        u = _update(user_id=100, has_message=False, has_callback=True)
         u.callback_query.data = "some_other_action"
         c = _ctx()
         result = await handler(u, c)
-        assert result == "ok"
+        assert result is None
+        u.callback_query.answer.assert_called_once()
+        u.callback_query.edit_message_text.assert_called_once_with(NOT_OWNER_MSG)
+
+    @pytest.mark.asyncio
+    async def test_owner_id_zero_rejects_non_superadmin(self):
+        @require_ownership
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
+            return "ok"
+
+        with patch("database.repositories.routers.get_router_by_id") as mock_get:
+            mock_get.return_value = {"id": 1, "owner_id": 0, "password": ""}
+            u = _update(user_id=100, has_message=False, has_callback=True)
+            u.callback_query.data = "connect_router_1"
+            c = _ctx()
+            result = await handler(u, c)
+            assert result is None
+            u.callback_query.answer.assert_called_once()
+            u.callback_query.edit_message_text.assert_called_once_with(NOT_OWNER_MSG)
+
+    @pytest.mark.asyncio
+    async def test_router_not_found_rejects_non_superadmin(self):
+        @require_ownership
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
+            return "ok"
+
+        with patch("database.repositories.routers.get_router_by_id") as mock_get:
+            mock_get.return_value = None
+            u = _update(user_id=100, has_message=False, has_callback=True)
+            u.callback_query.data = "connect_router_1"
+            c = _ctx()
+            result = await handler(u, c)
+            assert result is None
+            u.callback_query.answer.assert_called_once()
+            u.callback_query.edit_message_text.assert_called_once_with(NOT_OWNER_MSG)
+
+    @pytest.mark.asyncio
+    async def test_no_router_id_message_blocked_for_non_superadmin(self):
+        @require_ownership
+        async def handler(update, context):  # type: ignore[reportMissingParameterType]
+            return "ok"
+
+        u = _update(user_id=100, has_message=True, has_callback=False)
+        c = _ctx()
+        result = await handler(u, c)
+        assert result is None
+        u.message.reply_text.assert_called_once_with(NOT_OWNER_MSG)
 
     @pytest.mark.asyncio
     async def test_extract_router_id_from_callback_data(self):

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from librouteros.exceptions import LibRouterosError
 
-from core.connection_pool import MAX_RETRIES, ConnectionPool
+from core.connection_pool import MAX_CONNECTIONS_PER_ROUTER, MAX_RETRIES, ConnectionPool
 from core.exceptions import RouterNotFoundError
 
 
@@ -323,6 +323,15 @@ class TestReconnect:
             with pytest.raises(LibRouterosError):
                 pool.reconnect("discovered_1")
             assert pool.active_counts.get("discovered_1", 0) == 0
+
+    def test_reconnect_never_exceeds_max_connections(self, pool, fake_api):  # type: ignore[reportMissingParameterType]
+        with (
+            patch("database.models.get_router_by_id", return_value=_router_db_row(), create=True),
+            patch("core.connection_pool.connect", return_value=fake_api),
+        ):
+            for _ in range(5):
+                pool.reconnect("discovered_1")
+            assert pool.active_counts["discovered_1"] <= MAX_CONNECTIONS_PER_ROUTER
 
 
 class TestCloseConnection:

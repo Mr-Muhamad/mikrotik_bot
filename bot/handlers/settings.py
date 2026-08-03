@@ -96,6 +96,28 @@ async def pdf_group_misc(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+def _get_pdf_group_info(option: str):
+    from bot.keyboards import (
+        get_pdf_layout_keyboard,
+        get_pdf_misc_keyboard,
+        get_pdf_settings_keyboard,
+        get_pdf_text_keyboard,
+    )
+
+    text_options = {"brand_name", "hotspot_dns", "footer", "value_font_size"}
+    layout_options = {"margins", "spacing", "cards_per_row", "cards_per_page", "label_spacing"}
+    misc_options = {"show_qr"}
+
+    if option in text_options:
+        return "pdf_group_text", "🔤 إعدادات النصوص والهوية", get_pdf_text_keyboard
+    if option in layout_options:
+        return "pdf_group_layout", "📐 إعدادات الهيكل والمقاسات", get_pdf_layout_keyboard
+    if option in misc_options:
+        return "pdf_group_misc", "📱 إعدادات الباركود (QR Code)", get_pdf_misc_keyboard
+
+    return "menu_pdf_settings", "⚙️ إعدادات الطباعة", get_pdf_settings_keyboard
+
+
 @admin_only
 async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Prompt user for a new value for the selected PDF setting.
@@ -148,9 +170,10 @@ async def pdf_settings_option(update: Update, context: ContextTypes.DEFAULT_TYPE
         ),
     }
 
+    parent_nav, _, _ = _get_pdf_group_info(option)
     context.user_data["pdf_option"] = option
     set_current_action(query.from_user.id, "pdf_settings")
-    nav_set(context, "menu_pdf_settings")
+    nav_set(context, parent_nav)
 
     await query.edit_message_text(
         prompts.get(option, PDF_UNKNOWN_OPTION),
@@ -239,11 +262,12 @@ async def pdf_settings_value(update: Update, context: ContextTypes.DEFAULT_TYPE)
             await send_step(update, context, err_msg)
             return WAITING_PDF_VALUE
 
+        _, group_title, keyboard_func = _get_pdf_group_info(str(option))
         await reply_final(update, context, PDF_SETTINGS_UPDATED)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=pdf_settings.format_settings(),
-            reply_markup=get_pdf_settings_keyboard(),
+            text=f"{group_title}\n\n{pdf_settings.format_settings()}",
+            reply_markup=keyboard_func(),
         )
     except (ValueError, TypeError) as e:
         await send_error(
