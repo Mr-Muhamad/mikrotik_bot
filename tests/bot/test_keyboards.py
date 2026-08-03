@@ -1266,6 +1266,12 @@ class TestGetLogsFilterKeyboard:
         m = get_logs_filter_keyboard({})
         assert "main_menu" in _btns(m)
 
+    def test_back_to_reports_button(self):
+        m = get_logs_filter_keyboard({})
+        all_data = _btns(m)
+        assert "reports_menu" in all_data
+        assert "main_menu" in all_data
+
 
 # ===========================================================================
 # 43: get_logs_submenu_keyboard

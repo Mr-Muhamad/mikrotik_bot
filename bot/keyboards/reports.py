@@ -109,6 +109,7 @@ def get_logs_filter_keyboard(
         nav_buttons.append(InlineKeyboardButton("التالي ▶️", callback_data=f"logs_page_{page + 1}"))
     if nav_buttons:
         keyboard.append(nav_buttons)
+    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="reports_menu")])
     keyboard.append([InlineKeyboardButton("🏠 الرئيسية", callback_data="main_menu")])
     return InlineKeyboardMarkup(keyboard)
 
