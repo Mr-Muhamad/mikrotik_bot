@@ -1,19 +1,31 @@
-"""Snapshot the project to a zip file in _releases/v1.1-quality/.
+"""Snapshot the project to a zip file in _releases/<version>/.
 
 Excludes:
 - .env (secrets)
 - bot_data.db, backups/ (runtime state)
 - __pycache__, .pytest_cache, .ruff_cache (build artifacts)
 - _releases/ (meta)
+
+Usage:
+    python scripts/snapshot_release.py [version]
+    Defaults to v1.2 when no version is provided.
 """
 
 import os
+import sys
 import zipfile
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-RELEASE_DIR = PROJECT_ROOT / "_releases" / "v1.1-quality"
-ZIP_PATH = RELEASE_DIR / "mikrotik_bot.zip"
+DEFAULT_VERSION = "v1.2"
+
+
+def _resolve_release_dir() -> tuple[Path, Path]:
+    version = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_VERSION
+    if not version.startswith("v"):
+        version = f"v{version}"
+    release_dir = PROJECT_ROOT / "_releases" / version
+    return release_dir, release_dir / "mikrotik_bot.zip"
 
 EXCLUDE_DIRS = {
     "__pycache__",
@@ -62,12 +74,13 @@ def should_exclude(path: Path) -> bool:
 
 def build_zip() -> int:
     """Create the snapshot zip. Returns number of files added."""
-    RELEASE_DIR.mkdir(parents=True, exist_ok=True)
-    if ZIP_PATH.exists():
-        ZIP_PATH.unlink()
+    release_dir, zip_path = _resolve_release_dir()
+    release_dir.mkdir(parents=True, exist_ok=True)
+    if zip_path.exists():
+        zip_path.unlink()
 
     count = 0
-    with zipfile.ZipFile(ZIP_PATH, "w", zipfile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for root, dirs, files in os.walk(PROJECT_ROOT):
             # Filter excluded dirs in-place to prevent descent
             dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS]
@@ -84,5 +97,6 @@ def build_zip() -> int:
 
 if __name__ == "__main__":
     n = build_zip()
-    size_kb = ZIP_PATH.stat().st_size / 1024
-    print(f"Created {ZIP_PATH} ({size_kb:.1f} KB, {n} files)")
+    _, zip_path = _resolve_release_dir()
+    size_kb = zip_path.stat().st_size / 1024
+    print(f"Created {zip_path} ({size_kb:.1f} KB, {n} files)")
