@@ -4,7 +4,7 @@ from collections.abc import Callable
 from telegram import Update
 from telegram.ext import ContextTypes, ConversationHandler
 
-from bot.keyboards import get_nav_back_keyboard, get_pdf_settings_keyboard
+from bot.keyboards import get_nav_back_keyboard
 from bot.messages import (
     PDF_BRAND_NAME_PROMPT,
     PDF_CARDS_PER_PAGE_PROMPT,
