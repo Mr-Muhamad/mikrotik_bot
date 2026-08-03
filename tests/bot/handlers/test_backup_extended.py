@@ -308,7 +308,10 @@ class TestBackgroundBackupJob:
     async def test_exception_sends_error(self, mock_mikrotik_api):  # type: ignore[reportMissingParameterType]
         ctx = self._make_job_context("full")
 
-        with patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb:
+        with (
+            patch("bot.handlers.backup.run_blocking", new_callable=AsyncMock) as mock_rb,
+            patch("config.ADMIN_IDS", []),
+        ):
             mock_rb.side_effect = OSError("crash")
             await _background_backup_job(ctx)
 

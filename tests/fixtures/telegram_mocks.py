@@ -45,6 +45,7 @@ def make_mock_update(
         update.message.text = text
         update.message.reply_text = AsyncMock()
         update.message.delete = AsyncMock()
+        update.effective_message = update.message
 
     return update
 
