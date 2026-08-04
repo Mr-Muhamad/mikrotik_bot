@@ -32,4 +32,22 @@
 ## 6. Enterprise Security & Access Control Roles
 - **Super Admin (`ADMIN_IDS`):** صلاحيات كاملة تشمل إدارة الروترات، الحذف الشامل، إعادة التشغيل (`/reboot`)، استعادة النسخ الاحتياطية، وتعيين أدوار المستخدمين.
 - **Operator Role (`operator`):** صلاحيات تشغيلية محددة تشمل البحث، شحن وتعديل الحسابات، عرض الإحصائيات والتصدير دون امتلاك صلاحيات الحذف التدميري أو تعديل النظام.
+- **Role Management (`/roles`):** تعيين أدوار super_admin / admin / operator / viewer / customer، وإدارة المشغّلين وربطهم بالروترات عبر `operator_router_permissions`.
 - **Auditing & Traceability:** تسجيل كافة الإجراءات الحساسة في `audit_logs` برقم المشرف والوقت المعياري مع إمكانية التصدير بصيغة CSV.
+
+## 7. Card Batches & Sales
+- **Card Batches (`/batches`):** عرض دفعات الكروت مع ملخص المبيعات، تفاصيل كل دفعة، تحديث حالة الدفع (مدفوع/غير مدفوع/مؤجل)، إعادة إنشاء PDF، ومشاركة الكروت.
+- **Sales (`/sales`):** تقارير المبيعات وإدارة العملاء (`/add_customer`، `/remove_customer`).
+
+## 8. Reports & Export
+- **Hotspot Report:** إحصائيات شاملة (إجمالي/نشط/غير نشط/حسب البروفايل) مع تصدير CSV وExcel.
+- **Excel Reports (`core/reports_excel.py`):** إنشاء تقارير Excel منظمة.
+- **Charts (`core/chart_generator.py`):** رسوم بيانية في تقارير الإحصائيات.
+- **Usage Report (`/usage`):** تقرير استخدام مستخدم Hotspot (الحالة، الحدود، الأجهزة النشطة).
+
+## 9. Observability & Metrics
+- **Prometheus Metrics (`/metrics`):** أداء الاتصالات، معدل الأخطاء لكل مكوّن، صحة المكونات (سليم/منحط/حرج)، واستهلاك السيرفر (CPU/RAM).
+- **Circuit Breaker (`core/circuit_breaker.py`):** حماية من الفشل المتسلسل في طلبات MikroTik API.
+- **Request Tracking:** تتبُّع `request_id` عبر كامل السجلات مع ContextVars (user, chat, router, command, duration).
+- **Session Timeout (`/timeout`):** فصل الراوتر المختار تلقائياً عند الخمول مع مدة قابلة للتخصيص.
+

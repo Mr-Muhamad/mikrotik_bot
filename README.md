@@ -22,7 +22,7 @@
 
 ## المتطلبات
 
-- Python 3.10+.
+- Python 3.10+ (مُطوَّر ومُختبَر على Python 3.12).
 - تفعيل خدمة MikroTik API على الراوتر: `IP -> Services -> api`.
 - المنفذ الافتراضي لخدمة API هو `8728` (من `config.DEFAULT_API_PORT`).
 - **تنبيه**: اتصال `8728` غير مشفّر (نصّي/ثنائي) ويعمل عبر `librouteros`. يجب تشغيله داخل شبكة موثوقة ومقيدة فقط. راجع ضوابط التخفيف في `docs/routeros-api-security.md`.
@@ -84,6 +84,7 @@ python main.py
 | `/userman` | إنشاء كروت User Manager. |
 | `/backup` | فتح قائمة النسخ الاحتياطي. |
 | `/routers` | إدارة الروترات المحفوظة. |
+| `/addrouter` | إضافة روتر يدوياً (IP/منفذ/مستخدم/كلمة مرور/اسم). |
 | `/settings` | إعدادات PDF. |
 | `/reboot` | إعادة تشغيل الراوتر المختار. |
 | `/timeout` | إعداد مدة الخمول وحماية الجلسة. |
@@ -109,6 +110,9 @@ python main.py
 mikrotik_bot/
 ├── main.py                    # نقطة تشغيل البوت
 ├── config.py                  # تحميل .env والتحقق من الإعدادات المطلوبة
+├── alembic.ini                # إعداد Alembic والاتصال بـ SQLite
+├── alembic/                   # Alembic migrations (الترحيلات)
+├── docs/                      # توثيق أمني وتوافق (routeros-api-security, routeros-v6-v7-compatibility)
 ├── utils/
 │   ├── handler_registry.py    # بناء ConversationHandler والمعالجات المستقلة
 │   ├── bot_commands.py        # أوامر Telegram السريعة
@@ -137,7 +141,8 @@ mikrotik_bot/
 │   │   ├── __init__.py        # تصدير المعالجات
 │   │   ├── batch.py           # /batches دفعات الكروت
 │   │   ├── commands_basic.py  # /cancel, /clean, /metrics, /sync, معالج الخطأ
-│   │   ├── common.py          # القوائم والأوامر العامة
+│   │   ├── common/            # /start, /help, /clean, /metrics, /sync والقوائم
+│   │   ├── common.py          # واجهة توافق لإعادة التصدير
 │   │   ├── handler_utils.py   # دوال مساعدة مشتركة
 │   │   ├── menus.py           # go_back للتنقل بين القوائم
 │   │   ├── roles.py           # /roles إدارة أدوار المشرفين
@@ -174,7 +179,15 @@ mikrotik_bot/
 │   │       ├── rename.py      # إعادة تسمية الراوتر
 │   │       └── saved.py       # الروترات المحفوظة
 │   ├── helpers/profiles.py    # جلب وكاش البروفايلات
-│   ├── keyboards.py           # أزرار InlineKeyboard
+│   ├── keyboards/             # أزرار InlineKeyboard (حزمة)
+│   │   ├── __init__.py        # إعادة تصدير مختارة للتوافق مع الاختبارات
+│   │   ├── common.py          # أزرار القوائم الرئيسية والتنقل
+│   │   ├── hotspot.py         # أزرار Hotspot
+│   │   ├── operator.py        # أزرار المشغّلين
+│   │   ├── reports.py         # أزرار التقارير والسجلات
+│   │   ├── router.py          # أزرار الروترات
+│   │   ├── settings.py        # أزرار إعدادات PDF
+│   │   └── userman.py         # أزرار User Manager
 │   ├── messages.py            # مركز النصوص العربية والرسائل
 │   ├── profile_callbacks.py   # callback index cache للبروفايلات
 │   └── router_selector.py     # حالة الراوتر والجلسة
@@ -183,6 +196,7 @@ mikrotik_bot/
 │   ├── mikrotik_api.py        # تنفيذ أوامر RouterOS
 │   ├── mikrotik_client.py     # MikroTik client wrapper
 │   ├── connection_pool.py     # إدارة اتصالات MikroTik
+│   ├── circuit_breaker.py     # فاصل الدارة (circuit breaker) لطلبات MikroTik API
 │   ├── cache.py               # TTLCache عام (dict-based مع threading.Lock)
 │   ├── exceptions.py          # فئات الاستثناءات المخصصة
 │   ├── metrics.py             # مقاييس Prometheus: record_action, record_error, record_component_result, record_db_query, record_mikrotik_request, record_telegram_request, get_health_status
@@ -246,16 +260,17 @@ mikrotik_bot/
 ## المعمارية
 
 - يعتمد البوت على `python-telegram-bot` و`ConversationHandler` لتدفقات المحادثة متعددة الخطوات، مدعوماً بنماذج بيانات `Dataclasses` لضمان النوعية (`Type Safety`).
-- التسجيل الفعلي للمعالجات موجود في `bot/registrations.py`.
+- التسجيل الفعلي للمعالجات موجود في `bot/registrations.py`، ومقسم إلى `bot/registration_parts/` (conversation / separate_handlers / standalone).
 - `utils/handler_registry.py` يبني `ConversationHandler` الرئيسي، ويدعم أيضاً `ConversationHandler`ات مستقلة لبعض التدفقات.
 - `concurrent_updates(False)` مفعل لضمان استقرار FSM.
 - عمليات MikroTik المتزامنة يتم تنفيذها عبر `run_blocking()` حتى لا يتم حجب event loop.
-- اتصال MikroTik يمر عبر `core/mikrotik_api.py` و`core/connection_pool.py` مع retry وtimeouts وrate limiting.
+- اتصال MikroTik يمر عبر `core/mikrotik_api.py` و`core/connection_pool.py` مع retry وtimeouts وrate limiting، ويحميه `core/circuit_breaker.py` من فشل متسلسل.
 - `bot/handlers/routers.py` واجهة توافق؛ التنفيذ الفعلي لتدفقات الروترات موزع داخل `bot/handlers/router_flows/`.
 - `core/backup_service.py` واجهة توافق؛ التنفيذ الفعلي للنسخ الاحتياطي والاستعادة موزع داخل `core/backup/`.
-- البيانات المحلية تحفظ في SQLite داخل `mikrotik_bot.db`.
+- البيانات المحلية تحفظ في SQLite داخل `mikrotik_bot.db` مع ترحيلات Alembic في `alembic/`.
 - النسخ الاحتياطية تحفظ داخل `backups/`.
 - إدارة السجلات تتم عبر `utils/logging_setup.py`؛ الشاشة تظهر `INFO` فما فوق، والملف `logs/mikrotik-bot.log` يسجل `DEBUG` فما فوق بتنسيق JSON مع `request_id` لكل عملية.
+- مقاييس Prometheus متاحة عبر `core/metrics.py` وتُصدَر عبر `/metrics` (أداء الاتصالات، صحة المكونات، معدل الخطأ، استهلاك السيرفر).
 
 ## التبعيات
 
@@ -292,10 +307,13 @@ ruff>=0.3.0
 قبل تشغيل البوت بعد أي تعديل (استخدم `py -3.12` بدل `python` عند الحاجة):
 
 ```bash
-ruff check . --select F821
-py -3.12 scripts/validate_handlers.py
 py -3.12 -c "import py_compile; py_compile.compile('main.py', doraise=True)"
-py -3.12 -m pytest -q
+ruff check .
+py -3.12 scripts/validate_handlers.py
+py -3.12 scripts/validate_routeros_paths.py
+py -3.12 scripts/check_type_ignore.py
+py -3.12 -m pyright --pythonpath ".\venv\Scripts\python.exe"
+py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --cov-fail-under=80 -q
 ```
 
 ثم شغّل البوت:
