@@ -15,11 +15,12 @@ import logging.handlers
 import os
 import sys
 from contextlib import contextmanager
-from dotenv import load_dotenv
 from contextvars import ContextVar, Token
 from datetime import datetime
 from typing import Any, Generator
 from uuid import uuid4
+
+from dotenv import load_dotenv
 
 load_dotenv()
 

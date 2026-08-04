@@ -10,12 +10,12 @@ This module deliberately imports nothing from ``core`` to stay cycle-free.
 
 from __future__ import annotations
 
-from typing import Mapping, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 # RouterOS API responses are loosely typed dicts; use these aliases
 # instead of bare ``dict``/``list[dict]`` so pyright strict mode can
 # infer proper key/value types and avoid ``Unknown`` cascades.
-type RouterOSRow = Mapping[str, str | int | float | bool | None]
+type RouterOSRow = dict[str, str | int | float | bool | None]
 """A single row returned by the RouterOS API."""
 
 type RouterOSResponse = list[RouterOSRow]

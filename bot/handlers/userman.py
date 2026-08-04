@@ -253,7 +253,7 @@ async def userman_card_timestamp_custom(
 
 
 @admin_only
-async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def userman_card_count(update: Update, context: ContextTypes.DEFAULT_TYPE):  # noqa: C901
     """Generate the requested number of cards, create PDF, and save the batch.
 
     Args:

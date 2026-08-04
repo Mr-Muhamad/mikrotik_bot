@@ -1,4 +1,5 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
@@ -253,7 +254,7 @@ def get_blocked_macs_keyboard(blocked: list[RouterOSRow]) -> InlineKeyboardMarku
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_usage_select_keyboard(users: Sequence[RouterOSRow]) -> InlineKeyboardMarkup:
+def get_usage_select_keyboard(users: Sequence[Mapping[str, Any]]) -> InlineKeyboardMarkup:
     keyboard: _KeyboardLayout = []
     for idx, user in enumerate(users):
         name = str(user.get("name", "—"))

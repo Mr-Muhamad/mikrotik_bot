@@ -21,7 +21,6 @@ import logging
 
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
 
-import config  # noqa: E402
 from core.profile_sync import profile_sync  # noqa: E402
 from core.userman_manager import userman_manager  # noqa: E402
 from database.models import init_db  # noqa: E402
