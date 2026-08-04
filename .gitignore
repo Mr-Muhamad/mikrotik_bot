@@ -28,3 +28,21 @@ bandit_report.txt
 package.json
 package-lock.json
 
+# AI agent tooling workspaces and generated artifacts (kept local only)
+.kilo/
+kb/
+.plans/
+.bob/
+var/
+.plans/
+review/
+.agents/
+.cursor/
+
+# IDE settings
+.vscode/
+
+# Local logs and coverage reports
+error.log
+htmlcov/
+
