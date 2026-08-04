@@ -44,6 +44,7 @@ class UserManager:
         self._api_override = api
         self._users_cache = TTLCache(max_size=20, ttl=5)
         self._sessions_cache = TTLCache(max_size=20, ttl=5)
+        self._customers_cache = TTLCache(max_size=20, ttl=300)
 
     @property
     def _api(self) -> MikrotikClient:
@@ -56,11 +57,13 @@ class UserManager:
         cached = self._users_cache.get(router_key)
         if cached is not None:
             return cast(RouterOSResponse, cached)
+        is_v7 = not base_path.startswith("tool/")
+        user_field = "name" if is_v7 else "username"
         users = self._api.execute(
             router_key,
             f"{base_path}/user/print",
             **{
-                ".proplist": ".id,name,username,password,profile,disabled,shared-users,caller-id,comment"  # noqa: E501
+                ".proplist": f".id,{user_field},password,profile,disabled,shared-users,caller-id,comment"  # noqa: E501
             },
         )
         self._users_cache.set(router_key, users)
@@ -69,6 +72,55 @@ class UserManager:
     def invalidate_users_cache(self, router_key: str):
         self._users_cache.invalidate(router_key)
         self._sessions_cache.invalidate(router_key)
+        self._customers_cache.invalidate(router_key)
+
+    def _get_customer_login(self, router_key: str) -> str:
+        """Resolve the first User Manager customer login for the router.
+
+        RouterOS v6 ``user/add`` requires a ``customer`` argument naming the
+        owning customer; without it the API answers ``owner is required``.
+        v7 also accepts a customer, but the account field differs (v6 uses
+        ``login``, v7 uses ``name``). The resolved login is cached per router
+        to avoid an extra round-trip on every card creation.
+        """
+        # Local import keeps the type-cast helper scoped to this method, the
+        # same pattern used by _get_all_users_cached below.
+        from typing import cast
+
+        cached = self._customers_cache.get(router_key)
+        if cached is not None:
+            return cast(str, cached)
+
+        base_path = self._api.get_userman_base_path(router_key)
+        is_v7 = not base_path.startswith("tool/")
+        field = "name" if is_v7 else "login"
+        login = "admin"
+
+        try:
+            rows = self._api.execute(
+                router_key,
+                f"{base_path}/customer/print",
+                **{".proplist": ".id," + field},
+            )
+            for row in rows or []:
+                candidate = str(row.get(field) or row.get("login") or row.get("name") or "")
+                if candidate:
+                    login = candidate
+                    break
+        except (TrapError, ConnectionError, OSError) as e:
+            logger.warning(
+                "Failed to resolve User Manager customer on %s "
+                "(error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+            )
+        except Exception as e:  # noqa: BLE001 - catch-all: log unexpected error before returning result
+            logger.exception(
+                "Failed to resolve User Manager customer on %s (error type: %s): %s",
+                router_key, type(e).__name__, sanitize_log_data(str(e)),
+            )
+
+        self._customers_cache.set(router_key, login)
+        return login
 
     def _generate_digits(self, length: int) -> str:
         return "".join(secrets.choice(string.digits) for _ in range(length))
@@ -85,10 +137,12 @@ class UserManager:
         """Fetch existing User Manager usernames for deduplication."""
         try:
             base_path = self._api.get_userman_base_path(router_key)
+            is_v7 = not base_path.startswith("tool/")
+            user_field = "name" if is_v7 else "username"
             rows = self._api.execute(
                 router_key,
                 f"{base_path}/user/print",
-                **{".proplist": "name,username"},
+                **{".proplist": user_field},
             )
         except (TrapError, ConnectionError, OSError) as e:
             logger.warning(
@@ -242,7 +296,16 @@ class UserManager:
         base_path = self._api.get_userman_base_path(router_key)
         is_v7 = not base_path.startswith("tool/")
 
-        add_params = {"name": username}
+        if is_v7:
+            add_params = {"name": username}
+        else:
+            # RouterOS v6 User Manager keys users by `username` (not `name`)
+            # and requires the owning `customer` on add; omitting it answers
+            # `failure: owner is required`.
+            add_params = {
+                "username": username,
+                "customer": self._get_customer_login(router_key),
+            }
         if password:
             add_params["password"] = password
         if comment:
@@ -260,6 +323,9 @@ class UserManager:
 
         # Create the account first, never bundling the profile into the add call.
         self._api.execute(router_key, f"{base_path}/user/add", **add_params)
+        # Drop the cached user list so subsequent lookups (dedup, get_user,
+        # delete) see the newly created account immediately.
+        self._users_cache.invalidate(router_key)
         router_name = mikrotik_api.get_router_name(router_key)
         _log_um_action("userman_user_create", username, router_name, 0)
 
@@ -341,7 +407,7 @@ class UserManager:
                 f"{base_path}/user/create-and-activate-profile",
                 profile=profile,
                 numbers=username,
-                customer="admin",
+                customer=self._get_customer_login(router_key),
             )
         except (TrapError, ConnectionError, OSError) as e:
             logger.warning(
@@ -501,9 +567,9 @@ class UserManager:
         if not uid:
             return None
         base_path = self._api.get_userman_base_path(router_key)
-        results = self._api.execute(router_key, f"{base_path}/user/print", **{".id": uid})
+        results = self._get_all_users_cached(router_key, base_path)
         for user in results or []:
-            if user.get(".id") == uid:
+            if str(user.get(".id")) == str(uid):
                 entry = dict(user)
                 if "name" not in entry and "username" in entry:
                     entry["name"] = entry["username"]

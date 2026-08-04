@@ -176,9 +176,7 @@ class TestCreateCards:
 
         def side_effect(rk, cmd, **kw):  # type: ignore[reportMissingParameterType]
             call_count[0] += 1
-            if cmd.endswith("/user/print") and "name,username" in kw.get(
-                ".proplist", ""
-            ):
+            if cmd.endswith("/user/print") and kw.get(".proplist", "") == "name":
                 raise Exception("network error")
             if cmd.endswith("/user-print") and ".proplist" in kw:
                 return []
@@ -292,9 +290,16 @@ class TestCreateUser:
         mgr._create_user(RK, "u1", "p1", "1M")  # type: ignore[reportPrivateUsage]
 
         calls = api.execute.call_args_list
-        assert calls[0].args[1] == f"{V6}/user/add"
-        assert calls[0].kwargs["shared-users"] == "1"
-        assert calls[1].args[1] == f"{V6}/user/create-and-activate-profile"
+        add_calls = [c for c in calls if c.args[1] == f"{V6}/user/add"]
+        assert len(add_calls) == 1
+        assert add_calls[0].kwargs["username"] == "u1"
+        assert add_calls[0].kwargs["customer"] == "admin"
+        assert add_calls[0].kwargs["shared-users"] == "1"
+        activate_calls = [
+            c for c in calls if c.args[1] == f"{V6}/user/create-and-activate-profile"
+        ]
+        assert len(activate_calls) == 1
+        assert activate_calls[0].kwargs["customer"] == "admin"
 
     def test_v6_empty_password(self):
         mgr, api = _make_manager()
@@ -302,7 +307,9 @@ class TestCreateUser:
         api.execute.return_value = None
 
         result = mgr._create_user(RK, "u1", "", "1M")  # type: ignore[reportPrivateUsage]
-        add_call = api.execute.call_args_list[0]
+        add_call = [
+            c for c in api.execute.call_args_list if c.args[1] == f"{V6}/user/add"
+        ][0]
         assert "password" not in add_call.kwargs
         assert result["password"] == ""
 
@@ -340,7 +347,9 @@ class TestCreateUser:
         api.execute.return_value = None
 
         mgr._create_user(RK, "u1", "p1", "1M", caller_id="")  # type: ignore[reportPrivateUsage]
-        add_call = api.execute.call_args_list[0]
+        add_call = [
+            c for c in api.execute.call_args_list if c.args[1] == f"{V6}/user/add"
+        ][0]
         assert "caller-id" not in add_call.kwargs
 
 
