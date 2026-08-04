@@ -42,7 +42,7 @@ from database.repositories.routers import (
 )
 from utils.admin_decorator import admin_only, require_ownership, require_role, reset_rate_limit
 from utils.async_blocking import run_blocking
-from utils.chat_cleaner import edit_clean
+from utils.chat_cleaner import edit_clean, safe_edit_plain
 from utils.error_response import send_error
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ async def saved_routers_list(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not routers:
         msg = SAVED_ROUTERS_EMPTY
         if query:
-            await query.edit_message_text(msg, reply_markup=get_router_keyboard())
+            await safe_edit_plain(query, context, msg, get_router_keyboard())
         else:
             await update.message.reply_text(msg, reply_markup=get_router_keyboard())
         return
@@ -164,8 +164,10 @@ async def connect_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not router or not router.get("username"):
         await query.edit_message_text(ROUTER_NO_CREDENTIALS)
         return
-    await query.edit_message_text(
-        f"⏳ جاري الاتصال بـ {router.get('identity', router['ip_address'])}..."
+    await safe_edit_plain(
+        query,
+        context,
+        f"⏳ جاري الاتصال بـ {router.get('identity', router['ip_address'])}...",
     )
     try:
         success, version, identity = await run_blocking(
@@ -293,7 +295,7 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = await ack_callback(update)
     if query is None:
         return
-    await query.edit_message_text(REFRESHING_ROUTERS)
+    await safe_edit_plain(query, context, REFRESHING_ROUTERS)
     try:
         routers = await run_blocking(get_saved_routers, active_only=True, decrypt=True)
         updated = 0

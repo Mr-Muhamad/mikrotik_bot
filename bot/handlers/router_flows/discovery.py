@@ -40,7 +40,7 @@ from database.repositories.routers import (
 )
 from utils.admin_decorator import admin_only, reset_rate_limit
 from utils.async_blocking import run_blocking
-from utils.chat_cleaner import edit_clean, schedule_delete, send_step
+from utils.chat_cleaner import edit_clean, safe_edit_plain, schedule_delete, send_step
 from utils.error_response import send_error
 from utils.formatters import sanitize_text
 
@@ -61,11 +61,11 @@ async def discover_routers_callback(update: Update, context: ContextTypes.DEFAUL
     query = await ack_callback(update)
     if query is None:
         return
-    await query.edit_message_text(DISCOVERY_START)
+    await safe_edit_plain(query, context, DISCOVERY_START)
     try:
         routers = await discover_routers(mndp_timeout=10)
         if not routers:
-            await query.edit_message_text(DISCOVERY_NO_RESULTS, reply_markup=get_router_keyboard())
+            await safe_edit_plain(query, context, DISCOVERY_NO_RESULTS, get_router_keyboard())
             return
         results_text = "\n\n".join([r.display_line() for r in routers])
         await edit_clean(
