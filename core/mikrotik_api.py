@@ -628,11 +628,33 @@ class MikrotikAPI:
 
     def _get_bot_host_for_router(self, router_key: str) -> str:
         """Return the bot host IP that the router can reach (from the bot's perspective)."""
-        # In most setups the bot and router are on the same management network.
-        # The user should set BOT_HOST in .env if the bot is behind NAT.
-        from config import BOT_HOST
+        import socket  # noqa: PLC0415
 
-        return BOT_HOST
+        from config import BOT_HOST  # noqa: PLC0415
+
+        if BOT_HOST:
+            return BOT_HOST
+
+        if router_key:
+            from core.connection_pool import ROUTER_KEY_PREFIX  # noqa: PLC0415
+            from database.models import get_router_by_id  # noqa: PLC0415
+
+            if str(router_key).startswith(ROUTER_KEY_PREFIX):
+                db_id = str(router_key).replace(ROUTER_KEY_PREFIX, "")
+                try:
+                    router_cfg = get_router_by_id(int(db_id), decrypt=False)
+                    if router_cfg and "ip" in router_cfg:
+                        ip = router_cfg["ip"]
+                        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                            s.connect((str(ip), 80))
+                            detected_ip = s.getsockname()[0]
+                            if detected_ip and not detected_ip.startswith("127."):
+                                logger.debug("Auto-detected BOT_HOST IP %s for router %s", detected_ip, router_key)
+                                return detected_ip
+                except Exception as e:  # noqa: BLE001 - catch-all for socket auto-detect failure
+                    logger.debug("Auto-detect BOT_HOST IP failed for %s: %s", router_key, e)
+
+        return ""
 
     def upload_file_to_router(self, router_key: str, local_path: str, remote_name: str) -> bool:
         """Serve a local file via HTTP and have the router fetch it.

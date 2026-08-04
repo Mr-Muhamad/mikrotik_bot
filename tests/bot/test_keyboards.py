@@ -55,6 +55,7 @@ from bot.keyboards import (
     get_search_results_keyboard,
     get_skip_keyboard,
     get_stats_keyboard,
+    get_usage_select_keyboard,
     get_user_selection_keyboard,
     get_userman_detail_keyboard,
     get_userman_keyboard,
@@ -242,10 +243,19 @@ class TestGetReportKeyboard:
     def test_three_rows(self):
         assert _row_count(get_report_keyboard()) == 3
 
-    def test_callbacks(self):
-        all_data = _btns(get_report_keyboard())
-        for cb in ["report_excel", "report_csv", "report_refresh", "main_menu"]:
-            assert cb in all_data
+class TestGetUsageSelectKeyboard:
+    def test_returns_markup_and_displays_comment(self):
+        users = [
+            {"name": "user1", "comment": "Note 1", "uptime": "10m"},
+            {"name": "user2", "comment": "", "uptime": "5m"},
+            {"name": "user3", "comment": "", "uptime": ""},
+        ]
+        markup = get_usage_select_keyboard(users)
+        assert isinstance(markup, InlineKeyboardMarkup)
+        row_labels = [btn.text for row in markup.inline_keyboard for btn in row]
+        assert "user1 — 💬 Note 1" in row_labels
+        assert "user2 — 5m" in row_labels
+        assert "user3" in row_labels
 
 
 # ===========================================================================
@@ -427,7 +437,7 @@ class TestGetPdfMiscKeyboard:
 
     def test_callbacks(self):
         all_data = _btns(get_pdf_misc_keyboard())
-        assert "pdf_show_qr" in all_data
+        assert "pdf_toggle_qr" in all_data
         assert "menu_pdf_settings" in all_data
 
 

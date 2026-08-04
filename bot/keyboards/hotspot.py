@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from core.mikrotik_client import RouterOSRow
@@ -251,12 +253,18 @@ def get_blocked_macs_keyboard(blocked: list[RouterOSRow]) -> InlineKeyboardMarku
     return InlineKeyboardMarkup(keyboard)
 
 
-def get_usage_select_keyboard(users: list[RouterOSRow]) -> InlineKeyboardMarkup:
+def get_usage_select_keyboard(users: Sequence[RouterOSRow]) -> InlineKeyboardMarkup:
     keyboard: _KeyboardLayout = []
     for idx, user in enumerate(users):
         name = str(user.get("name", "—"))
         uptime = str(user.get("uptime", ""))
-        label = f"{name} — {uptime}" if uptime else name
+        comment = str(user.get("comment", "")).strip()
+        if comment:
+            label = f"{name} — 💬 {comment}"
+        elif uptime:
+            label = f"{name} — {uptime}"
+        else:
+            label = name
         keyboard.append([InlineKeyboardButton(label, callback_data=f"usage_sel_{idx}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="reports_menu")])
     return InlineKeyboardMarkup(keyboard)
