@@ -15,10 +15,13 @@ import logging.handlers
 import os
 import sys
 from contextlib import contextmanager
+from dotenv import load_dotenv
 from contextvars import ContextVar, Token
 from datetime import datetime
 from typing import Any, Generator
 from uuid import uuid4
+
+load_dotenv()
 
 # Production configuration from environment
 def _parse_log_level(raw: str | None) -> int:
@@ -414,8 +417,19 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
 
     root.setLevel(logging.DEBUG)
 
-    logging.getLogger(__name__).debug(
-        "Logging configured - console level: %s, file level: DEBUG",
+    # Diagnostic: log the actual handlers attached to root
+    _handler_descs = []
+    for h in root.handlers:
+        if isinstance(h, logging.StreamHandler) and h.stream is sys.stdout:
+            _handler_descs.append(f"console(level={logging.getLevelName(h.level)})")
+        elif isinstance(h, logging.handlers.RotatingFileHandler):
+            _handler_descs.append(f"file(level={logging.getLevelName(h.level)})")
+        else:
+            _handler_descs.append(type(h).__name__)
+    logging.getLogger(__name__).info(
+        "Logging configured - root level=%s, handlers=[%s], requested console level=%s",
+        logging.getLevelName(root.level),
+        ", ".join(_handler_descs),
         logging.getLevelName(level),
     )
 
