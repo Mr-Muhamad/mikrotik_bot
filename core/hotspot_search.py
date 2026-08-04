@@ -107,7 +107,7 @@ def _enrich_host_names(
 
 def search_hosts(api: MikrotikClient, router_key: str, search_term: str) -> RouterOSResponse:
     """Search hotspot hosts by IP or MAC address with enriched host names from DHCP leases."""
-    search_lower = search_term.lower().strip()
+    search_lower = str(search_term).lower().strip()
     proplist = (
         ".id,mac-address,address,user,bypassed,uptime,bytes-in,bytes-out,server"
     )
