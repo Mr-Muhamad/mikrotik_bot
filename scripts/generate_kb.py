@@ -35,7 +35,6 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 KB_DIR = ROOT / "kb"
-VENV_PREFIX = "scripts/Activate.ps1"
 
 EXCLUDED_DIRS = {
     "__pycache__",
@@ -94,9 +93,6 @@ def iter_python_files() -> list[Path]:
         if not base.is_dir():
             continue
         for path in base.rglob("*.py"):
-            rel = path.relative_to(ROOT).as_posix()
-            if rel.startswith(VENV_PREFIX):
-                continue
             if any(part in EXCLUDED_DIRS for part in path.parts):
                 continue
             files.append(path)

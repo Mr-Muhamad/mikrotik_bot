@@ -107,6 +107,9 @@ python main.py
 mikrotik_bot/
 ├── main.py                    # نقطة التشغيل: init_db, Application, JobQueue, post_init, polling, graceful shutdown
 ├── config.py                  # تحميل .env والتحقق من BOT_TOKEN, ADMIN_IDS, ENCRYPTION_KEY
+├── alembic/                   # Alembic migrations (الترحيلات) — انظر alembic.ini
+├── alembic.ini                # إعداد Alembic والاتصال بـ SQLite
+├── docs/                      # توثيق أمني وتوافق (routeros-api-security, routeros-v6-v7-compatibility)
 ├── utils/
 │   ├── handler_registry.py    # بناء ConversationHandler الرئيسي والمعالجات المستقلة
 │   ├── bot_commands.py        # قائمة أوامر Telegram السريعة
@@ -164,7 +167,7 @@ mikrotik_bot/
 │   │   ├── watchdog.py        # مراقبة حالة الروترات
 │   │   ├── states.py          # WaitingState enum
 │   │   ├── callback_constants.py # ثوابت/بناة callback_data وأنماط PATTERNS (المصدر الوحيد للـ tokens)
-│   │   └── constants.py       # WAITING_* constants
+│   │   ├── constants.py       # WAITING_* constants
 │   │   └── router_flows/
 │   │       ├── __init__.py    # إعادة تصدير تدفقات الروترات
 │   │       ├── discovery.py   # اكتشاف الروترات
@@ -173,7 +176,15 @@ mikrotik_bot/
 │   │       ├── rename.py      # إعادة تسمية الراوتر
 │   │       └── saved.py       # الروترات المحفوظة
 │   ├── helpers/profiles.py    # جلب وتخزين أسماء البروفايلات مؤقتاً
-│   ├── keyboards.py           # كل InlineKeyboard builders
+│   ├── keyboards/              # كل InlineKeyboard builders (حزمة)
+│   │   ├── __init__.py         # إعادة تصدير مختارة للتوافق مع الاختبارات
+│   │   ├── common.py           # أزرار القوائم الرئيسية والتنقل
+│   │   ├── hotspot.py          # أزرار Hotspot
+│   │   ├── operator.py         # أزرار المشغّلين
+│   │   ├── reports.py          # أزرار التقارير والسجلات
+│   │   ├── router.py           # أزرار الروترات
+│   │   ├── settings.py         # أزرار إعدادات PDF
+│   │   └── userman.py          # أزرار User Manager
 │   ├── messages.py            # النصوص العربية للمستخدم
 │   ├── profile_callbacks.py   # callback index cache للبروفايلات
 │   └── router_selector.py     # الراوتر المختار وحالة التنقل لكل مستخدم
@@ -182,6 +193,7 @@ mikrotik_bot/
 │   ├── mikrotik_api.py        # واجهة تنفيذ لأوامر RouterOS مع retry/throttle
 │   ├── mikrotik_client.py     # MikroTik client wrapper
 │   ├── connection_pool.py     # connection pool وtimeouts وmetrics
+│   ├── circuit_breaker.py     # فاصل الدارة (circuit breaker) لطلبات MikroTik API
 │   ├── cache.py               # TTLCache عام (dict-based مع threading.Lock)
 │   ├── exceptions.py          # فئات الاستثناءات المخصصة
 │   ├── metrics.py             # مقاييس Prometheus: record_action, record_error, record_component_result, record_db_query, record_mikrotik_request, record_telegram_request, get_health_status, get_error_rate
@@ -235,8 +247,9 @@ mikrotik_bot/
 │   ├── card_generator.py      # منطق إنشاء الكروت
 │   ├── card_renderer.py       # عرض الكروت
 │   ├── pdf_renderer.py        # عرض PDF
-│   └── pdf_settings.py        # إعدادات PDF
-├── scripts/                   # validate_handlers, validate_routeros_paths, check_type_ignore, snapshot_release, e2e_smoke, stress_test
+│   ├── pdf_settings.py        # إعدادات PDF
+│   └── fonts/                 # خطوط مضمّنة في عرض الكروت (مثل Hacen Beirut Heading.ttf)
+├── scripts/                   # validate_handlers, validate_routeros_paths, check_type_ignore, snapshot_release, e2e_smoke, stress_test, generate_kb, parse_pyright_bot, live_um_cards_test, test_discovery, list_logger_exception_sites
 └── tests/                     # pytest tests للوحدات والتكامل
     ├── stress/                # اختبارات تزامن حتمية (مكتشفة الأخطاء، إصلاح time.monotonic hang)
     └── fault/                 # حقن أعطال (circuit-breaker, DB latency, FTP, RouterOS malformed)
@@ -468,7 +481,7 @@ mikrotik_bot/
 - `decrypt_password()` (معرّفة في `utils/crypto.py` وتُعاد تصديرها عبر `database/models.py`) يعيد نصاً فارغاً عند فشل الفك ولا تعيد ciphertext.
 - استخدم `is_duplicate_callback()` في callbacks التي قد تؤدي إلى عمليات خطرة أو مزدوجة مثل reboot وbackup.
 - لا ترفع `.env`, `mikrotik_bot.db`, `logs/`, `venv/`, أو محتويات `backups/` إلى Git (مستثناة في `.gitignore`).
-- المجموعات (group chats) تُتجاهل صامتاً في `admin_decorator.py:111,163`. البوت يعمل فقط في المحادثات الفردية.
+- المجموعات (group chats) تُتجاهل صامتاً عبر `_is_group_chat()` في `utils/admin_decorator.py` (تُستخدم عند `:220,:350`). البوت يعمل فقط في المحادثات الفردية.
 
 
 ## قواعد البيانات
@@ -533,7 +546,7 @@ py -3.12 -m pytest --cov=bot --cov=core --cov=database --cov=utils --cov=pdf --c
 
 ملاحظات:
 
-- `ruff check .` يستخدم الإعدادات من `ruff.toml` (قواعد E/F/W/I/UP/B).
+- `ruff check .` يستخدم الإعدادات من `pyproject.toml` (`[tool.ruff]`) (قواعد E/F/W/I/UP/B).
 - `validate_handlers.py` يتحقق من اتساق imports وتسجيل المعالجات؛ يتجاهل ثوابت ALL-CAPS (مثل `PATTERNS`, `CALLBACKS`) لأنها ليست معالجات.
 - `validate_routeros_paths.py` يمنع hardcoded User Manager paths في `core/` لضمان توافق RouterOS v6/v7.
 - `check_type_ignore.py` يتحقق من أن كل `# type: ignore` يحمل سبباً موثّقاً.
