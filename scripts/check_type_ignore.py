@@ -46,7 +46,7 @@ def scan_files():
     results: list[tuple[str, int, str, re.Pattern[str]]] = []
     py_files = sorted(PROJECT_ROOT.rglob("*.py"))
     for path in py_files:
-        if any(skip in path.parts for skip in ("venv", "__pycache__", "Activate.ps1")):
+        if any(skip in path.parts for skip in ("venv", "__pycache__")):
             continue
         rel = path.relative_to(PROJECT_ROOT)
         try:
