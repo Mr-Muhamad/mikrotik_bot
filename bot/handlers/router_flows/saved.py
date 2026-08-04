@@ -318,9 +318,11 @@ async def refresh_routers(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         routers = await run_blocking(get_saved_routers, active_only=True)
         text = _build_router_status_text(routers)
-        await query.edit_message_text(
+        await safe_edit_plain(
+            query,
+            context,
             f"{text}\n\n✅ تم تحديث {updated} روتر",
-            reply_markup=get_saved_routers_keyboard(routers),
+            get_saved_routers_keyboard(routers),
         )
         reset_rate_limit(query.from_user.id)
     except sqlite3.Error as e:
