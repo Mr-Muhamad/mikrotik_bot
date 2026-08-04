@@ -342,17 +342,40 @@ class _FlushStreamHandler(logging.StreamHandler):  # type: ignore[type-arg]  # S
     """StreamHandler that flushes after every record.
 
     Ensures log lines appear immediately in the terminal even when stdout is
-    buffered (common on Windows with cmd.exe or some IDEs).
+    buffered (common on Windows with cmd.exe or some IDEs). When stdout cannot
+    encode a character (e.g. emoji on a non-UTF-8 Windows console), the
+    character is replaced with an ASCII-safe marker so the log line is never
+    silently swallowed by ``logging.Handler.handleError``.
+
+    Note: ``super().emit()`` swallows encoding errors internally and calls
+    ``handleError()`` without re-raising, so the whole emit path is implemented
+    manually here to handle ``UnicodeEncodeError`` before it is lost.
     """
 
     def emit(self, record: logging.LogRecord) -> None:
-        super().emit(record)
-        self.flush()
+        try:
+            msg = self.format(record)
+            try:
+                self.stream.write(msg + self.terminator)
+            except UnicodeEncodeError:
+                # Fallback: the terminal encoding cannot represent the message
+                # (e.g. emoji on cp1252). Replace unencodable characters with
+                # ASCII-safe markers so nothing is silently dropped.
+                safe_msg = msg.encode("ascii", "replace").decode("ascii")
+                self.stream.write(safe_msg + self.terminator)
+            self.flush()
+        except Exception:  # noqa: BLE001 - last-resort: never crash the logging path
+            self.handleError(record)
 
 
 def _add_console_handler(root: logging.Logger, level: int) -> None:
-    """Attach a human-readable console handler to *root*."""
-    console = _FlushStreamHandler(sys.stdout)
+    """Attach a human-readable console handler to *root*.
+
+    Uses ``sys.stderr`` instead of ``sys.stdout`` because stderr is unbuffered
+    on Windows, so log lines appear immediately in the terminal instead of being
+    held in the stdout buffer (which caused logs to appear missing).
+    """
+    console = _FlushStreamHandler(sys.stderr)
     console.setLevel(level)
     console.setFormatter(
         logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - [%(request_id)s] [%(component)s] - %(message)s")
@@ -397,12 +420,14 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
     root = logging.getLogger()
     _ensure_request_id_filter(root)
 
-    has_console = any(isinstance(h, logging.StreamHandler) and h.stream is sys.stdout for h in root.handlers)
+    has_console = any(
+        isinstance(h, logging.StreamHandler) and h.stream in (sys.stdout, sys.stderr) for h in root.handlers
+    )
     has_file = any(isinstance(h, logging.handlers.RotatingFileHandler) for h in root.handlers)
 
     if has_console and has_file:
         for handler in root.handlers:
-            if isinstance(handler, logging.StreamHandler) and handler.stream is sys.stdout and handler.level != level:
+            if isinstance(handler, logging.StreamHandler) and handler.stream in (sys.stdout, sys.stderr) and handler.level != level:
                 handler.setLevel(level)
         return
 
@@ -420,7 +445,7 @@ def configure_logging(level: int = LOG_LEVEL) -> None:
     # Diagnostic: log the actual handlers attached to root
     _handler_descs = []
     for h in root.handlers:
-        if isinstance(h, logging.StreamHandler) and h.stream is sys.stdout:
+        if isinstance(h, logging.StreamHandler) and h.stream in (sys.stdout, sys.stderr):
             _handler_descs.append(f"console(level={logging.getLevelName(h.level)})")
         elif isinstance(h, logging.handlers.RotatingFileHandler):
             _handler_descs.append(f"file(level={logging.getLevelName(h.level)})")

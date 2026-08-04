@@ -1,5 +1,3 @@
-from logging.config import fileConfig
-
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
@@ -8,10 +6,13 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+# NOTE: We intentionally do NOT call fileConfig() here.
+# The application manages its own logging configuration via
+# utils.logging_setup.configure_logging(). Calling fileConfig() would
+# destroy the existing handlers (including our _FlushStreamHandler that
+# ensures logs appear in the terminal) and replace them with the minimal
+# handlers from alembic.ini, causing all application logs to disappear
+# from the terminal after init_db() runs.
 
 # add your model's MetaData object here
 # for 'autogenerate' support
