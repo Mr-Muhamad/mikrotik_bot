@@ -550,7 +550,7 @@ class UserManager:
         field = "name" if is_v7 else "username"
 
         results = self._get_all_users_cached(router_key, base_path)
-        search = search_term.lower()
+        search = str(search_term).lower()
         matches: RouterOSResponse = []
         for user in results or []:
             name = str(user.get(field, "")).lower()

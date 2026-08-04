@@ -227,7 +227,7 @@ class HotspotManager:
         Uses API-side ?name= and ?comment= filters when possible, with automatic
         fallback to in-memory filtering if the RouterOS version doesn't support it.
         """
-        search = search_term.lower()
+        search = str(search_term).lower()
         seen: set[str] = set()
         results: RouterOSResponse = []
 
