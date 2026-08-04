@@ -4,6 +4,7 @@ import sys
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from telegram.error import BadRequest
 
 from bot.handlers import stats as stats_module
 from utils import admin_decorator
@@ -133,6 +134,34 @@ class TestStatsUserman:
             await stats_module.stats_userman(update, ctx)
         text = update.callback_query.edit_message_text.call_args.args[0]
         assert "10 cards" in text
+
+    @pytest.mark.asyncio
+    async def test_userman_stats_message_not_modified_is_silent(self):
+        ctx = MagicMock()
+        ctx.user_data = {"router_key": "discovered_1"}
+        update = _query_update()
+        stats = {"total_users": 10, "enabled_users": 7, "disabled_users": 3}
+
+        # محاكاة خطأ Telegram الحميد: الرسالة لم تتغير عند النقر المكرر
+        update.callback_query.edit_message_text = AsyncMock(
+            side_effect=BadRequest(
+                "Message is not modified: specified new message content and "
+                "reply markup are exactly the same as a current content and "
+                "reply markup of the message"
+            )
+        )
+
+        with (
+            patch(
+                "bot.handlers.stats.run_blocking",
+                new=AsyncMock(side_effect=["Router1", stats]),
+            ),
+            patch("bot.handlers.stats.stats_manager") as mock_sm,
+        ):
+            mock_sm.format_userman_stats.return_value = "📊 UserMan: 10 cards"
+            # يجب ألا يرفع الاستثاء — المعالج يتجاهله بصمت
+            await stats_module.stats_userman(update, ctx)
+        update.callback_query.edit_message_text.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_userman_stats_error(self):

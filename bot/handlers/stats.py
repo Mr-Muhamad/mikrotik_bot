@@ -2,6 +2,7 @@ import logging
 
 from librouteros.exceptions import LibRouterosError
 from telegram import Update
+from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
 from bot.keyboards import get_stats_keyboard
@@ -53,7 +54,14 @@ async def _show_stats(update: Update, context: ContextTypes.DEFAULT_TYPE, stat_t
             stats = await run_blocking(stats_manager.get_userman_stats, router_key)
             text = stats_manager.format_userman_stats(stats, router_name)
 
-        await query.edit_message_text(text, reply_markup=get_stats_keyboard(), parse_mode="HTML")
+        try:
+            await query.edit_message_text(text, reply_markup=get_stats_keyboard(), parse_mode="HTML")
+        except BadRequest as e:
+            # Telegram يرفض تعديل رسالة لم يتغير محتواها أو أزرارها —
+            # يحدث عند النقر المكرر على زر الإحصائيات دون تغير البيانات.
+            if "Message is not modified" in str(e):
+                return
+            raise
     except (LibRouterosError, OSError) as e:
         await send_error(
             update,
